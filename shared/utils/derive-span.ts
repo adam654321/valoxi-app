@@ -3,7 +3,13 @@
  *
  * Priority order:
  *  a. DATE GUARD: if reportDate < periodEnd → cannot be complete → part-year.
- *  b. months_covered: if present and > 0, isFullYear = months >= 11.
+ *  b. months_covered: if present and > 0:
+ *       • Slice 21 — if months >= 11 AND a YTD/interim name signal is present,
+ *         the explicit partial-period filename wins → part-year (isFullYear=false).
+ *         A round month count extracted by an LLM from a document that is itself
+ *         labelled "YTD" or "Interim" is less reliable than the explicit name
+ *         signal; the name is the stronger authority.
+ *       • Otherwise isFullYear = months >= 11.
  *  c. BS-specific snapshot rule: if documentType === 'balance_sheet' and
  *     periodEnd is present, full-year iff the as-at date is the last day of
  *     a calendar month (i.e. a fiscal year-end snapshot).
@@ -74,8 +80,16 @@ export function computeSpan(input: SpanInput): SpanResult {
     return { isFullYear: false, monthsCovered: null };
   }
 
-  // ── b. months_covered (explicit extraction, most reliable) ─────────────────
+  // ── b. months_covered (explicit extraction) ────────────────────────────────
   if (typeof monthsCovered === 'number' && monthsCovered > 0) {
+    // Slice 21: when months >= 11 (would be full-year) but a YTD/interim name
+    // signal is present, the explicit partial-period label wins.  An LLM can
+    // misread a 12-month forecast column as "months_covered=12", but the
+    // document author labelling it "YTD" or "Interim" is unambiguous.
+    const hasYtdSignal = !!(ytdHintText && YTD_PATTERN.test(ytdHintText));
+    if (monthsCovered >= 11 && hasYtdSignal) {
+      return { isFullYear: false, monthsCovered: Math.round(monthsCovered) };
+    }
     return {
       isFullYear: monthsCovered >= 11,
       monthsCovered: Math.round(monthsCovered),

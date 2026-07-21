@@ -163,8 +163,9 @@ describe('computeSpan — Slice 18 YTD/interim hint (path d)', () => {
     expect(result.isFullYear).toBe(true);
   });
 
-  it('months_covered=12 wins over YTD filename hint (path b fires first)', () => {
-    // Content signal (12 months) overrides filename hint — trust explicit data.
+  it('Slice 21 — YTD filename wins over months_covered=12 (name signal is the stronger authority)', () => {
+    // An LLM may extract months_covered=12 from a 12-month forecast column inside
+    // a document the author explicitly labelled "YTD".  The name signal wins.
     const result = computeSpan({
       periodEnd: '2026-03-31',
       reportDate: null,
@@ -172,7 +173,7 @@ describe('computeSpan — Slice 18 YTD/interim hint (path d)', () => {
       documentType: 'profit_and_loss',
       ytdHintText: 'Canoports_YTD_Profit_and_Loss.pdf',
     });
-    expect(result.isFullYear).toBe(true);
+    expect(result.isFullYear).toBe(false);
     expect(result.monthsCovered).toBe(12);
   });
 
@@ -208,5 +209,120 @@ describe('computeSpan — Slice 18 YTD/interim hint (path d)', () => {
       ytdHintText: 'YTD Balance Sheet March 2026.pdf',
     });
     expect(result.isFullYear).toBe(true);
+  });
+});
+
+describe('computeSpan — Slice 21 YTD/interim signal overrides months_covered=12', () => {
+  it('months_covered=12 + "YTD" in filename → part-year (Canoports real case)', () => {
+    // The exact Sc-1 scenario: Gemini extracted months_covered=12 from the
+    // Canoports YTD P&L because the document contains a 12-month forecast column.
+    // The filename unambiguously says "YTD" → part-year wins.
+    const result = computeSpan({
+      monthsCovered: 12,
+      periodEnd: '2026-05-31',
+      reportDate: null,
+      documentType: 'profit_and_loss',
+      ytdHintText: 'Canoports_YTD_Profit_and_Loss.pdf',
+    });
+    expect(result.isFullYear).toBe(false);
+    expect(result.monthsCovered).toBe(12);
+  });
+
+  it('months_covered=11 + "YTD" in filename → part-year', () => {
+    const result = computeSpan({
+      monthsCovered: 11,
+      periodEnd: '2026-03-31',
+      reportDate: null,
+      documentType: 'profit_and_loss',
+      ytdHintText: 'Company YTD Accounts.pdf',
+    });
+    expect(result.isFullYear).toBe(false);
+    expect(result.monthsCovered).toBe(11);
+  });
+
+  it('months_covered=12 + "Interim" in filename → part-year', () => {
+    const result = computeSpan({
+      monthsCovered: 12,
+      periodEnd: '2025-12-31',
+      reportDate: null,
+      documentType: 'profit_and_loss',
+      ytdHintText: 'Interim Accounts FY2025.pdf',
+    });
+    expect(result.isFullYear).toBe(false);
+    expect(result.monthsCovered).toBe(12);
+  });
+
+  it('months_covered=12 + "year to date" in filename → part-year', () => {
+    const result = computeSpan({
+      monthsCovered: 12,
+      periodEnd: '2025-09-30',
+      reportDate: null,
+      ytdHintText: 'Acme year to date report.pdf',
+    });
+    expect(result.isFullYear).toBe(false);
+    expect(result.monthsCovered).toBe(12);
+  });
+
+  it('months_covered=12, NO YTD signal → still full-year (unchanged path b)', () => {
+    // Confirming the Slice 21 guard only fires when the YTD name signal is present.
+    const result = computeSpan({
+      monthsCovered: 12,
+      periodEnd: '2025-03-31',
+      reportDate: null,
+      documentType: 'profit_and_loss',
+      ytdHintText: 'Annual Statutory Accounts FY2025.pdf',
+    });
+    expect(result.isFullYear).toBe(true);
+    expect(result.monthsCovered).toBe(12);
+  });
+
+  it('months_covered=12, ytdHintText=null → still full-year', () => {
+    const result = computeSpan({
+      monthsCovered: 12,
+      periodEnd: '2025-03-31',
+      reportDate: null,
+      ytdHintText: null,
+    });
+    expect(result.isFullYear).toBe(true);
+    expect(result.monthsCovered).toBe(12);
+  });
+
+  it('months_covered=10 (already part-year) + no YTD hint → part-year (unaffected)', () => {
+    const result = computeSpan({
+      monthsCovered: 10,
+      periodEnd: '2025-10-31',
+      reportDate: null,
+      documentType: 'profit_and_loss',
+    });
+    expect(result.isFullYear).toBe(false);
+    expect(result.monthsCovered).toBe(10);
+  });
+
+  it('reportDate < periodEnd + months_covered=12 → part-year (path a still fires first)', () => {
+    // Date guard (path a) still takes priority even with months_covered=12
+    // and no YTD hint — Slice 21 does not change path a's behaviour.
+    const result = computeSpan({
+      monthsCovered: 12,
+      periodEnd: '2026-03-31',
+      reportDate: '2025-09-15',
+      documentType: 'profit_and_loss',
+      ytdHintText: null,
+    });
+    expect(result.isFullYear).toBe(false);
+    expect(result.monthsCovered).toBeNull();
+  });
+
+  it('BS with months_covered=12 + YTD hint → part-year (Slice 21 applies to balance sheets too)', () => {
+    // Path c (BS snapshot) is only reached when months_covered is absent.
+    // When months_covered=12 is present, path b runs first and the YTD hint applies.
+    const result = computeSpan({
+      monthsCovered: 12,
+      periodEnd: '2026-03-31',
+      reportDate: null,
+      documentType: 'balance_sheet',
+      ytdHintText: 'YTD Balance Sheet FY2026.pdf',
+    });
+    expect(result.isFullYear).toBe(false);
+    expect(result.monthsCovered).toBe(12);
   });
 });
