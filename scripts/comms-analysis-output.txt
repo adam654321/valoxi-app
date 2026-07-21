@@ -1,0 +1,849 @@
+══════════════════════════════════════════════════════════════════════
+SAFETY CHECK — asserting both hosts before any writes
+══════════════════════════════════════════════════════════════════════
+  PROD_DATABASE_URL host fragment: ep-old-recipe-an7e4afw.c-6.us-east-1.aws.neon.tech
+  PROD: ✓ recognised prod URL — treating as READ-ONLY
+  DATABASE_URL host fragment:      helium
+  DEV:  ✓ NOT prod — dev writes permitted
+  PROD db name: neondb
+  DEV  db name: heliumdb
+
+STEP 1 — Identifying affected companies from prod
+──────────────────────────────────────────────────────────────────────
+  Flag A (duplicate full-year periods):         59 companies
+  Flag B (management+statutory conflict):       49 companies
+  Flag C (forecast year >2026):                 5 companies
+  Flag D (non-zero docs, zero statutory income): 0 companies
+  TOTAL unique affected companies: 59
+
+
+STEP 2 — Processing 59 companies (clone → backfill → reselect → measure)
+──────────────────────────────────────────────────────────────────────
+
+[1/59] prod tc=80  "Indirock Limited"  (dup-fy,mgmt-v-stat)
+    cloning... dev=200
+    backfilling contributions... done
+    reselecting...[RESELECT] company=200
+[RESELECT] 16 contributions → 12 winners
+[RESELECT] Pruned 3 empty ghost period(s): [1101, 1102, 1103]
+[RESELECT] Done. company=200
+ done
+    ⚠  MATERIAL | direction=DOWN | EV delta=£-34,870
+    cleanup done
+
+[2/59] prod tc=82  "Astorbush "  (dup-fy,mgmt-v-stat)
+    cloning... dev=201
+    backfilling contributions... done
+    reselecting...[RESELECT] company=201
+[RESELECT] 11 contributions → 9 winners
+[RESELECT] Pruned 2 empty ghost period(s): [1109, 1110]
+[RESELECT] Done. company=201
+ done
+    ⚠  MATERIAL | direction=UP | EV delta=n/a
+    cleanup done
+
+[3/59] prod tc=83  "Newbie&Me "  (dup-fy,mgmt-v-stat)
+    cloning... dev=202
+    backfilling contributions... done
+    reselecting...[RESELECT] company=202
+[RESELECT] 10 contributions → 8 winners
+[RESELECT] Pruned 2 empty ghost period(s): [1114, 1115]
+[RESELECT] Done. company=202
+ done
+    ⚠  MATERIAL | direction=DOWN | EV delta=n/a
+    cleanup done
+
+[4/59] prod tc=86  "Thomas Niamh Contracting "  (dup-fy)
+    cloning... dev=203
+    backfilling contributions... done
+    reselecting...[RESELECT] company=203
+[RESELECT] 13 contributions → 10 winners
+[RESELECT] Pruned 2 empty ghost period(s): [1121, 1123]
+[RESELECT] Done. company=203
+ done
+    ⚠  MATERIAL | direction=DOWN | EV delta=n/a
+    cleanup done
+
+[5/59] prod tc=89  "Innova Design Group Limited"  (dup-fy,mgmt-v-stat)
+    cloning... dev=204
+    backfilling contributions... done
+    reselecting...[RESELECT] company=204
+[RESELECT] 15 contributions → 12 winners
+[RESELECT] Pruned 2 empty ghost period(s): [1127, 1128]
+[RESELECT] Done. company=204
+ done
+    ⚠  MATERIAL | direction=UP | EV delta=£190,875
+    cleanup done
+
+[6/59] prod tc=90  "Trade Double Glazing Limited"  (dup-fy,mgmt-v-stat)
+    cloning... dev=205
+    backfilling contributions... done
+    reselecting...[RESELECT] company=205
+[RESELECT] 12 contributions → 10 winners
+[RESELECT] Pruned 2 empty ghost period(s): [1139, 1140]
+[RESELECT] Done. company=205
+ done
+    ⚠  MATERIAL | direction=UP | EV delta=£51,246
+    cleanup done
+
+[7/59] prod tc=94  "London Dental Studio"  (dup-fy)
+    cloning... dev=206
+    backfilling contributions... done
+    reselecting...[RESELECT] company=206
+[RESELECT] 16 contributions → 14 winners
+[RESELECT] Pruned 1 empty ghost period(s): [1146]
+[RESELECT] Done. company=206
+ done
+    ⚠  MATERIAL | direction=DOWN | EV delta=£-294,280
+    cleanup done
+
+[8/59] prod tc=96  "Hayward Miller"  (dup-fy,mgmt-v-stat)
+    cloning... dev=207
+    backfilling contributions... done
+    reselecting...[RESELECT] company=207
+[RESELECT] 11 contributions → 10 winners
+[RESELECT] Pruned 3 empty ghost period(s): [1154, 1156, 1157]
+[RESELECT] Done. company=207
+ done
+    ✓  immaterial | direction=— | EV delta=n/a
+    cleanup done
+
+[9/59] prod tc=97  "Palatial leisure"  (dup-fy)
+    cloning... dev=208
+    backfilling contributions... done
+    reselecting...[RESELECT] company=208
+[RESELECT] 10 contributions → 8 winners
+[RESELECT] Pruned 1 empty ghost period(s): [1162]
+[RESELECT] Done. company=208
+ done
+    ⚠  MATERIAL | direction=DOWN | EV delta=£-360,639
+    cleanup done
+
+[10/59] prod tc=101  "Hickenbuild Ltd"  (dup-fy,mgmt-v-stat)
+    cloning... dev=209
+    backfilling contributions... done
+    reselecting...[RESELECT] company=209
+[RESELECT] 12 contributions → 10 winners
+[RESELECT] Pruned 1 empty ghost period(s): [1168]
+[RESELECT] Done. company=209
+ done
+    ⚠  MATERIAL | direction=UP | EV delta=£366,380
+    cleanup done
+
+[11/59] prod tc=104  "Vavona Joinery"  (dup-fy)
+    cloning... dev=210
+    backfilling contributions... done
+    reselecting...[RESELECT] company=210
+[RESELECT] 9 contributions → 9 winners
+[RESELECT] Pruned 1 empty ghost period(s): [1170]
+[RESELECT] Done. company=210
+ done
+    ✓  immaterial | direction=— | EV delta=£0
+    cleanup done
+
+[12/59] prod tc=107  "Property Care NW"  (dup-fy,mgmt-v-stat)
+    cloning... dev=211
+    backfilling contributions... done
+    reselecting...[RESELECT] company=211
+[RESELECT] 13 contributions → 13 winners
+[RESELECT] Pruned 1 empty ghost period(s): [1181]
+[RESELECT] Done. company=211
+ done
+    ✓  immaterial | direction=— | EV delta=£0
+    cleanup done
+
+[13/59] prod tc=108  "RCT MANUFACTURING LIMITED"  (dup-fy,mgmt-v-stat)
+    cloning... dev=212
+    backfilling contributions... done
+    reselecting...[RESELECT] company=212
+[RESELECT] 12 contributions → 10 winners
+[RESELECT] Pruned 4 empty ghost period(s): [1185, 1186, 1190, 1191]
+[RESELECT] Done. company=212
+ done
+    ✓  immaterial | direction=— | EV delta=£0
+    cleanup done
+
+[14/59] prod tc=114  "Chew Valley Construction Limited"  (dup-fy)
+    cloning... dev=213
+    backfilling contributions... done
+    reselecting...[RESELECT] company=213
+[RESELECT] 9 contributions → 8 winners
+[RESELECT] Pruned 1 empty ghost period(s): [1196]
+[RESELECT] Done. company=213
+ done
+    ✓  immaterial | direction=— | EV delta=£0
+    cleanup done
+
+[15/59] prod tc=115  "Asher Care Ltd"  (dup-fy,mgmt-v-stat)
+    cloning... dev=214
+    backfilling contributions... done
+    reselecting...[RESELECT] company=214
+[RESELECT] 12 contributions → 9 winners
+[RESELECT] Pruned 2 empty ghost period(s): [1200, 1201]
+[RESELECT] Done. company=214
+ done
+    ⚠  MATERIAL | direction=DOWN | EV delta=£-354,280
+    cleanup done
+
+[16/59] prod tc=117  "Habit 5"  (dup-fy,mgmt-v-stat,forecast-yr)
+    cloning... dev=215
+    backfilling contributions... done
+    reselecting...[RESELECT] company=215
+[RESELECT] 17 contributions → 11 winners
+[RESELECT] Pruned 6 empty ghost period(s): [1208, 1209, 1210, 1211, 1212, 1213]
+[RESELECT] Done. company=215
+ done
+    ✓  immaterial | direction=— | EV delta=£0
+    cleanup done
+
+[17/59] prod tc=119  "Adventure Connection"  (dup-fy,mgmt-v-stat)
+    cloning... dev=216
+    backfilling contributions... done
+    reselecting...[RESELECT] company=216
+[RESELECT] 14 contributions → 10 winners
+[RESELECT] Pruned 4 empty ghost period(s): [1220, 1222, 1223, 1225]
+[RESELECT] Done. company=216
+ done
+    ⚠  MATERIAL | direction=UP | EV delta=£73,969
+    cleanup done
+
+[18/59] prod tc=122  "    Clifford Press Limited"  (dup-fy,mgmt-v-stat)
+    cloning... dev=217
+    backfilling contributions... done
+    reselecting...[RESELECT] company=217
+[RESELECT] 20 contributions → 9 winners
+[RESELECT] Pruned 8 empty ghost period(s): [1229, 1232, 1233, 1234, 1235, 1236, 1237, 1238]
+[RESELECT] Done. company=217
+ done
+    ⚠  MATERIAL | direction=UP | EV delta=n/a
+    cleanup done
+
+[19/59] prod tc=123  "Printing Company"  (dup-fy,mgmt-v-stat)
+    cloning... dev=218
+    backfilling contributions... done
+    reselecting...[RESELECT] company=218
+[RESELECT] 12 contributions → 12 winners
+[RESELECT] Pruned 2 empty ghost period(s): [1245, 1246]
+[RESELECT] Done. company=218
+ done
+    ✓  immaterial | direction=— | EV delta=n/a
+    cleanup done
+
+[20/59] prod tc=124  "Association of Learning"  (dup-fy,mgmt-v-stat)
+    cloning... dev=219
+    backfilling contributions... done
+    reselecting...[RESELECT] company=219
+[RESELECT] 13 contributions → 9 winners
+[RESELECT] Pruned 5 empty ghost period(s): [1247, 1251, 1252, 1254, 1256]
+[RESELECT] Done. company=219
+ done
+    ⚠  MATERIAL | direction=UP | EV delta=£349,038
+    cleanup done
+
+[21/59] prod tc=125  "Cordell Engineering Limited"  (dup-fy,mgmt-v-stat)
+    cloning... dev=220
+    backfilling contributions... done
+    reselecting...[RESELECT] company=220
+[RESELECT] 11 contributions → 10 winners
+[RESELECT] Pruned 2 empty ghost period(s): [1262, 1263]
+[RESELECT] Done. company=220
+ done
+    ✓  immaterial | direction=— | EV delta=£0
+    cleanup done
+
+[22/59] prod tc=127  "Moby Foods"  (dup-fy)
+    cloning... dev=221
+    backfilling contributions... done
+    reselecting...[RESELECT] company=221
+[RESELECT] 13 contributions → 12 winners
+[RESELECT] Pruned 1 empty ghost period(s): [1270]
+[RESELECT] Done. company=221
+ done
+    ✓  immaterial | direction=— | EV delta=£0
+    cleanup done
+
+[23/59] prod tc=128  "Metainy Air Conditioning Ltd"  (dup-fy,mgmt-v-stat)
+    cloning... dev=222
+    backfilling contributions... done
+    reselecting...[RESELECT] company=222
+[RESELECT] 7 contributions → 7 winners
+[RESELECT] Pruned 1 empty ghost period(s): [1277]
+[RESELECT] Done. company=222
+ done
+    ⚠  MATERIAL | direction=DOWN | EV delta=£0
+    cleanup done
+
+[24/59] prod tc=130  "Keen As Mustard"  (dup-fy,mgmt-v-stat)
+    cloning... dev=223
+    backfilling contributions... done
+    reselecting...[RESELECT] company=223
+[RESELECT] 21 contributions → 12 winners
+[RESELECT] Pruned 7 empty ghost period(s): [1281, 1282, 1283, 1286, 1287, 1289, 1290]
+[RESELECT] Done. company=223
+ done
+    ⚠  MATERIAL | direction=mixed | EV delta=£129,499
+    cleanup done
+
+[25/59] prod tc=132  "COOPER LOMAZ RECRUITMENT LIMITED"  (dup-fy,mgmt-v-stat)
+    cloning... dev=224
+    backfilling contributions... done
+    reselecting...[RESELECT] company=224
+[RESELECT] 15 contributions → 11 winners
+[RESELECT] Pruned 4 empty ghost period(s): [1293, 1295, 1297, 1300]
+[RESELECT] Done. company=224
+ done
+    ⚠  MATERIAL | direction=— | EV delta=n/a
+    cleanup done
+
+[26/59] prod tc=134  "LCIAD"  (dup-fy,mgmt-v-stat)
+    cloning... dev=225
+    backfilling contributions... done
+    reselecting...[RESELECT] company=225
+[RESELECT] 14 contributions → 11 winners
+[RESELECT] Pruned 4 empty ghost period(s): [1307, 1308, 1309, 1310]
+[RESELECT] Done. company=225
+ done
+    ✓  immaterial | direction=— | EV delta=n/a
+    cleanup done
+
+[27/59] prod tc=136  "LHDPS"  (dup-fy,mgmt-v-stat)
+    cloning... dev=226
+    backfilling contributions... done
+    reselecting...[RESELECT] company=226
+[RESELECT] 11 contributions → 10 winners
+[RESELECT] Pruned 2 empty ghost period(s): [1312, 1315]
+[RESELECT] Done. company=226
+ done
+    ⚠  MATERIAL | direction=UP | EV delta=n/a
+    cleanup done
+
+[28/59] prod tc=137  "MANOR BUILDING SOLUTIONS (UK) LTD"  (dup-fy,mgmt-v-stat,forecast-yr)
+    cloning... dev=227
+    backfilling contributions... done
+    reselecting...[RESELECT] company=227
+[RESELECT] 14 contributions → 10 winners
+[RESELECT] Pruned 6 empty ghost period(s): [1321, 1322, 1323, 1325, 1326, 1328]
+[RESELECT] Done. company=227
+ done
+    ⚠  MATERIAL | direction=mixed | EV delta=£-981,662
+    cleanup done
+
+[29/59] prod tc=138  "Cooper Gibson"  (dup-fy,mgmt-v-stat)
+    cloning... dev=228
+    backfilling contributions... done
+    reselecting...[RESELECT] company=228
+[RESELECT] 19 contributions → 10 winners
+[RESELECT] Pruned 5 empty ghost period(s): [1333, 1334, 1335, 1336, 1338]
+[RESELECT] Done. company=228
+ done
+    ⚠  MATERIAL | direction=UP | EV delta=£246,659
+    cleanup done
+
+[30/59] prod tc=139  "Cleaning and Gardening Crew"  (dup-fy,mgmt-v-stat)
+    cloning... dev=229
+    backfilling contributions... done
+    reselecting...[RESELECT] company=229
+[RESELECT] 14 contributions → 8 winners
+[RESELECT] Pruned 4 empty ghost period(s): [1343, 1344, 1345, 1346]
+[RESELECT] Done. company=229
+ done
+    ✓  immaterial | direction=— | EV delta=n/a
+    cleanup done
+
+[31/59] prod tc=142  "CR Building Contractors Limited"  (dup-fy,mgmt-v-stat,forecast-yr)
+    cloning... dev=230
+    backfilling contributions... done
+    reselecting...[RESELECT] company=230
+[RESELECT] 16 contributions → 16 winners
+[RESELECT] Pruned 4 empty ghost period(s): [1351, 1352, 1353, 1354]
+[RESELECT] Done. company=230
+ done
+    ✓  immaterial | direction=— | EV delta=n/a
+    cleanup done
+
+[32/59] prod tc=143  "UK SOL LTD"  (dup-fy)
+    cloning... dev=231
+    backfilling contributions... done
+    reselecting...[RESELECT] company=231
+[RESELECT] 11 contributions → 11 winners
+[RESELECT] Pruned 1 empty ghost period(s): [1365]
+[RESELECT] Done. company=231
+ done
+    ⚠  MATERIAL | direction=DOWN | EV delta=n/a
+    cleanup done
+
+[33/59] prod tc=149  "Civil Engineering"  (dup-fy)
+    cloning... dev=232
+    backfilling contributions... done
+    reselecting...[RESELECT] company=232
+[RESELECT] 9 contributions → 8 winners
+[RESELECT] Pruned 1 empty ghost period(s): [1370]
+[RESELECT] Done. company=232
+ done
+    ⚠  MATERIAL | direction=UP | EV delta=£25,852
+    cleanup done
+
+[34/59] prod tc=155  "LW Haddow"  (dup-fy,mgmt-v-stat)
+    cloning... dev=233
+    backfilling contributions... done
+    reselecting...[RESELECT] company=233
+[RESELECT] 14 contributions → 10 winners
+[RESELECT] Pruned 5 empty ghost period(s): [1376, 1377, 1378, 1379, 1380]
+[RESELECT] Done. company=233
+ done
+    ✓  immaterial | direction=— | EV delta=£0
+    cleanup done
+
+[35/59] prod tc=156  "Apple Homecare Limited"  (dup-fy,mgmt-v-stat)
+    cloning... dev=234
+    backfilling contributions... done
+    reselecting...[RESELECT] company=234
+[RESELECT] 11 contributions → 9 winners
+[RESELECT] Pruned 2 empty ghost period(s): [1386, 1387]
+[RESELECT] Done. company=234
+ done
+    ✓  immaterial | direction=— | EV delta=n/a
+    cleanup done
+
+[36/59] prod tc=157  "Warren Creative"  (dup-fy,mgmt-v-stat)
+    cloning... dev=235
+    backfilling contributions... done
+    reselecting...[RESELECT] company=235
+[RESELECT] 14 contributions → 10 winners
+[RESELECT] Pruned 5 empty ghost period(s): [1392, 1394, 1395, 1396, 1397]
+[RESELECT] Done. company=235
+ done
+    ⚠  MATERIAL | direction=UP | EV delta=£47,948
+    cleanup done
+
+[37/59] prod tc=161  "The Homecare People"  (dup-fy,mgmt-v-stat)
+    cloning... dev=236
+    backfilling contributions... done
+    reselecting...[RESELECT] company=236
+[RESELECT] 24 contributions → 16 winners
+[RESELECT] Pruned 5 empty ghost period(s): [1399, 1407, 1408, 1409, 1410]
+[RESELECT] Done. company=236
+ done
+    ⚠  MATERIAL | direction=mixed | EV delta=n/a
+    cleanup done
+
+[38/59] prod tc=162  "CDC Engineering And Fabrication Limited"  (dup-fy,mgmt-v-stat,forecast-yr)
+    cloning... dev=237
+    backfilling contributions... done
+    reselecting...[RESELECT] company=237
+[RESELECT] 11 contributions → 11 winners
+[RESELECT] Pruned 1 empty ghost period(s): [1413]
+[RESELECT] Done. company=237
+ done
+    ✓  immaterial | direction=— | EV delta=£0
+    cleanup done
+
+[39/59] prod tc=163  "Lovell Landscape"  (dup-fy,mgmt-v-stat)
+    cloning... dev=238
+    backfilling contributions... done
+    reselecting...[RESELECT] company=238
+[RESELECT] 8 contributions → 8 winners
+[RESELECT] Pruned 1 empty ghost period(s): [1419]
+[RESELECT] Done. company=238
+ done
+    ⚠  MATERIAL | direction=— | EV delta=£0
+    cleanup done
+
+[40/59] prod tc=170  "LON_Nursery"  (dup-fy,mgmt-v-stat)
+    cloning... dev=239
+    backfilling contributions... done
+    reselecting...[RESELECT] company=239
+[RESELECT] 12 contributions → 10 winners
+[RESELECT] Pruned 3 empty ghost period(s): [1424, 1427, 1431]
+[RESELECT] Done. company=239
+ done
+    ✓  immaterial | direction=— | EV delta=£0
+    cleanup done
+
+[41/59] prod tc=172  "Ideal scaffolding"  (dup-fy,mgmt-v-stat)
+    cloning... dev=240
+    backfilling contributions... done
+    reselecting...[RESELECT] company=240
+[RESELECT] 17 contributions → 10 winners
+[RESELECT] Pruned 8 empty ghost period(s): [1434, 1436, 1437, 1440, 1441, 1442, 1443, 1444]
+[RESELECT] Done. company=240
+ done
+    ⚠  MATERIAL | direction=UP | EV delta=£153,257
+    cleanup done
+
+[42/59] prod tc=174  "B&K Electrical Services"  (dup-fy,mgmt-v-stat)
+    cloning... dev=241
+    backfilling contributions... done
+    reselecting...[RESELECT] company=241
+[RESELECT] 12 contributions → 10 winners
+[RESELECT] Pruned 3 empty ghost period(s): [1448, 1449, 1451]
+[RESELECT] Done. company=241
+ done
+    ✓  immaterial | direction=— | EV delta=n/a
+    cleanup done
+
+[43/59] prod tc=179  "Little Agnes Nursery"  (dup-fy)
+    cloning... dev=242
+    backfilling contributions... done
+    reselecting...[RESELECT] company=242
+[RESELECT] 9 contributions → 9 winners
+[RESELECT] Pruned 1 empty ghost period(s): [1457]
+[RESELECT] Done. company=242
+ done
+    ✓  immaterial | direction=— | EV delta=n/a
+    cleanup done
+
+[44/59] prod tc=185  "trade double glazing"  (dup-fy,mgmt-v-stat)
+    cloning... dev=243
+    backfilling contributions... done
+    reselecting...[RESELECT] company=243
+[RESELECT] 13 contributions → 11 winners
+[RESELECT] Pruned 2 empty ghost period(s): [1460, 1464]
+[RESELECT] Done. company=243
+ done
+    ⚠  MATERIAL | direction=DOWN | EV delta=n/a
+    cleanup done
+
+[45/59] prod tc=192  "Elcot"  (dup-fy,mgmt-v-stat)
+    cloning... dev=244
+    backfilling contributions... done
+    reselecting...[RESELECT] company=244
+[RESELECT] 3 contributions → 3 winners
+[RESELECT] Pruned 1 empty ghost period(s): [1468]
+[RESELECT] Done. company=244
+ done
+    ✓  immaterial | direction=— | EV delta=n/a
+    cleanup done
+
+[46/59] prod tc=193  "Jager Electrical Contractors Ltd"  (dup-fy,mgmt-v-stat)
+    cloning... dev=245
+    backfilling contributions... done
+    reselecting...[RESELECT] company=245
+[RESELECT] 8 contributions → 7 winners
+[RESELECT] Pruned 1 empty ghost period(s): [1473]
+[RESELECT] Done. company=245
+ done
+    ✓  immaterial | direction=— | EV delta=£0
+    cleanup done
+
+[47/59] prod tc=197  "BESIXTH & Campus Group (MGA Media Limited)"  (dup-fy,mgmt-v-stat)
+    cloning... dev=246
+    backfilling contributions... done
+    reselecting...[RESELECT] company=246
+[RESELECT] 7 contributions → 6 winners
+[RESELECT] Pruned 1 empty ghost period(s): [1478]
+[RESELECT] Done. company=246
+ done
+    ✓  immaterial | direction=— | EV delta=£0
+    cleanup done
+
+[48/59] prod tc=205  "Vincent Hannon & Associates Ltd T/A Vincent Hannon Architects"  (dup-fy,mgmt-v-stat)
+    cloning... dev=247
+    backfilling contributions... done
+    reselecting...[RESELECT] company=247
+[RESELECT] 15 contributions → 14 winners
+[RESELECT] Pruned 2 empty ghost period(s): [1482, 1483]
+[RESELECT] Done. company=247
+ done
+    ✓  immaterial | direction=— | EV delta=£3
+    cleanup done
+
+[49/59] prod tc=206  "Westcliffe joiners"  (dup-fy,mgmt-v-stat)
+    cloning... dev=248
+    backfilling contributions... done
+    reselecting...[RESELECT] company=248
+[RESELECT] 13 contributions → 12 winners
+[RESELECT] Pruned 1 empty ghost period(s): [1495]
+[RESELECT] Done. company=248
+ done
+    ⚠  MATERIAL | direction=UP | EV delta=n/a
+    cleanup done
+
+[50/59] prod tc=208  "Timber Building Specialists Ltd"  (dup-fy)
+    cloning... dev=249
+    backfilling contributions... done
+    reselecting...[RESELECT] company=249
+[RESELECT] 10 contributions → 8 winners
+[RESELECT] Pruned 1 empty ghost period(s): [1500]
+[RESELECT] Done. company=249
+ done
+    ⚠  MATERIAL | direction=UP | EV delta=n/a
+    cleanup done
+
+[51/59] prod tc=214  "B & R Plastering Limited"  (dup-fy,mgmt-v-stat)
+    cloning... dev=250
+    backfilling contributions... done
+    reselecting...[RESELECT] company=250
+[RESELECT] 12 contributions → 8 winners
+[RESELECT] Pruned 5 empty ghost period(s): [1505, 1506, 1507, 1508, 1509]
+[RESELECT] Done. company=250
+ done
+    ⚠  MATERIAL | direction=UP | EV delta=n/a
+    cleanup done
+
+[52/59] prod tc=215  "Opem Security"  (dup-fy,mgmt-v-stat)
+    cloning... dev=251
+    backfilling contributions... done
+    reselecting...[RESELECT] company=251
+[RESELECT] 10 contributions → 6 winners
+[RESELECT] Pruned 3 empty ghost period(s): [1512, 1513, 1515]
+[RESELECT] Done. company=251
+ done
+    ⚠  MATERIAL | direction=UP | EV delta=£70,630
+    cleanup done
+
+[53/59] prod tc=216  "Baytree nursery"  (dup-fy,mgmt-v-stat)
+    cloning... dev=252
+    backfilling contributions... done
+    reselecting...[RESELECT] company=252
+[RESELECT] 10 contributions → 10 winners
+[RESELECT] Pruned 1 empty ghost period(s): [1521]
+[RESELECT] Done. company=252
+ done
+    ⚠  MATERIAL | direction=mixed | EV delta=£55,823
+    cleanup done
+
+[54/59] prod tc=217  "Teakcroft"  (dup-fy,mgmt-v-stat)
+    cloning... dev=253
+    backfilling contributions... done
+    reselecting...[RESELECT] company=253
+[RESELECT] 11 contributions → 10 winners
+[RESELECT] Pruned 2 empty ghost period(s): [1522, 1524]
+[RESELECT] Done. company=253
+ done
+    ⚠  MATERIAL | direction=UP | EV delta=n/a
+    cleanup done
+
+[55/59] prod tc=218  "Canoports UK Limited"  (dup-fy,mgmt-v-stat,forecast-yr)
+    cloning... dev=254
+    backfilling contributions... done
+    reselecting...[RESELECT] company=254
+[RESELECT] 15 contributions → 12 winners
+[RESELECT] Pruned 8 empty ghost period(s): [1529, 1533, 1534, 1535, 1537, 1538, 1539, 1540]
+[RESELECT] Done. company=254
+ done
+    ⚠  MATERIAL | direction=— | EV delta=£0
+    cleanup done
+
+[56/59] prod tc=219  "Clean Green Cleaning Services Ltd"  (dup-fy,mgmt-v-stat)
+    cloning... dev=255
+    backfilling contributions... done
+    reselecting...[RESELECT] company=255
+[RESELECT] 10 contributions → 9 winners
+[RESELECT] Pruned 1 empty ghost period(s): [1549]
+[RESELECT] Done. company=255
+ done
+    ⚠  MATERIAL | direction=UP | EV delta=n/a
+    cleanup done
+
+[57/59] prod tc=220  "Canoports UK Limited"  (dup-fy,mgmt-v-stat)
+    cloning... dev=256
+    backfilling contributions... done
+    reselecting...[RESELECT] company=256
+[RESELECT] 11 contributions → 10 winners
+[RESELECT] Pruned 2 empty ghost period(s): [1553, 1557]
+[RESELECT] Done. company=256
+ done
+    ⚠  MATERIAL | direction=— | EV delta=£0
+    cleanup done
+
+[58/59] prod tc=228  "Thor-CON"  (dup-fy,mgmt-v-stat)
+    cloning... dev=257
+    backfilling contributions... done
+    reselecting...[RESELECT] company=257
+[RESELECT] 13 contributions → 10 winners
+[RESELECT] Pruned 4 empty ghost period(s): [1563, 1564, 1565, 1566]
+[RESELECT] Done. company=257
+ done
+    ⚠  MATERIAL | direction=— | EV delta=£0
+    cleanup done
+
+[59/59] prod tc=234  "Old Castle Farm"  (dup-fy,mgmt-v-stat)
+    cloning... dev=258
+    backfilling contributions... done
+    reselecting...[RESELECT] company=258
+[RESELECT] 14 contributions → 10 winners
+[RESELECT] Pruned 4 empty ghost period(s): [1574, 1575, 1576, 1577]
+[RESELECT] Done. company=258
+ done
+    ✓  immaterial | direction=— | EV delta=n/a
+    cleanup done
+
+
+════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+STEP 3 — FINAL TABLE
+Sorted: ACTIVE+MATERIAL first | ACTIVE+IMMATERIAL | non-active
+════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+TC     | Company                        | Owner                    | Email                            | Status       | Flags              | What moved                                              |     Current EV |   Corrected EV | Dir    | Material | Offer?  
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+  *** ACTIVE+MATERIAL (EMAIL LIST) ***
+80     | Indirock Limited               | David Jessey             | david@dynastypropertyholdings.c  | active       | dup-fy,mgmt-v-sta  | FY2026 EBITDA ↓ £-34,870 (£104,488→£69,618); EV ↓ £-34  |       £151,768 |       £116,898 | DOWN   | YES      | none    
+        CURRENT  EBITDA by year: 2021:£1,163 2022:£-11,553 2023:£15,708 2024:£38,429 2025:£47,280 2026:£104,488
+        CORRECTED EBITDA by year: 2021:£1,163 2022:£-11,553 2023:£15,708 2024:£38,429 2025:£47,280 2026:£69,618
+82     | Astorbush                      | Abi Sutcliffe            | abi@hsacquisitions.london        | active       | dup-fy,mgmt-v-sta  | FY2021 EBITDA appeared (→£428,883); FY2022 EBITDA appe  |     (no model) |     (no model) | UP     | YES      | none    
+        CURRENT  EBITDA by year: 2025:£72,001
+        CORRECTED EBITDA by year: 2021:£428,883 2022:£515,434 2023:£196,887 2024:£205,310 2025:£72,001
+83     | Newbie&Me                      | Abi Sutcliffe            | abi@hsacquisitions.london        | active       | dup-fy,mgmt-v-sta  | FY2022 EBITDA removed (was £-31,684); FY2024 EBITDA re  |     (no model) |     (no model) | DOWN   | YES      | none    
+        CURRENT  EBITDA by year: 2022:£-31,684 2024:£132,137 2025:£45,559
+        CORRECTED EBITDA by year: 2023:£-22,722
+86     | Thomas Niamh Contracting       | Abi Sutcliffe            | abi@hsacquisitions.london        | active       | dup-fy             | FY2020 EBITDA removed (was £111,339); FY2021 EBITDA re  |     (no model) |     (no model) | DOWN   | YES      | none    
+        CURRENT  EBITDA by year: 2020:£111,339 2021:£150,681 2022:£654,823 2023:£1,097,894 2024:£687,690 2025:£768,633
+        CORRECTED EBITDA by year: 2022:£654,823 2023:£1,097,894 2024:£687,690 2025:£768,633
+89     | Innova Design Group Limited    | David Jessey             | david@dynastypropertyholdings.c  | active       | dup-fy,mgmt-v-sta  | FY2024 EBITDA ↑ £118,723 (£325,567→£444,290); FY2025 E  |       £458,535 |       £649,410 | UP     | YES      | none    
+        CURRENT  EBITDA by year: 2021:£213,105 2022:£300,235 2023:£180,040 2024:£325,567 2025:£209,511
+        CORRECTED EBITDA by year: 2021:£213,105 2022:£300,235 2023:£180,040 2024:£444,290 2025:£218,038
+90     | Trade Double Glazing Limited   | David Jessey             | david@dynastypropertyholdings.c  | active       | dup-fy,mgmt-v-sta  | FY2025 EBITDA ↑ £51,246 (£0→£51,246); EV ↑ £51,246 (£4  |        £40,859 |        £92,105 | UP     | YES      | none    
+        CURRENT  EBITDA by year: 2023:£41,881 2024:£40,859 2025:£0 2026:£0
+        CORRECTED EBITDA by year: 2023:£41,881 2024:£40,859 2025:£51,246 2026:£0
+101    | Hickenbuild Ltd                | Richard Lloyd            | lloydyr@icloud.com               | active       | dup-fy,mgmt-v-sta  | FY2025 EBITDA ↑ £244,253 (£153,634→£397,887); EV ↑ £36  |       £701,408 |     £1,067,787 | UP     | YES      | none    
+        CURRENT  EBITDA by year: 2021:£140,782 2022:£260,745 2023:£168,042 2024:£259,383 2025:£153,634
+        CORRECTED EBITDA by year: 2021:£140,782 2022:£260,745 2023:£168,042 2024:£259,383 2025:£397,887
+119    | Adventure Connection           | Chris Airey              | chris@digitalmixologist.io       | active       | dup-fy,mgmt-v-sta  | FY2025 EBITDA appeared (→£89,847); EV ↑ £73,969 (£335,  |       £335,502 |       £409,471 | UP     | YES      | none    
+        CURRENT  EBITDA by year: 2022:£27,370 2023:£60,960 2024:£30,672 2026:£117,729
+        CORRECTED EBITDA by year: 2022:£27,370 2023:£60,960 2024:£30,672 2025:£89,847 2026:£117,729
+128    | Metainy Air Conditioning Ltd   | Richard Lloyd            | lloydyr@icloud.com               | active       | dup-fy,mgmt-v-sta  | EV ↓ £0 (£0→£0)                                         |             £0 |             £0 | DOWN   | YES      | none    
+130    | Keen As Mustard                | Chris Airey              | chris@digitalmixologist.io       | active       | dup-fy,mgmt-v-sta  | FY2023 EBITDA removed (was £125,862); EV ↑ £129,499 (£  |        £15,602 |       £145,102 | mixed  | YES      | none    
+        CURRENT  EBITDA by year: 2023:£125,862 2024:£197,806
+        CORRECTED EBITDA by year: 2024:£197,806
+137    | MANOR BUILDING SOLUTIONS (UK)  | Premila Stampe           | milla@grow-and-co.com            | active       | dup-fy,mgmt-v-sta  | FY2026 EBITDA appeared (→£30,675); FY2027 EBITDA appea  |     £1,542,608 |       £560,945 | mixed  | YES      | none    
+        CURRENT  EBITDA by year: 2025:£489,389
+        CORRECTED EBITDA by year: 2025:£489,389 2026:£30,675 2027:£74,653
+138    | Cooper Gibson                  | Chris Airey              | chris@digitalmixologist.io       | active       | dup-fy,mgmt-v-sta  | FY2024 EBITDA ↓ £-2,381 (£121,539→£119,158); FY2026 EB  |      £-100,533 |       £146,126 | UP     | YES      | none    
+        CURRENT  EBITDA by year: 2022:£14,679 2023:£18,202 2024:£121,539 2026:£7,695
+        CORRECTED EBITDA by year: 2022:£14,679 2023:£18,202 2024:£119,158 2025:£221,671 2026:£53,266
+157    | Warren Creative                | Chris Airey              | chris@digitalmixologist.io       | active       | dup-fy,mgmt-v-sta  | FY2025 EBITDA ↑ £63,930 (£546→£64,476); EV ↑ £47,948 (  |       £-12,826 |        £35,121 | UP     | YES      | none    
+        CURRENT  EBITDA by year: 2022:£1,350 2023:£42,882 2024:£-14,248 2025:£546 2026:£-3,400
+        CORRECTED EBITDA by year: 2022:£1,350 2023:£42,882 2024:£-14,248 2025:£64,476 2026:£-3,400
+163    | Lovell Landscape               | Premila Stampe           | milla@grow-and-co.com            | active       | dup-fy,mgmt-v-sta  | issued current_offer frozen EV £1,255,147 ≠ corrected   |       £719,610 |       £719,610 | —      | YES      | YES ⚠   
+        issued current_offer (id=10, sent=Mon Jun 15 2026 12:46:41 GMT+0000 (Coordinated Universal Time)): frozen EV=£1,255,147 offer=£1,002,414 [DIFFERS from corrected £719,610]
+172    | Ideal scaffolding              | Samuel Ade               | sam.ade150@hotmail.com           | active       | dup-fy,mgmt-v-sta  | FY2026 EBITDA ↑ £183,909 (£0→£183,909); EV ↑ £153,257   |       £509,292 |       £662,549 | UP     | YES      | none    
+        CURRENT  EBITDA by year: 2022:£823,615 2023:£594,797 2024:£264,438 2025:£346,712 2026:£0
+        CORRECTED EBITDA by year: 2022:£823,615 2023:£594,797 2024:£264,438 2025:£346,712 2026:£183,909
+185    | trade double glazing           | Samuel Ade               | sam.ade150@hotmail.com           | active       | dup-fy,mgmt-v-sta  | FY2026 EBITDA ↓ £-13,057 (£13,057→£0)                   |     (no model) |     (no model) | DOWN   | YES      | none    
+        CURRENT  EBITDA by year: 2021:£64,169 2022:£28,929 2023:£41,881 2024:£40,859 2025:£63,267 2026:£13,057
+        CORRECTED EBITDA by year: 2021:£64,169 2022:£28,929 2023:£41,881 2024:£40,859 2025:£63,267 2026:£0
+206    | Westcliffe joiners             | Mitchell Foley           | mitch@tkcacquisitions.co.uk      | active       | dup-fy,mgmt-v-sta  | FY2026 EBITDA ↑ £93,467 (£34,121→£127,587)              |     (no model) |     (no model) | UP     | YES      | none    
+        CURRENT  EBITDA by year: 2021:£198,477 2022:£154,468 2023:£158,875 2024:£112,537 2025:£158,388 2026:£34,121
+        CORRECTED EBITDA by year: 2021:£198,477 2022:£154,468 2023:£158,875 2024:£112,537 2025:£158,388 2026:£127,587
+208    | Timber Building Specialists L  | Premila Stampe           | milla@grow-and-co.com            | active       | dup-fy             | FY2025 EBITDA appeared (→£214,141)                      |     (no model) |     (no model) | UP     | YES      | none    
+        CURRENT  EBITDA by year: 2022:£51,572 2023:£31,194 2024:£336,870
+        CORRECTED EBITDA by year: 2022:£51,572 2023:£31,194 2024:£336,870 2025:£214,141
+214    | B & R Plastering Limited       | Premila Stampe           | milla@grow-and-co.com            | active       | dup-fy,mgmt-v-sta  | FY2024 EBITDA ↑ £2,516 (£410,000→£412,516); FY2025 EBI  |     (no model) |     (no model) | UP     | YES      | none    
+        CURRENT  EBITDA by year: 2023:£50,000 2024:£410,000 2025:£200,000 2026:£434,737
+        CORRECTED EBITDA by year: 2023:£50,000 2024:£412,516 2025:£201,490 2026:£434,737
+215    | Opem Security                  | Richard Lloyd            | lloydyr@icloud.com               | active       | dup-fy,mgmt-v-sta  | FY2026 EBITDA ↑ £77,051 (£66,667→£143,718); EV ↑ £70,6  |       £620,766 |       £691,396 | UP     | YES      | none    
+        CURRENT  EBITDA by year: 2024:£286,054 2025:£369,478 2026:£66,667
+        CORRECTED EBITDA by year: 2024:£286,054 2025:£369,478 2026:£143,718
+216    | Baytree nursery                | Mr Sudesh Yadav          | yadav_sudesh@ymail.com           | active       | dup-fy,mgmt-v-sta  | FY2022 EBITDA removed (was £73,680); FY2023 EBITDA rem  |       £293,975 |       £349,798 | mixed  | YES      | none    
+        CURRENT  EBITDA by year: 2022:£73,680 2023:£26,085 2024:£83,376
+        CORRECTED EBITDA by year: 2024:£83,376
+217    | Teakcroft                      | Premila Stampe           | milla@grow-and-co.com            | active       | dup-fy,mgmt-v-sta  | FY2026 EBITDA ↑ £236,164 (£0→£236,164)                  |     (no model) |     (no model) | UP     | YES      | none    
+        CURRENT  EBITDA by year: 2022:£416,814 2023:£206,544 2024:£325,274 2025:£581,656 2026:£0
+        CORRECTED EBITDA by year: 2022:£416,814 2023:£206,544 2024:£325,274 2025:£581,656 2026:£236,164
+219    | Clean Green Cleaning Services  | Premila Stampe           | milla@grow-and-co.com            | active       | dup-fy,mgmt-v-sta  | FY2025 EBITDA ↑ £9,614 (£120,731→£130,345)              |     (no model) |     (no model) | UP     | YES      | none    
+        CURRENT  EBITDA by year: 2023:£52,470 2024:£58,660 2025:£120,731 2026:£556,358
+        CORRECTED EBITDA by year: 2023:£52,470 2024:£58,660 2025:£130,345 2026:£556,358
+220    | Canoports UK Limited           | Clinton Harrison         | clinton@thecggroup.co.uk         | active       | dup-fy,mgmt-v-sta  | issued current_offer frozen EV £6,308,297 ≠ corrected   |    £10,493,239 |    £10,493,239 | —      | YES      | YES ⚠   
+        issued current_offer (id=12, sent=Mon Jul 06 2026 18:13:00 GMT+0000 (Coordinated Universal Time)): frozen EV=£6,308,297 offer=£3,386,196 [DIFFERS from corrected £10,493,239]
+
+  *** ACTIVE+IMMATERIAL ***
+96     | Hayward Miller                 | Chris Airey              | chris@digitalmixologist.io       | active       | dup-fy,mgmt-v-sta  | no material change                                      |     (no model) |     (no model) | —      | no       | none    
+104    | Vavona Joinery                 | Mitchell Foley           | mitch@tkcacquisitions.co.uk      | active       | dup-fy             | no material change                                      |       £482,754 |       £482,754 | —      | no       | none    
+107    | Property Care NW               | Mitchell Foley           | mitch@tkcacquisitions.co.uk      | active       | dup-fy,mgmt-v-sta  | no material change                                      |       £174,116 |       £174,116 | —      | no       | none    
+114    | Chew Valley Construction Limi  | Richard Lloyd            | lloydyr@icloud.com               | active       | dup-fy             | no material change                                      |       £807,582 |       £807,582 | —      | no       | none    
+117    | Habit 5                        | Chris Airey              | chris@digitalmixologist.io       | active       | dup-fy,mgmt-v-sta  | no material change                                      |       £150,992 |       £150,992 | —      | no       | none    
+125    | Cordell Engineering Limited    | Spencer Mawer            | spencer@hatchdevelopment.co.uk   | past_due     | dup-fy,mgmt-v-sta  | no material change                                      |       £832,434 |       £832,434 | —      | no       | none    
+127    | Moby Foods                     | Amin Rahman              | info@mergicgroup.com             | active       | dup-fy             | no material change                                      |       £566,052 |       £566,052 | —      | no       | none    
+139    | Cleaning and Gardening Crew    | Amanda Bird              | transformingsquares@gmail.com    | active       | dup-fy,mgmt-v-sta  | no material change                                      |     (no model) |     (no model) | —      | no       | none    
+142    | CR Building Contractors Limit  | David Jessey             | david@dynastypropertyholdings.c  | active       | dup-fy,mgmt-v-sta  | no material change                                      |     (no model) |     (no model) | —      | no       | none    
+155    | LW Haddow                      | Spencer Mawer            | spencer@hatchdevelopment.co.uk   | past_due     | dup-fy,mgmt-v-sta  | no material change                                      |       £282,393 |       £282,393 | —      | no       | none    
+162    | CDC Engineering And Fabricati  | David Jessey             | david@dynastypropertyholdings.c  | active       | dup-fy,mgmt-v-sta  | no material change                                      |       £118,955 |       £118,955 | —      | no       | none    
+170    | LON_Nursery                    | Carely Jones             | c.jones@virtusenterprise.co.uk   | active       | dup-fy,mgmt-v-sta  | no material change                                      |       £-13,865 |       £-13,865 | —      | no       | none    
+174    | B&K Electrical Services        | Samuel Ade               | sam.ade150@hotmail.com           | active       | dup-fy,mgmt-v-sta  | no material change                                      |     (no model) |     (no model) | —      | no       | none    
+179    | Little Agnes Nursery           | Samuel Ade               | sam.ade150@hotmail.com           | active       | dup-fy             | no material change                                      |     (no model) |     (no model) | —      | no       | none    
+192    | Elcot                          | Samuel Ade               | sam.ade150@hotmail.com           | active       | dup-fy,mgmt-v-sta  | no material change                                      |     (no model) |     (no model) | —      | no       | none    
+193    | Jager Electrical Contractors   | Spencer Mawer            | spencer@hatchdevelopment.co.uk   | past_due     | dup-fy,mgmt-v-sta  | no material change                                      |       £113,579 |       £113,579 | —      | no       | none    
+197    | BESIXTH & Campus Group (MGA M  | David Jessey             | david@dynastypropertyholdings.c  | active       | dup-fy,mgmt-v-sta  | no material change                                      |       £-78,654 |       £-78,654 | —      | no       | none    
+205    | Vincent Hannon & Associates L  | David Jessey             | david@dynastypropertyholdings.c  | active       | dup-fy,mgmt-v-sta  | no material change                                      |     £1,534,687 |     £1,534,690 | —      | no       | none    
+        CURRENT  EBITDA by year: 2023:£209,845 2024:£68,821 2025:£94,733 2026:£1,259,105
+        CORRECTED EBITDA by year: 2023:£209,845 2024:£68,821 2025:£94,736 2026:£1,259,105
+234    | Old Castle Farm                | Amanda Bird              | transformingsquares@gmail.com    | active       | dup-fy,mgmt-v-sta  | no material change                                      |     (no model) |     (no model) | —      | no       | none    
+
+  *** NOT ACTIVE ***
+94     | London Dental Studio           | Rabih Wassel             | rabihwassel@gmail.com            | canceled     | dup-fy             | FY2020 EBITDA removed (was £234,371); FY2021 EBITDA re  |       £173,948 |      £-120,332 | DOWN   | YES      | none    
+        CURRENT  EBITDA by year: 2020:£234,371 2021:£228,870 2024:£23,352 2025:£0
+        CORRECTED EBITDA by year: 2025:£0
+97     | Palatial leisure               | Rabih Wassel             | rabihwassel@gmail.com            | canceled     | dup-fy             | FY2022 EBITDA removed (was £63,575); FY2023 EBITDA rem  |       £360,639 |             £0 | DOWN   | YES      | none    
+        CURRENT  EBITDA by year: 2022:£63,575 2023:£237,162 2024:£59,902
+        CORRECTED EBITDA by year: (none)
+115    | Asher Care Ltd                 | Binu Mathai              | binumathai79@gmail.com           | canceled     | dup-fy,mgmt-v-sta  | FY2024 EBITDA ↓ £-7,243 (£689,678→£682,435); FY2025 EB  |     £3,140,357 |     £2,786,077 | DOWN   | YES      | none    
+        CURRENT  EBITDA by year: 2022:£402,553 2023:£582,910 2024:£689,678 2025:£611,629 2026:£618,690
+        CORRECTED EBITDA by year: 2022:£402,553 2023:£582,910 2024:£682,435 2025:£359,643 2026:£618,690
+122    |     Clifford Press Limited     | Crown Aiyeki             | crown@brookmooreholdings.com     | canceled     | dup-fy,mgmt-v-sta  | FY2023 EBITDA ↑ £140,907 (£0→£140,907); FY2024 EBITDA   |     (no model) |     (no model) | UP     | YES      | none    
+        CURRENT  EBITDA by year: 2023:£0 2024:£0 2025:£0 2026:£0
+        CORRECTED EBITDA by year: 2023:£140,907 2024:£232,323 2025:£348,205 2026:£0
+124    | Association of Learning        | Chris Peters             | 1978chris.peters@gmail.com       | canceled     | dup-fy,mgmt-v-sta  | FY2024 EBITDA appeared (→£353,793); FY2025 EBITDA appe  |     £1,068,891 |     £1,417,928 | UP     | YES      | YES ⚠   
+        CURRENT  EBITDA by year: 2022:£407,728 2023:£297,865
+        CORRECTED EBITDA by year: 2022:£407,728 2023:£297,865 2024:£353,793 2025:£724,107
+        issued current_offer (id=6, sent=Tue May 05 2026 14:43:47 GMT+0000 (Coordinated Universal Time)): frozen EV=£0 offer=£1,329,107 [DIFFERS from corrected £1,417,928]
+132    | COOPER LOMAZ RECRUITMENT LIMI  | Rabih Wassel             | rabihwassel@gmail.com            | canceled     | dup-fy,mgmt-v-sta  | FY2021 EBITDA appeared (→£0); FY2022 EBITDA appeared (  |     (no model) |     (no model) | —      | YES      | none    
+        CURRENT  EBITDA by year: 2024:£16,229
+        CORRECTED EBITDA by year: 2021:£0 2022:£19,170 2023:£0 2024:£16,229
+136    | LHDPS                          | Rabih Wassel             | rabihwassel@gmail.com            | canceled     | dup-fy,mgmt-v-sta  | FY2023 EBITDA appeared (→£237,894); FY2024 EBITDA appe  |     (no model) |     (no model) | UP     | YES      | none    
+        CURRENT  EBITDA by year: 2021:£0 2022:£33,356
+        CORRECTED EBITDA by year: 2021:£0 2022:£33,356 2023:£237,894 2024:£232,366
+143    | UK SOL LTD                     | Alice de Haan            | alice@dehaan-group.com           | canceled     | dup-fy             | FY2025 EBITDA removed (was £1,447,117)                  |     (no model) |     (no model) | DOWN   | YES      | none    
+        CURRENT  EBITDA by year: 2021:£138,615 2022:£39,920 2023:£68,942 2024:£436,415 2025:£1,447,117 2026:£898,068
+        CORRECTED EBITDA by year: 2021:£138,615 2022:£39,920 2023:£68,942 2024:£436,415 2026:£898,068
+149    | Civil Engineering              | (unknown)                | (unknown)                        | unknown      | dup-fy             | FY2025 EBITDA ↑ £38,777 (£0→£38,777); EV ↑ £25,852 (£2  |       £289,639 |       £315,491 | UP     | YES      | none    
+        CURRENT  EBITDA by year: 2022:£131,197 2023:£252,357 2024:£182,102 2025:£0
+        CORRECTED EBITDA by year: 2022:£131,197 2023:£252,357 2024:£182,102 2025:£38,777
+161    | The Homecare People            | Gloria Omeje             | gloria.omeje@mail.com            | canceled     | dup-fy,mgmt-v-sta  | FY2022 EBITDA ↑ £418 (£-24,013→£-23,595); FY2024 EBITD  |     (no model) |     (no model) | mixed  | YES      | none    
+        CURRENT  EBITDA by year: 2019:£94,422 2020:£69,414 2021:£-20,396 2022:£-24,013 2023:£-5,698 2024:£28,534 2025:£37,472 2026:£121,601
+        CORRECTED EBITDA by year: 2019:£94,422 2020:£69,414 2021:£-20,396 2022:£-23,595 2023:£-5,698 2024:£27,561 2025:£37,472 2026:£9,640
+218    | Canoports UK Limited           | Clinton Harrison         | info@thecggroup.co.uk            | canceled     | dup-fy,mgmt-v-sta  | issued offer_letter frozen EV £0 ≠ corrected £19,074,0  |    £19,074,045 |    £19,074,045 | —      | YES      | YES ⚠   
+        issued offer_letter (id=58, sent=n/a): frozen EV=£0 offer=£2,588,114 [DIFFERS from corrected £19,074,045]
+        issued current_offer (id=11, sent=Wed Jul 01 2026 11:45:52 GMT+0000 (Coordinated Universal Time)): frozen EV=£0 offer=£2,588,114 [DIFFERS from corrected £19,074,045]
+228    | Thor-CON                       | (unknown)                | (unknown)                        | unknown      | dup-fy,mgmt-v-sta  | issued offer_letter frozen EV £124,853 ≠ corrected £-6  |        £-6,900 |        £-6,900 | —      | YES      | YES ⚠   
+        issued offer_letter (id=62, sent=Thu Jul 16 2026 19:01:05 GMT+0000 (Coordinated Universal Time)): frozen EV=£124,853 offer=£152,815 [DIFFERS from corrected £-6,900]
+        issued current_offer (id=13, sent=Thu Jul 16 2026 19:01:05 GMT+0000 (Coordinated Universal Time)): frozen EV=£124,853 offer=£152,815 [DIFFERS from corrected £-6,900]
+108    | RCT MANUFACTURING LIMITED      | Dilip Gurung             | dilipgurung1907@gmail.com        | canceled     | dup-fy,mgmt-v-sta  | no material change                                      |       £132,428 |       £132,428 | —      | no       | none    
+123    | Printing Company               | (unknown)                | (unknown)                        | unknown      | dup-fy,mgmt-v-sta  | no material change                                      |     (no model) |     (no model) | —      | no       | none    
+134    | LCIAD                          | Rabih Wassel             | rabihwassel@gmail.com            | canceled     | dup-fy,mgmt-v-sta  | no material change                                      |     (no model) |     (no model) | —      | no       | none    
+156    | Apple Homecare Limited         | Gloria Omeje             | gloria.omeje@mail.com            | canceled     | dup-fy,mgmt-v-sta  | no material change                                      |     (no model) |     (no model) | —      | no       | none    
+
+════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+SUMMARY
+  Total affected companies processed: 59
+  ACTIVE + MATERIAL (need email):     24
+  ACTIVE + IMMATERIAL (quiet fix):    19
+  NOT ACTIVE (quiet fix):             16
+  Issued offer/HoT affected:          5
+
+  EMAIL LIST:
+    tc=80  Indirock Limited                    david@dynastypropertyholdings.co.uk  [active]  DOWN  FY2026 EBITDA ↓ £-34,870 (£104,488→£69,618); EV ↓ £-34,870 (£151,768→£116,898)
+    tc=82  Astorbush                           abi@hsacquisitions.london  [active]  UP  FY2021 EBITDA appeared (→£428,883); FY2022 EBITDA appeared (→£515,434); FY2023 E
+    tc=83  Newbie&Me                           abi@hsacquisitions.london  [active]  DOWN  FY2022 EBITDA removed (was £-31,684); FY2024 EBITDA removed (was £132,137); FY20
+    tc=86  Thomas Niamh Contracting            abi@hsacquisitions.london  [active]  DOWN  FY2020 EBITDA removed (was £111,339); FY2021 EBITDA removed (was £150,681)
+    tc=89  Innova Design Group Limited         david@dynastypropertyholdings.co.uk  [active]  UP  FY2024 EBITDA ↑ £118,723 (£325,567→£444,290); FY2025 EBITDA ↑ £8,527 (£209,511→£
+    tc=90  Trade Double Glazing Limited        david@dynastypropertyholdings.co.uk  [active]  UP  FY2025 EBITDA ↑ £51,246 (£0→£51,246); EV ↑ £51,246 (£40,859→£92,105)
+    tc=101  Hickenbuild Ltd                     lloydyr@icloud.com  [active]  UP  FY2025 EBITDA ↑ £244,253 (£153,634→£397,887); EV ↑ £366,380 (£701,408→£1,067,787
+    tc=119  Adventure Connection                chris@digitalmixologist.io  [active]  UP  FY2025 EBITDA appeared (→£89,847); EV ↑ £73,969 (£335,502→£409,471)
+    tc=128  Metainy Air Conditioning Ltd        lloydyr@icloud.com  [active]  DOWN  EV ↓ £0 (£0→£0)
+    tc=130  Keen As Mustard                     chris@digitalmixologist.io  [active]  mixed  FY2023 EBITDA removed (was £125,862); EV ↑ £129,499 (£15,602→£145,102)
+    tc=137  MANOR BUILDING SOLUTIONS (UK) LTD   milla@grow-and-co.com  [active]  mixed  FY2026 EBITDA appeared (→£30,675); FY2027 EBITDA appeared (→£74,653); EV ↓ £-981
+    tc=138  Cooper Gibson                       chris@digitalmixologist.io  [active]  UP  FY2024 EBITDA ↓ £-2,381 (£121,539→£119,158); FY2026 EBITDA ↑ £45,571 (£7,695→£53
+    tc=157  Warren Creative                     chris@digitalmixologist.io  [active]  UP  FY2025 EBITDA ↑ £63,930 (£546→£64,476); EV ↑ £47,948 (£-12,826→£35,121)
+    tc=163  Lovell Landscape                    milla@grow-and-co.com  [active]  —  issued current_offer frozen EV £1,255,147 ≠ corrected £719,610
+    tc=172  Ideal scaffolding                   sam.ade150@hotmail.com  [active]  UP  FY2026 EBITDA ↑ £183,909 (£0→£183,909); EV ↑ £153,257 (£509,292→£662,549)
+    tc=185  trade double glazing                sam.ade150@hotmail.com  [active]  DOWN  FY2026 EBITDA ↓ £-13,057 (£13,057→£0)
+    tc=206  Westcliffe joiners                  mitch@tkcacquisitions.co.uk  [active]  UP  FY2026 EBITDA ↑ £93,467 (£34,121→£127,587)
+    tc=208  Timber Building Specialists Ltd     milla@grow-and-co.com  [active]  UP  FY2025 EBITDA appeared (→£214,141)
+    tc=214  B & R Plastering Limited            milla@grow-and-co.com  [active]  UP  FY2024 EBITDA ↑ £2,516 (£410,000→£412,516); FY2025 EBITDA ↑ £1,490 (£200,000→£20
+    tc=215  Opem Security                       lloydyr@icloud.com  [active]  UP  FY2026 EBITDA ↑ £77,051 (£66,667→£143,718); EV ↑ £70,630 (£620,766→£691,396)
+    tc=216  Baytree nursery                     yadav_sudesh@ymail.com  [active]  mixed  FY2022 EBITDA removed (was £73,680); FY2023 EBITDA removed (was £26,085); EV ↑ £
+    tc=217  Teakcroft                           milla@grow-and-co.com  [active]  UP  FY2026 EBITDA ↑ £236,164 (£0→£236,164)
+    tc=219  Clean Green Cleaning Services Ltd   milla@grow-and-co.com  [active]  UP  FY2025 EBITDA ↑ £9,614 (£120,731→£130,345)
+    tc=220  Canoports UK Limited                clinton@thecggroup.co.uk  [active]  —  issued current_offer frozen EV £6,308,297 ≠ corrected £10,493,239
