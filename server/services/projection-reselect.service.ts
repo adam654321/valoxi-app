@@ -475,8 +475,21 @@ export async function reselect(targetCompanyId: number): Promise<void> {
       await upsertBalanceFromFigures(period.id, targetCompanyId, figures, winnerSourceDocId);
     }
 
-    // 4. Reconcile: remove income/balance rows from OTHER periods in the same
-    //    (fiscalYear, isFullYear) slot — they lost the election.
+    // 4. Reconcile: remove income/balance rows from OTHER periods that lost
+    //    the election for this fiscal year.
+    //
+    //    Income winners span ALL is_full_year slots in this fiscal year.
+    //    This is critical for the split-attribution case where a container period
+    //    was created by one document (e.g. a Company Accounts PDF, stamping
+    //    is_full_year=true) while the actual income figures were written by a
+    //    different part-year document (e.g. a YTD P&L).  After Slice 18 flips the
+    //    income contribution's is_full_year to false, the income winner lands in a
+    //    new is_full_year=false container.  Without the wider scope, the old
+    //    is_full_year=true container's income_statement would never be evicted and
+    //    would keep leaking into fetchReportedEbitdaByYear.
+    //
+    //    Balance winners remain scoped to their own is_full_year slot so that
+    //    balance and income reconcile independently.
     const slotPeriods = await db
       .select({ id: financialPeriods.id })
       .from(financialPeriods)
@@ -484,7 +497,9 @@ export async function reselect(targetCompanyId: number): Promise<void> {
         and(
           eq(financialPeriods.targetCompanyId, targetCompanyId),
           eq(financialPeriods.fiscalYear, winner.fiscalYear),
-          eq(financialPeriods.isFullYear, winner.isFullYear),
+          winner.statementType === 'balance'
+            ? eq(financialPeriods.isFullYear, winner.isFullYear)
+            : undefined,
         ),
       );
 

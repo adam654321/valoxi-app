@@ -591,6 +591,8 @@ describe('V-Check A–H: triple-test company', () => {
   });
 
   // ─── CHECK H: staff_data is on the latest winning full-year period ────────────
+  // NOTE: must run before check I, which adds a FY2026 full-year period that
+  // would shift staff_data to FY2026 and invalidate this check.
 
   it('H. staff_data: exactly one row, on the latest winning full-year period (FY2025 container)', async () => {
     const sdRows = await db
@@ -622,5 +624,92 @@ describe('V-Check A–H: triple-test company', () => {
     // headcount and sourceDoc are intact
     expect(sdRows[0].headcount).toBe(42);
     expect(sdRows[0].docId).toBe(docStaffId);
+  });
+
+  // ─── CHECK I: Slice 19 — part-year income win evicts stale full-year income ───
+  //
+  // Adversarial scenario:
+  //   FY2026 income contribution starts as is_full_year=true → reselect writes it
+  //   into the is_full_year=true container → appears in reportedEbitdaByYear.
+  //   ALSO a full-year BALANCE contribution exists for FY2026 (this is the trap:
+  //   it would make yearToWinnerPeriodId include FY2026, causing clearOrphanedFigures
+  //   to skip FY2026 and leave the stale income intact — the pre-Slice-19 bug).
+  //   After flipping income to is_full_year=false (Slice 18), reselect must:
+  //     a) evict income from the is_full_year=true container period (widened reconcile)
+  //     b) leave balance on the is_full_year=true container untouched
+  //     c) result in FY2026 absent from fetchReportedEbitdaByYear
+
+  it('I. Slice 19: part-year income win evicts income from full-year container; balance unaffected', async () => {
+    const FY26 = 2026;
+    const FY26_INC = { operatingProfit: '200000', depreciationAmortisation: '15000', revenue: '2000000' };
+    const FY26_EBITDA = 215000; // 200000 + 15000
+
+    // ── Step 1: seed FY2026 as fully full-year (pre-Slice 18 state) ────────────
+    const [contribInc26] = await db.insert(financialContributions).values({
+      targetCompanyId: testCompanyId, sourceDocumentId: docStatId,
+      statementType: 'income' as const, sourceTier: 'statutory',
+      isFullYear: true, isPrimaryYear: true,
+      periodEnd: `${FY26}-03-31`, fiscalYear: FY26,
+      figures: FY26_INC as any,
+    }).returning();
+
+    // Full-year BALANCE for FY2026 — adversarial: adds FY2026 to yearToWinnerPeriodId
+    // so clearOrphanedFigures would skip it (the pre-Slice-19 bug path)
+    await db.insert(financialContributions).values({
+      targetCompanyId: testCompanyId, sourceDocumentId: docStatId,
+      statementType: 'balance' as const, sourceTier: 'statutory',
+      isFullYear: true, isPrimaryYear: true,
+      periodEnd: `${FY26}-03-31`, fiscalYear: FY26,
+      figures: STAT_BAL as any,
+    });
+
+    await reselect(testCompanyId);
+    const reportedBefore = await fetchReportedEbitdaByYear(testCompanyId);
+    const pid26full = await getPeriodId(FY26);
+    console.log(`  I. BEFORE  FY2026 in reportedEbitda: ${reportedBefore['2026']}  (expected ≈${FY26_EBITDA})  pid26full=${pid26full}`);
+    expect(reportedBefore['2026']).toBeCloseTo(FY26_EBITDA, 0);
+    expect(pid26full).toBeDefined();
+
+    // ── Step 2: Slice 18 patch — flip income contribution to is_full_year=false ─
+    await db.update(financialContributions)
+      .set({ isFullYear: false })
+      .where(eq(financialContributions.id, contribInc26.id));
+
+    // ── Step 3: reselect — Slice 19 widened reconcile must evict income from pid26full
+    await reselect(testCompanyId);
+
+    const reportedAfter = await fetchReportedEbitdaByYear(testCompanyId);
+    console.log(`  I. AFTER   FY2026 in reportedEbitda: ${reportedAfter['2026']}  (expected undefined)`);
+
+    // FY2026 must have dropped out — part-year income cannot feed valuation
+    expect(reportedAfter['2026']).toBeUndefined();
+
+    // The is_full_year=true container must have NO income_statement left
+    const incOnFullPeriod = await db
+      .select({ id: incomeStatements.id })
+      .from(incomeStatements)
+      .where(eq(incomeStatements.financialPeriodId, pid26full!));
+    console.log(`  I. is_full_year=true period(${pid26full}) income rows: ${incOnFullPeriod.length}  (expected 0)`);
+    expect(incOnFullPeriod).toHaveLength(0);
+
+    // Balance on the full-year container must be PRESERVED — balance winner is still full-year
+    const balOnFullPeriod = await db
+      .select({ id: balanceSheets.id })
+      .from(balanceSheets)
+      .where(eq(balanceSheets.financialPeriodId, pid26full!));
+    console.log(`  I. is_full_year=true period(${pid26full}) balance rows: ${balOnFullPeriod.length}  (expected 1)`);
+    expect(balOnFullPeriod).toHaveLength(1);
+
+    // Prior years unaffected (FY2025 still IM-tiered from check G)
+    expect(reportedAfter['2022']).toBeCloseTo(STAT_EBITDA[FY22], 0);
+    expect(reportedAfter['2023']).toBeCloseTo(STAT_EBITDA[FY23], 0);
+    expect(reportedAfter['2024']).toBeCloseTo(STAT_EBITDA[FY24], 0);
+    expect(reportedAfter['2025']).toBeUndefined();
+
+    // Cleanup FY2026 contributions so afterAll is clean
+    await db.delete(financialContributions).where(and(
+      eq(financialContributions.targetCompanyId, testCompanyId),
+      eq(financialContributions.fiscalYear, FY26),
+    ));
   });
 });
