@@ -1,5 +1,6 @@
 - [resend-broadcasts-no-merge-tags](resend-broadcasts-no-merge-tags.md) — Resend broadcast templates cannot use merge tags the way transactional emails can.
 - [YTD period detection](ytd-period-detection.md) — fiscal-year-end month is inferred by frequency across a company's periods, not assumed to be December.
-- [Financial projection slices](financial-projection-slices.md) — Multi-slice projection system: contributions table (Slice 1), pure selector (Slice 2), reselect wiring (Slice 3). All through Slice 19 done.
+- [Financial projection slices](financial-projection-slices.md) — Multi-slice projection system: contributions table (Slice 1), pure selector (Slice 2), reselect wiring (Slice 3). All through Slice 20 done.
 - [Stable year-container model](stable-year-container.md) — Slice 16 final: period container survivor priority, re-point logic, orphaned-figure clearing, extended prune condition.
 - [Reselect income reconcile scope](reselect-income-reconcile.md) — Income reconcile in step 4 must span ALL fiscal-year periods; balance reconcile stays scoped to its own is_full_year slot.
+- [Slice 20 income is_full_year gate](slice20-income-is-full-year.md) — IS.is_full_year stamped by reselect from income contribution span; fetchReportedEbitdaByYear gates on IS not FP.

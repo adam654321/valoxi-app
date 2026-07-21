@@ -126,6 +126,7 @@ async function upsertIncomeFromFigures(
   targetCompanyId: number,
   figures: Record<string, any>,
   winnerSourceDocumentId: number | null,
+  isFullYear: boolean,
 ): Promise<void> {
   const data = {
     revenue: figures.revenue ?? null,
@@ -147,6 +148,7 @@ async function upsertIncomeFromFigures(
     costOfSalesBreakdown: figures.costOfSalesBreakdown ?? null,
     overheadsBreakdown: figures.overheadsBreakdown ?? null,
     exceptionalItems: figures.exceptionalItems ?? null,
+    isFullYear,
     sourceDocumentId: winnerSourceDocumentId,
   };
 
@@ -470,7 +472,13 @@ export async function reselect(targetCompanyId: number): Promise<void> {
     // Upsert winner figures into the projection table
     const winnerSourceDocId = winner.sourceDocumentId ?? null;
     if (winner.statementType === 'income') {
-      await upsertIncomeFromFigures(period.id, targetCompanyId, figures, winnerSourceDocId);
+      // Slice 20: stamp the income statement's own is_full_year from the INCOME
+      // contribution's span — not the period container.  This lets
+      // fetchReportedEbitdaByYear gate on income_statements.is_full_year so that
+      // a YTD P&L whose contribution was flipped to is_full_year=false by Slice 18
+      // is excluded from valuation even when it lives in an is_full_year=true
+      // period container (stamped true by the balance sheet winner).
+      await upsertIncomeFromFigures(period.id, targetCompanyId, figures, winnerSourceDocId, winner.isFullYear);
     } else {
       await upsertBalanceFromFigures(period.id, targetCompanyId, figures, winnerSourceDocId);
     }

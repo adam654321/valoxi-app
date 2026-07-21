@@ -391,7 +391,9 @@ async function getDevEbitdaByYear(devTcId: number): Promise<EbitdaByYear> {
     .where(
       and(
         eq(incomeStatements.targetCompanyId, devTcId),
-        eq(financialPeriods.isFullYear, true),
+        // Slice 20: gate on income_statements.is_full_year (stamped by reselect
+        // from the winning income contribution's span) not the period container.
+        eq(incomeStatements.isFullYear, true),
         or(
           isNull(financialPeriods.sourceTier),
           ne(financialPeriods.sourceTier, 'information_memorandum'),

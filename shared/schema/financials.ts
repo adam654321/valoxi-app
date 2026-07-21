@@ -46,6 +46,7 @@ export const incomeStatements = pgTable("income_statements", {
   costOfSalesBreakdown: json("cost_of_sales_breakdown"),
   overheadsBreakdown: json("overheads_breakdown"),
   exceptionalItems: json("exceptional_items"),
+  isFullYear: boolean("is_full_year").notNull().default(true),
   sourceDocumentId: integer("source_document_id").references(() => documents.id, { onDelete: 'set null' }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

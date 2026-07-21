@@ -70,7 +70,12 @@ export async function fetchReportedEbitdaByYear(targetCompanyId: number): Promis
     .where(
       and(
         eq(incomeStatements.targetCompanyId, targetCompanyId),
-        eq(financialPeriods.isFullYear, true),
+        // Slice 20: gate on the income statement's own is_full_year flag (stamped
+        // by reselect from the winning INCOME contribution) rather than the period
+        // container's flag.  The period container's flag reflects the BALANCE
+        // winner's span and can be true even when the income source is a YTD/
+        // part-year document, causing YTD figures to leak into valuation.
+        eq(incomeStatements.isFullYear, true),
         or(
           isNull(financialPeriods.sourceTier),
           ne(financialPeriods.sourceTier, 'information_memorandum'),
