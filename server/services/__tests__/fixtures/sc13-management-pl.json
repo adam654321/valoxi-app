@@ -1,0 +1,11 @@
+{
+  "source": "management",
+  "years": {
+    "2024": {
+      "revenue": 400000,
+      "operating_profit": 40000,
+      "depreciation_amortisation": 6000
+    }
+  },
+  "period_ends": { "2024": "2024-12-31" }
+}

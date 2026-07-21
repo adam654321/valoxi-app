@@ -1,0 +1,13 @@
+{
+  "source": "statutory",
+  "years": {
+    "2024": {
+      "balance_sheet": {
+        "equity": {
+          "retained_earnings": 5000
+        }
+      }
+    }
+  },
+  "period_ends": { "2024": "2024-12-31" }
+}

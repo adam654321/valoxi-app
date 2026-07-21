@@ -1,0 +1,12 @@
+{
+  "source": "statutory",
+  "years": {
+    "2024": {
+      "revenue": 180000,
+      "operating_profit": 20000,
+      "depreciation_amortisation": 3000
+    }
+  },
+  "period_ends": { "2024": "2024-06-30" },
+  "months_covered": { "2024": 6 }
+}

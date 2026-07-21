@@ -12,7 +12,7 @@
  *   - Prune only when: no income AND no balance AND no staff_data AND no adjustments.
  *
  * Test scenarios (a)–(f) are sequential; each builds on the prior state.
- * Far-future fiscal years (3920, 3923–3926) avoid collision with real data.
+ * Realistic fiscal years (2019, 2021–2024) — safe since the test company gets a fresh id.
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
@@ -33,11 +33,11 @@ import { reselect } from '../projection-reselect.service';
 
 const USER_COMPANY_ID = 71;
 
-const FY23 = 3923;
-const FY24 = 3924;
-const FY25 = 3925;
-const FY26 = 3926;
-const GHOST_YEAR = 3920;
+const FY23 = 2021;
+const FY24 = 2022;
+const FY25 = 2023;
+const FY26 = 2024;
+const GHOST_YEAR = 2019;
 
 const STAT_REV_23 = '2300000';
 const STAT_REV_24 = '2400000';
@@ -123,7 +123,7 @@ describe('reselect — stable year-container periods (Slice 16 final)', () => {
       .values([
         {
           targetCompanyId: testCompanyId, uploadedBy: userId,
-          documentName: 'Statutory FY23-25', originalFilename: 'stat-2325.pdf',
+          documentName: 'Statutory FY21-23', originalFilename: 'stat-2123.pdf',
           filePath: 'uploads/s16f-stat.pdf', fileSize: 1000, fileType: 'application/pdf',
           documentCategory: 'statutory_accounts', publicToken: mkToken(),
         },

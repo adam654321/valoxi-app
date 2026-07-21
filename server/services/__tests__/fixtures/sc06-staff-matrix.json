@@ -1,0 +1,12 @@
+{
+  "summary": {
+    "total_headcount": 25,
+    "total_staff_costs": 850000,
+    "total_gross_salaries": 700000,
+    "total_employer_ni": 85000,
+    "total_employer_pension": 35000
+  },
+  "staff": [],
+  "fiscal_year": 2024,
+  "report_date": "2024-03-31"
+}

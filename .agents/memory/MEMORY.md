@@ -4,3 +4,4 @@
 - [Stable year-container model](stable-year-container.md) — Slice 16 final: period container survivor priority, re-point logic, orphaned-figure clearing, extended prune condition.
 - [Reselect income reconcile scope](reselect-income-reconcile.md) — Income reconcile in step 4 must span ALL fiscal-year periods; balance reconcile stays scoped to its own is_full_year slot.
 - [Slice 20 income is_full_year gate](slice20-income-is-full-year.md) — IS.is_full_year stamped by reselect from income contribution span; fetchReportedEbitdaByYear gates on IS not FP.
+- [Reselect two-income-winner ordering](reselect-two-income-winner.md) — When two income winners exist for same fiscal year (full-year + part-year), the last winner processed clears the prior; upload order controls which survives.

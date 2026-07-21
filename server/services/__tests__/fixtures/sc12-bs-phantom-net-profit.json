@@ -1,0 +1,20 @@
+{
+  "source": "statutory",
+  "years": {
+    "2024": {
+      "balance_sheet": {
+        "current_assets": {
+          "cash_at_bank": 150000,
+          "trade_debtors": 350000,
+          "total": 500000
+        },
+        "equity": {
+          "retained_earnings": 450000,
+          "total": 450000
+        }
+      },
+      "net_profit": 75000
+    }
+  },
+  "period_ends": { "2024": "2024-12-31" }
+}
