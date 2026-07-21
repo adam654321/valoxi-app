@@ -50,6 +50,7 @@ export class FinancialDataService {
     sourceDocumentId?: number,
     documentCategory?: string,
     imOptions?: IMOptions,
+    documentName?: string,
   ): Promise<ProcessingResult> {
     console.log(`[FINANCIAL_DATA] Processing ${documentType} for company ${targetCompanyId}`);
 
@@ -78,10 +79,10 @@ export class FinancialDataService {
         case 'profit_and_loss':
         case 'profit_loss':
         case 'p_and_l':
-          return await this.processProfitAndLoss(analysisData, targetCompanyId, sourceDocumentId, documentCategory, isIM);
+          return await this.processProfitAndLoss(analysisData, targetCompanyId, sourceDocumentId, documentCategory, isIM, documentName);
         
         case 'balance_sheet':
-          return await this.processBalanceSheet(analysisData, targetCompanyId, sourceDocumentId, documentCategory, isIM);
+          return await this.processBalanceSheet(analysisData, targetCompanyId, sourceDocumentId, documentCategory, isIM, documentName);
         
         case 'staff_matrix':
           return await this.processStaffMatrix(analysisData, targetCompanyId, sourceDocumentId, documentCategory);
@@ -95,7 +96,7 @@ export class FinancialDataService {
           return await this.processAssetRegister(analysisData, targetCompanyId, sourceDocumentId);
         
         case 'company_accounts':
-          return await this.processCompanyAccounts(analysisData, targetCompanyId, sourceDocumentId, documentCategory, isIM);
+          return await this.processCompanyAccounts(analysisData, targetCompanyId, sourceDocumentId, documentCategory, isIM, documentName);
         
         default:
           console.log(`[FINANCIAL_DATA] Unknown document type: ${documentType}, skipping normalization`);
@@ -117,6 +118,7 @@ export class FinancialDataService {
     documentCategory?: string,
     docId?: number,
     documentType?: string,
+    documentName?: string,
   ): { monthsCovered: number | null; isFullYear: boolean } {
     const periodEnd: string | null =
       data.period_ends?.[yearKey] ?? data.period_end ?? null;
@@ -128,6 +130,7 @@ export class FinancialDataService {
       periodEnd,
       reportDate,
       documentType,
+      ytdHintText: documentName ?? null,
     });
 
     if (result.isFullYear !== (monthsCovered == null || monthsCovered >= 11)) {
@@ -151,6 +154,7 @@ export class FinancialDataService {
     sourceDocumentId?: number,
     documentCategory?: string,
     isIM: boolean = false,
+    documentName?: string,
   ): Promise<ProcessingResult> {
     const errors: string[] = [];
     let recordsCreated = 0;
@@ -182,7 +186,7 @@ export class FinancialDataService {
 
         const periodEnd = this.inferPeriodEnd(data, yearKey) || `${fiscalYear}-12-31`;
         const isPrimary = primaryYear === null || fiscalYear === primaryYear;
-        const span = this.deriveSpan(data, yearKey, documentCategory, sourceDocumentId);
+        const span = this.deriveSpan(data, yearKey, documentCategory, sourceDocumentId, undefined, documentName);
 
         const pl = (yearData as any).profit_and_loss || yearData;
         const yd = yearData as any;
@@ -263,7 +267,7 @@ export class FinancialDataService {
         const fiscalYear = data.fiscal_year || new Date().getFullYear();
         const periodEnd = data.period_end || `${fiscalYear}-12-31`;
         
-        const fallbackSpan = this.deriveSpan(data, String(fiscalYear), documentCategory, sourceDocumentId);
+        const fallbackSpan = this.deriveSpan(data, String(fiscalYear), documentCategory, sourceDocumentId, undefined, documentName);
 
         const plFields = {
           revenue: this.parseDecimal(pl.revenue),
@@ -347,6 +351,7 @@ export class FinancialDataService {
     sourceDocumentId?: number,
     documentCategory?: string,
     isIM: boolean = false,
+    documentName?: string,
   ): Promise<ProcessingResult> {
     const errors: string[] = [];
     let recordsCreated = 0;
@@ -377,7 +382,7 @@ export class FinancialDataService {
 
         const periodEnd = this.inferPeriodEnd(data, yearKey) || `${fiscalYear}-12-31`;
         const bsIsPrimary = bsPrimaryYear === null || fiscalYear === bsPrimaryYear;
-        const bsSpan = this.deriveSpan(data, yearKey, documentCategory, sourceDocumentId, 'balance_sheet');
+        const bsSpan = this.deriveSpan(data, yearKey, documentCategory, sourceDocumentId, 'balance_sheet', documentName);
         
         const bs = (yearData as any).balance_sheet || yearData;
         const fixedAssets = bs.fixed_assets || {};
@@ -475,7 +480,7 @@ export class FinancialDataService {
         const fiscalYear = data.fiscal_year || new Date().getFullYear();
         const periodEnd = data.period_end || data.report_date || `${fiscalYear}-12-31`;
         
-        const bsFallbackSpan = this.deriveSpan(data, String(fiscalYear), documentCategory, sourceDocumentId, 'balance_sheet');
+        const bsFallbackSpan = this.deriveSpan(data, String(fiscalYear), documentCategory, sourceDocumentId, 'balance_sheet', documentName);
 
         const fixedAssets = bs.fixed_assets || {};
         const currentAssets = bs.current_assets || {};
@@ -726,6 +731,7 @@ export class FinancialDataService {
     sourceDocumentId?: number,
     documentCategory?: string,
     isIM: boolean = false,
+    documentName?: string,
   ): Promise<ProcessingResult> {
     const results: ProcessingResult[] = [];
 
@@ -736,6 +742,7 @@ export class FinancialDataService {
         sourceDocumentId,
         documentCategory,
         isIM,
+        documentName,
       );
       results.push(plResult);
     }
@@ -747,6 +754,7 @@ export class FinancialDataService {
         sourceDocumentId,
         documentCategory,
         isIM,
+        documentName,
       );
       results.push(bsResult);
     }

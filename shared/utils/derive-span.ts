@@ -7,7 +7,10 @@
  *  c. BS-specific snapshot rule: if documentType === 'balance_sheet' and
  *     periodEnd is present, full-year iff the as-at date is the last day of
  *     a calendar month (i.e. a fiscal year-end snapshot).
- *  d. Fallback: full-year.
+ *  d. YTD / interim text hint: if ytdHintText contains an explicit partial-period
+ *     signal ("YTD", "year to date", "interim") → part-year.
+ *     Only reached when paths a–c have not already resolved the span.
+ *  e. Fallback: full-year.
  *
  * Category name is NOT a span authority. Pass documentType/reportDate/
  * periodEnd explicitly instead.
@@ -15,11 +18,26 @@
  * No Date.now() — pass any "today" in if needed as reportDate or similar.
  */
 
+/**
+ * Matches explicit partial-period signals in a document name or title.
+ *
+ * Matches (case-insensitive):
+ *   - "YTD" not surrounded by letters — handles both "YTD P&L.pdf" (space
+ *     delimited) and "Canoports_YTD_Profit.pdf" (underscore delimited).
+ *     Uses negative lookahead/lookbehind against [a-zA-Z] rather than \b so
+ *     that underscores (which are \w) do NOT prevent a match.
+ *   - "year to date" / "year-to-date"
+ *   - "interim" as a whole word (e.g. "Interim P&L", "Interim Accounts")
+ */
+const YTD_PATTERN = /(?<![a-zA-Z])YTD(?![a-zA-Z])|\byear[\s\-]?to[\s\-]?date\b|\binterim\b/i;
+
 export interface SpanInput {
   monthsCovered?: number | null;
   periodEnd?: string | null;
   reportDate?: string | null;
   documentType?: string;
+  /** Filename or document title to check for partial-period keywords (YTD / interim). */
+  ytdHintText?: string | null;
 }
 
 export interface SpanResult {
@@ -47,7 +65,7 @@ export function isLastDayOfMonth(dateStr: string): boolean {
 }
 
 export function computeSpan(input: SpanInput): SpanResult {
-  const { monthsCovered, periodEnd, reportDate, documentType } = input;
+  const { monthsCovered, periodEnd, reportDate, documentType, ytdHintText } = input;
 
   // ── a. DATE GUARD ──────────────────────────────────────────────────────────
   // If a generation/as-of date exists AND it is before the claimed period end,
@@ -73,6 +91,16 @@ export function computeSpan(input: SpanInput): SpanResult {
     return { isFullYear: atYearEnd, monthsCovered: null };
   }
 
-  // ── d. Fallback ────────────────────────────────────────────────────────────
+  // ── d. YTD / interim text hint ─────────────────────────────────────────────
+  // When no reliable content signal is available, fall back to checking the
+  // document name / title for explicit partial-period keywords.
+  // This catches "Canoports_YTD_Profit_and_Loss.pdf", "Manor YTD P&L.pdf",
+  // "Interim Accounts Q3.pdf", etc., when Gemini did not extract months_covered
+  // or report_date from the document body.
+  if (ytdHintText && YTD_PATTERN.test(ytdHintText)) {
+    return { isFullYear: false, monthsCovered: null };
+  }
+
+  // ── e. Fallback ────────────────────────────────────────────────────────────
   return { isFullYear: true, monthsCovered: null };
 }

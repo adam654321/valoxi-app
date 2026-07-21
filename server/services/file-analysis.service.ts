@@ -323,6 +323,7 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
                   llmIsIM: classificationResult.isInformationMemorandum ?? false,
                   llmReason: classificationResult.imReason,
                 },
+                event.fileName,
               );
               console.log(`[FILE_ANALYSIS] Financial data normalization for ${result.documentType}: ${normalizationResult.message}`);
               if (normalizationResult.errors && normalizationResult.errors.length > 0) {
