@@ -1410,6 +1410,35 @@ async function main(): Promise<void> {
     }
   }
 
+  // ─── Persist results to file so mail-merge reads survive stdout truncation ───
+  {
+    const fs = await import('fs');
+    const out = results.map(r => ({
+      tcId:               r.prodTcId,
+      companyName:        r.companyName,
+      ownerName:          r.account.ownerName,
+      ownerEmail:         r.account.ownerEmail,
+      status:             r.account.status,
+      isActive:           r.account.isActive,
+      flags:              r.flags,
+      material:           r.material,
+      direction:          r.direction,
+      whatMoved:          r.whatMoved,
+      currentEV:          r.currentDealModel?.enterpriseValue  ?? null,
+      correctedEV:        r.correctedDealModel?.enterpriseValue ?? null,
+      currentEbitda:      r.currentEbitdaByYear,
+      correctedEbitda:    r.correctedEbitdaByYear,
+      ebitdaChanged:      r.ebitdaChanged,
+      slice18Flipped:     r.slice18Flipped,
+      offerAffected:      r.offerAffected,
+      validationPass:     r.validation.pass,
+      validationLeaks:    r.validation.leaks,
+      issuedOffers:       r.issuedOffers,
+    }));
+    fs.writeFileSync('/tmp/comms-results.json', JSON.stringify(out, null, 2));
+    console.log('\n  [JSON dump → /tmp/comms-results.json]');
+  }
+
   // ─── STEP 3: Self-validation summary for ACTIVE+MATERIAL ────────────────────
 
   const activeMaterialResults = results.filter(r => r.account.isActive && r.material);
