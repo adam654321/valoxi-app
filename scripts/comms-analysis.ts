@@ -1213,11 +1213,25 @@ async function selfValidate(
     }
   }
 
-  // ── CHECK 2: winning income contribution is is_full_year=true for each year ─
+  // ── CHECK 2: at least one full-year income contribution exists for each year ──
+  //
+  // Previous approach (sort by tier, check sorted[0].isFullYear) was wrong:
+  // when two same-tier contributions exist for the same fiscal year (e.g. a YTD
+  // P&L and a full-year statutory doc are both at tier='statutory'), the stable
+  // sort preserves DB-insertion order rather than reselect-winner order.  The
+  // reselect loser can sort first and produce a false flag even though
+  // fetchReportedEbitdaByYear already gates on incomeStatements.isFullYear=true
+  // (Slice 20), ensuring no part-year figure ever enters the averaging window.
+  //
+  // Correct invariant: if ANY full-year contribution exists for the year, reselect
+  // will have chosen it as the IS winner and the EBITDA figure is clean.  Only
+  // flag when ALL contributions for a year are part-year yet the year still
+  // appears in correctedEbitdaByYear — that would contradict Slice 20 and
+  // indicate a genuine residual leak.
   const incContribs = await db.select({
-    fiscalYear:      financialContributions.fiscalYear,
-    sourceTier:      financialContributions.sourceTier,
-    isFullYear:      financialContributions.isFullYear,
+    fiscalYear:       financialContributions.fiscalYear,
+    sourceTier:       financialContributions.sourceTier,
+    isFullYear:       financialContributions.isFullYear,
     sourceDocumentId: financialContributions.sourceDocumentId,
   }).from(financialContributions)
     .where(and(
@@ -1226,23 +1240,25 @@ async function selfValidate(
     ));
 
   for (const year of Object.keys(correctedEbitdaByYear)) {
-    const fyNum      = Number(year);
-    const yearConts  = incContribs.filter(c => c.fiscalYear === fyNum);
+    const fyNum     = Number(year);
+    const yearConts = incContribs.filter(c => c.fiscalYear === fyNum);
     if (yearConts.length === 0) continue;
 
-    const sorted = [...yearConts].sort(
-      (a, b) => (TIER_RANK[a.sourceTier ?? ''] ?? 99) - (TIER_RANK[b.sourceTier ?? ''] ?? 99),
-    );
-    const winner = sorted[0];
-    if (winner && !winner.isFullYear) {
-      // Fetch doc name for context
+    const hasFullYear = yearConts.some(c => c.isFullYear === true);
+    if (!hasFullYear) {
+      // All contributions are part-year/IM but the year still appears in
+      // correctedEbitdaByYear — contradicts Slice 20's IS.isFullYear gate.
       let docName = '(unknown)';
-      if (winner.sourceDocumentId) {
+      const anyDoc = yearConts.find(c => c.sourceDocumentId != null);
+      if (anyDoc?.sourceDocumentId) {
         const [d] = await db.select({ documentName: documents.documentName })
-          .from(documents).where(eq(documents.id, winner.sourceDocumentId)).limit(1);
+          .from(documents).where(eq(documents.id, anyDoc.sourceDocumentId)).limit(1);
         docName = d?.documentName ?? docName;
       }
-      leaks.push(`CHECK2: FY${year} income winner is part-year (is_full_year=false) doc="${docName}"`);
+      leaks.push(
+        `CHECK2: FY${year} in EBITDA but ALL income contributions are part-year ` +
+        `(Slice 20 regression — no full-year source exists); nearest doc="${docName}"`,
+      );
     }
   }
 
