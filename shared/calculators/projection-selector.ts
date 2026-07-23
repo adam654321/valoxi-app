@@ -1,3 +1,5 @@
+import { hasCoreIncomeValue } from '../utils/has-any-value';
+
 export type SourceTier =
   | 'user_override'
   | 'statutory'
@@ -46,6 +48,29 @@ function createdAtMs(c: Contribution): number {
 }
 
 /**
+ * Comparison function for sorting contributions by precedence (ascending = best first).
+ *
+ * Precedence (lower rank wins):
+ *   1. Tier rank: user_override=0, statutory=1, management=2, information_memorandum=3
+ *   2. is_primary_year: true beats false
+ *   3. Most recent createdAt
+ *   4. Highest sourceDocumentId
+ */
+function compareByRank(a: Contribution, b: Contribution): number {
+  const rankDiff = tierRank(a.sourceTier) - tierRank(b.sourceTier);
+  if (rankDiff !== 0) return rankDiff;
+
+  const aPrimary = a.isPrimaryYear !== false;
+  const bPrimary = b.isPrimaryYear !== false;
+  if (aPrimary !== bPrimary) return aPrimary ? -1 : 1;
+
+  const tsDiff = createdAtMs(b) - createdAtMs(a); // descending: more recent first
+  if (tsDiff !== 0) return tsDiff;
+
+  return (b.sourceDocumentId ?? 0) - (a.sourceDocumentId ?? 0); // descending: higher id first
+}
+
+/**
  * Pure, deterministic function: given an array of financial contributions for
  * ONE company, returns exactly one winner per (fiscalYear, statementType, isFullYear)
  * slot.
@@ -55,6 +80,15 @@ function createdAtMs(c: Contribution): number {
  *   2. is_primary_year: true beats false (primary filing beats a comparative year from another doc)
  *   3. Most recent createdAt
  *   4. Highest sourceDocumentId
+ *
+ * Income fall-through (Slice 22):
+ *   For income contributions, a candidate with no core P&L figures (null/absent
+ *   turnover, grossProfit, operatingProfit, costOfSales, profitBeforeTax) is
+ *   skipped in favour of the next-ranked candidate that does have figures.
+ *   Numeric 0 counts as present — only null/undefined/absent triggers the skip.
+ *   If NO candidate has core figures, the top-ranked is returned as-is (£0 is
+ *   correct when no real figures exist for that year).
+ *   Balance-sheet winner selection is untouched.
  *
  * Part-year (isFullYear=false) and full-year (isFullYear=true) are independent
  * groups and both survive.
@@ -75,25 +109,20 @@ export function selectProjectionWinners(contribs: Contribution[]): Winner[] {
   const winners: Winner[] = [];
 
   for (const [key, bucket] of groups) {
-    const winner = bucket.reduce((best, candidate) => {
-      const rankDiff = tierRank(candidate.sourceTier) - tierRank(best.sourceTier);
-      if (rankDiff < 0) return candidate;
-      if (rankDiff > 0) return best;
+    const sorted = [...bucket].sort(compareByRank);
 
-      // Primary year beats comparative: null/undefined treated as true (legacy rows)
-      const candidatePrimary = candidate.isPrimaryYear !== false;
-      const bestPrimary = best.isPrimaryYear !== false;
-      if (candidatePrimary && !bestPrimary) return candidate;
-      if (!candidatePrimary && bestPrimary) return best;
+    let winner: Contribution;
 
-      const tsDiff = createdAtMs(candidate) - createdAtMs(best);
-      if (tsDiff > 0) return candidate;
-      if (tsDiff < 0) return best;
-
-      const docA = candidate.sourceDocumentId ?? 0;
-      const docB = best.sourceDocumentId ?? 0;
-      return docA > docB ? candidate : best;
-    });
+    if (sorted[0]?.statementType === 'income') {
+      // Fall-through: skip candidates whose figures contain no core P&L value.
+      // A lower-ranked candidate with real figures beats a higher-ranked one with none.
+      winner =
+        sorted.find(c =>
+          hasCoreIncomeValue((c.figures ?? {}) as Record<string, unknown>),
+        ) ?? sorted[0]; // fall back to top-ranked when ALL are empty (£0/absent is correct)
+    } else {
+      winner = sorted[0];
+    }
 
     winners.push({ ...winner, _groupKey: key });
   }

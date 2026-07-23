@@ -56,10 +56,12 @@ const sc13Stat = require('./fixtures/sc13-statutory-pl.json');
 const sc13Mgmt = require('./fixtures/sc13-management-pl.json');
 const sc14MgV1 = require('./fixtures/sc14-management-v1.json');
 const sc14Stat = require('./fixtures/sc14-statutory-pl.json');
+const sc15Mgmt = require('./fixtures/sc15-management-pl.json');
+const sc15bTc185 = require('./fixtures/sc15b-tc185-management.json');
 
 const USER_COMPANY_ID = 71;
 
-describe('Forward-Path Regression Gate — Layer A (14 scenarios)', () => {
+describe('Forward-Path Regression Gate — Layer A (15 scenarios)', () => {
   let userId: number;
   const createdCompanyIds: number[] = [];
 
@@ -680,5 +682,152 @@ describe('Forward-Path Regression Gate — Layer A (14 scenarios)', () => {
     // EBITDA reflects statutory winner: 48k + 7k = 55k
     const ebitda = await fetchReportedEbitdaByYear(coId);
     expect(ebitda['2024']).toBe(55000);
+  });
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // Sc-15  Null-income winner guard — selector-level fall-through (Slice 22)
+  //
+  //  An empty statutory IS (no core P&L figures) must NOT beat a real
+  //  management IS.  Tests cover both upload orderings (Layer A) and the
+  //  confirmed live case tc=185 FY2026 (Layer B).
+  //
+  //  "Empty statutory" contributions are inserted directly into the truth
+  //  table (bypassing the ingestion guard in financial-data.service.ts) to
+  //  simulate historical rows that were stored before the ingestion filter
+  //  existed — this is the exact scenario present in prod for tc=185/tc=132.
+  // ══════════════════════════════════════════════════════════════════════════
+
+  async function insertEmptyIncomeContrib(
+    coId: number,
+    tier: string,
+    fy: number,
+    periodEnd: string,
+  ): Promise<number> {
+    const [row] = await db
+      .insert(financialContributions)
+      .values({
+        targetCompanyId: coId,
+        fiscalYear: fy,
+        statementType: 'income',
+        sourceTier: tier,
+        isFullYear: true,
+        isPrimaryYear: true,
+        monthsCovered: 12,
+        periodEnd,
+        figures: {},
+      })
+      .returning({ id: financialContributions.id });
+    return row.id;
+  }
+
+  it('Sc-15a: Empty statutory (first) + real management → management EBITDA wins; empty row retained', async () => {
+    const coId = await mkCompany('FPG SC15a Empty-Stat-First');
+
+    // Simulate historical empty statutory contribution (pre ingestion-guard)
+    const emptyId = await insertEmptyIncomeContrib(coId, 'statutory', 2024, '2024-12-31');
+
+    // Real management P&L: OP=30k + DA=5k = 35k
+    await financialDataService.processExtractedData('profit_and_loss', sc15Mgmt, coId);
+
+    await reselect(coId);
+
+    // Management figure wins
+    const ebitda = await fetchReportedEbitdaByYear(coId);
+    expect(ebitda['2024']).toBe(35000);
+
+    // Empty statutory contribution is retained (not deleted — truth table is append-only)
+    const allContribs = await db
+      .select()
+      .from(financialContributions)
+      .where(eq(financialContributions.targetCompanyId, coId));
+    expect(allContribs.some(c => c.id === emptyId)).toBe(true);
+
+    // Exactly one full-year IS for FY2024 (no duplicate winners)
+    const fullYearIS = await db
+      .select()
+      .from(incomeStatements)
+      .where(and(eq(incomeStatements.targetCompanyId, coId), eq(incomeStatements.isFullYear, true)));
+    expect(fullYearIS).toHaveLength(1);
+
+    // Exactly one full-year period container for FY2024
+    const fullYearPeriods = await db
+      .select()
+      .from(financialPeriods)
+      .where(and(eq(financialPeriods.targetCompanyId, coId), eq(financialPeriods.isFullYear, true)));
+    expect(fullYearPeriods).toHaveLength(1);
+  });
+
+  it('Sc-15b: Real management (first) + empty statutory (second) → same result (order-independent)', async () => {
+    const coId = await mkCompany('FPG SC15b Empty-Stat-Second');
+
+    // Real management first
+    await financialDataService.processExtractedData('profit_and_loss', sc15Mgmt, coId);
+
+    // Empty statutory inserted after (as if a later document re-used the same FY)
+    const emptyId = await insertEmptyIncomeContrib(coId, 'statutory', 2024, '2024-12-31');
+
+    await reselect(coId);
+
+    // Same outcome regardless of order
+    const ebitda = await fetchReportedEbitdaByYear(coId);
+    expect(ebitda['2024']).toBe(35000);
+
+    // Empty statutory contribution is retained
+    const allContribs = await db
+      .select()
+      .from(financialContributions)
+      .where(eq(financialContributions.targetCompanyId, coId));
+    expect(allContribs.some(c => c.id === emptyId)).toBe(true);
+
+    const fullYearIS = await db
+      .select()
+      .from(incomeStatements)
+      .where(and(eq(incomeStatements.targetCompanyId, coId), eq(incomeStatements.isFullYear, true)));
+    expect(fullYearIS).toHaveLength(1);
+  });
+
+  it('Sc-15c: Both statutory and management empty → year has no fabricated income (£0/absent is correct)', async () => {
+    const coId = await mkCompany('FPG SC15c Both Empty');
+
+    await insertEmptyIncomeContrib(coId, 'statutory',  2024, '2024-12-31');
+    await insertEmptyIncomeContrib(coId, 'management', 2024, '2024-12-31');
+
+    await reselect(coId);
+
+    const ebitda = await fetchReportedEbitdaByYear(coId);
+    // Both candidates have no core figures — top-ranked (statutory) is returned as
+    // fall-back; IS created with null OP+DA → EBITDA = 0.  £0 is correct here.
+    expect(ebitda['2024'] ?? 0).toBe(0);
+
+    // Both contributions retained in truth table
+    const allContribs = await db
+      .select()
+      .from(financialContributions)
+      .where(eq(financialContributions.targetCompanyId, coId));
+    expect(allContribs.filter(c => c.statementType === 'income')).toHaveLength(2);
+  });
+
+  // ── Layer B — tc=185 "trade double glazing" FY2026 live case ──────────────
+  //
+  //  Prod state: empty statutory IS outranked a real management IS (£13,057),
+  //  causing FY2026 to project as £0.  The selector-level guard must restore
+  //  the management figure.  INPUTS FROZEN — the fixture exactly mirrors prod.
+
+  it('Sc-15d (Layer B): tc=185-style — empty statutory FY2026 + management £13,057 → FY2026=£13,057, not £0', async () => {
+    const coId = await mkCompany('FPG SC15d LayerB tc185 FY2026');
+
+    // Real management P&L — mirrors tc=185 prod: OP=£13,057 for FY2026
+    await financialDataService.processExtractedData('profit_and_loss', sc15bTc185, coId);
+
+    // Empty statutory — mirrors the empty statutory IS that exists in prod for tc=185 FY2026
+    await insertEmptyIncomeContrib(coId, 'statutory', 2026, '2026-05-27');
+
+    await reselect(coId);
+
+    const ebitda = await fetchReportedEbitdaByYear(coId);
+
+    // BEFORE fix: statutory (empty) won → FY2026=£0
+    // AFTER fix:  statutory (empty) skipped → management wins → FY2026=£13,057
+    expect(ebitda['2026']).toBe(13057);
   });
 });
