@@ -1,0 +1,1323 @@
+{
+  "companyId": 81,
+  "exportedAt": "2026-07-24T15:42:37.321Z",
+  "experts": [
+    {
+      "expertType": "data_quality",
+      "status": "success",
+      "score": 44,
+      "confidence": "low",
+      "processingTime": 6662,
+      "createdAt": "2026-05-24T11:20:05.364Z",
+      "updatedAt": "2026-05-24T11:20:12.037Z",
+      "analysisData": {
+        "stage": "data_quality",
+        "company_name": "Civil Engineering Test",
+        "assessment_date": "2025-05-20",
+        "overall_completeness_score": 44,
+        "overall_completeness_rating": "low",
+        "confidence_for_analysis": "low",
+        "data_sources": {
+          "company_accounts": {
+            "status": "complete",
+            "years_available": 4,
+            "years_list": [
+              2022,
+              2023,
+              2024,
+              2025
+            ],
+            "most_recent_period_end": "2025-08-31",
+            "data_staleness_months": -3,
+            "consecutive_years": true,
+            "key_fields_populated": [
+              "revenue",
+              "gross_profit",
+              "operating_profit",
+              "net_profit"
+            ],
+            "key_fields_missing": []
+          },
+          "profit_and_loss": {
+            "status": "complete",
+            "key_fields_populated": [
+              "revenue",
+              "cost_of_sales",
+              "gross_profit",
+              "administrative_expenses",
+              "operating_profit",
+              "net_profit"
+            ],
+            "key_fields_missing": [],
+            "has_overheads_breakdown": true,
+            "has_cost_of_sales_breakdown": true
+          },
+          "balance_sheet": {
+            "status": "complete",
+            "key_fields_populated": [
+              "fixed_assets",
+              "current_assets.total",
+              "current_liabilities.total",
+              "equity.total"
+            ],
+            "key_fields_missing": [],
+            "has_detailed_breakdown": true
+          },
+          "asset_register": {
+            "status": "missing",
+            "asset_count": 0,
+            "has_category_breakdown": false,
+            "has_individual_assets": false
+          },
+          "sales_ledger": {
+            "status": "missing",
+            "has_aging_breakdown": false,
+            "has_customer_breakdown": false,
+            "customer_count": 0
+          },
+          "staff_matrix": {
+            "status": "missing",
+            "headcount_reported": 0,
+            "has_individual_records": false,
+            "has_director_identification": false
+          }
+        },
+        "consistency_checks": {
+          "pl_revenue_vs_accounts": {
+            "result": "consistent",
+            "pl_value": 852502,
+            "accounts_value": 852502,
+            "variance_percent": 0
+          },
+          "bs_net_assets_vs_accounts": {
+            "result": "consistent",
+            "bs_value": 92320,
+            "accounts_value": 92320,
+            "variance_percent": 0
+          },
+          "staff_costs_vs_pl": {
+            "result": "unable_to_check",
+            "matrix_value": null,
+            "pl_value": 278443,
+            "variance_percent": null
+          },
+          "assets_nbv_vs_bs": {
+            "result": "unable_to_check",
+            "register_value": null,
+            "bs_value": 13968,
+            "variance_percent": null
+          },
+          "debtors_vs_bs": {
+            "result": "unable_to_check",
+            "ledger_value": null,
+            "bs_value": 130956,
+            "variance_percent": null
+          }
+        },
+        "red_flags": [
+          "Staff matrix is missing (no employee/payroll snapshot provided)",
+          "Asset register is missing (no fixed assets snapshot provided)",
+          "Sales ledger is missing (no receivables/invoicing snapshot provided)",
+          "Staff matrix shows fewer than 3 employees (data missing)",
+          "Sales ledger shows no current invoicing activity (data missing)"
+        ],
+        "gaps_requiring_seller_action": [
+          "Provide detailed Staff Matrix including headcount, individual records, and payroll breakdown.",
+          "Provide Fixed Asset Register with gross/net book values and category breakdowns.",
+          "Provide Sales Ledger with aging analysis and top debtor list."
+        ],
+        "analysis_limitations": [
+          "Unable to verify payroll accuracy against P&L overheads due to missing staff matrix.",
+          "Unable to verify physical asset existence or depreciation rates due to missing asset register.",
+          "Unable to assess debtor concentration or bad debt risk due to missing sales ledger."
+        ]
+      }
+    },
+    {
+      "expertType": "deal_structure",
+      "status": "success",
+      "score": 55,
+      "confidence": "high",
+      "processingTime": 15421,
+      "createdAt": "2026-05-24T11:20:32.618Z",
+      "updatedAt": "2026-05-24T11:21:30.304Z",
+      "analysisData": {
+        "expert": "deal_structure",
+        "company_name": "Civil Engineering Test",
+        "analysis_date": "2025-05-20",
+        "score": 55,
+        "confidence": "high",
+        "structures": [
+          {
+            "name": "Conservative Approach",
+            "strategy": "Minimize cash at risk by anchoring on the conservative equity value and using a heavy earnout to bridge the massive gap between reported and adjusted EBITDA.",
+            "risk_to_buyer": "low",
+            "suitable_when": "The buyer is concerned about the 172% debtor spike and the 10% margin collapse, requiring the sellers to prove the business's sustainability post-normalization.",
+            "consideration": {
+              "total_headline": 290000,
+              "upfront_cash": 116000,
+              "upfront_percent": 40,
+              "deferred": 58000,
+              "earnout_maximum": 116000,
+              "earnout_metric": "Adjusted EBITDA and Debtor Collection",
+              "earnout_period_months": 24,
+              "earnout_rationale": "Addresses Trigger 3 (Owner Dependency) and Trigger 4 (Uncertain Add-backs). The earnout ensures the directors transition relationships and that the 'hollow' reported profits translate into actual cash flow.",
+              "retention_escrow": 65000
+            },
+            "key_conditions": [
+              "Repayment of £33,132 director loan prior to completion",
+              "24-month full-time handover for both directors",
+              "Specific indemnity for the £131k trade debtor balance",
+              "Minimum cash-free/debt-free working capital peg"
+            ],
+            "notes": "Seller obligations: 24-month handover followed by 36-month non-compete. Key warranties: Specific indemnity for tax liabilities and debtor collection; warranty cap at 50% of consideration; 24-month period. Completion mechanism: Completion accounts with a working capital peg based on a 12-month average. Risk to buyer is low due to high deferment and specific debtor protections."
+          },
+          {
+            "name": "Balanced Approach",
+            "strategy": "A middle-ground structure using the mid-point valuation, providing enough upfront cash to engage the seller while protecting against key-person risk.",
+            "risk_to_buyer": "medium",
+            "suitable_when": "Due diligence confirms the debtor spike is a timing issue rather than bad debt, but margin pressure remains a concern.",
+            "consideration": {
+              "total_headline": 380000,
+              "upfront_cash": 228000,
+              "upfront_percent": 60,
+              "deferred": 76000,
+              "earnout_maximum": 76000,
+              "earnout_metric": "Gross Margin and EBITDA Stability",
+              "earnout_period_months": 18,
+              "earnout_rationale": "Addresses Trigger 3 (Owner Dependency). Given the small team of 6, the directors' technical roles are critical for project delivery and subcontractor management.",
+              "retention_escrow": 38000
+            },
+            "key_conditions": [
+              "Repayment of director loans",
+              "18-month handover period",
+              "Gross margin floor of 41% to trigger earnout payments",
+              "Standard tax and commercial warranties"
+            ],
+            "notes": "Seller obligations: 18-month handover with a consultancy agreement for months 12-18. Key warranties: Standard suite with a 100% cap on upfront consideration; 18-month period; £5k basket. Completion mechanism: Locked box if completion is within 3 months of latest accounts. Risk to buyer is medium due to higher upfront cash and reliance on margin stabilization."
+          },
+          {
+            "name": "Competitive Approach",
+            "strategy": "Aggressive upfront payment at the high end of the valuation range to compete with other bidders, while still using a small earnout to ensure director retention.",
+            "risk_to_buyer": "high",
+            "suitable_when": "The buyer has high strategic synergy and is confident they can bring subcontractor work in-house to recover lost margins.",
+            "consideration": {
+              "total_headline": 475000,
+              "upfront_cash": 356250,
+              "upfront_percent": 75,
+              "deferred": 59375,
+              "earnout_maximum": 59375,
+              "earnout_metric": "Revenue Retention",
+              "earnout_period_months": 12,
+              "earnout_rationale": "Addresses Trigger 3 (Owner Dependency). Even in a competitive bid, the high reliance on 2 directors for a 6-person firm necessitates a retention-linked payment.",
+              "retention_escrow": 25000
+            },
+            "key_conditions": [
+              "Repayment of director loans",
+              "12-month handover period",
+              "Clean balance sheet at completion",
+              "Limited warranties on operational matters"
+            ],
+            "notes": "Seller obligations: 12-month handover. Key warranties: Fundamental warranties only (title, capacity, tax); 12-month period; 25% cap. Completion mechanism: Locked box. Risk to buyer is high because 75% of the high-end valuation is paid upfront despite significant margin and debtor risks identified in QoE."
+          }
+        ],
+        "recommended_structure": "Conservative Approach",
+        "recommendation_rationale": "The gap between the seller's likely expectation (£1M+) and the adjusted valuation (£380k) is too wide for a standard deal. Furthermore, the 172% debtor spike and 10% margin collapse are major red flags that suggest the business's cash flow is decoupling from its reported profits. A conservative structure with high retention and an earnout tied to actual cash collection and normalized EBITDA is the only way to protect the buyer from 'hollow' earnings.",
+        "negotiation_priorities": [
+          "Normalization of director salaries to market rates (£110k total)",
+          "Verification and collection of the £131k trade debtor balance",
+          "Stabilization of gross margins through better subcontractor management",
+          "Securing a long-term transition for the two key directors"
+        ],
+        "deal_breaker_terms": [
+          "Refusal to repay the £33k director loan account",
+          "Inability to provide a clear aging report for the trade debtor spike",
+          "Refusal of directors to commit to at least a 12-month handover"
+        ],
+        "key_findings": [
+          "Reported EBITDA of £223k is misleading due to sub-market director salaries.",
+          "Working capital is deteriorating, with debtor days doubling and creditors being stretched.",
+          "The business is asset-light but highly dependent on two individuals and external subcontractors.",
+          "Aggressive dividend extraction has limited the company's capital buffer."
+        ],
+        "narrative": "Civil Engineering Test presents a classic 'small firm' challenge: strong technical performance masked by aggressive tax-efficient extraction and deteriorating operational metrics. The 172% increase in debtors is the most immediate risk, potentially representing uncollectible revenue or project disputes. Structuring must focus on 'cashing out' the balance sheet risks before the full purchase price is paid. The Conservative Approach is recommended to bridge the valuation gap and ensure the buyer does not pay for 'paper profits' that never materialize as cash."
+      }
+    },
+    {
+      "expertType": "financial",
+      "status": "success",
+      "score": 68,
+      "confidence": "high",
+      "processingTime": 12535,
+      "createdAt": "2026-05-24T11:20:32.582Z",
+      "updatedAt": "2026-05-24T11:20:45.186Z",
+      "analysisData": {
+        "expert": "financial",
+        "company_name": "Civil Engineering Test",
+        "analysis_date": "2025-05-20",
+        "score": 68,
+        "confidence": "high",
+        "yearly_metrics": {
+          "2022": {
+            "revenue": 456428,
+            "revenue_yoy_growth_percent": null,
+            "cost_of_sales": 274894,
+            "gross_profit": 181534,
+            "gross_margin_percent": 39.77,
+            "administrative_expenses": 52677,
+            "operating_profit": 131197,
+            "operating_margin_percent": 28.74,
+            "depreciation_amortisation": null,
+            "ebitda": null,
+            "interest_payable": null,
+            "interest_coverage_ratio": null,
+            "profit_before_tax": 131197,
+            "corporation_tax": 24928,
+            "effective_tax_rate_percent": 19,
+            "net_profit": 106269,
+            "net_margin_percent": 23.28
+          },
+          "2023": {
+            "revenue": 900319,
+            "revenue_yoy_growth_percent": 97.25,
+            "cost_of_sales": 434876,
+            "gross_profit": 465443,
+            "gross_margin_percent": 51.7,
+            "administrative_expenses": 224853,
+            "operating_profit": 252148,
+            "operating_margin_percent": 28.01,
+            "depreciation_amortisation": 209,
+            "ebitda": 252357,
+            "interest_payable": null,
+            "interest_coverage_ratio": null,
+            "profit_before_tax": 252148,
+            "corporation_tax": 6395,
+            "effective_tax_rate_percent": 2.54,
+            "net_profit": 258543,
+            "net_margin_percent": 28.72
+          },
+          "2024": {
+            "revenue": 802703,
+            "revenue_yoy_growth_percent": -10.84,
+            "cost_of_sales": 411605,
+            "gross_profit": 391098,
+            "gross_margin_percent": 48.72,
+            "administrative_expenses": 211385,
+            "operating_profit": 180213,
+            "operating_margin_percent": 22.45,
+            "depreciation_amortisation": 1889,
+            "ebitda": 182102,
+            "interest_payable": 244,
+            "interest_coverage_ratio": 738.58,
+            "profit_before_tax": 180213,
+            "corporation_tax": -937,
+            "effective_tax_rate_percent": -0.52,
+            "net_profit": 181150,
+            "net_margin_percent": 22.57
+          },
+          "2025": {
+            "revenue": 852502,
+            "revenue_yoy_growth_percent": 6.2,
+            "cost_of_sales": 499078,
+            "gross_profit": 353424,
+            "gross_margin_percent": 41.46,
+            "administrative_expenses": 133845,
+            "operating_profit": 219579,
+            "operating_margin_percent": 25.76,
+            "depreciation_amortisation": 3622,
+            "ebitda": 223201,
+            "interest_payable": 535,
+            "interest_coverage_ratio": 410.43,
+            "profit_before_tax": 219579,
+            "corporation_tax": 54307,
+            "effective_tax_rate_percent": 24.73,
+            "net_profit": 165272,
+            "net_margin_percent": 19.39
+          }
+        },
+        "cagr": {
+          "revenue_cagr_percent": 23.15,
+          "gross_profit_cagr_percent": 24.87,
+          "operating_profit_cagr_percent": 18.73,
+          "period_years": 3
+        },
+        "cost_structure": {
+          "cost_of_sales_percent_revenue": 58.54,
+          "overheads_percent_revenue": 15.7,
+          "staff_costs_percent_revenue": 32.66,
+          "director_costs_percent_revenue": 3.54,
+          "top_5_overheads": [
+            {
+              "category": "Insurance",
+              "value": 30865,
+              "percent_of_overheads": 23.06
+            },
+            {
+              "category": "Motor Expenses",
+              "value": 26674,
+              "percent_of_overheads": 19.93
+            },
+            {
+              "category": "Professional Fees",
+              "value": 22167,
+              "percent_of_overheads": 16.56
+            },
+            {
+              "category": "Computer Costs",
+              "value": 22150,
+              "percent_of_overheads": 16.55
+            },
+            {
+              "category": "Directors Salaries",
+              "value": 25140,
+              "percent_of_overheads": 18.78
+            }
+          ],
+          "cost_base_classification": "predominantly_variable"
+        },
+        "earnings_quality": {
+          "net_profit_tracks_operating_profit": false,
+          "exceptional_items_identified": [
+            "Significant volatility in effective tax rate (-0.5% to 24.7%)",
+            "Large fluctuations in directors' pension contributions (£120k to £5k)",
+            "Other operating income of £11.5k in 2023 ceased by 2025"
+          ],
+          "tax_rate_consistent": false,
+          "ebitda_latest": 223201,
+          "ebitda_trend": "stable",
+          "limitations": [
+            "Depreciation not available for 2022",
+            "2023 appears to be a 13-month period based on summary insights"
+          ]
+        },
+        "debt_service": {
+          "latest_interest_coverage": 410.43,
+          "interest_coverage_trend": "deteriorating",
+          "additional_debt_capacity_assessment": "Extremely high. The company has negligible debt and could comfortably service significant acquisition leverage."
+        },
+        "key_findings": [
+          "Revenue has shown a strong 3-year CAGR of 23.15%, despite a temporary 10.8% dip in 2024.",
+          "Gross margins are under significant pressure, contracting from 51.7% in 2023 to 41.5% in 2025, driven by a 56% surge in subcontractor costs.",
+          "Operating profit is heavily influenced by discretionary director remuneration, specifically pension contributions which dropped from £120k to £5k to support the bottom line.",
+          "The company is highly cash-generative but maintains a high dividend payout ratio, often matching or exceeding annual net profit.",
+          "Balance sheet liquidity is robust, though the current ratio has tightened from 2.77 to 1.50 due to rising trade payables and tax liabilities.",
+          "Trade debtors increased by 172% in the latest year, significantly outpacing revenue growth and suggesting potential collection issues or aggressive year-end billing.",
+          "The cost base is predominantly variable, with direct labour and subcontractors accounting for the majority of the expense profile."
+        ],
+        "red_flags": [
+          "Significant gross margin compression (10.2 percentage points in 2 years) indicates loss of pricing power or rising supply chain costs.",
+          "Trade debtors growing at 27x the rate of revenue growth in 2025 suggests a major deterioration in working capital efficiency.",
+          "High dividend extraction relative to net profit limits the company's ability to fund organic growth from internal reserves.",
+          "Inconsistent effective tax rates suggest potential prior-year adjustments or aggressive tax planning that may require indemnity."
+        ],
+        "narrative": "Civil Engineering Test presents a profile of a maturing technical services firm with strong historical growth but emerging margin pressures. The 3-year revenue CAGR of 23.15% is impressive, yet the 2024 contraction and subsequent modest 6.2% recovery in 2025 suggest a transition from rapid growth to a more volatile phase. From a profitability standpoint, the headline operating margins appear stable (25-28%), but this is misleading. The underlying performance has been bolstered by significant reductions in discretionary director costs (pensions and salaries), which masked a substantial 10.2% drop in gross margin since 2023. This compression is primarily due to a reliance on subcontractors, whose costs are rising much faster than top-line revenue.\n\nEarnings quality is moderate. While the company is clearly profitable, the net profit is frequently distorted by volatile tax treatments and one-off income items. Furthermore, the 2025 balance sheet reveals a concerning 172% spike in trade debtors. In a service-based business, such a disconnect between revenue growth (6%) and debtor growth (172%) often signals disputes, uncollectible balances, or 'pulling forward' future revenue to meet targets. \n\nFor an acquirer, the company offers a clean debt profile and excellent interest coverage, providing ample room for leveraged financing. However, the valuation should be based on an 'adjusted EBITDA' that normalises director remuneration and accounts for the current margin trajectory. The primary risk for a buyer is the sustainability of the current gross margin and the recoverability of the ballooning debtor book. Post-acquisition, focus must shift toward subcontractor management and tightening the credit control function to restore cash flow efficiency."
+      }
+    },
+    {
+      "expertType": "operational",
+      "status": "success",
+      "score": 62,
+      "confidence": "high",
+      "processingTime": 10584,
+      "createdAt": "2026-05-24T11:20:32.587Z",
+      "updatedAt": "2026-05-24T11:20:43.237Z",
+      "analysisData": {
+        "expert": "operational",
+        "company_name": "Civil Engineering Test",
+        "analysis_date": "2025-05-20",
+        "score": 62,
+        "confidence": "high",
+        "working_capital": {
+          "yearly_metrics": {
+            "2024": {
+              "debtor_days": 21.86,
+              "creditor_days": 12.15,
+              "stock_days": 0,
+              "cash_conversion_cycle_days": 9.71,
+              "net_working_capital": 85770,
+              "working_capital_percent_revenue": 10.68
+            },
+            "2025": {
+              "debtor_days": 56.07,
+              "creditor_days": 44.07,
+              "stock_days": 0,
+              "cash_conversion_cycle_days": 12,
+              "net_working_capital": 81844,
+              "working_capital_percent_revenue": 9.6
+            }
+          },
+          "trend": "deteriorating",
+          "working_capital_intensity": "moderate",
+          "observations": [
+            "Debtor days have more than doubled from 21.9 to 56.1 days, indicating significant collection delays or a shift in client payment terms.",
+            "Creditor days increased from 12.2 to 44.1, suggesting the business is intentionally stretching suppliers to offset the debtor lag.",
+            "The Cash Conversion Cycle remains relatively tight at 12 days, but the underlying volatility in receivables is a liquidity risk.",
+            "Net working capital is stable in absolute terms but declining as a percentage of revenue."
+          ]
+        },
+        "capex": {
+          "total_gross_asset_value": 21479,
+          "total_nbv": 13968,
+          "asset_freshness_percent": 65.03,
+          "recent_additions_24m_value": 13091,
+          "recent_additions_percent": 60.95,
+          "annual_depreciation_charge": 3622,
+          "estimated_maintenance_capex": 3622,
+          "capex_cliff_risk": false,
+          "assets_requiring_replacement": [],
+          "category_breakdown": {
+            "property": {
+              "cost": 0,
+              "nbv": 0
+            },
+            "plant_machinery": {
+              "cost": 1822,
+              "nbv": 523
+            },
+            "vehicles": {
+              "cost": 0,
+              "nbv": 0
+            },
+            "it_equipment": {
+              "cost": 9811,
+              "nbv": 5802
+            },
+            "other": {
+              "cost": 9846,
+              "nbv": 7643
+            }
+          },
+          "observations": [
+            "The asset base is relatively fresh with 61% of assets purchased in the last 24 months.",
+            "The business is asset-light, typical for engineering services, with a focus on IT and fixtures rather than heavy plant.",
+            "Maintenance capex is low, currently covered by the £3.6k annual depreciation charge.",
+            "Plant and machinery is the oldest category (NBV is 28% of cost), but represents a small portion of total value."
+          ]
+        },
+        "workforce": {
+          "headcount": 6,
+          "total_payroll": 278443,
+          "revenue_per_employee": 142083,
+          "payroll_percent_revenue": 32.66,
+          "average_salary_all": 46407,
+          "average_salary_excl_directors": 49660,
+          "director_remuneration_total": 30140,
+          "director_percent_of_payroll": 10.82,
+          "ft_pt_split": {
+            "full_time": 6,
+            "part_time": 0
+          },
+          "longest_tenured_years": null,
+          "newest_hire_months_ago": null,
+          "observations": [
+            "Revenue per employee of £142k is healthy for a technical consultancy.",
+            "Heavy reliance on subcontractors (costing £195k in 2025) suggests a flexible but potentially lower-margin delivery model.",
+            "Direct labour costs are growing faster than revenue, indicating potential wage inflation or productivity dips.",
+            "The workforce is small (6 people), creating high individual impact risk."
+          ]
+        },
+        "owner_dependency": {
+          "risk_level": "medium",
+          "director_count": 2,
+          "highest_individual_salary": 25140,
+          "highest_individual_percent_of_payroll": 9.03,
+          "critical_function_concentration": "High concentration of strategic and operational control in two directors.",
+          "observations": [
+            "Director remuneration is low relative to dividends, which is common for tax efficiency but masks true market-rate management costs.",
+            "Director pension contributions were slashed from £69k to £5k in 2025 to support operating profit.",
+            "Significant increase in director loan accounts (£33k) indicates the business is being used as a personal liquidity source."
+          ]
+        },
+        "scalability": {
+          "rating": "medium",
+          "headcount_for_25pct_growth": 2,
+          "capex_needed_for_growth": "Minimal (£10k-£20k for IT/Software)",
+          "working_capital_supports_growth": false,
+          "bottlenecks": [
+            "Subcontractor availability",
+            "Debtor collection cycle",
+            "Director bandwidth"
+          ],
+          "observations": [
+            "The business relies heavily on subcontractors to scale, which protects fixed costs but exposes the firm to margin squeeze.",
+            "Current debtor trends suggest that 25% growth would lock up an additional £32k in cash, which may require external financing if dividends remain high.",
+            "Operational overheads are lean, allowing for good operating leverage if gross margins can be stabilized."
+          ]
+        },
+        "key_findings": [
+          "Revenue growth is steady (6.2%) but gross margins are under pressure due to rising subcontractor costs.",
+          "The business is highly efficient in its use of fixed assets but increasingly inefficient in its working capital management.",
+          "Dividend payouts are aggressive, often matching or exceeding net profit, limiting the internal capital available for scaling.",
+          "The shift from internal staff to subcontractors is increasing the variable cost base."
+        ],
+        "red_flags": [
+          "172% increase in trade debtors in a single year without proportional revenue growth.",
+          "Significant increase in amounts owed by directors (£33k).",
+          "Gross margin compression from 48.7% to 41.5% in 12 months.",
+          "Current ratio has tightened significantly from 2.77 to 1.50."
+        ],
+        "narrative": "Civil Engineering Test is a lean, profitable technical services firm with a modern, asset-light operational model. While top-line growth is present, the operational efficiency is currently hampered by a deteriorating working capital cycle and significant margin compression. The business is increasingly reliant on subcontractors, which provides scalability but reduces quality and cost control. The primary risk is the sharp increase in debtor days and the high level of cash extraction via dividends and director loans, which could constrain growth if not addressed."
+      }
+    },
+    {
+      "expertType": "qoe",
+      "status": "success",
+      "score": 64,
+      "confidence": "high",
+      "processingTime": 12850,
+      "createdAt": "2026-05-24T11:20:32.604Z",
+      "updatedAt": "2026-05-24T11:21:04.204Z",
+      "analysisData": {
+        "expert": "quality_of_earnings",
+        "company_name": "Civil Engineering Test",
+        "analysis_date": "2025-05-20",
+        "score": 64,
+        "confidence": "high",
+        "reported_figures": {
+          "operating_profit": 219579,
+          "depreciation": 3622,
+          "amortisation": 0,
+          "reported_ebitda": 223201,
+          "source_year": 2025
+        },
+        "add_backs": [
+          {
+            "item": "Excess Director Pension Contributions",
+            "category": "owner_salary",
+            "amount": 5000,
+            "recurrence": "recurring",
+            "year": 2025,
+            "justification": "Director pension contributions are discretionary and volatile (£120k in 2023, £69k in 2024, £5k in 2025). While the 2025 figure is low, the total remuneration package is being normalized in the deductions section.",
+            "confidence": "high",
+            "defensibility_score": 9,
+            "case_for_inclusion": "These are discretionary payments to owners that do not reflect the operational cost of running the business.",
+            "case_for_exclusion": "The seller may argue these are part of a standard tax-efficient remuneration strategy that should be viewed in aggregate."
+          }
+        ],
+        "deductions": [
+          {
+            "item": "Market Rate Replacement Management Cost",
+            "category": "replacement_salary",
+            "amount": 84860,
+            "recurrence": "recurring",
+            "year": 2025,
+            "justification": "Current director salaries are £25,140 for two directors. For a £850k revenue business, a working MD (£57,500) and an Operations/Technical Lead (£52,500) are required. Total market cost £110,000 minus current £25,140 salary.",
+            "confidence": "high",
+            "defensibility_score": 8,
+            "case_for_inclusion": "The current salaries are significantly below market rates for the technical and strategic roles the directors perform.",
+            "case_for_exclusion": "The seller might argue that the existing 6-person staff handles most operations, requiring less senior management oversight."
+          },
+          {
+            "item": "Bad Debt Provision (Debtor Spike)",
+            "category": "bad_debt_provision",
+            "amount": 13096,
+            "recurrence": "one_off",
+            "year": 2025,
+            "justification": "Trade debtors increased 172% (£48k to £131k) while revenue only grew 6%. This suggests collection issues or aged balances. A conservative 10% provision on the total book is required.",
+            "confidence": "medium",
+            "defensibility_score": 6,
+            "case_for_inclusion": "The disconnect between revenue growth and debtor growth is a classic indicator of uncollectible or disputed invoices.",
+            "case_for_exclusion": "The seller may claim the spike is due to a single large project billed at year-end that is fully collectible."
+          },
+          {
+            "item": "Cessation of Other Operating Income",
+            "category": "unsustainable_revenue",
+            "amount": 11558,
+            "recurrence": "one_off",
+            "year": 2023,
+            "justification": "Other operating income (rental/grants) of £11.5k in 2023 has ceased by 2025. This income is not part of the core sustainable engineering services.",
+            "confidence": "high",
+            "defensibility_score": 9,
+            "case_for_inclusion": "Non-core income that has already ceased should be removed to show the true earnings of the service business.",
+            "case_for_exclusion": "The seller might argue they could easily replace this income with other ancillary services."
+          }
+        ],
+        "total_add_backs": 5000,
+        "total_deductions": 109514,
+        "adjusted_ebitda": {
+          "conservative": 118687,
+          "base": 129783,
+          "optimistic": 143341
+        },
+        "adjustment_summary": {
+          "reported_ebitda": 223201,
+          "plus_add_backs": 5000,
+          "minus_deductions": 98418,
+          "equals_adjusted_ebitda_base": 129783
+        },
+        "director_salary_analysis": {
+          "directors": [
+            {
+              "name": "Combined Directors (2)",
+              "current_salary": 25140,
+              "estimated_market_rate": 110000,
+              "benchmark_range_used": "Revenue £1M-£5M (Mid-point adjusted for £850k revenue)",
+              "adjustment": 84860,
+              "adjustment_type": "deduction"
+            }
+          ]
+        },
+        "sustainability_assessment": {
+          "sustainable_for_3_years": false,
+          "key_assumptions": [
+            "Gross margins can be stabilized at 41% despite rising subcontractor costs",
+            "The debtor spike is a timing issue rather than a systemic credit risk",
+            "The 6-person staff remains stable post-acquisition"
+          ],
+          "sensitivity_factors": [
+            "Subcontractor pricing power",
+            "Retention of the 6 key technical staff members",
+            "Recovery of the £131k debtor balance"
+          ],
+          "upside_scenarios": [
+            "Bringing subcontractor work in-house to recover 10% gross margin",
+            "Implementing formal credit control to reduce debtor days to 30"
+          ],
+          "downside_scenarios": [
+            "Further gross margin erosion if subcontractor rates continue to outpace revenue growth",
+            "Loss of one of the two directors before a management transition is complete"
+          ]
+        },
+        "key_findings": [
+          "Reported EBITDA is heavily inflated by under-market director salaries and a sudden halt in pension contributions.",
+          "Gross margin has collapsed by 10.2 percentage points in two years due to subcontractor reliance.",
+          "Working capital efficiency has deteriorated sharply, with debtor days more than doubling.",
+          "The business is being used as a personal liquidity source, evidenced by the £33k director loan account."
+        ],
+        "red_flags": [
+          "172% increase in trade debtors suggests potential revenue 'pull-forward' or bad debt.",
+          "Significant margin compression indicates a lack of pricing power in the current delivery model.",
+          "High dividend extraction (exceeding net profit) limits organic growth capacity."
+        ],
+        "narrative": "The Quality of Earnings for Civil Engineering Test is significantly lower than the headline figures suggest. While the company reports an EBITDA of £223k, this is 'hollow' profit. It is achieved by paying two directors a combined salary of only £25k and slashing pension contributions to near zero. When normalized for market-rate management and the cessation of non-core income, the sustainable EBITDA drops to approximately £130k. Furthermore, the 2025 earnings are backed by a concerning spike in trade debtors, which suggests that cash flow is not tracking profit. A buyer must focus on the 10% gross margin loss since 2023; the business is currently scaling turnover but losing its grip on delivery costs. The valuation should be based on the adjusted base case of £129,783, with a significant portion of the purchase price held in escrow against the collection of the current debtor book."
+      }
+    },
+    {
+      "expertType": "risk",
+      "status": "success",
+      "score": 68,
+      "confidence": "medium",
+      "processingTime": 12327,
+      "createdAt": "2026-05-24T11:20:32.591Z",
+      "updatedAt": "2026-05-24T11:20:44.982Z",
+      "analysisData": {
+        "expert": "risk",
+        "company_name": "Civil Engineering Test",
+        "analysis_date": "2025-05-20",
+        "score": 68,
+        "confidence": "medium",
+        "customer_concentration": {
+          "risk_level": "moderate",
+          "top_customer_percent": null,
+          "top_3_customers_percent": null,
+          "top_5_customers_percent": null,
+          "hhi_index": null,
+          "hhi_classification": "moderate",
+          "total_customers": null,
+          "customers_over_15_percent": [],
+          "observations": [
+            "Sales ledger data not provided; however, trade debtors increased by 172% in 2025 (£130,956), suggesting potential concentration in a few large active projects.",
+            "Trade debtors represent 54% of total current assets in 2025, up from 36% in 2024."
+          ]
+        },
+        "financial_risk": {
+          "risk_level": "moderate",
+          "technically_insolvent": false,
+          "current_ratio_trend": "deteriorating",
+          "creditor_growth_vs_revenue": "Creditors grew 340% (£13.7k to £60.2k) while revenue grew 6.2%.",
+          "director_loans_balance": 33132,
+          "intercompany_balances": 0,
+          "interest_coverage_adequate": true,
+          "going_concern_indicators": [
+            "Current ratio dropped from 2.77 to 1.50 (or 2.34 depending on specific balance sheet version provided).",
+            "Dividends of £169,750 in 2025 exceeded net profit of £165,272."
+          ],
+          "observations": [
+            "Significant increase in taxation liabilities from £34.5k to £101.9k suggests a backlog of tax payments or a sharp increase in taxable activity not fully reflected in cash flow.",
+            "Interest coverage is exceptionally high (410x), indicating no immediate debt service pressure."
+          ]
+        },
+        "key_person_risk": {
+          "risk_level": "high",
+          "highest_individual_payroll_percent": null,
+          "single_points_of_failure": [
+            "Directors",
+            "Technical Lead"
+          ],
+          "management_depth": "thin",
+          "average_tenure_years": null,
+          "observations": [
+            "Directors' remuneration (salary + pension) is a major component of overheads, though it fluctuated wildly from £94k to £30k in 2025.",
+            "The company operates with only 6 employees, suggesting high reliance on the owner-directors for technical delivery and business development."
+          ]
+        },
+        "revenue_quality": {
+          "risk_level": "moderate",
+          "revenue_type": "project_based",
+          "customer_trend": "unknown",
+          "seasonality_detected": false,
+          "observations": [
+            "Revenue is likely project-based given the sector (Civil Engineering) and the volatility in trade debtor balances.",
+            "Gross margin compression (48.7% to 41.5%) suggests rising subcontractor costs or pricing pressure on projects."
+          ]
+        },
+        "balance_sheet_risks": {
+          "director_loans": 33132,
+          "connected_company_balances": 0,
+          "deferred_tax": 3492,
+          "pension_obligations": 0,
+          "contingent_liabilities": "unable_to_assess",
+          "observations": [
+            "Director loan account (debit) increased from £8.4k to £33.1k, representing cash extracted that may need to be settled or offset against the purchase price.",
+            "High dividend payout ratio (102% of profit) limits the company's ability to build a capital buffer."
+          ]
+        },
+        "bad_debt": {
+          "total_overdue_90_plus": null,
+          "recommended_provision": 13095,
+          "existing_provision": 0,
+          "net_profit_impact": -13095,
+          "observations": [
+            "No specific aging provided, but the 172% surge in debtors warrants a cautionary 10% general provision (£13k) until aging is verified.",
+            "The sharp increase in debtors relative to revenue growth suggests potential collection issues or 'lumpy' milestone billing."
+          ]
+        },
+        "risk_register": [
+          {
+            "risk": "Working Capital Strain",
+            "category": "financial",
+            "severity": "medium",
+            "likelihood": "high",
+            "financial_impact": 60243,
+            "impact_description": "Trade creditors and tax liabilities are rising significantly faster than cash reserves.",
+            "mitigation": "Implement a working capital adjustment mechanism in the SPA; ensure a minimum cash-free/debt-free target."
+          },
+          {
+            "risk": "Director Dependency",
+            "category": "people",
+            "severity": "high",
+            "likelihood": "high",
+            "financial_impact": null,
+            "impact_description": "Loss of key directors could lead to loss of technical expertise and client relationships.",
+            "mitigation": "Tie a significant portion of the consideration to a 2-year earn-out and retention period for directors."
+          },
+          {
+            "risk": "Margin Erosion",
+            "category": "operational",
+            "severity": "medium",
+            "likelihood": "medium",
+            "financial_impact": 61000,
+            "impact_description": "Gross margin fell by 7.2 percentage points due to increased subcontractor reliance.",
+            "mitigation": "Review subcontractor contracts and project pricing models during commercial due diligence."
+          },
+          {
+            "risk": "Director Loan Recovery",
+            "category": "balance_sheet",
+            "severity": "low",
+            "likelihood": "medium",
+            "financial_impact": 33132,
+            "impact_description": "Amounts owed by directors must be cleared or treated as a reduction in equity at completion.",
+            "mitigation": "Require repayment of director loans as a condition precedent to completion."
+          }
+        ],
+        "deal_breakers": [
+          "None identified from the financial data provided, though the surge in tax liabilities requires urgent investigation."
+        ],
+        "key_findings": [
+          "The company is profitable but cash-flow management is tightening.",
+          "Heavy reliance on subcontractors (costs up 56%) is squeezing margins.",
+          "The balance sheet is being 'hollowed out' by dividends exceeding net profit.",
+          "Significant increase in trade debtors suggests potential revenue recognition or collection risks."
+        ],
+        "narrative": "Civil Engineering Test is a profitable, low-geared technical services firm. While top-line growth is steady, the risk profile has shifted in the latest fiscal year. Specifically, the company is showing signs of 'stretching' its creditors (340% growth) to fund a massive spike in trade debtors (172% growth). The high dividend payout ratio and increasing director loan balances suggest the owners are extracting maximum value prior to a potential exit. The deal structure should focus on securing the key personnel and ensuring the 'debtor spike' converts to cash before full payment is released."
+      }
+    },
+    {
+      "expertType": "screening",
+      "status": "success",
+      "score": null,
+      "confidence": null,
+      "processingTime": 10839,
+      "createdAt": "2026-05-24T11:20:12.047Z",
+      "updatedAt": "2026-05-24T11:20:22.895Z",
+      "analysisData": {
+        "stage": "screening",
+        "company_name": "Civil Engineering Test",
+        "sector": "Engineering & Technical Services",
+        "analysis_date": "2025-05-22",
+        "data_quality_score": 44,
+        "analysis_period": {
+          "earliest_year": 2022,
+          "latest_year": 2025,
+          "years_of_data": 4
+        },
+        "dimensions": {
+          "earnings_trajectory": {
+            "rag": "AMBER",
+            "score": 55,
+            "revenue_cagr_percent": 23.1,
+            "latest_revenue": 852502,
+            "latest_gross_margin_percent": 41.5,
+            "latest_operating_margin_percent": 25.8,
+            "latest_net_margin_percent": 19.4,
+            "margin_direction": "contracting",
+            "explanation": "Revenue shows a strong 4-year CAGR, but gross margins have compressed significantly from 51.7% in 2023 to 41.5% in 2025. Operating profit is currently sustained by aggressive cuts to director pension contributions rather than core operational efficiency."
+          },
+          "balance_sheet_health": {
+            "rag": "GREEN",
+            "score": 75,
+            "latest_current_ratio": 1.5,
+            "latest_net_assets": 92320,
+            "net_asset_growth_percent": -4.6,
+            "long_term_debt": 3492,
+            "explanation": "The company maintains a healthy current ratio of 1.5 and remains virtually debt-free. While net assets dipped slightly due to high dividend payouts, the overall capital structure is conservative and equity-funded."
+          },
+          "cash_reality": {
+            "rag": "AMBER",
+            "score": 50,
+            "latest_cash_at_bank": 79956,
+            "cash_trend": "stable",
+            "cash_vs_profit_alignment": "partial",
+            "explanation": "Cash reserves have remained flat at approximately 80,000 despite reporting 165,272 in net profit. This mismatch is driven by a 172% surge in trade debtors and high dividend extractions that match or exceed annual earnings."
+          },
+          "customer_risk": {
+            "rag": "RED",
+            "score": 20,
+            "top_customer_concentration_percent": null,
+            "aged_debt_90_plus_percent": null,
+            "total_customers": null,
+            "explanation": "Data Unavailable. The absence of sales_ledger data prevents assessment of customer concentration or debt aging, which is critical given the 130,956 balance currently sitting in trade debtors."
+          },
+          "asset_quality": {
+            "rag": "AMBER",
+            "score": 45,
+            "nbv_to_cost_percent": null,
+            "recent_additions_percent": null,
+            "total_nbv": 13968,
+            "explanation": "The asset base is small and primarily composed of computer equipment and fixtures. While there was investment in 2024, the lack of a detailed asset register makes it difficult to assess the remaining useful life of technical equipment."
+          },
+          "people_capability": {
+            "rag": "AMBER",
+            "score": 50,
+            "headcount": 6,
+            "revenue_per_employee": 142083,
+            "payroll_to_revenue_percent": 32.7,
+            "director_cost_percent_of_payroll": 10.8,
+            "explanation": "Revenue per head is healthy for the sector, and director remuneration has been reduced significantly in the latest period. However, the lack of a staff_matrix prevents assessment of technical certifications or key-man risk."
+          }
+        },
+        "overall_score": 53,
+        "recommendation": "PROCEED_WITH_CAUTION",
+        "recommendation_justification": "The company is profitable and debt-free with a solid revenue base, but significant data gaps in customer concentration and asset quality must be addressed. The recent margin compression and high dividend payout ratio suggest the owners may be de-risking ahead of a sale.",
+        "key_strengths": [
+          "Strong top-line growth with a 4-year revenue CAGR of 23.1%.",
+          "Minimal financial leverage with virtually no long-term bank debt.",
+          "Consistently profitable since inception with healthy double-digit net margins."
+        ],
+        "key_concerns": [
+          "Significant gross margin erosion from 51.7% to 41.5% over the last 24 months.",
+          "Sharp 172% increase in trade debtors suggests potential collection issues or aggressive revenue recognition.",
+          "High dividend payout ratio (exceeding 100% of profit in some years) limits internal reinvestment."
+        ],
+        "questions_for_seller": [
+          "What caused the 56% increase in subcontractor costs that compressed the 2025 gross margin?",
+          "Can you provide an aging profile for the 130,956 currently held in trade debtors?",
+          "Why did director pension contributions drop from 69,035 to 5,000 in the latest financial year?",
+          "What is the nature of the 33,132 currently owed by directors to the company?"
+        ],
+        "comparable_context": "The company's net margins (19-22%) are above the 10-15% typical for UK technical testing services, though the revenue per employee is standard for a consultancy-heavy model. The high reliance on subcontractors is common but makes the business vulnerable to margin squeeze.",
+        "executive_summary": "Civil Engineering Test is a profitable, lean engineering services firm showing consistent revenue growth and a clean, debt-free balance sheet. We recommend proceeding with caution. While the headline figures are attractive, the underlying 'quality of earnings' is weakening; gross margins are contracting, and operating profit is currently being supported by a significant reduction in director pension costs rather than core efficiency. Furthermore, a massive spike in trade debtors (up 172%) has not yet converted to cash, and the lack of sales ledger data makes it impossible to determine if this represents a single-customer risk or a general slowdown in collections. The current owners are extracting nearly all profit via dividends and have increasing director loan balances, which may indicate a lack of long-term commitment to the firm's capital base. Further due diligence must focus on customer concentration and the sustainability of the current subcontractor cost model."
+      }
+    },
+    {
+      "expertType": "sector",
+      "status": "success",
+      "score": 68,
+      "confidence": "medium",
+      "processingTime": 6059,
+      "createdAt": "2026-05-24T11:20:32.608Z",
+      "updatedAt": "2026-05-24T11:20:51.312Z",
+      "analysisData": {
+        "expert": "sector",
+        "company_name": "Civil Engineering Test",
+        "sector": "Engineering & Technical Services",
+        "analysis_date": "2023-10-27",
+        "score": 68,
+        "confidence": "medium",
+        "sector_overview": {
+          "growth_outlook": "stable",
+          "uk_market_size_estimate": "£30bn - £40bn (Total Engineering Services)",
+          "key_trends": [
+            "Digital Twin and BIM (Building Information Modelling) adoption",
+            "Focus on sustainable infrastructure and decarbonisation",
+            "Shift toward modular and off-site construction support",
+            "Increased demand for structural health monitoring"
+          ],
+          "regulatory_factors": [
+            "Building Safety Act 2022 compliance",
+            "Eurocodes transition and UK-specific structural standards",
+            "HSE (Health and Safety Executive) oversight on site safety",
+            "Net Zero 2050 infrastructure mandates"
+          ],
+          "observations": "The UK structural and civil engineering sector is currently characterized by steady demand driven by public infrastructure projects (HS2, water industry AMP cycles) and a recovery in commercial retrofitting, though it faces headwinds from high interest rates affecting private residential development."
+        },
+        "competitive_positioning": {
+          "company_size_classification": "small",
+          "typical_gross_margin_range": {
+            "low": 35,
+            "high": 50
+          },
+          "typical_operating_margin_range": {
+            "low": 10,
+            "high": 18
+          },
+          "typical_ebitda_margin_range": {
+            "low": 12,
+            "high": 20
+          },
+          "positioning_assessment": "Given the lack of specific revenue data, this company is assessed as a typical UK SME engineering firm. These businesses are often highly specialized but face competition from larger multidisciplinary consultancies. Success at this scale depends on technical niche and local reputation."
+        },
+        "comparable_multiples": {
+          "ev_revenue_range": {
+            "low": 0.4,
+            "mid": 0.6,
+            "high": 0.8
+          },
+          "ev_ebitda_range": {
+            "low": 2,
+            "high": 3.5
+          },
+          "factors_affecting_multiple": [
+            "Project-based nature of revenue",
+            "Technical staff retention rates",
+            "Contractual liability and PI insurance costs",
+            "Client concentration"
+          ],
+          "premium_factors": [
+            "Framework agreements with public bodies or Tier 1 contractors",
+            "Specialism in high-barrier niches (e.g., nuclear, rail, or marine)",
+            "Strong second-tier management reducing founder dependency"
+          ],
+          "discount_factors": [
+            "High reliance on the founder for business development",
+            "Lumpy, non-recurring project revenue",
+            "Small team size (<20) creating key-person risk",
+            "Exposure to cyclical residential construction markets"
+          ],
+          "data_confidence": "based_on_training_data"
+        },
+        "growth_opportunities": [
+          {
+            "opportunity": "Public Sector Frameworks",
+            "effort": "high",
+            "potential_impact": "high",
+            "timeframe": "medium_term",
+            "description": "Securing a place on local authority or national infrastructure frameworks to move away from ad-hoc private bidding."
+          },
+          {
+            "opportunity": "Digital Engineering Services",
+            "effort": "medium",
+            "potential_impact": "medium",
+            "timeframe": "short_term",
+            "description": "Investing in advanced BIM and 3D modeling to increase billable rates and reduce design errors."
+          },
+          {
+            "opportunity": "Geographic Diversification",
+            "effort": "medium",
+            "potential_impact": "medium",
+            "timeframe": "medium_term",
+            "description": "Expanding service delivery to adjacent UK regions to mitigate local economic downturns."
+          }
+        ],
+        "sector_risks": [
+          {
+            "risk": "Professional Indemnity (PI) Insurance Costs",
+            "severity": "high",
+            "timeframe": "immediate",
+            "description": "Rising premiums and stricter exclusions in the UK insurance market for structural engineers."
+          },
+          {
+            "risk": "Talent Shortage",
+            "severity": "medium",
+            "timeframe": "near_term",
+            "description": "Difficulty in recruiting and retaining Chartered Engineers (CEng) in a competitive labor market."
+          },
+          {
+            "risk": "Economic Cyclicality",
+            "severity": "high",
+            "timeframe": "medium_term",
+            "description": "Sensitivity to UK interest rates and their impact on capital expenditure in the construction sector."
+          }
+        ],
+        "key_findings": [
+          "The sector is stable but fragmented, making it a prime target for consolidation by larger engineering groups.",
+          "Valuations for SMEs are heavily constrained by the project-based nature of the work and owner-dependency.",
+          "Regulatory changes regarding building safety are creating a 'moat' for established firms with strong compliance records."
+        ],
+        "narrative": "Civil Engineering Test operates in a resilient but competitive UK market. As an SME, its valuation is likely anchored to the 2.0x - 3.5x EBITDA range unless it can demonstrate significant recurring revenue through long-term frameworks or specialized IP. The primary value driver for a buyer would be the acquisition of technical talent and a localized client base, though significant due diligence is required on PI insurance claims and project pipelines."
+      }
+    },
+    {
+      "expertType": "synthesis",
+      "status": "success",
+      "score": null,
+      "confidence": null,
+      "processingTime": 17473,
+      "createdAt": "2026-05-24T11:20:32.623Z",
+      "updatedAt": "2026-05-24T11:21:47.825Z",
+      "analysisData": {
+        "stage": "synthesis",
+        "company_name": "Civil Engineering Test",
+        "sector": "Engineering & Technical Services",
+        "analysis_date": "2025-05-20",
+        "overall_score": 64,
+        "recommendation": "PROCEED_WITH_CAUTION",
+        "scores_dashboard": {
+          "financial": {
+            "score": 68,
+            "confidence": "high"
+          },
+          "operational": {
+            "score": 62,
+            "confidence": "high"
+          },
+          "risk": {
+            "score": 68,
+            "confidence": "medium"
+          },
+          "quality_of_earnings": {
+            "score": 64,
+            "confidence": "high"
+          },
+          "sector": {
+            "score": 68,
+            "confidence": "medium"
+          },
+          "valuation": {
+            "score": 72,
+            "confidence": "high"
+          },
+          "deal_structure": {
+            "score": 55,
+            "confidence": "high"
+          }
+        },
+        "executive_summary": "Civil Engineering Test is a lean, profitable technical services firm showing strong historical growth (23% CAGR) but currently facing significant operational and financial headwinds. While reported EBITDA for 2025 stands at £223k, this figure is 'hollow,' achieved through sub-market director salaries and the cessation of pension contributions. Adjusted EBITDA is more realistically £130k. The verdict: Proceed with caution, anchoring the deal on a conservative valuation and a structure that mitigates a concerning 172% spike in trade debtors. Key metrics include £852k revenue and a 25.7% operating margin, though gross margins have compressed by 10.2% in two years due to subcontractor reliance. Valuation range for equity is £290k–£475k. Top reasons to proceed: Strong revenue growth history, debt-free balance sheet, and a modern asset base. Top reasons for caution: Severe margin erosion, high key-person dependency on two directors, and deteriorating working capital efficiency. Recommended structure: Conservative Approach with a £290k headline price, 40% upfront cash, and heavy earn-outs/escrows tied to debtor collection and margin stability.",
+        "expert_consensus": {
+          "agreements": [
+            "Reported EBITDA is significantly inflated by below-market director remuneration.",
+            "Gross margin compression (from 51.7% to 41.5%) is a critical operational risk driven by subcontractor costs.",
+            "The 172% spike in trade debtors is a major red flag for cash flow and revenue quality.",
+            "The business is highly dependent on the two founding directors for technical delivery and client relationships."
+          ],
+          "contradictions": [
+            {
+              "topic": "Revenue Stability",
+              "expert_a": "Financial",
+              "expert_a_view": "Views revenue as showing a strong 3-year CAGR of 23.15% despite a 2024 dip.",
+              "expert_b": "Risk",
+              "expert_b_view": "Notes revenue is likely project-based and volatile, evidenced by the debtor spike.",
+              "resolution": "The revenue is likely 'lumpy' and project-driven; the CAGR is impressive but masks high sensitivity to 1-2 large contracts."
+            }
+          ]
+        },
+        "devils_advocate": {
+          "worst_case_scenario": "The 172% debtor spike represents disputed or uncollectible invoices from a single large client who has ceased payments. Simultaneously, the two directors exit post-acquisition, taking key client relationships with them, while subcontractor costs continue to rise, turning the business loss-making within 12 months.",
+          "weakest_assumptions": [
+            "That the 41% gross margin is a 'floor' rather than a point on a continuing downward slide.",
+            "That the 6-person staff can maintain operations without the intensive daily involvement of the founders.",
+            "That the trade debtor balance is fully collectible and not a result of aggressive revenue recognition."
+          ],
+          "underweighted_risks": [
+            "Professional Indemnity (PI) insurance risk: In this sector, a single structural failure claim could exceed the entire enterprise value.",
+            "Tax liability risk: The volatile effective tax rate (-0.5% to 24.7%) suggests potential HMRC disputes or significant prior-year adjustments."
+          ],
+          "post_mortem_predictions": "If this deal fails, the buyer will regret not performing a deep-dive audit into the 2025 debtor ledger and failing to secure long-term restrictive covenants on the directors."
+        },
+        "investment_thesis": {
+          "positive_case": "The acquisition provides a profitable, debt-free platform in a stable sector with a modern asset base. By bringing subcontractor work in-house and professionalising credit control, an acquirer can restore margins to >50% and significantly improve cash conversion.",
+          "conditions_for_success": [
+            "Successful collection of at least 90% of the current £131k debtor book.",
+            "Retention of the two directors for a minimum 18-month transition period.",
+            "Stabilisation of gross margins at or above 41% through improved procurement."
+          ],
+          "integration_priorities_100_days": [
+            "Implement formal credit control and debtor chasing procedures.",
+            "Review all subcontractor agreements to identify cost-saving opportunities.",
+            "Conduct client 'hand-holding' meetings with the directors to secure relationship continuity.",
+            "Standardise project pricing models to protect margins."
+          ]
+        },
+        "information_requests": {
+          "critical": [
+            {
+              "request": "Aged Debtor Ledger with commentary on balances >60 days.",
+              "source_expert": "Quality of Earnings",
+              "rationale": "To determine if the 172% spike is a timing issue or bad debt."
+            },
+            {
+              "request": "Breakdown of subcontractor costs by project and provider.",
+              "source_expert": "Operational",
+              "rationale": "To understand the drivers of the 10.2% margin collapse."
+            }
+          ],
+          "important": [
+            {
+              "request": "Professional Indemnity insurance claims history and current policy terms.",
+              "source_expert": "Sector",
+              "rationale": "Standard risk assessment for engineering consultancies."
+            },
+            {
+              "request": "Details of the £33k Director Loan Account and repayment plan.",
+              "source_expert": "Risk",
+              "rationale": "To ensure equity value is not eroded by unrecorded extractions."
+            }
+          ],
+          "nice_to_have": [
+            {
+              "request": "Customer concentration report (Top 5 clients by revenue).",
+              "source_expert": "Risk",
+              "rationale": "To assess the impact of losing a single key account."
+            }
+          ]
+        },
+        "valuation_summary": {
+          "equity_value_range": {
+            "low": 290000,
+            "mid": 380000,
+            "high": 475000
+          },
+          "recommended_offer": 290000,
+          "recommended_structure": "Conservative Approach: 40% upfront, 20% deferred, 40% earn-out tied to EBITDA and debtor collection."
+        },
+        "narrative_report": "### Investment Memorandum: Civil Engineering Test\n\n**Introduction**\nCivil Engineering Test is a specialist technical services firm operating within the UK engineering sector. The company has demonstrated a robust historical growth trajectory, with revenue increasing from £456k in 2022 to £852k in 2025. However, a synthesis of expert analyses reveals a business at a crossroads, where top-line success is being undermined by deteriorating operational efficiency and aggressive capital extraction by the owners.\n\n**Financial Performance & Quality of Earnings**\nOn the surface, the company appears highly profitable, reporting a 2025 EBITDA of £223k. However, the Quality of Earnings (QoE) assessment identifies this as a 'hollow' figure. The directors have significantly reduced their own salaries and pension contributions to support the bottom line. When normalised for market-rate management costs (£110k for two senior roles), the sustainable EBITDA drops to approximately £130k. \n\nFurthermore, the 2025 financial year shows a concerning disconnect between revenue and cash. While revenue grew by only 6.2%, trade debtors surged by 172%. This suggests either a significant failure in credit control or aggressive year-end billing to meet targets. The effective tax rate has also shown extreme volatility, ranging from -0.5% to 24.7%, which requires a specific tax indemnity in the Sale and Purchase Agreement (SPA).\n\n**Operational & Risk Profile**\nThe company’s operational model has shifted toward a heavy reliance on subcontractors, which now account for a significant portion of the cost of sales. This shift has resulted in a 10.2 percentage point collapse in gross margin over the last 24 months. While this model provides flexibility, it has clearly eroded the company's pricing power and cost control. \n\nKey-person risk is classified as 'High.' With only six employees, the technical expertise and client relationships reside almost exclusively with the two directors. Any acquisition must include a robust retention and handover strategy to prevent a post-deal 'brain drain.'\n\n**Valuation & Deal Structure**\nThere is a significant gap between the likely seller expectations (anchored on unadjusted figures) and the adjusted market value. Based on a 2.5x multiple of Adjusted EBITDA, the enterprise value is estimated at £324k, with a resulting equity value of approximately £380k after accounting for cash and debt-like items. \n\nTo protect the buyer, a 'Conservative Approach' to deal structuring is recommended. This involves a headline price of £290k, with only 40% paid upfront. The remaining 60% should be split between deferred consideration and an earn-out tied to the successful collection of the current debtor book and the maintenance of normalised EBITDA levels. This structure ensures the sellers remain incentivised to transition the business and that the buyer does not pay for 'paper profits' that fail to materialise as cash.\n\n**Conclusion**\nCivil Engineering Test offers a strategic opportunity to acquire a technical platform with a solid reputation. However, the current operational trends—specifically margin erosion and working capital strain—must be reversed. The deal is recommended only if the proposed conservative structure is accepted and if due diligence can confirm the recoverability of the trade debtor spike."
+      }
+    },
+    {
+      "expertType": "valuation",
+      "status": "success",
+      "score": 72,
+      "confidence": "high",
+      "processingTime": 10593,
+      "createdAt": "2026-05-24T11:20:32.613Z",
+      "updatedAt": "2026-05-24T11:21:14.842Z",
+      "analysisData": {
+        "expert": "valuation",
+        "company_name": "Civil Engineering Test",
+        "analysis_date": "2025-05-20",
+        "score": 72,
+        "confidence": "high",
+        "ebitda_multiple_valuation": {
+          "adjusted_ebitda_base": 129783,
+          "sector_multiple_range": {
+            "low": 2,
+            "mid": 2.75,
+            "high": 3.5
+          },
+          "selected_multiple": 2.5,
+          "multiple_justification": "A multiple of 2.5x is selected, positioned slightly below the sector midpoint. While the company shows strong historical revenue growth (23% CAGR), significant discounts are applied for high owner dependency (2 directors on low salaries), a small headcount (6 staff), and severe gross margin compression (10.2% drop in 2 years) due to subcontractor reliance.",
+          "premium_factors_applied": [
+            "Strong 3-year revenue CAGR of 23.15%",
+            "Clean debt-free balance sheet",
+            "Modern asset base (61% of assets under 24 months old)"
+          ],
+          "discount_factors_applied": [
+            "High owner dependency with thin management depth",
+            "Significant gross margin erosion (41.5% from 51.7%)",
+            "Small team size (6 employees) creating key-person risk",
+            "Deteriorating working capital efficiency (debtor days doubled)"
+          ],
+          "enterprise_value_range": {
+            "conservative": 237374,
+            "base": 324458,
+            "optimistic": 452824
+          }
+        },
+        "ev_to_equity_bridge": {
+          "enterprise_value_base": 324458,
+          "plus_cash": 101143,
+          "minus_long_term_debt": 0,
+          "minus_director_loans": 33132,
+          "minus_bad_debt_provision": 13096,
+          "minus_working_capital_adjustment": 0,
+          "equity_value": {
+            "conservative": 212289,
+            "base": 379373,
+            "optimistic": 507739
+          }
+        },
+        "asset_based_valuation": {
+          "net_asset_value": 115412,
+          "property_adjustment": 0,
+          "bad_debt_adjustment": -13096,
+          "adjusted_nav": 102316,
+          "nav_as_floor": true
+        },
+        "revenue_multiple_crosscheck": {
+          "latest_revenue": 852502,
+          "revenue_multiple_range": {
+            "low": 0.4,
+            "high": 0.6
+          },
+          "implied_ev_range": {
+            "low": 341000,
+            "high": 511501
+          }
+        },
+        "valuation_summary": {
+          "recommended_range": {
+            "equity_value_low": 290000,
+            "equity_value_mid": 380000,
+            "equity_value_high": 475000
+          },
+          "primary_methodology": "ebitda_multiple",
+          "cross_check_alignment": "moderate"
+        },
+        "sensitivity": {
+          "ebitda_plus_10pct": {
+            "enterprise_value": 356903,
+            "equity_value": 411818
+          },
+          "ebitda_minus_10pct": {
+            "enterprise_value": 292012,
+            "equity_value": 346927
+          },
+          "multiple_plus_half": {
+            "enterprise_value": 389349,
+            "equity_value": 444264
+          },
+          "multiple_minus_half": {
+            "enterprise_value": 259566,
+            "equity_value": 314481
+          },
+          "key_customer_loss_impact": "High risk; debtor spike suggests concentration in 1-2 large projects which could impair 20-30% of value if lost.",
+          "director_replacement_impact": 84860
+        },
+        "seller_expectations": {
+          "likely_seller_expectation_range": {
+            "low": 650000,
+            "high": 1100000
+          },
+          "seller_anchor_points": [
+            "Reported EBITDA of £223k (ignoring salary normalization)",
+            "Historical 97% revenue growth in 2023",
+            "1x Revenue (£850k) as a common industry rule of thumb"
+          ],
+          "negotiation_gap_assessment": "Significant. The seller is likely to anchor on the unadjusted EBITDA of £223k and a 4-5x multiple, leading to a £1M+ expectation. The buyer's valuation is suppressed by the need to normalize director salaries and the recent margin collapse. A heavy earn-out structure is required to bridge this gap."
+        },
+        "key_findings": [
+          "The business is highly profitable on paper but requires significant normalization for market-rate management costs.",
+          "Gross margin compression is the primary operational concern, falling 10% in two years due to subcontractor reliance.",
+          "The 172% spike in trade debtors suggests a potential revenue recognition issue or collection risk that must be addressed in the SPA.",
+          "The company is debt-free and cash-generative, but aggressive dividend extraction limits internal growth funding."
+        ],
+        "red_flags": [
+          "Debtor growth (172%) vs Revenue growth (6%) indicates severe working capital deterioration.",
+          "Director loan account of £33k represents cash extraction that must be settled at completion.",
+          "Inconsistent effective tax rates suggest potential liabilities or prior-period adjustments."
+        ],
+        "narrative": "Civil Engineering Test is a classic owner-managed SME with strong technical foundations but significant 'hollow' profits. While the reported EBITDA is £223k, the sustainable earnings (Adjusted EBITDA) are closer to £130k once market-rate salaries for the two directors are factored in. The valuation is further tempered by a sharp decline in gross margins and a concerning spike in trade debtors. A fair market value for the equity lies between £290k and £475k. To protect the buyer, the deal should be structured with a significant portion of the consideration held in escrow against the collection of the current debtor book and a 2-year earn-out to ensure the directors transition their technical relationships effectively."
+      }
+    }
+  ]
+}
