@@ -13,6 +13,7 @@ import {
   type InsertDealModel,
   type ExpertAnalysisResult,
 } from '@shared/schema';
+import { getReconciledFinancials } from './reconciled-financials.service';
 
 const CATEGORY_MAP: Record<string, string> = {
   owner_salary: 'owner_salary_excess',
@@ -509,15 +510,8 @@ export class DealModelMappingService {
 
   private async getLatestBalanceSheet(targetCompanyId: number): Promise<Record<string, any> | null> {
     try {
-      const [result] = await db
-        .select()
-        .from(balanceSheets)
-        .innerJoin(financialPeriods, eq(balanceSheets.financialPeriodId, financialPeriods.id))
-        .where(eq(balanceSheets.targetCompanyId, targetCompanyId))
-        .orderBy(desc(financialPeriods.periodEnd))
-        .limit(1);
-
-      return result?.balance_sheets || null;
+      const reconciled = await getReconciledFinancials(targetCompanyId);
+      return reconciled.currentBalanceSheet;
     } catch (err) {
       console.log(`[DEAL_MODEL_MAPPING] Warning: Could not fetch balance sheet`, err);
       return null;

@@ -6,10 +6,15 @@ COMPANY: ${companyName}
 SECTOR: ${sector}
 
 INPUT
-You will receive structured JSON containing:
-- company_accounts: Multi-year P&L and Balance Sheet data (your PRIMARY source for trends)
-- profit_and_loss: Current/detailed P&L with overheads breakdown
-- balance_sheet: Current detailed Balance Sheet
+You will receive structured JSON containing a RECONCILED_FINANCIALS block.
+
+RECONCILED_FINANCIALS contains figures reconciled directly from the company's official accounting records:
+- incomeByYear: full-year income statements keyed by fiscal year (revenue, costOfSales, grossProfit, administrativeExpenses, operatingProfit, depreciationAmortisation, interestPayable, profitBeforeTax, corporationTax, netProfit, staffCosts, directorsRemuneration, ebitda, and breakdown fields)
+- balanceSheetsByYear: the reselected balance sheet per fiscal year
+- currentBalanceSheet: the most recent valid balance sheet snapshot
+
+AUTHORITY RULE — RECONCILED_FINANCIALS IS YOUR ONLY SOURCE FOR FIGURES:
+Use the exact values from RECONCILED_FINANCIALS. Do not infer, blend, average, or round to a different value. Do not substitute or estimate figures from any other source. If a field is null, it means the figure was not disclosed — state that explicitly, never guess.
 
 YOUR ANALYSIS (Financial Performance Only)
 

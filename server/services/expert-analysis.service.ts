@@ -8,6 +8,7 @@ import {
   type ExpertAnalysisResult,
   type TargetCompany,
 } from '@shared/schema';
+import { getReconciledFinancials } from './reconciled-financials.service';
 import { GeminiExpertService, GeminiParseFailureError } from './gemini-expert-service';
 import { captureAnalysisSnapshot } from './metrics-snapshot.service';
 import { buildStage0DataQualityPrompt } from '../prompts/stage0-data-quality-prompt';
@@ -66,18 +67,11 @@ export class ExpertAnalysisService {
   }
 
   private async getExtractedData(companyId: number): Promise<Record<string, unknown>> {
-    const analysisTypes = [
-      'company_accounts',
-      'asset_register',
-      'sales_ledger',
-      'staff_matrix',
-      'profit_and_loss',
-      'balance_sheet',
-    ];
+    // Operational docTypes: read analysis_data from document_analysis_results
+    const operationalTypes = ['asset_register', 'sales_ledger', 'staff_matrix'];
+    const results: Record<string, unknown> = {};
 
-    const results: Record<string, unknown[]> = {};
-
-    for (const docType of analysisTypes) {
+    for (const docType of operationalTypes) {
       const rows = await db
         .select({
           analysisData: documentAnalysisResults.analysisData,
@@ -92,6 +86,10 @@ export class ExpertAnalysisService {
         );
       results[docType] = rows.map((r) => r.analysisData).filter(Boolean);
     }
+
+    // Financial docTypes (company_accounts, profit_and_loss, balance_sheet):
+    // Do NOT read analysis_data. Use reconciled figures from the reconciled tables only.
+    results['RECONCILED_FINANCIALS'] = await getReconciledFinancials(companyId);
 
     return results;
   }

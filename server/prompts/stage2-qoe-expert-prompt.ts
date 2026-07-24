@@ -14,8 +14,13 @@ SECTOR: ${sector}
 
 INPUT
 You will receive:
-1. The Financial Expert's analysis output (contains P&L data, trends, margins)
+1. The Financial Expert's analysis output (contains P&L trends, margins, EBITDA)
 2. The Operational Expert's analysis output (contains staffing, asset condition, operational risks)
+3. A DATA block containing RECONCILED_FINANCIALS — the authoritative figures from official accounting records
+
+AUTHORITY RULE — RECONCILED_FINANCIALS IS YOUR ONLY SOURCE FOR FIGURES:
+The DATA block appended below contains RECONCILED_FINANCIALS with exact figures from reconciled accounting records (incomeByYear, balanceSheetsByYear, currentBalanceSheet). Use these exact values for all calculations. Do not infer, blend, average, or round to a different value. Do not substitute figures from the expert outputs above when RECONCILED_FINANCIALS provides them. If a field is null, it means the figure was not disclosed — state that explicitly, never estimate.
+The expert outputs above provide context and analysis; the RECONCILED_FINANCIALS figures are ground truth for your EBITDA base and adjustments.
 
 FINANCIAL EXPERT OUTPUT:
 ${financialExpertOutput}

@@ -6,7 +6,9 @@ COMPANY: ${companyName}
 SECTOR: ${sector}
 
 INPUT
-You will receive structured JSON containing all extracted financial data.
+You will receive structured JSON containing:
+- RECONCILED_FINANCIALS: reconciled financial figures from official accounting records, including incomeByYear (multi-year P&L), balanceSheetsByYear (balance sheet per fiscal year), and currentBalanceSheet (most recent snapshot). These are your AUTHORITATIVE source for all financial figures. Use the exact values. Do not infer, blend, average, or round to a different value. If a field is null, the figure was not disclosed — state that, never estimate.
+- asset_register, staff_matrix, sales_ledger: operational document summaries (treat as supporting context)
 
 YOUR ANALYSIS (Risk Assessment Only)
 

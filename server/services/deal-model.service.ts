@@ -1,11 +1,10 @@
-import { eq, desc, and, ne, or, isNull, lte } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { db } from '../db';
 import {
   targetCompanies,
-  incomeStatements,
-  financialPeriods,
   dealModels,
 } from '@shared/schema';
+import { getReconciledFinancials } from './reconciled-financials.service';
 import { dealModelRepository, type DealModelWithDetails } from '../repositories/deal-model.repository';
 import { dealModelMappingService } from './deal-model-mapping.service';
 import {
@@ -40,60 +39,20 @@ async function verifyOwnership(targetCompanyId: number, userCompanyId: number): 
 
 /**
  * Single source of truth for "reported EBITDA by fiscal year".
- * Only full-year periods contribute (is_full_year = true).
- * Part-year periods are excluded from the average.
- * If multiple income rows somehow share a fiscal year, the first (most-recent
- * periodEnd) row wins — matching the reselect precedence.
+ * Delegates to getReconciledFinancials so the deal model and expert analysis
+ * provably read the same code path and apply the same filtering gates:
+ *   - is_full_year = true (income statement's own flag, Slice 20)
+ *   - source_tier != information_memorandum (Slice 12)
+ *   - period_end <= today (Slice 17 completed-year gate)
+ *   - fiscal_year <= currentYear (mislabel guard)
  *
  * Exported so the offer/HoT builder can call the same function as the screen.
  */
 export async function fetchReportedEbitdaByYear(targetCompanyId: number): Promise<Record<string, number>> {
-  // Slice 17 — completed-year gate: only periods whose period_end is today or
-  // in the past contribute to valuation.  Forecast periods (period_end in the
-  // future) are excluded here so they never appear in the averaging window.
-  // A second guard on fiscal_year catches the edge case where a period_end
-  // falls in the past but was mislabelled with a future fiscal_year (e.g. a
-  // YTD P&L dated June 2026 extracted as FY2027 on some prod documents).
-  const today = new Date().toISOString().split('T')[0];
-  const currentYear = new Date().getFullYear();
-
-  const rows = await db
-    .select({
-      periodEnd: financialPeriods.periodEnd,
-      fiscalYear: financialPeriods.fiscalYear,
-      sourceTier: financialPeriods.sourceTier,
-      operatingProfit: incomeStatements.operatingProfit,
-      depreciationAmortisation: incomeStatements.depreciationAmortisation,
-    })
-    .from(incomeStatements)
-    .innerJoin(financialPeriods, eq(incomeStatements.financialPeriodId, financialPeriods.id))
-    .where(
-      and(
-        eq(incomeStatements.targetCompanyId, targetCompanyId),
-        // Slice 20: gate on the income statement's own is_full_year flag (stamped
-        // by reselect from the winning INCOME contribution) rather than the period
-        // container's flag.  The period container's flag reflects the BALANCE
-        // winner's span and can be true even when the income source is a YTD/
-        // part-year document, causing YTD figures to leak into valuation.
-        eq(incomeStatements.isFullYear, true),
-        or(
-          isNull(financialPeriods.sourceTier),
-          ne(financialPeriods.sourceTier, 'information_memorandum'),
-        ),
-        lte(financialPeriods.periodEnd, today),
-        lte(financialPeriods.fiscalYear, currentYear),
-      ),
-    )
-    .orderBy(desc(financialPeriods.periodEnd));
-
+  const reconciled = await getReconciledFinancials(targetCompanyId);
   const result: Record<string, number> = {};
-  for (const row of rows) {
-    const year = row.fiscalYear?.toString() || (row.periodEnd ? new Date(row.periodEnd).getFullYear().toString() : null);
-    if (!year) continue;
-    if (year in result) continue; // first (most-recent) row wins per year
-    const op = toNum(row.operatingProfit);
-    const da = toNum(row.depreciationAmortisation);
-    result[year] = op + da;
+  for (const [year, row] of Object.entries(reconciled.incomeByYear)) {
+    result[year] = row.ebitda;
   }
   return result;
 }
