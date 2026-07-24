@@ -34,10 +34,19 @@ export interface ReconciledIncomeYear {
   ebitda: number;
 }
 
+/**
+ * Sign-convention note attached to every reconciled block.
+ * Authoritative single source — do not duplicate in prompt files.
+ */
+export interface ReconciledSignConventions {
+  amountsOwedToDirectors: string;
+}
+
 export interface ReconciledFinancials {
   incomeByYear: Record<string, ReconciledIncomeYear>;
   balanceSheetsByYear: Record<string, Record<string, unknown>>;
   currentBalanceSheet: Record<string, unknown> | null;
+  _signConventions: ReconciledSignConventions;
 }
 
 const BS_CORE_FIELDS = [
@@ -236,5 +245,10 @@ export async function getReconciledFinancials(companyId: number): Promise<Reconc
     };
   }
 
-  return { incomeByYear, balanceSheetsByYear, currentBalanceSheet };
+  const _signConventions: ReconciledSignConventions = {
+    amountsOwedToDirectors:
+      'LIABILITY — money the company owes to its directors. Both positive and negative stored values represent this liability; a negative sign reflects the source document\'s credit-balance notation, not a reversal of direction. Use abs(value) as the liability amount.',
+  };
+
+  return { incomeByYear, balanceSheetsByYear, currentBalanceSheet, _signConventions };
 }

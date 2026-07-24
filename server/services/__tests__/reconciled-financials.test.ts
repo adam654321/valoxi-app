@@ -383,3 +383,69 @@ describe('getReconciledFinancials — tier-precedence balance sheet selection (D
     expect(String(reconciled.currentBalanceSheet!.cashAtBank)).toBe('75312.48');
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DB integration tests — sign-convention note (F.1)
+// Fixture: one balance sheet row with a NEGATIVE amountsOwedToDirectors (-149587.37)
+// mirrors the real company 885 shape.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('getReconciledFinancials — _signConventions note (F.1)', () => {
+  let companyId: number;
+  const periodIds: number[] = [];
+  const mkToken = () => `rf-sign-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+  beforeAll(async () => {
+    const [co] = await db
+      .insert(targetCompanies)
+      .values({ userCompanyId: USER_COMPANY_ID, companyName: `RF-SignTest-${mkToken()}` })
+      .returning();
+    companyId = co.id;
+
+    // Single balance-sheet row with a negative amountsOwedToDirectors (credit-balance notation)
+    const [fp] = await db
+      .insert(financialPeriods)
+      .values({
+        targetCompanyId: companyId,
+        periodType: 'annual',
+        periodEnd: '2026-06-25',
+        fiscalYear: 2026,
+        isFullYear: false,
+        sourceTier: 'information_memorandum',
+      })
+      .returning();
+    periodIds.push(fp.id);
+    await db.insert(balanceSheets).values({
+      targetCompanyId: companyId,
+      financialPeriodId: fp.id,
+      amountsOwedToDirectors: '-149587.37',
+      totalEquity: '292974.93',
+      cashAtBank: '75312.48',
+    });
+  });
+
+  afterAll(async () => {
+    await db.delete(balanceSheets).where(eq(balanceSheets.targetCompanyId, companyId));
+    if (periodIds.length > 0) {
+      await db.delete(financialPeriods).where(inArray(financialPeriods.id, periodIds));
+    }
+    await db.delete(targetCompanies).where(eq(targetCompanies.id, companyId));
+  });
+
+  // F.1 — _signConventions note is present and contains the authoritative text
+  it('F.1: _signConventions.amountsOwedToDirectors is present in the serialised block', async () => {
+    const reconciled = await getReconciledFinancials(companyId);
+    const serialised = JSON.stringify(reconciled);
+
+    expect(reconciled._signConventions).toBeDefined();
+    expect(typeof reconciled._signConventions.amountsOwedToDirectors).toBe('string');
+
+    // Must state LIABILITY and the credit-balance note
+    expect(reconciled._signConventions.amountsOwedToDirectors).toContain('LIABILITY');
+    expect(reconciled._signConventions.amountsOwedToDirectors).toContain('credit-balance notation');
+    expect(reconciled._signConventions.amountsOwedToDirectors).toContain('abs(value)');
+
+    // Must appear in the top-level serialised output alongside the negative figure
+    expect(serialised).toContain('_signConventions');
+    expect(serialised).toContain('-149587.37');
+  });
+});
