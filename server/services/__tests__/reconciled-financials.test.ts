@@ -15,6 +15,11 @@
  *
  * Because all rows share FY2025, balanceSheetsByYear["2025"] = 75312 row and
  * 295005 never appears anywhere in the serialised output.
+ *
+ * D.1-D.4  Tier-precedence tests (mirrors real company 885 shape).
+ *   FY2025 statutory, cash=295005 → wins FY2025 slot (only candidate).
+ *   FY2026 statutory year-end, cash=null (other non-null) → wins FY2026 slot (tier beats IM).
+ *   FY2026 IM, later period_end, cash=75312.48 → wins currentBalanceSheet (latest overall).
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { eq, inArray } from 'drizzle-orm';
@@ -85,7 +90,7 @@ describe('isBalanceSheetEmpty — pure logic', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// DB integration tests
+// DB integration tests — original fixture (all rows FY2025)
 // ─────────────────────────────────────────────────────────────────────────────
 describe('getReconciledFinancials — balance sheet selection (E.1, E.2, E.3)', () => {
   let companyId: number;
@@ -239,5 +244,142 @@ describe('getReconciledFinancials — balance sheet selection (E.1, E.2, E.3)', 
   it('E.2 structural: getReconciledFinancials is exported and callable', () => {
     expect(typeof getReconciledFinancials).toBe('function');
     expect(typeof fetchReportedEbitdaByYear).toBe('function');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DB integration tests — tier-precedence fixture (mirrors real company 885)
+// ─────────────────────────────────────────────────────────────────────────────
+describe('getReconciledFinancials — tier-precedence balance sheet selection (D.1-D.4)', () => {
+  let companyId: number;
+  const periodIds: number[] = [];
+  const mkToken = () => `rf-tier-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+  beforeAll(async () => {
+    const [co] = await db
+      .insert(targetCompanies)
+      .values({ userCompanyId: USER_COMPANY_ID, companyName: `RF-TierTest-${mkToken()}` })
+      .returning();
+    companyId = co.id;
+
+    // ── FY2025 statutory: cash=295005 — only candidate for FY2025 ────────
+    const [fpFy25] = await db
+      .insert(financialPeriods)
+      .values({
+        targetCompanyId: companyId,
+        periodType: 'annual',
+        periodEnd: '2025-02-28',
+        fiscalYear: 2025,
+        isFullYear: true,
+        sourceTier: 'statutory',
+      })
+      .returning();
+    periodIds.push(fpFy25.id);
+    await db.insert(balanceSheets).values({
+      targetCompanyId: companyId,
+      financialPeriodId: fpFy25.id,
+      cashAtBank: '295005',
+      totalEquity: '180000',
+      tradeDebtors: '42000',
+    });
+
+    // ── FY2026 statutory year-end: cash=null, other fields non-null ───────
+    // Should win FY2026 slot over the IM row (tier=statutory > IM).
+    const [fpFy26Stat] = await db
+      .insert(financialPeriods)
+      .values({
+        targetCompanyId: companyId,
+        periodType: 'annual',
+        periodEnd: '2026-02-28',
+        fiscalYear: 2026,
+        isFullYear: true,
+        sourceTier: 'statutory',
+      })
+      .returning();
+    periodIds.push(fpFy26Stat.id);
+    await db.insert(balanceSheets).values({
+      targetCompanyId: companyId,
+      financialPeriodId: fpFy26Stat.id,
+      cashAtBank: null,           // null cash — disclosed as blank
+      totalEquity: '220000',      // non-null: not an empty row
+      tradeDebtors: '50000',
+    });
+
+    // ── FY2026 IM: cash=75312.48, LATER period_end — wins currentBalanceSheet
+    // Should NOT win FY2026 balanceSheetsByYear slot (IM tier < statutory).
+    const [fpFy26Im] = await db
+      .insert(financialPeriods)
+      .values({
+        targetCompanyId: companyId,
+        periodType: 'annual',
+        periodEnd: '2026-06-25',
+        fiscalYear: 2026,
+        isFullYear: false,
+        sourceTier: 'information_memorandum',
+      })
+      .returning();
+    periodIds.push(fpFy26Im.id);
+    await db.insert(balanceSheets).values({
+      targetCompanyId: companyId,
+      financialPeriodId: fpFy26Im.id,
+      cashAtBank: '75312.48',
+      totalEquity: '195000',
+      tradeDebtors: '38000',
+    });
+  });
+
+  afterAll(async () => {
+    await db.delete(balanceSheets).where(eq(balanceSheets.targetCompanyId, companyId));
+    if (periodIds.length > 0) {
+      await db.delete(financialPeriods).where(inArray(financialPeriods.id, periodIds));
+    }
+    await db.delete(targetCompanies).where(eq(targetCompanies.id, companyId));
+  });
+
+  // D.1 — tier beats later date: FY2026 winner is the statutory row
+  it('D.1: balanceSheetsByYear FY2026 winner is the STATUTORY row (tier beats later IM date)', async () => {
+    const reconciled = await getReconciledFinancials(companyId);
+    const fy2026 = reconciled.balanceSheetsByYear['2026'];
+    expect(fy2026).toBeDefined();
+    expect(fy2026.sourceTier).toBe('statutory');
+    expect(fy2026.periodEnd).toBe('2026-02-28');
+    // cashAtBank is null on the statutory row (not disclosed)
+    expect(fy2026.cashAtBank).toBeNull();
+  });
+
+  // D.2 — FY2025 slot carries 295005
+  it('D.2: balanceSheetsByYear FY2025 cashAtBank is 295005', async () => {
+    const reconciled = await getReconciledFinancials(companyId);
+    const fy2025 = reconciled.balanceSheetsByYear['2025'];
+    expect(fy2025).toBeDefined();
+    expect(String(fy2025.cashAtBank)).toBe('295005');
+  });
+
+  // D.3 — currentBalanceSheet is the IM row (latest passing overall)
+  it('D.3: currentBalanceSheet is the IM row (periodEnd=2026-06-25, cash=75312.48)', async () => {
+    const reconciled = await getReconciledFinancials(companyId);
+    expect(reconciled.currentBalanceSheet).not.toBeNull();
+    expect(reconciled.currentBalanceSheet!.periodEnd).toBe('2026-06-25');
+    expect(reconciled.currentBalanceSheet!.sourceTier).toBe('information_memorandum');
+    expect(String(reconciled.currentBalanceSheet!.cashAtBank)).toBe('75312.48');
+    expect(reconciled.currentBalanceSheet!._label).toBe('CURRENT POSITION');
+  });
+
+  // D.4 — 295005 appears ONLY in FY2025 entry; current position cash is 75312.48
+  it('D.4: 295005 appears only in the FY2025 entry; current position cash is 75312.48', async () => {
+    const reconciled = await getReconciledFinancials(companyId);
+
+    // 295005 must appear in FY2025
+    const fy2025Serialised = JSON.stringify(reconciled.balanceSheetsByYear['2025']);
+    expect(fy2025Serialised).toContain('295005');
+
+    // 295005 must NOT appear in FY2026 slot or currentBalanceSheet
+    const fy2026Serialised = JSON.stringify(reconciled.balanceSheetsByYear['2026']);
+    expect(fy2026Serialised).not.toContain('295005');
+    const currentSerialised = JSON.stringify(reconciled.currentBalanceSheet);
+    expect(currentSerialised).not.toContain('295005');
+
+    // Current position cash is 75312.48
+    expect(String(reconciled.currentBalanceSheet!.cashAtBank)).toBe('75312.48');
   });
 });

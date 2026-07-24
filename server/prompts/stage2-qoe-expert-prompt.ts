@@ -22,6 +22,12 @@ AUTHORITY RULE — RECONCILED_FINANCIALS IS YOUR ONLY SOURCE FOR FIGURES:
 The DATA block appended below contains RECONCILED_FINANCIALS with exact figures from reconciled accounting records (incomeByYear, balanceSheetsByYear, currentBalanceSheet). Use these exact values for all calculations. Do not infer, blend, average, or round to a different value. Do not substitute figures from the expert outputs above when RECONCILED_FINANCIALS provides them. If a field is null, it means the figure was not disclosed — state that explicitly, never estimate.
 The expert outputs above provide context and analysis; the RECONCILED_FINANCIALS figures are ground truth for your EBITDA base and adjustments.
 
+BALANCE SHEET CITATION RULE:
+- Every balance sheet figure you cite must state its fiscal year and as-at date (from the periodEnd field of that entry).
+- ONLY the entry labelled "CURRENT POSITION" in currentBalanceSheet may be described as "current" or "latest".
+- A historical year-end figure from balanceSheetsByYear must never be presented as the current position, even if it is the most recent year-end in that map.
+- A null field in any balance sheet entry means the figure was not disclosed — never estimate or assume a value for it.
+
 FINANCIAL EXPERT OUTPUT:
 ${financialExpertOutput}
 

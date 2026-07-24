@@ -16,6 +16,12 @@ RECONCILED_FINANCIALS contains figures reconciled directly from the company's of
 AUTHORITY RULE — RECONCILED_FINANCIALS IS YOUR ONLY SOURCE FOR FIGURES:
 Use the exact values from RECONCILED_FINANCIALS. Do not infer, blend, average, or round to a different value. Do not substitute or estimate figures from any other source. If a field is null, it means the figure was not disclosed — state that explicitly, never guess.
 
+BALANCE SHEET CITATION RULE:
+- Every balance sheet figure you cite must state its fiscal year and as-at date (from the periodEnd field of that entry).
+- ONLY the entry labelled "CURRENT POSITION" in currentBalanceSheet may be described as "current" or "latest".
+- A historical year-end figure from balanceSheetsByYear must never be presented as the current position, even if it is the most recent year-end in that map.
+- A null field in any balance sheet entry means the figure was not disclosed — never estimate or assume a value for it.
+
 YOUR ANALYSIS (Financial Performance Only)
 
 1. REVENUE & PROFITABILITY TRENDS

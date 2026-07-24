@@ -56,6 +56,27 @@ export function isBalanceSheetEmpty(row: Record<string, unknown>): boolean {
   return BS_CORE_FIELDS.every((f) => row[f] == null);
 }
 
+/**
+ * Tier precedence for balanceSheetsByYear winner selection.
+ * Lower rank = higher authority.
+ * user_override (0) > statutory (1) > management (2) > information_memorandum (3) > unknown (4)
+ */
+function sourceTierRank(tier: string | null | undefined): number {
+  if (tier === 'user_override') return 0;
+  if (tier === 'statutory') return 1;
+  if (tier === 'management') return 2;
+  if (tier === 'information_memorandum') return 3;
+  return 4;
+}
+
+type EligibleBsRow = {
+  bs: Record<string, unknown>;
+  fiscalYear: string;
+  periodEnd: string;
+  sourceTier: string | null;
+  tierRank: number;
+};
+
 export async function getReconciledFinancials(companyId: number): Promise<ReconciledFinancials> {
   const today = new Date().toISOString().split('T')[0];
   const currentYear = new Date().getFullYear();
@@ -142,10 +163,11 @@ export async function getReconciledFinancials(companyId: number): Promise<Reconc
     };
   }
 
-  // ── Balance sheets ordered most-recent first ──────────────────────────────
+  // ── Balance sheets: collect all eligible rows ─────────────────────────────
   // Guards applied per row:
   //   (a) not future-dated: periodEnd <= today
   //   (b) not all-null core fields (empty row)
+  // Fetched periodEnd DESC so eligibleRows[0] is the globally latest passing row.
   const bsRows = await db
     .select()
     .from(balanceSheets)
@@ -153,30 +175,65 @@ export async function getReconciledFinancials(companyId: number): Promise<Reconc
     .where(eq(balanceSheets.targetCompanyId, companyId))
     .orderBy(desc(financialPeriods.periodEnd));
 
-  const balanceSheetsByYear: Record<string, Record<string, unknown>> = {};
-  let currentBalanceSheet: Record<string, unknown> | null = null;
+  const eligibleRows: EligibleBsRow[] = [];
 
   for (const row of bsRows) {
     const bs = row.balance_sheets as Record<string, unknown>;
     const fp = row.financial_periods;
     const periodEnd = fp.periodEnd as string | null;
     const fiscalYear = fp.fiscalYear as number | null;
+    const sourceTier = (fp.sourceTier as string | null) ?? null;
 
-    const isFuture = periodEnd != null && periodEnd > today;
-    const isEmpty = isBalanceSheetEmpty(bs);
+    if (periodEnd == null || fiscalYear == null) continue;
+    if (periodEnd > today) continue; // future-dated guard
+    if (isBalanceSheetEmpty(bs)) continue; // empty row guard
 
-    // balanceSheetsByYear: most-recent valid row per fiscal year
-    if (fiscalYear != null && !isFuture && !isEmpty) {
-      const key = fiscalYear.toString();
-      if (!(key in balanceSheetsByYear)) {
-        balanceSheetsByYear[key] = bs;
-      }
+    eligibleRows.push({
+      bs,
+      fiscalYear: fiscalYear.toString(),
+      periodEnd,
+      sourceTier,
+      tierRank: sourceTierRank(sourceTier),
+    });
+  }
+
+  // ── balanceSheetsByYear: tier precedence first, periodEnd DESC as tiebreak ─
+  // user_override > statutory > management > information_memorandum > unknown
+  const candidates = new Map<string, EligibleBsRow>();
+  for (const row of eligibleRows) {
+    const existing = candidates.get(row.fiscalYear);
+    if (
+      !existing ||
+      row.tierRank < existing.tierRank ||
+      (row.tierRank === existing.tierRank && row.periodEnd > existing.periodEnd)
+    ) {
+      candidates.set(row.fiscalYear, row);
     }
+  }
 
-    // currentBalanceSheet: first non-empty, non-future-dated row in descending order
-    if (currentBalanceSheet == null && !isFuture && !isEmpty) {
-      currentBalanceSheet = bs;
-    }
+  const balanceSheetsByYear: Record<string, Record<string, unknown>> = {};
+  for (const [year, row] of candidates) {
+    balanceSheetsByYear[year] = {
+      ...row.bs,
+      fiscalYear: year,
+      periodEnd: row.periodEnd,
+      sourceTier: row.sourceTier,
+    };
+  }
+
+  // ── currentBalanceSheet: latest passing row overall (periodEnd DESC) ───────
+  // Does NOT apply tier precedence — always the most recent snapshot regardless of tier.
+  // Carries _label so the LLM knows this is the current position.
+  let currentBalanceSheet: Record<string, unknown> | null = null;
+  if (eligibleRows.length > 0) {
+    const latest = eligibleRows[0]; // already ordered DESC by periodEnd
+    currentBalanceSheet = {
+      ...latest.bs,
+      fiscalYear: latest.fiscalYear,
+      periodEnd: latest.periodEnd,
+      sourceTier: latest.sourceTier,
+      _label: 'CURRENT POSITION',
+    };
   }
 
   return { incomeByYear, balanceSheetsByYear, currentBalanceSheet };
