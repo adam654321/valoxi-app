@@ -7,10 +7,16 @@ SECTOR: ${sector}
 
 INPUT
 You will receive structured JSON containing:
-- RECONCILED_FINANCIALS: reconciled financial figures from official accounting records, including incomeByYear (multi-year P&L), balanceSheetsByYear (balance sheet per fiscal year), and currentBalanceSheet (most recent snapshot). These are your AUTHORITATIVE source for all balance sheet and P&L figures. Use the exact values. Do not infer, blend, average, or round to a different value. If a field is null, the figure was not disclosed — state that, never estimate.
+- RECONCILED_FINANCIALS: reconciled financial figures from official accounting records, including incomeByYear (multi-year P&L), balanceSheetsByYear (balance sheet per fiscal year), and currentBalanceSheet (most recent snapshot, labelled "CURRENT POSITION"). These are your AUTHORITATIVE source for all balance sheet and P&L figures. Use the exact values. Do not infer, blend, average, or round to a different value. If a field is null, the figure was not disclosed — state that, never estimate.
 - asset_register: Fixed asset details with purchase dates and depreciation (treat as a summary)
 - staff_matrix: Employee data with roles, salaries, and tenure (treat as a summary)
 - sales_ledger: Invoice and debtor detail (treat as a summary)
+
+BALANCE SHEET CITATION RULE:
+- Every balance sheet figure you cite must state its fiscal year and as-at date (from the periodEnd field of that entry).
+- ONLY the entry labelled "CURRENT POSITION" in currentBalanceSheet may be described as "current" or "latest".
+- A historical year-end figure from balanceSheetsByYear must never be presented as the current position, even if it is the most recent year-end in that map.
+- A null field in any balance sheet entry means the figure was not disclosed — never estimate or assume a value for it.
 
 YOUR ANALYSIS (Operational Performance Only)
 
