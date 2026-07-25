@@ -6,7 +6,7 @@ import {
   financialContributions,
   documents,
 } from '@shared/schema';
-import { eq, sql } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 
 /**
  * Resolves the source tier for a financial contribution.
@@ -129,15 +129,21 @@ export async function backfillFinancialContributions(): Promise<{ income: number
     FROM financial_contributions
   `);
   const existingRows = existingRes.rows ?? [];
-  const existingKeys = new Set<string>();
+  // ── H10: count-aware snapshot (Map<key, occurrence-count>) ────────────────
+  // A Set collapses duplicate pre-existing rows to one skip, then inserts all
+  // remaining copies. A Map with consuming decrements skips exactly as many
+  // incoming rows as there are pre-existing rows sharing that key, then inserts
+  // the remainder — correct idempotent behaviour across re-runs with duplicates.
+  const existingKeys = new Map<string, number>();
   for (const r of existingRows) {
-    existingKeys.add(contribKey(
+    const k = contribKey(
       r.target_company_id == null ? null : Number(r.target_company_id),
       r.fiscal_year == null ? null : Number(r.fiscal_year),
       String(r.statement_type),
       r.source_document_id == null ? null : Number(r.source_document_id),
       r.is_full_year === true || r.is_full_year === 't',
-    ));
+    );
+    existingKeys.set(k, (existingKeys.get(k) ?? 0) + 1);
   }
   console.log(`[BACKFILL] MODE: INSERT-ONLY. Nothing in this script deletes.`);
   console.log(`[BACKFILL] existing-key snapshot: ${existingKeys.size} distinct keys from ${existingRows.length} rows`);
@@ -147,6 +153,47 @@ export async function backfillFinancialContributions(): Promise<{ income: number
   if (DRY_RUN) {
     console.log('[BACKFILL] DRY RUN: counting only, no inserts.');
   }
+
+  // ── H9a: bulk period map ──────────────────────────────────────────────────
+  // Single query replacing one per-row financial_periods lookup in each loop.
+  const allPeriodsRes = await db
+    .select({
+      id: financialPeriods.id,
+      fiscalYear: financialPeriods.fiscalYear,
+      periodType: financialPeriods.periodType,
+      isFullYear: financialPeriods.isFullYear,
+      monthsCovered: financialPeriods.monthsCovered,
+      periodEnd: financialPeriods.periodEnd,
+    })
+    .from(financialPeriods);
+  const periodById = new Map<number, {
+    fiscalYear: number | null;
+    periodType: string;
+    isFullYear: boolean;
+    monthsCovered: number | null;
+    periodEnd: string | null;
+  }>();
+  for (const p of allPeriodsRes) {
+    periodById.set(p.id, {
+      fiscalYear: p.fiscalYear,
+      periodType: p.periodType,
+      isFullYear: p.isFullYear,
+      monthsCovered: p.monthsCovered,
+      periodEnd: p.periodEnd,
+    });
+  }
+  console.log(`[BACKFILL] H9a: period map loaded for ${periodById.size} periods`);
+
+  // ── H9b: bulk document category map ──────────────────────────────────────
+  // Single query replacing one conditional per-row documents lookup in each loop.
+  const allDocsRes = await db
+    .select({ id: documents.id, documentCategory: documents.documentCategory })
+    .from(documents);
+  const docCategoryById = new Map<number, string | null>();
+  for (const d of allDocsRes) {
+    docCategoryById.set(d.id, d.documentCategory ?? null);
+  }
+  console.log(`[BACKFILL] H9b: document category map loaded for ${docCategoryById.size} documents`);
 
   let incomeInserted = 0;
   let balanceInserted = 0;
@@ -190,25 +237,16 @@ export async function backfillFinancialContributions(): Promise<{ income: number
     })
     .from(incomeStatements);
 
+  // ── H9d: batch income inserts ─────────────────────────────────────────────
+  const incomePending: (typeof financialContributions.$inferInsert)[] = [];
+
   for (const row of incomeRows) {
-    const [period] = await db
-      .select({
-        fiscalYear: financialPeriods.fiscalYear,
-        periodType: financialPeriods.periodType,
-        isFullYear: financialPeriods.isFullYear,
-        monthsCovered: financialPeriods.monthsCovered,
-        periodEnd: financialPeriods.periodEnd,
-      })
-      .from(financialPeriods)
-      .where(eq(financialPeriods.id, row.financialPeriodId));
+    // ── H9c: in-memory map lookups (no DB calls inside the loop) ─────────
+    const period = periodById.get(row.financialPeriodId);
 
     let documentCategory: string | null = null;
     if (row.sourceDocumentId) {
-      const [doc] = await db
-        .select({ documentCategory: documents.documentCategory })
-        .from(documents)
-        .where(eq(documents.id, row.sourceDocumentId));
-      documentCategory = doc?.documentCategory ?? null;
+      documentCategory = docCategoryById.get(row.sourceDocumentId) ?? null;
     }
 
     const tier = resolveSourceTier(period?.periodType ?? '', documentCategory);
@@ -250,7 +288,10 @@ export async function backfillFinancialContributions(): Promise<{ income: number
       row.sourceDocumentId ?? null,
       period?.isFullYear ?? true,
     );
-    if (existingKeys.has(contribDedupKey)) {
+    // ── H10: consuming decrement ───────────────────────────────────────────
+    const remainingIncome = existingKeys.get(contribDedupKey) ?? 0;
+    if (remainingIncome > 0) {
+      existingKeys.set(contribDedupKey, remainingIncome - 1);
       incomeSkippedExisting++;
       continue;
     }
@@ -261,7 +302,7 @@ export async function backfillFinancialContributions(): Promise<{ income: number
     if (period?.isFullYear === false) { partYearCount++; }
 
     if (!DRY_RUN) {
-      await db.insert(financialContributions).values({
+      incomePending.push({
         targetCompanyId: row.targetCompanyId,
         fiscalYear: period?.fiscalYear ?? null,
         statementType: 'income',
@@ -277,6 +318,10 @@ export async function backfillFinancialContributions(): Promise<{ income: number
     }
 
     incomeInserted++;
+  }
+
+  if (!DRY_RUN && incomePending.length > 0) {
+    await db.insert(financialContributions).values(incomePending);
   }
 
   console.log(`[BACKFILL] Income statements counted: ${incomeInserted}`);
@@ -329,25 +374,16 @@ export async function backfillFinancialContributions(): Promise<{ income: number
     })
     .from(balanceSheets);
 
+  // ── H9d: batch balance inserts ────────────────────────────────────────────
+  const balancePending: (typeof financialContributions.$inferInsert)[] = [];
+
   for (const row of balanceRows) {
-    const [period] = await db
-      .select({
-        fiscalYear: financialPeriods.fiscalYear,
-        periodType: financialPeriods.periodType,
-        isFullYear: financialPeriods.isFullYear,
-        monthsCovered: financialPeriods.monthsCovered,
-        periodEnd: financialPeriods.periodEnd,
-      })
-      .from(financialPeriods)
-      .where(eq(financialPeriods.id, row.financialPeriodId));
+    // ── H9c: in-memory map lookups (no DB calls inside the loop) ─────────
+    const period = periodById.get(row.financialPeriodId);
 
     let documentCategory: string | null = null;
     if (row.sourceDocumentId) {
-      const [doc] = await db
-        .select({ documentCategory: documents.documentCategory })
-        .from(documents)
-        .where(eq(documents.id, row.sourceDocumentId));
-      documentCategory = doc?.documentCategory ?? null;
+      documentCategory = docCategoryById.get(row.sourceDocumentId) ?? null;
     }
 
     const tier = resolveSourceTier(period?.periodType ?? '', documentCategory);
@@ -408,7 +444,10 @@ export async function backfillFinancialContributions(): Promise<{ income: number
       row.sourceDocumentId ?? null,
       period?.isFullYear ?? true,
     );
-    if (existingKeys.has(contribDedupKey)) {
+    // ── H10: consuming decrement ───────────────────────────────────────────
+    const remainingBalance = existingKeys.get(contribDedupKey) ?? 0;
+    if (remainingBalance > 0) {
+      existingKeys.set(contribDedupKey, remainingBalance - 1);
       balanceSkippedExisting++;
       continue;
     }
@@ -419,7 +458,7 @@ export async function backfillFinancialContributions(): Promise<{ income: number
     if (period?.isFullYear === false) { partYearCount++; }
 
     if (!DRY_RUN) {
-      await db.insert(financialContributions).values({
+      balancePending.push({
         targetCompanyId: row.targetCompanyId,
         fiscalYear: period?.fiscalYear ?? null,
         statementType: 'balance',
@@ -435,6 +474,10 @@ export async function backfillFinancialContributions(): Promise<{ income: number
     }
 
     balanceInserted++;
+  }
+
+  if (!DRY_RUN && balancePending.length > 0) {
+    await db.insert(financialContributions).values(balancePending);
   }
 
   console.log(`[BACKFILL] Balance sheets counted: ${balanceInserted}`);
