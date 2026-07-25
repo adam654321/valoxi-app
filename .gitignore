@@ -50,3 +50,6 @@ tests/.auth/
 
 # Vite leftovers
 vite.config.ts.*
+
+server/scripts/analysis-*.json
+server/scripts/*-baseline-*.json
