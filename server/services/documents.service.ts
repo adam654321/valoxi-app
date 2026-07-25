@@ -1,6 +1,7 @@
 import { documentsRepository, type DocumentWithDetails } from '../repositories/documents.repository';
 import { BadRequestError, NotFoundError, ForbiddenError } from '../utils/errors';
 import type { Document, DocumentCategory, InsertDocument } from '@shared/schema';
+import { documentsFilesService } from './documents-files.service';
 
 export class DocumentsService {
   async getDocumentCategories(): Promise<DocumentCategory[]> {
@@ -104,7 +105,8 @@ export class DocumentsService {
       throw new NotFoundError('Document not found or access denied');
     }
 
-    return await documentsRepository.deleteDocument(documentId, userCompanyId);
+    await documentsFilesService.deleteDocument(documentId, userCompanyId);
+    return true;
   }
 
   async logDocumentAccess(

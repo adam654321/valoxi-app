@@ -1,4 +1,4 @@
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, desc, sql, inArray } from 'drizzle-orm';
 import { db } from '../db';
 import {
   financialPeriods,
@@ -10,6 +10,7 @@ import {
   loanFacilities,
   ebitdaAdjustments,
   documents,
+  financialContributions,
   type FinancialPeriod,
   type InsertFinancialPeriod,
   type IncomeStatement,
@@ -594,6 +595,23 @@ export class FinancialDataRepository {
       .set({ sourceDocumentId: null, updatedAt: new Date() })
       .where(eq(balanceSheets.sourceDocumentId, documentId));
     console.log(`[FINANCIAL_DATA] Detached source_document_id references for document ${documentId}`);
+  }
+
+  async deleteContributionsByDocumentIds(documentIds: number[]): Promise<number> {
+    if (!documentIds.length) return 0;
+    const deleted = await db
+      .delete(financialContributions)
+      .where(inArray(financialContributions.sourceDocumentId, documentIds))
+      .returning({ id: financialContributions.id });
+    return deleted.length;
+  }
+
+  async deleteContributionsByCompanyId(targetCompanyId: number): Promise<number> {
+    const deleted = await db
+      .delete(financialContributions)
+      .where(eq(financialContributions.targetCompanyId, targetCompanyId))
+      .returning({ id: financialContributions.id });
+    return deleted.length;
   }
 
   async getAdjustmentsByCompany(targetCompanyId: number): Promise<(EbitdaAdjustment & { period: FinancialPeriod })[]> {

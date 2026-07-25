@@ -205,7 +205,8 @@ export class TargetCompaniesService {
     `);
     await db.delete(dealDocuments).where(eq(dealDocuments.targetCompanyId, id));
 
-    // 6. Documents
+    // 6. Documents (contributions first — FK is NO ACTION)
+    await db.execute(sql`DELETE FROM financial_contributions WHERE target_company_id = ${id}`);
     await db.delete(documents).where(eq(documents.targetCompanyId, id));
 
     // 8. Document stage progression and company document requirements

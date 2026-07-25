@@ -18,6 +18,7 @@ import {
   loanFacilities,
   ddRequirementStatus,
   ddRequirementDocuments,
+  financialContributions,
   type Document,
   type DocumentCategory,
   type InsertDocument,
@@ -323,6 +324,8 @@ export class DocumentsRepository {
         await db.update(loanFacilities).set({ sourceDocumentId: null }).where(inArray(loanFacilities.sourceDocumentId, allDocumentIds));
         await db.update(ddRequirementStatus).set({ documentId: null }).where(inArray(ddRequirementStatus.documentId, allDocumentIds));
         await db.update(ddRequirementDocuments).set({ documentId: null }).where(inArray(ddRequirementDocuments.documentId, allDocumentIds));
+
+        await db.delete(financialContributions).where(inArray(financialContributions.sourceDocumentId, allDocumentIds));
 
         const documentsDeleted = await db.delete(documents)
           .where(inArray(documents.id, allDocumentIds));
