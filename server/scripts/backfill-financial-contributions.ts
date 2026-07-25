@@ -321,7 +321,11 @@ export async function backfillFinancialContributions(): Promise<{ income: number
   }
 
   if (!DRY_RUN && incomePending.length > 0) {
-    await db.insert(financialContributions).values(incomePending);
+    for (let i = 0; i < incomePending.length; i += 200) {
+      const chunk = incomePending.slice(i, i + 200);
+      await db.insert(financialContributions).values(chunk);
+      console.log(`[BACKFILL] income flush ${i + chunk.length}/${incomePending.length}`);
+    }
   }
 
   console.log(`[BACKFILL] Income statements counted: ${incomeInserted}`);
@@ -477,7 +481,11 @@ export async function backfillFinancialContributions(): Promise<{ income: number
   }
 
   if (!DRY_RUN && balancePending.length > 0) {
-    await db.insert(financialContributions).values(balancePending);
+    for (let i = 0; i < balancePending.length; i += 200) {
+      const chunk = balancePending.slice(i, i + 200);
+      await db.insert(financialContributions).values(chunk);
+      console.log(`[BACKFILL] balance flush ${i + chunk.length}/${balancePending.length}`);
+    }
   }
 
   console.log(`[BACKFILL] Balance sheets counted: ${balanceInserted}`);
