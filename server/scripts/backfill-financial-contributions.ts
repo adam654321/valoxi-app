@@ -27,16 +27,67 @@ export function resolveSourceTier(
 }
 
 export async function backfillFinancialContributions(): Promise<{ income: number; balance: number }> {
-  // Print host for V-check
-  const hostResult = await db.execute(sql`SELECT current_database() AS db, inet_server_addr() AS host`);
-  console.log('[BACKFILL] Connected host/db:', hostResult.rows?.[0]);
+  // ── H1: Host + dry-run guard ─────────────────────────────────────────────
+  const DRY_RUN = process.env.DRY_RUN !== 'false';
+  const ALLOW_TRUNCATE = process.env.ALLOW_TRUNCATE === 'true';
 
-  // Idempotent: truncate first so re-runs don't duplicate
-  await db.delete(financialContributions);
-  console.log('[BACKFILL] Cleared financial_contributions — starting fresh');
+  const rawUrl = process.env.DATABASE_URL;
+  if (!rawUrl) throw new Error('[BACKFILL] DATABASE_URL is not set. Refusing.');
+  let host: string;
+  try {
+    host = new URL(rawUrl).hostname;
+  } catch {
+    throw new Error('[BACKFILL] DATABASE_URL is not parseable. Refusing.');
+  }
+  const expectHost = process.env.EXPECT_DB_HOST;
+  if (!expectHost) {
+    throw new Error('[BACKFILL] EXPECT_DB_HOST is not set. Refusing to run. Set it to a distinctive substring of the host you intend to hit.');
+  }
+  if (!host.includes(expectHost)) {
+    throw new Error(`[BACKFILL] HOST MISMATCH. Connected host is ${host}, EXPECT_DB_HOST="${expectHost}" did not match. Refusing.`);
+  }
+  const dbNameRes = await db.execute(sql`SELECT current_database() AS db`);
+  console.log(`[BACKFILL] host=${host} db=${dbNameRes.rows?.[0]?.db} DRY_RUN=${DRY_RUN} ALLOW_TRUNCATE=${ALLOW_TRUNCATE}`);
+
+  // ── H2: Non-empty table refusal ──────────────────────────────────────────
+  const existingRes = await db.execute(sql`SELECT count(*)::int AS n FROM financial_contributions`);
+  const existingCount = Number(existingRes.rows?.[0]?.n ?? 0);
+  console.log(`[BACKFILL] financial_contributions currently holds ${existingCount} rows`);
+  if (existingCount > 0 && !ALLOW_TRUNCATE) {
+    throw new Error(`[BACKFILL] REFUSING: financial_contributions is not empty (${existingCount} rows). This script truncates before inserting and would destroy user_override contributions. Set ALLOW_TRUNCATE=true only if you are certain that is what you want.`);
+  }
+
+  // ── H4: Primary-year map ─────────────────────────────────────────────────
+  const primaryRes = await db.execute(sql`
+    SELECT source_document_id, MAX(fiscal_year) AS max_year
+    FROM financial_periods
+    WHERE source_document_id IS NOT NULL AND fiscal_year IS NOT NULL
+    GROUP BY source_document_id
+  `);
+  const primaryYearByDoc = new Map<number, number>();
+  for (const r of primaryRes.rows ?? []) {
+    primaryYearByDoc.set(Number(r.source_document_id), Number(r.max_year));
+  }
+  console.log(`[BACKFILL] primary-year map built for ${primaryYearByDoc.size} documents`);
+
+  // ── H3: Guarded truncate ─────────────────────────────────────────────────
+  if (!DRY_RUN) {
+    await db.delete(financialContributions);
+    console.log('[BACKFILL] Cleared financial_contributions, starting fresh');
+  } else {
+    console.log('[BACKFILL] DRY RUN: no truncate, no inserts. Counting only.');
+  }
 
   let incomeInserted = 0;
   let balanceInserted = 0;
+
+  // Distribution counters (run in both DRY_RUN and live mode)
+  const tierCount: Record<string, number> = {};
+  let primaryYearTrue = 0;
+  let primaryYearFalse = 0;
+  let partYearCount = 0;
+  const skipsTotal = 0;
+  const skipReasons: Record<string, number> = {};
 
   // ── Income statements ────────────────────────────────────────────────────
   const incomeRows = await db
@@ -90,6 +141,13 @@ export async function backfillFinancialContributions(): Promise<{ income: number
 
     const tier = resolveSourceTier(period?.periodType ?? '', documentCategory);
 
+    const isPrimaryYear = (() => {
+      if (row.sourceDocumentId == null) return true;
+      const maxYear = primaryYearByDoc.get(row.sourceDocumentId);
+      if (maxYear == null || period?.fiscalYear == null) return true;
+      return period.fiscalYear === maxYear;
+    })();
+
     const figures = {
       revenue: row.revenue,
       costOfSales: row.costOfSales,
@@ -112,23 +170,31 @@ export async function backfillFinancialContributions(): Promise<{ income: number
       exceptionalItems: row.exceptionalItems,
     };
 
-    await db.insert(financialContributions).values({
-      targetCompanyId: row.targetCompanyId,
-      fiscalYear: period?.fiscalYear ?? null,
-      statementType: 'income',
-      sourceDocumentId: row.sourceDocumentId ?? null,
-      sourceTier: tier,
-      isFullYear: period?.isFullYear ?? true,
-      monthsCovered: period?.monthsCovered ?? null,
-      periodEnd: period?.periodEnd ?? null,
-      asAtDate: null,
-      figures,
-    });
+    // Track distributions (both modes)
+    tierCount[tier] = (tierCount[tier] ?? 0) + 1;
+    if (isPrimaryYear) { primaryYearTrue++; } else { primaryYearFalse++; }
+    if (period?.isFullYear === false) { partYearCount++; }
+
+    if (!DRY_RUN) {
+      await db.insert(financialContributions).values({
+        targetCompanyId: row.targetCompanyId,
+        fiscalYear: period?.fiscalYear ?? null,
+        statementType: 'income',
+        sourceDocumentId: row.sourceDocumentId ?? null,
+        sourceTier: tier,
+        isFullYear: period?.isFullYear ?? true,
+        isPrimaryYear,
+        monthsCovered: period?.monthsCovered ?? null,
+        periodEnd: period?.periodEnd ?? null,
+        asAtDate: null,
+        figures,
+      });
+    }
 
     incomeInserted++;
   }
 
-  console.log(`[BACKFILL] Income statements inserted: ${incomeInserted}`);
+  console.log(`[BACKFILL] Income statements counted: ${incomeInserted}`);
 
   // ── Balance sheets ───────────────────────────────────────────────────────
   const balanceRows = await db
@@ -201,6 +267,13 @@ export async function backfillFinancialContributions(): Promise<{ income: number
 
     const tier = resolveSourceTier(period?.periodType ?? '', documentCategory);
 
+    const isPrimaryYear = (() => {
+      if (row.sourceDocumentId == null) return true;
+      const maxYear = primaryYearByDoc.get(row.sourceDocumentId);
+      if (maxYear == null || period?.fiscalYear == null) return true;
+      return period.fiscalYear === maxYear;
+    })();
+
     const figures = {
       intangibleAssets: row.intangibleAssets,
       tangibleFixedAssets: row.tangibleFixedAssets,
@@ -242,24 +315,55 @@ export async function backfillFinancialContributions(): Promise<{ income: number
       fixedAssetsDetail: row.fixedAssetsDetail,
     };
 
-    await db.insert(financialContributions).values({
-      targetCompanyId: row.targetCompanyId,
-      fiscalYear: period?.fiscalYear ?? null,
-      statementType: 'balance',
-      sourceDocumentId: row.sourceDocumentId ?? null,
-      sourceTier: tier,
-      isFullYear: period?.isFullYear ?? true,
-      monthsCovered: period?.monthsCovered ?? null,
-      periodEnd: period?.periodEnd ?? null,
-      asAtDate: period?.periodEnd ?? null,
-      figures,
-    });
+    // Track distributions (both modes)
+    tierCount[tier] = (tierCount[tier] ?? 0) + 1;
+    if (isPrimaryYear) { primaryYearTrue++; } else { primaryYearFalse++; }
+    if (period?.isFullYear === false) { partYearCount++; }
+
+    if (!DRY_RUN) {
+      await db.insert(financialContributions).values({
+        targetCompanyId: row.targetCompanyId,
+        fiscalYear: period?.fiscalYear ?? null,
+        statementType: 'balance',
+        sourceDocumentId: row.sourceDocumentId ?? null,
+        sourceTier: tier,
+        isFullYear: period?.isFullYear ?? true,
+        isPrimaryYear,
+        monthsCovered: period?.monthsCovered ?? null,
+        periodEnd: period?.periodEnd ?? null,
+        asAtDate: period?.periodEnd ?? null,
+        figures,
+      });
+    }
 
     balanceInserted++;
   }
 
-  console.log(`[BACKFILL] Balance sheets inserted: ${balanceInserted}`);
-  console.log(`[BACKFILL] Total: income=${incomeInserted} balance=${balanceInserted}`);
+  console.log(`[BACKFILL] Balance sheets counted: ${balanceInserted}`);
+
+  // ── H5: Summary report ───────────────────────────────────────────────────
+  const total = incomeInserted + balanceInserted;
+  console.log(`[BACKFILL] --- Summary ---`);
+  console.log(`[BACKFILL] Income contributions counted: ${incomeInserted}`);
+  console.log(`[BACKFILL] Balance contributions counted: ${balanceInserted}`);
+  console.log(`[BACKFILL] Total contributions counted: ${total}`);
+  console.log(`[BACKFILL] Tier distribution:`);
+  for (const [t, count] of Object.entries(tierCount).sort()) {
+    console.log(`[BACKFILL]   ${t}: ${count}`);
+  }
+  console.log(`[BACKFILL] isPrimaryYear distribution: true=${primaryYearTrue} false=${primaryYearFalse}`);
+  console.log(`[BACKFILL] isFullYear=false (part-year) contributions: ${partYearCount}`);
+  console.log(`[BACKFILL] Total skips: ${skipsTotal}`);
+  for (const [reason, count] of Object.entries(skipReasons)) {
+    console.log(`[BACKFILL]   ${reason}: ${count}`);
+  }
 
   return { income: incomeInserted, balance: balanceInserted };
+}
+
+const isMain = process.argv[1]?.includes('backfill-financial-contributions');
+if (isMain) {
+  backfillFinancialContributions()
+    .then(r => { console.log('[BACKFILL] DONE', r); process.exit(0); })
+    .catch(e => { console.error('[BACKFILL] FAILED', e); process.exit(1); });
 }
