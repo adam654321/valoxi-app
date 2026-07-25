@@ -26,10 +26,29 @@ export function resolveSourceTier(
   return 'management';
 }
 
+// ── H6: insert-only dedup key ───────────────────────────────────────────────
+// FIVE parts. is_full_year is load-bearing: a part-year stub and a full-year
+// statement from the same document and year are legitimately distinct
+// contributions, and projection-selector.ts groupKey includes isFullYear.
+function contribKey(
+  targetCompanyId: number | null,
+  fiscalYear: number | null,
+  statementType: string,
+  sourceDocumentId: number | null,
+  isFullYear: boolean,
+): string {
+  return [
+    targetCompanyId ?? 'null',
+    fiscalYear ?? 'null',
+    statementType,
+    sourceDocumentId ?? 'null',
+    isFullYear ? 't' : 'f',
+  ].join('|');
+}
+
 export async function backfillFinancialContributions(): Promise<{ income: number; balance: number }> {
   // ── H1: Host + dry-run guard ─────────────────────────────────────────────
   const DRY_RUN = process.env.DRY_RUN !== 'false';
-  const ALLOW_TRUNCATE = process.env.ALLOW_TRUNCATE === 'true';
 
   const rawUrl = process.env.DATABASE_URL;
   if (!rawUrl) throw new Error('[BACKFILL] DATABASE_URL is not set. Refusing.');
@@ -47,18 +66,12 @@ export async function backfillFinancialContributions(): Promise<{ income: number
     throw new Error(`[BACKFILL] HOST MISMATCH. Connected host is ${host}, EXPECT_DB_HOST="${expectHost}" did not match. Refusing.`);
   }
   const dbNameRes = await db.execute(sql`SELECT current_database() AS db`);
-  console.log(`[BACKFILL] host=${host} db=${dbNameRes.rows?.[0]?.db} DRY_RUN=${DRY_RUN} ALLOW_TRUNCATE=${ALLOW_TRUNCATE}`);
+  console.log(`[BACKFILL] host=${host} db=${dbNameRes.rows?.[0]?.db} DRY_RUN=${DRY_RUN}`);
 
-  // ── H2: Non-empty table refusal ──────────────────────────────────────────
-  const existingRes = await db.execute(sql`SELECT count(*)::int AS n FROM financial_contributions`);
-  const existingCount = Number(existingRes.rows?.[0]?.n ?? 0);
+  // ── H2: Row count ────────────────────────────────────────────────────────
+  const existingCountRes = await db.execute(sql`SELECT count(*)::int AS n FROM financial_contributions`);
+  const existingCount = Number(existingCountRes.rows?.[0]?.n ?? 0);
   console.log(`[BACKFILL] financial_contributions currently holds ${existingCount} rows`);
-  if (!DRY_RUN && existingCount > 0 && !ALLOW_TRUNCATE) {
-    throw new Error(`[BACKFILL] REFUSING: financial_contributions is not empty (${existingCount} rows). This script truncates before inserting and would destroy user_override contributions. Set ALLOW_TRUNCATE=true only if you are certain that is what you want.`);
-  }
-  if (DRY_RUN && existingCount > 0) {
-    console.warn(`[BACKFILL] WARNING: table already holds ${existingCount} rows. A real run would truncate them.`);
-  }
 
   // ── H4: Primary-year map ─────────────────────────────────────────────────
   const primaryRes = await db.execute(sql`
@@ -73,12 +86,36 @@ export async function backfillFinancialContributions(): Promise<{ income: number
   }
   console.log(`[BACKFILL] primary-year map built for ${primaryYearByDoc.size} documents`);
 
-  // ── H3: Guarded truncate ─────────────────────────────────────────────────
-  if (!DRY_RUN) {
-    await db.delete(financialContributions);
-    console.log('[BACKFILL] Cleared financial_contributions, starting fresh');
-  } else {
-    console.log('[BACKFILL] DRY RUN: no truncate, no inserts. Counting only.');
+  // ── H6: existing-key snapshot. Replaces the H3 truncate. ─────────────────
+  // Dedup is against the START-OF-RUN snapshot ONLY. We deliberately do NOT
+  // add keys as we insert: two source rows can legitimately share a five-part
+  // key (e.g. two rows with NULL source_document_id for the same company-year)
+  // and intra-run dedup would under-insert them. Snapshot-only dedup protects
+  // rows written by the live forward path, leaves legacy rows behaving as the
+  // validated design intended, and is still idempotent across runs because a
+  // previous run's inserts are inside the next run's snapshot.
+  const existingRes = await db.execute(sql`
+    SELECT target_company_id, fiscal_year, statement_type, source_document_id, is_full_year
+    FROM financial_contributions
+  `);
+  const existingRows = existingRes.rows ?? [];
+  const existingKeys = new Set<string>();
+  for (const r of existingRows) {
+    existingKeys.add(contribKey(
+      r.target_company_id == null ? null : Number(r.target_company_id),
+      r.fiscal_year == null ? null : Number(r.fiscal_year),
+      String(r.statement_type),
+      r.source_document_id == null ? null : Number(r.source_document_id),
+      r.is_full_year === true || r.is_full_year === 't',
+    ));
+  }
+  console.log(`[BACKFILL] MODE: INSERT-ONLY. Nothing in this script deletes.`);
+  console.log(`[BACKFILL] existing-key snapshot: ${existingKeys.size} distinct keys from ${existingRows.length} rows`);
+  if (existingKeys.size !== existingRows.length) {
+    console.warn(`[BACKFILL] NOTE: ${existingRows.length - existingKeys.size} pre-existing rows share a key with another pre-existing row. Not created by this run.`);
+  }
+  if (DRY_RUN) {
+    console.log('[BACKFILL] DRY RUN: counting only, no inserts.');
   }
 
   let incomeInserted = 0;
@@ -91,6 +128,8 @@ export async function backfillFinancialContributions(): Promise<{ income: number
   let partYearCount = 0;
   const skipsTotal = 0;
   const skipReasons: Record<string, number> = {};
+  let incomeSkippedExisting = 0;
+  let balanceSkippedExisting = 0;
 
   // ── Income statements ────────────────────────────────────────────────────
   const incomeRows = await db
@@ -172,6 +211,19 @@ export async function backfillFinancialContributions(): Promise<{ income: number
       overheadsBreakdown: row.overheadsBreakdown,
       exceptionalItems: row.exceptionalItems,
     };
+
+    // ── H6: insert-only skip ───────────────────────────────────────────────
+    const contribDedupKey = contribKey(
+      row.targetCompanyId,
+      period?.fiscalYear ?? null,
+      'income',
+      row.sourceDocumentId ?? null,
+      period?.isFullYear ?? true,
+    );
+    if (existingKeys.has(contribDedupKey)) {
+      incomeSkippedExisting++;
+      continue;
+    }
 
     // Track distributions (both modes)
     tierCount[tier] = (tierCount[tier] ?? 0) + 1;
@@ -318,6 +370,19 @@ export async function backfillFinancialContributions(): Promise<{ income: number
       fixedAssetsDetail: row.fixedAssetsDetail,
     };
 
+    // ── H6: insert-only skip ───────────────────────────────────────────────
+    const contribDedupKey = contribKey(
+      row.targetCompanyId,
+      period?.fiscalYear ?? null,
+      'balance',
+      row.sourceDocumentId ?? null,
+      period?.isFullYear ?? true,
+    );
+    if (existingKeys.has(contribDedupKey)) {
+      balanceSkippedExisting++;
+      continue;
+    }
+
     // Track distributions (both modes)
     tierCount[tier] = (tierCount[tier] ?? 0) + 1;
     if (isPrimaryYear) { primaryYearTrue++; } else { primaryYearFalse++; }
@@ -360,6 +425,7 @@ export async function backfillFinancialContributions(): Promise<{ income: number
   for (const [reason, count] of Object.entries(skipReasons)) {
     console.log(`[BACKFILL]   ${reason}: ${count}`);
   }
+  console.log(`[BACKFILL] skipped as already present: income=${incomeSkippedExisting} balance=${balanceSkippedExisting} total=${incomeSkippedExisting + balanceSkippedExisting}`);
 
   return { income: incomeInserted, balance: balanceInserted };
 }
