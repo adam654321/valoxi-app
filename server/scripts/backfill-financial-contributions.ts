@@ -83,18 +83,38 @@ export async function backfillFinancialContributions(): Promise<{ income: number
   const existingCount = Number(existingCountRes.rows?.[0]?.n ?? 0);
   console.log(`[BACKFILL] financial_contributions currently holds ${existingCount} rows`);
 
-  // ── H4: Primary-year map ─────────────────────────────────────────────────
+  // ── H8: primary-year map, keyed on what each document actually REPORTS ────
+  // SUPERSEDES the original H4 map. That map was built from
+  // financial_periods.source_document_id, but the lookup below uses the
+  // STATEMENT table's source_document_id. Those differ for 517 prod rows,
+  // because a later document's statement attaches to a period an earlier
+  // document created. Consequences of the old map: where a document created no
+  // periods of its own it was absent entirely and every one of its rows was
+  // stamped primary (H4 silently degraded to a no-op); where it created only
+  // its EARLIER year, max_year was too low, so the document's real primary year
+  // was stamped false and its comparative was stamped true, exactly inverted.
+  // The correct question is: across every statement this document produced,
+  // what is the highest fiscal year it reports? Answer from the statement
+  // tables, not from period authorship.
   const primaryRes = await db.execute(sql`
-    SELECT source_document_id, MAX(fiscal_year) AS max_year
-    FROM financial_periods
-    WHERE source_document_id IS NOT NULL AND fiscal_year IS NOT NULL
+    SELECT source_document_id, MAX(fiscal_year) AS max_year FROM (
+      SELECT i.source_document_id, p.fiscal_year
+      FROM income_statements i
+      JOIN financial_periods p ON p.id = i.financial_period_id
+      WHERE i.source_document_id IS NOT NULL AND p.fiscal_year IS NOT NULL
+      UNION ALL
+      SELECT b.source_document_id, p.fiscal_year
+      FROM balance_sheets b
+      JOIN financial_periods p ON p.id = b.financial_period_id
+      WHERE b.source_document_id IS NOT NULL AND p.fiscal_year IS NOT NULL
+    ) t
     GROUP BY source_document_id
   `);
   const primaryYearByDoc = new Map<number, number>();
   for (const r of primaryRes.rows ?? []) {
     primaryYearByDoc.set(Number(r.source_document_id), Number(r.max_year));
   }
-  console.log(`[BACKFILL] primary-year map built for ${primaryYearByDoc.size} documents`);
+  console.log(`[BACKFILL] H8 primary-year map built for ${primaryYearByDoc.size} documents`);
 
   // ── H6: existing-key snapshot. Replaces the H3 truncate. ─────────────────
   // Dedup is against the START-OF-RUN snapshot ONLY. We deliberately do NOT
