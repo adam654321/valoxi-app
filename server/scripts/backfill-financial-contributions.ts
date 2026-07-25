@@ -53,8 +53,11 @@ export async function backfillFinancialContributions(): Promise<{ income: number
   const existingRes = await db.execute(sql`SELECT count(*)::int AS n FROM financial_contributions`);
   const existingCount = Number(existingRes.rows?.[0]?.n ?? 0);
   console.log(`[BACKFILL] financial_contributions currently holds ${existingCount} rows`);
-  if (existingCount > 0 && !ALLOW_TRUNCATE) {
+  if (!DRY_RUN && existingCount > 0 && !ALLOW_TRUNCATE) {
     throw new Error(`[BACKFILL] REFUSING: financial_contributions is not empty (${existingCount} rows). This script truncates before inserting and would destroy user_override contributions. Set ALLOW_TRUNCATE=true only if you are certain that is what you want.`);
+  }
+  if (DRY_RUN && existingCount > 0) {
+    console.warn(`[BACKFILL] WARNING: table already holds ${existingCount} rows. A real run would truncate them.`);
   }
 
   // ── H4: Primary-year map ─────────────────────────────────────────────────
