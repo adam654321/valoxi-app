@@ -66,7 +66,17 @@ export async function backfillFinancialContributions(): Promise<{ income: number
     throw new Error(`[BACKFILL] HOST MISMATCH. Connected host is ${host}, EXPECT_DB_HOST="${expectHost}" did not match. Refusing.`);
   }
   const dbNameRes = await db.execute(sql`SELECT current_database() AS db`);
-  console.log(`[BACKFILL] host=${host} db=${dbNameRes.rows?.[0]?.db} DRY_RUN=${DRY_RUN}`);
+  // ── H7: fire confirmation token ─────────────────────────────────────────
+  // DRY_RUN=false alone is not sufficient to write. A live run requires a
+  // second, non-obvious, deliberately typed token. Added after an accidental
+  // live run on dev caused by DRY_RUN=false being passed unintentionally.
+  const CONFIRM_WRITE = process.env.CONFIRM_WRITE ?? '';
+  console.log(`[BACKFILL] host=${host} db=${dbNameRes.rows?.[0]?.db} DRY_RUN=${DRY_RUN} CONFIRM_WRITE_SET=${CONFIRM_WRITE !== ''}`);
+  if (!DRY_RUN && CONFIRM_WRITE !== 'phase3-fire') {
+    throw new Error(
+      '[BACKFILL] LIVE RUN BLOCKED. DRY_RUN=false additionally requires CONFIRM_WRITE=phase3-fire. Refusing.'
+    );
+  }
 
   // ── H2: Row count ────────────────────────────────────────────────────────
   const existingCountRes = await db.execute(sql`SELECT count(*)::int AS n FROM financial_contributions`);
