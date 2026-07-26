@@ -1,4 +1,4 @@
-import { hasCoreIncomeValue } from '../utils/has-any-value';
+import { hasCoreIncomeValue, hasCoreBalanceValue } from '../utils/has-any-value';
 
 export type SourceTier =
   | 'user_override'
@@ -121,7 +121,14 @@ export function selectProjectionWinners(contribs: Contribution[]): Winner[] {
           hasCoreIncomeValue((c.figures ?? {}) as Record<string, unknown>),
         ) ?? sorted[0]; // fall back to top-ranked when ALL are empty (£0/absent is correct)
     } else {
-      winner = sorted[0];
+      // Balance fall-through, mirror of the income guard above: skip
+      // candidates whose figures contain no core balance value. Legacy
+      // backfilled contributions can be all-null (the ingestion guard
+      // postdates them). Fall back to top-ranked when ALL are empty.
+      winner =
+        sorted.find(c =>
+          hasCoreBalanceValue((c.figures ?? {}) as Record<string, unknown>),
+        ) ?? sorted[0];
     }
 
     winners.push({ ...winner, _groupKey: key });

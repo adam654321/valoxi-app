@@ -122,6 +122,71 @@ describe('selectProjectionWinners', () => {
   });
 });
 
+describe('selectProjectionWinners — balance fall-through guard', () => {
+  it('T1: balance group — statutory all-null loses to management with real figures', () => {
+    // Statutory ranks above management, but its figures are all-null.
+    // The balance guard must skip it and return the management candidate instead.
+    const allNull = contrib({
+      id: 1,
+      sourceTier: 'statutory',
+      statementType: 'balance',
+      figures: { tangibleFixedAssets: null, cashAtBank: null, totalCurrentAssets: null },
+    });
+    const withData = contrib({
+      id: 2,
+      sourceTier: 'management',
+      statementType: 'balance',
+      figures: { tangibleFixedAssets: '150000', cashAtBank: '20000' },
+    });
+    const winners = selectProjectionWinners([allNull, withData]);
+    expect(winners).toHaveLength(1);
+    expect(winners[0].id).toBe(2);
+    expect(winners[0].sourceTier).toBe('management');
+  });
+
+  it('T2: balance group — all candidates all-null falls back to top-ranked (statutory)', () => {
+    // When every candidate in the group has no core balance value, the guard
+    // falls back to sorted[0] (the top-ranked by tier / createdAt / doc id).
+    const nullStatutory = contrib({
+      id: 1,
+      sourceTier: 'statutory',
+      statementType: 'balance',
+      figures: { tangibleFixedAssets: null },
+    });
+    const nullManagement = contrib({
+      id: 2,
+      sourceTier: 'management',
+      statementType: 'balance',
+      figures: {},
+    });
+    const winners = selectProjectionWinners([nullStatutory, nullManagement]);
+    expect(winners).toHaveLength(1);
+    expect(winners[0].id).toBe(1);
+    expect(winners[0].sourceTier).toBe('statutory');
+  });
+
+  it('T3: income group unchanged — statutory all-null loses to management with figures (Slice 22 regression guard)', () => {
+    // Confirms the existing income fall-through behaviour is unaffected by the
+    // balance guard change.
+    const allNull = contrib({
+      id: 1,
+      sourceTier: 'statutory',
+      statementType: 'income',
+      figures: { revenue: null, operatingProfit: null },
+    });
+    const withData = contrib({
+      id: 2,
+      sourceTier: 'management',
+      statementType: 'income',
+      figures: { revenue: '500000', operatingProfit: '80000' },
+    });
+    const winners = selectProjectionWinners([allNull, withData]);
+    expect(winners).toHaveLength(1);
+    expect(winners[0].id).toBe(2);
+    expect(winners[0].sourceTier).toBe('management');
+  });
+});
+
 describe('selectProjectionWinners — is_primary_year precedence (Slice 10)', () => {
   it('primary (doc B) beats comparative (doc A) within the same tier, regardless of createdAt/id order', () => {
     // doc A: comparative (FY2023 appeared as prior-year in FY2024 accounts), uploaded first
