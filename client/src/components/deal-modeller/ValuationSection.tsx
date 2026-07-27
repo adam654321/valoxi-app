@@ -49,6 +49,8 @@ interface ValuationSectionProps {
 interface LocalValues {
   averagingYears: number;
   ebitdaMultiple: number;
+  offerDriver: string;
+  targetOfferPrice: number;
   plusExcessCash: number;
   plusPropertyValue: number;
   minusPrimaryDebt: number;
@@ -71,6 +73,8 @@ function initLocal(model: DealModel): LocalValues {
   return {
     averagingYears: model.averagingYears ?? 3,
     ebitdaMultiple: toNum(model.ebitdaMultiple),
+    offerDriver: (model as any).offerDriver ?? 'ebitda',
+    targetOfferPrice: toNum((model as any).targetOfferPrice),
     plusExcessCash: toNum(model.plusExcessCash),
     plusPropertyValue: toNum(model.propertyValue),
     minusPrimaryDebt: toNum(model.minusPrimaryDebt),
@@ -87,6 +91,8 @@ function buildModelInput(local: LocalValues, model: DealModel): DealModelInput {
   return {
     averagingYears: local.averagingYears,
     ebitdaMultiple: local.ebitdaMultiple,
+    offerDriver: local.offerDriver,
+    targetOfferPrice: local.targetOfferPrice,
     plusExcessCash: local.plusExcessCash,
     minusPrimaryDebt: local.minusPrimaryDebt,
     minusOtherDebt: local.minusOtherDebt,
@@ -128,6 +134,7 @@ export default function ValuationSection({
     const init = initLocal(model);
     return {
       ebitdaMultiple: String(init.ebitdaMultiple),
+      targetOfferPrice: String(init.targetOfferPrice),
       plusExcessCash: String(init.plusExcessCash),
       plusPropertyValue: String(init.plusPropertyValue),
       minusPrimaryDebt: String(init.minusPrimaryDebt),
@@ -146,6 +153,7 @@ export default function ValuationSection({
   const syncDisplayFromLocal = useCallback((values: LocalValues) => {
     setDisplayValues({
       ebitdaMultiple: String(values.ebitdaMultiple),
+      targetOfferPrice: String(values.targetOfferPrice),
       plusExcessCash: String(values.plusExcessCash),
       plusPropertyValue: String(values.plusPropertyValue),
       minusPrimaryDebt: String(values.minusPrimaryDebt),
@@ -273,7 +281,7 @@ export default function ValuationSection({
   const receivablesInterestAnnual = localCalcs?.receivablesInterestAnnual ?? 0;
   const valuationEbitda = localCalcs?.valuationEbitda ?? avgEbitda;
 
-  type NumericLocalField = Exclude<keyof LocalValues, 'workingCapitalOverride'>;
+  type NumericLocalField = Exclude<keyof LocalValues, 'workingCapitalOverride' | 'offerDriver'>;
   const bridgeItems: Array<{
     label: string;
     field: NumericLocalField;
@@ -348,10 +356,31 @@ export default function ValuationSection({
         <Separator />
 
         <div className="space-y-4">
-          <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1">
-            EBITDA Multiple
-            {explainContext && <ExplainButton metricKey="EBITDA Multiple" metricValue={`${local.ebitdaMultiple.toFixed(1)}x`} context={explainContext} />}
-          </h4>
+          <div className="flex items-center justify-between gap-2">
+            <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+              EBITDA Multiple
+              {explainContext && <ExplainButton metricKey="EBITDA Multiple" metricValue={`${local.ebitdaMultiple.toFixed(1)}x`} context={explainContext} />}
+            </h4>
+            <div className="flex border rounded-md overflow-hidden shrink-0">
+              {(['ebitda', 'target_price'] as const).map(driver => (
+                <button
+                  key={driver}
+                  onClick={() => {
+                    setLocal(prev => ({ ...prev, offerDriver: driver }));
+                    if (!isLocked) debounceSave({ offerDriver: driver });
+                  }}
+                  disabled={isLocked}
+                  className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                    local.offerDriver === driver
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-background hover:bg-muted text-foreground'
+                  } ${isLocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} border-r last:border-r-0`}
+                >
+                  {driver === 'ebitda' ? 'EBITDA × Multiple' : 'Target price'}
+                </button>
+              ))}
+            </div>
+          </div>
 
           {hasRange && (
             <div className="space-y-2">
@@ -411,7 +440,7 @@ export default function ValuationSection({
                 min={1}
                 max={10}
                 step={0.1}
-                disabled={isLocked}
+                disabled={isLocked || local.offerDriver === 'target_price'}
                 className="py-2"
               />
               <div className="flex justify-between text-sm text-muted-foreground mt-1">
@@ -444,11 +473,57 @@ export default function ValuationSection({
                     setLocal(prev => ({ ...prev, ebitdaMultiple: parsed }));
                   }
                 }}
-                disabled={isLocked}
+                disabled={isLocked || local.offerDriver === 'target_price'}
                 className="text-center text-base font-semibold"
               />
+              {local.offerDriver === 'target_price' && (
+                <p className="text-xs text-muted-foreground text-center mt-1">
+                  {localCalcs?.impliedMultiple != null
+                    ? `${localCalcs.impliedMultiple.toFixed(1)}x (implied)`
+                    : 'n/a (implied)'}
+                </p>
+              )}
             </div>
           </div>
+
+          {local.offerDriver === 'target_price' && (
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-muted-foreground flex-1">Target offer price</span>
+              <div className="w-36 shrink-0">
+                <div className="relative">
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">£</span>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    value={displayValues.targetOfferPrice ?? String(local.targetOfferPrice)}
+                    onFocus={handleFocus}
+                    onBlur={() => {
+                      handleBlur();
+                      const raw = displayValues.targetOfferPrice ?? '';
+                      const parsed = parseFloat(raw);
+                      if (isNaN(parsed) || raw.trim() === '') {
+                        setDisplayValues(prev => ({ ...prev, targetOfferPrice: String(local.targetOfferPrice) }));
+                      } else {
+                        setDisplayValues(prev => ({ ...prev, targetOfferPrice: String(parsed) }));
+                        updateLocal('targetOfferPrice', parsed, 'targetOfferPrice');
+                      }
+                    }}
+                    onChange={e => {
+                      const raw = e.target.value;
+                      setDisplayValues(prev => ({ ...prev, targetOfferPrice: raw }));
+                      const parsed = parseFloat(raw);
+                      if (!isNaN(parsed)) {
+                        setLocal(prev => ({ ...prev, targetOfferPrice: parsed }));
+                      }
+                    }}
+                    disabled={isLocked}
+                    className="pl-7 text-right text-base h-9"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="bg-muted/50 rounded-lg p-4">
             {receivablesInterestAnnual > 0 && (
