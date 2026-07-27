@@ -37,6 +37,8 @@ export interface ContingentConsiderationInput {
 export interface DealModelInput {
   averagingYears: number;
   ebitdaMultiple: string | number;
+  offerDriver?: string | null;
+  targetOfferPrice?: string | number | null;
 
   plusExcessCash: string | number;
   minusPrimaryDebt: string | number;
@@ -69,6 +71,7 @@ export interface CalculationResult {
 
   enterpriseValue: number;
   offerPrice: number;
+  impliedMultiple: number | null;
 
   feeLegalDd: number;
   feeAccountingDd: number;
@@ -144,24 +147,30 @@ export function calculateAdjustedEbitda(
 export function calculateOfferPrice(
   averageAdjustedEbitda: number,
   model: DealModelInput
-): { enterpriseValue: number; offerPrice: number } {
-  const enterpriseValue = averageAdjustedEbitda * toNum(model.ebitdaMultiple);
-
-  let offerPrice = enterpriseValue
-    + toNum(model.plusExcessCash)
+): { enterpriseValue: number; offerPrice: number; impliedMultiple: number | null } {
+  const bridge = toNum(model.plusExcessCash)
     - toNum(model.minusPrimaryDebt)
     - toNum(model.minusOtherDebt)
     - toNum(model.minusCorpTaxDue)
     - toNum(model.minusWorkingCapitalAdj)
-    + toNum(model.plusPropertyValue);
+    + toNum(model.plusPropertyValue)
+    + (model.otherAdjustments && Array.isArray(model.otherAdjustments)
+        ? model.otherAdjustments.reduce((s, a) => s + toNum(a.amount), 0)
+        : 0);
 
-  if (model.otherAdjustments && Array.isArray(model.otherAdjustments)) {
-    for (const adj of model.otherAdjustments) {
-      offerPrice += toNum(adj.amount);
-    }
+  if (model.offerDriver === 'target_price') {
+    const offerPrice = toNum(model.targetOfferPrice);
+    const enterpriseValue = offerPrice - bridge;
+    const impliedMultiple = averageAdjustedEbitda !== 0
+      ? enterpriseValue / averageAdjustedEbitda
+      : null;
+    return { enterpriseValue, offerPrice, impliedMultiple };
   }
 
-  return { enterpriseValue, offerPrice };
+  // default path — ebitda mode, and fail-safe for any unknown offerDriver value
+  const enterpriseValue = averageAdjustedEbitda * toNum(model.ebitdaMultiple);
+  const offerPrice = enterpriseValue + bridge;
+  return { enterpriseValue, offerPrice, impliedMultiple: null };
 }
 
 export function calculateFees(
@@ -340,7 +349,7 @@ export function calculateFullDealModel(
     .reduce((sum, l) => sum + toNum(l.amountUsed) * toNum(l.interestRate) / 100, 0);
   const valuationEbitda = averageAdjustedEbitda - receivablesInterestAnnual;
 
-  const { enterpriseValue, offerPrice } = calculateOfferPrice(valuationEbitda, model);
+  const { enterpriseValue, offerPrice, impliedMultiple } = calculateOfferPrice(valuationEbitda, model);
 
   const sellerActiveTotal = sellerPayments
     .filter(s => s.isActive)
@@ -383,6 +392,7 @@ export function calculateFullDealModel(
     averageAdjustedEbitda,
     enterpriseValue,
     offerPrice,
+    impliedMultiple,
     ...fees,
     totalFees: adjustedTotalFees,
     totalFundingRequired: adjustedTotalFundingRequired,

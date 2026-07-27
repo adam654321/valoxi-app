@@ -103,6 +103,8 @@ function buildCalcInputs(model: DealModelWithDetails): {
   const modelInput: DealModelInput = {
     averagingYears: model.averagingYears ?? 3,
     ebitdaMultiple: model.ebitdaMultiple ?? '3.0',
+    offerDriver: model.offerDriver ?? 'ebitda',
+    targetOfferPrice: model.targetOfferPrice ?? null,
     plusExcessCash: model.plusExcessCash ?? '0',
     minusPrimaryDebt: model.minusPrimaryDebt ?? '0',
     minusOtherDebt: model.minusOtherDebt ?? '0',

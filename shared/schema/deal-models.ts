@@ -17,6 +17,8 @@ export const dealModels = pgTable("deal_models", {
   isLocked: boolean("is_locked").default(false),
   averagingYears: integer("averaging_years").default(3),
   ebitdaMultiple: decimal("ebitda_multiple").default('3.0'),
+  offerDriver: varchar("offer_driver", { length: 20 }).default('ebitda'),
+  targetOfferPrice: decimal("target_offer_price"),
   multipleLow: decimal("multiple_low"),
   multipleHigh: decimal("multiple_high"),
   propertyValue: decimal("property_value").default('0'),

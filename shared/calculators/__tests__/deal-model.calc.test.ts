@@ -609,3 +609,60 @@ describe('annualiseService behaviour - sub-12-month terms (DSCR annualisation fi
     expect(r.revolvingInterestAnnual).toBe(20_000);
   });
 });
+
+describe('calculateFullDealModel — offer-driver mode (T1–T4)', () => {
+  const baseModel = {
+    averagingYears: 1,
+    ebitdaMultiple: '3',
+    plusExcessCash: '10000',
+    minusPrimaryDebt: '5000',
+    minusOtherDebt: '2000',
+    minusCorpTaxDue: '0',
+    minusWorkingCapitalAdj: '0',
+    plusPropertyValue: '0',
+    otherAdjustments: null,
+  };
+  // bridge = +10000 - 5000 - 2000 = 3000
+  // reported EBITDA 100,000, no adjustments → averageAdjustedEbitda = 100,000
+  const reported = { '2024': 100_000 };
+
+  it('T1: target_price mode — offerPrice equals target, EV = target − bridge, impliedMultiple = EV / avgEbitda', () => {
+    const model = { ...baseModel, offerDriver: 'target_price', targetOfferPrice: '200000' };
+    const r = calculateFullDealModel(reported, [], [], model);
+    // offerPrice = 200,000
+    expect(r.offerPrice).toBe(200_000);
+    // enterpriseValue = 200,000 − 3,000 = 197,000
+    expect(r.enterpriseValue).toBe(197_000);
+    // impliedMultiple = 197,000 / 100,000 = 1.97
+    expect(r.impliedMultiple).toBe(1.97);
+  });
+
+  it('T2: target_price mode with zero adjusted EBITDA — impliedMultiple is null, no throw', () => {
+    const model = { ...baseModel, offerDriver: 'target_price', targetOfferPrice: '50000' };
+    // force averageAdjustedEbitda to 0 by reporting all zeros
+    const zeroReported = { '2024': 0 };
+    const r = calculateFullDealModel(zeroReported, [], [], model);
+    expect(r.impliedMultiple).toBeNull();
+    expect(r.offerPrice).toBe(50_000);
+  });
+
+  it('T3: unknown offerDriver string — output identical to ebitda mode', () => {
+    const modelEbitda   = { ...baseModel, offerDriver: 'ebitda' };
+    const modelUnknown  = { ...baseModel, offerDriver: 'some_future_mode' };
+    const rEbitda  = calculateFullDealModel(reported, [], [], modelEbitda);
+    const rUnknown = calculateFullDealModel(reported, [], [], modelUnknown);
+    expect(rUnknown.enterpriseValue).toBe(rEbitda.enterpriseValue);
+    expect(rUnknown.offerPrice).toBe(rEbitda.offerPrice);
+    expect(rUnknown.impliedMultiple).toBeNull();
+  });
+
+  it('T4: ebitda mode with new fields absent — outputs identical to pre-change behaviour', () => {
+    // model has no offerDriver / targetOfferPrice at all
+    const modelNoNewFields = { ...baseModel };
+    const r = calculateFullDealModel(reported, [], [], modelNoNewFields);
+    // ebitda mode: EV = 100,000 × 3 = 300,000; offerPrice = 300,000 + 3,000 = 303,000
+    expect(r.enterpriseValue).toBe(300_000);
+    expect(r.offerPrice).toBe(303_000);
+    expect(r.impliedMultiple).toBeNull();
+  });
+});
