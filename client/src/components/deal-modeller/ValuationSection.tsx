@@ -144,6 +144,8 @@ export default function ValuationSection({
     };
   });
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [multipleInputFocused, setMultipleInputFocused] = useState(false);
+  const [targetInputFocused, setTargetInputFocused] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingRef = useRef<Partial<Record<string, any>> | null>(null);
   const isEditingRef = useRef(false);
@@ -280,6 +282,9 @@ export default function ValuationSection({
   const avgEbitda = localCalcs?.averageAdjustedEbitda ?? 0;
   const receivablesInterestAnnual = localCalcs?.receivablesInterestAnnual ?? 0;
   const valuationEbitda = localCalcs?.valuationEbitda ?? avgEbitda;
+  const effectiveMultiple: number | null = local.offerDriver === 'target_price'
+    ? (localCalcs?.impliedMultiple ?? null)
+    : toNum(local.ebitdaMultiple);
 
   type NumericLocalField = Exclude<keyof LocalValues, 'workingCapitalOverride' | 'offerDriver'>;
   const bridgeItems: Array<{
@@ -359,7 +364,7 @@ export default function ValuationSection({
           <div className="flex items-center justify-between gap-2">
             <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1">
               EBITDA Multiple
-              {explainContext && <ExplainButton metricKey="EBITDA Multiple" metricValue={`${local.ebitdaMultiple.toFixed(1)}x`} context={explainContext} />}
+              {explainContext && <ExplainButton metricKey="EBITDA Multiple" metricValue={effectiveMultiple != null ? `${effectiveMultiple.toFixed(2)}x` : 'n/a'} context={explainContext} />}
             </h4>
             <div className="flex border rounded-md overflow-hidden shrink-0">
               {(['ebitda', 'target_price'] as const).map(driver => (
@@ -407,8 +412,9 @@ export default function ValuationSection({
                   {multipleHigh!.toFixed(1)}x
                 </div>
                 {(() => {
-                  const pos = ((local.ebitdaMultiple - 1) / 9) * 100;
-                  const inRange = local.ebitdaMultiple >= multipleLow! && local.ebitdaMultiple <= multipleHigh!;
+                  const effM = effectiveMultiple ?? local.ebitdaMultiple;
+                  const pos = ((effM - 1) / 9) * 100;
+                  const inRange = effM >= multipleLow! && effM <= multipleHigh!;
                   return (
                     <div
                       className={`absolute top-2 w-4 h-4 rounded-full border-2 ${
@@ -419,10 +425,10 @@ export default function ValuationSection({
                   );
                 })()}
               </div>
-              {local.ebitdaMultiple < multipleLow! && (
+              {(effectiveMultiple ?? local.ebitdaMultiple) < multipleLow! && (
                 <p className="text-sm text-amber-600">Below expert's suggested range</p>
               )}
-              {local.ebitdaMultiple > multipleHigh! && (
+              {(effectiveMultiple ?? local.ebitdaMultiple) > multipleHigh! && (
                 <p className="text-sm text-amber-600">Above expert's suggested range</p>
               )}
             </div>
@@ -431,16 +437,17 @@ export default function ValuationSection({
           <div className="flex items-center gap-4">
             <div className="flex-1">
               <Slider
-                value={[local.ebitdaMultiple]}
+                value={[effectiveMultiple ?? local.ebitdaMultiple]}
                 onValueChange={([v]) => {
                   const rounded = Math.round(v * 10) / 10;
-                  updateLocal('ebitdaMultiple', rounded, 'ebitdaMultiple');
-                  setDisplayValues(prev => ({ ...prev, ebitdaMultiple: String(rounded) }));
+                  setLocal(prev => ({ ...prev, ebitdaMultiple: rounded, offerDriver: 'ebitda' }));
+                  setDisplayValues(prev => ({ ...prev, ebitdaMultiple: rounded.toFixed(2) }));
+                  if (!isLocked) debounceSave({ ebitdaMultiple: String(rounded), offerDriver: 'ebitda' });
                 }}
                 min={1}
                 max={10}
                 step={0.1}
-                disabled={isLocked || local.offerDriver === 'target_price'}
+                disabled={isLocked}
                 className="py-2"
               />
               <div className="flex justify-between text-sm text-muted-foreground mt-1">
@@ -452,17 +459,25 @@ export default function ValuationSection({
               <Input
                 type="text"
                 inputMode="decimal"
-                value={displayValues.ebitdaMultiple}
-                onFocus={handleFocus}
+                value={multipleInputFocused
+                  ? displayValues.ebitdaMultiple
+                  : (effectiveMultiple != null ? effectiveMultiple.toFixed(2) : 'n/a')}
+                onFocus={() => {
+                  setMultipleInputFocused(true);
+                  handleFocus();
+                  setDisplayValues(prev => ({ ...prev, ebitdaMultiple: local.ebitdaMultiple.toFixed(2) }));
+                }}
                 onBlur={() => {
+                  setMultipleInputFocused(false);
                   handleBlur();
                   const parsed = parseFloat(displayValues.ebitdaMultiple);
                   if (isNaN(parsed) || displayValues.ebitdaMultiple.trim() === '') {
-                    setDisplayValues(prev => ({ ...prev, ebitdaMultiple: String(local.ebitdaMultiple) }));
+                    setDisplayValues(prev => ({ ...prev, ebitdaMultiple: local.ebitdaMultiple.toFixed(2) }));
                   } else {
                     const clamped = Math.max(1, Math.min(10, Math.round(parsed * 10) / 10));
-                    setDisplayValues(prev => ({ ...prev, ebitdaMultiple: String(clamped) }));
-                    updateLocal('ebitdaMultiple', clamped, 'ebitdaMultiple');
+                    setDisplayValues(prev => ({ ...prev, ebitdaMultiple: clamped.toFixed(2) }));
+                    setLocal(prev => ({ ...prev, ebitdaMultiple: clamped, offerDriver: 'ebitda' }));
+                    if (!isLocked) debounceSave({ ebitdaMultiple: String(clamped), offerDriver: 'ebitda' });
                   }
                 }}
                 onChange={e => {
@@ -470,60 +485,69 @@ export default function ValuationSection({
                   setDisplayValues(prev => ({ ...prev, ebitdaMultiple: raw }));
                   const parsed = parseFloat(raw);
                   if (!isNaN(parsed)) {
-                    setLocal(prev => ({ ...prev, ebitdaMultiple: parsed }));
+                    setLocal(prev => ({ ...prev, ebitdaMultiple: parsed, offerDriver: 'ebitda' }));
                   }
                 }}
-                disabled={isLocked || local.offerDriver === 'target_price'}
+                disabled={isLocked}
                 className="text-center text-base font-semibold"
               />
               {local.offerDriver === 'target_price' && (
                 <p className="text-xs text-muted-foreground text-center mt-1">
                   {localCalcs?.impliedMultiple != null
-                    ? `${localCalcs.impliedMultiple.toFixed(1)}x (implied)`
+                    ? `${localCalcs.impliedMultiple.toFixed(2)}x (implied)`
                     : 'n/a (implied)'}
                 </p>
               )}
             </div>
           </div>
 
-          {local.offerDriver === 'target_price' && (
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-muted-foreground flex-1">Target offer price</span>
-              <div className="w-36 shrink-0">
-                <div className="relative">
-                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">£</span>
-                  <Input
-                    type="text"
-                    inputMode="numeric"
-                    value={displayValues.targetOfferPrice ?? String(local.targetOfferPrice)}
-                    onFocus={handleFocus}
-                    onBlur={() => {
-                      handleBlur();
-                      const raw = displayValues.targetOfferPrice ?? '';
-                      const parsed = parseFloat(raw);
-                      if (isNaN(parsed) || raw.trim() === '') {
-                        setDisplayValues(prev => ({ ...prev, targetOfferPrice: String(local.targetOfferPrice) }));
-                      } else {
-                        setDisplayValues(prev => ({ ...prev, targetOfferPrice: String(parsed) }));
-                        updateLocal('targetOfferPrice', parsed, 'targetOfferPrice');
-                      }
-                    }}
-                    onChange={e => {
-                      const raw = e.target.value;
-                      setDisplayValues(prev => ({ ...prev, targetOfferPrice: raw }));
-                      const parsed = parseFloat(raw);
-                      if (!isNaN(parsed)) {
-                        setLocal(prev => ({ ...prev, targetOfferPrice: parsed }));
-                      }
-                    }}
-                    disabled={isLocked}
-                    className="pl-7 text-right text-base h-9"
-                    placeholder="0"
-                  />
-                </div>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-muted-foreground flex-1">Target offer price</span>
+            <div className="w-36 shrink-0">
+              <div className="relative">
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">£</span>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  value={targetInputFocused
+                    ? (displayValues.targetOfferPrice ?? '')
+                    : (local.offerDriver === 'target_price'
+                        ? String(local.targetOfferPrice || 0)
+                        : String(Math.round(offerPrice)))}
+                  onFocus={() => {
+                    setTargetInputFocused(true);
+                    handleFocus();
+                    const seed = local.offerDriver === 'target_price' ? local.targetOfferPrice : offerPrice;
+                    setDisplayValues(prev => ({ ...prev, targetOfferPrice: String(Math.round(seed)) }));
+                  }}
+                  onBlur={() => {
+                    setTargetInputFocused(false);
+                    handleBlur();
+                    const raw = displayValues.targetOfferPrice ?? '';
+                    const parsed = parseFloat(raw);
+                    if (isNaN(parsed) || raw.trim() === '') {
+                      setDisplayValues(prev => ({ ...prev, targetOfferPrice: String(local.targetOfferPrice) }));
+                    } else {
+                      setDisplayValues(prev => ({ ...prev, targetOfferPrice: String(parsed) }));
+                      setLocal(prev => ({ ...prev, targetOfferPrice: parsed, offerDriver: 'target_price' }));
+                      if (!isLocked) debounceSave({ targetOfferPrice: String(parsed), offerDriver: 'target_price' });
+                    }
+                  }}
+                  onChange={e => {
+                    const raw = e.target.value;
+                    setDisplayValues(prev => ({ ...prev, targetOfferPrice: raw }));
+                    const parsed = parseFloat(raw);
+                    if (!isNaN(parsed)) {
+                      setLocal(prev => ({ ...prev, targetOfferPrice: parsed, offerDriver: 'target_price' }));
+                    }
+                  }}
+                  disabled={isLocked}
+                  className="pl-7 text-right text-base h-9"
+                  placeholder="0"
+                />
               </div>
             </div>
-          )}
+          </div>
 
           <div className="bg-muted/50 rounded-lg p-4">
             {receivablesInterestAnnual > 0 && (
@@ -544,7 +568,9 @@ export default function ValuationSection({
             )}
             <p className="text-sm text-muted-foreground">Enterprise Value</p>
             <p className="text-xl font-bold">
-              EV = {formatCurrency(valuationEbitda)} × {local.ebitdaMultiple.toFixed(1)}x = {formatCurrency(ev)}
+              {effectiveMultiple != null
+                ? `EV = ${formatCurrency(valuationEbitda)} × ${effectiveMultiple.toFixed(2)}x${local.offerDriver === 'target_price' ? ' (implied)' : ''} = ${formatCurrency(ev)}`
+                : `EV = ${formatCurrency(ev)}`}
             </p>
             {receivablesInterestAnnual > 0 && (
               <p className="text-xs text-muted-foreground mt-1">
