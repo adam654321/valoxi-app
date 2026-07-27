@@ -831,3 +831,36 @@ describe('Forward-Path Regression Gate — Layer A (15 scenarios)', () => {
     expect(ebitda['2026']).toBe(13057);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// calculateEBITDA — pure unit tests (G.1-G.3)
+// Covers the abs() normalisation added for credit-balance D&A sign convention.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('calculateEBITDA — pure unit (G.1-G.3)', () => {
+  // G.1 — negative D&A (credit-balance convention, e.g. tc=220 FY2026)
+  it('G.1: negative D&A returns operatingProfit + abs(depreciationAmortisation)', () => {
+    const result = financialDataService.calculateEBITDA({
+      operatingProfit: '1742396',
+      depreciationAmortisation: '-224650',
+    });
+    expect(result).toBe(1742396 + 224650); // 1967046
+  });
+
+  // G.2 — positive D&A (normal case must be unchanged)
+  it('G.2: positive D&A returns operatingProfit + depreciationAmortisation unchanged', () => {
+    const result = financialDataService.calculateEBITDA({
+      operatingProfit: '2529109',
+      depreciationAmortisation: '293618',
+    });
+    expect(result).toBe(2529109 + 293618); // 2822727
+  });
+
+  // G.3 — null D&A returns operatingProfit only
+  it('G.3: null D&A returns operatingProfit (no addition)', () => {
+    const result = financialDataService.calculateEBITDA({
+      operatingProfit: '820219',
+      depreciationAmortisation: null,
+    });
+    expect(result).toBe(820219);
+  });
+});

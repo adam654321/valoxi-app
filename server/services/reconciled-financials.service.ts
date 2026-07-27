@@ -40,6 +40,7 @@ export interface ReconciledIncomeYear {
  */
 export interface ReconciledSignConventions {
   amountsOwedToDirectors: string;
+  amountsOwedByDirectors: string;
 }
 
 export interface ReconciledFinancials {
@@ -168,7 +169,9 @@ export async function getReconciledFinancials(companyId: number): Promise<Reconc
       costOfSalesBreakdown: row.costOfSalesBreakdown,
       overheadsBreakdown: row.overheadsBreakdown,
       exceptionalItems: row.exceptionalItems,
-      ebitda: op + da,
+      // D&A is economically non-negative; abs() normalises credit-balance sign
+      // convention from extraction (see tc=220 FY2026, tc=219 FY2024).
+      ebitda: op + Math.abs(da),
     };
   }
 
@@ -248,6 +251,8 @@ export async function getReconciledFinancials(companyId: number): Promise<Reconc
   const _signConventions: ReconciledSignConventions = {
     amountsOwedToDirectors:
       'LIABILITY — money the company owes to its directors. Both positive and negative stored values represent this liability; a negative sign reflects the source document\'s credit-balance notation, not a reversal of direction. Use abs(value) as the liability amount.',
+    amountsOwedByDirectors:
+      'ASSET — money directors owe TO the company (a debtor). Use abs(value). In any EV-to-equity bridge this ADDS to equity value (enter as a negative deduction), never a subtraction.',
   };
 
   return { incomeByYear, balanceSheetsByYear, currentBalanceSheet, _signConventions };

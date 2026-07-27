@@ -822,7 +822,9 @@ export class FinancialDataService {
     
     if (isNaN(operatingProfit)) return null;
     
-    return operatingProfit + (isNaN(depreciation) ? 0 : depreciation);
+    // D&A is economically non-negative; abs() normalises credit-balance sign
+    // convention from extraction (see tc=220 FY2026, tc=219 FY2024).
+    return operatingProfit + (isNaN(depreciation) ? 0 : Math.abs(depreciation));
   }
 
   calculateGrossMargin(incomeStatement: {

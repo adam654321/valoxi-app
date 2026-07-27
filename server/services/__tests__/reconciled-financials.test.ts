@@ -28,6 +28,7 @@ import {
   targetCompanies,
   financialPeriods,
   balanceSheets,
+  incomeStatements,
 } from '@shared/schema';
 import { getReconciledFinancials, isBalanceSheetEmpty } from '../reconciled-financials.service';
 import { fetchReportedEbitdaByYear } from '../deal-model.service';
@@ -447,5 +448,73 @@ describe('getReconciledFinancials — _signConventions note (F.1)', () => {
     // Must appear in the top-level serialised output alongside the negative figure
     expect(serialised).toContain('_signConventions');
     expect(serialised).toContain('-149587.37');
+  });
+
+  // F.2 — amountsOwedByDirectors key is present with ASSET note
+  it('F.2: _signConventions.amountsOwedByDirectors is present and states ASSET', async () => {
+    const reconciled = await getReconciledFinancials(companyId);
+
+    expect(typeof reconciled._signConventions.amountsOwedByDirectors).toBe('string');
+    expect(reconciled._signConventions.amountsOwedByDirectors).toContain('ASSET');
+    expect(reconciled._signConventions.amountsOwedByDirectors).toContain('ADDS to equity value');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DB integration tests — negative D&A abs() normalisation (G.4)
+// Fixture: one income_statements row with depreciationAmortisation = -224650
+// mirrors tc=220 FY2026 (credit-balance extraction artefact).
+// ─────────────────────────────────────────────────────────────────────────────
+describe('getReconciledFinancials — negative D&A abs() normalisation (G.4)', () => {
+  let companyId: number;
+  const periodIds: number[] = [];
+  const mkToken = () => `rf-da-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+  beforeAll(async () => {
+    const [co] = await db
+      .insert(targetCompanies)
+      .values({ userCompanyId: USER_COMPANY_ID, companyName: `RF-NegDA-${mkToken()}` })
+      .returning();
+    companyId = co.id;
+
+    const [fp] = await db
+      .insert(financialPeriods)
+      .values({
+        targetCompanyId: companyId,
+        periodType: 'annual',
+        periodEnd: '2026-05-31',
+        fiscalYear: 2026,
+        isFullYear: true,
+        sourceTier: 'management',
+      })
+      .returning();
+    periodIds.push(fp.id);
+
+    await db.insert(incomeStatements).values({
+      targetCompanyId: companyId,
+      financialPeriodId: fp.id,
+      operatingProfit: '1742396',
+      depreciationAmortisation: '-224650',  // credit-balance sign (tc=220 FY2026 shape)
+      isFullYear: true,
+    });
+  });
+
+  afterAll(async () => {
+    await db.delete(incomeStatements).where(eq(incomeStatements.targetCompanyId, companyId));
+    if (periodIds.length > 0) {
+      await db.delete(financialPeriods).where(inArray(financialPeriods.id, periodIds));
+    }
+    await db.delete(targetCompanies).where(eq(targetCompanies.id, companyId));
+  });
+
+  // G.4 — negative D&A stored as -224650 must produce ebitda = 1742396 + 224650 = 1967046
+  it('G.4: incomeByYear ebitda with negative D&A = operatingProfit + abs(D&A)', async () => {
+    const reconciled = await getReconciledFinancials(companyId);
+    const entry = reconciled.incomeByYear['2026'];
+
+    expect(entry).toBeDefined();
+    expect(entry.ebitda).toBe(1742396 + 224650); // 1967046
+    // Raw D&A preserved as stored (negative) — only the computed ebitda is normalised
+    expect(entry.depreciationAmortisation).toBe('-224650');
   });
 });

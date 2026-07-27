@@ -53,10 +53,19 @@ Calculate: Enterprise Value = Adjusted EBITDA x Selected Multiple
 Starting from Enterprise Value:
 + Cash at Bank (from balance sheet)
 - Long-Term Debt (bank loans, HP obligations)
-- Director Loans (if owed by company to directors)
-- Recommended Bad Debt Provision (from Risk Expert)
-- Working Capital Adjustment (if normalised working capital differs from actual)
+- Director Loans: DIRECTION MATTERS. If the COMPANY owes the DIRECTORS
+  (amountsOwedToDirectors), enter the balance as a POSITIVE
+  minus_director_loans (a deduction). If the DIRECTORS owe the COMPANY
+  (amountsOwedByDirectors), that balance is an ASSET: enter it as a NEGATIVE
+  minus_director_loans, which adds it to equity value, and state the
+  direction explicitly in your narrative.
+- Recommended Bad Debt Provision: ONLY the figure the Risk Expert states. If
+  the Risk Expert states none, use 0. Never estimate one yourself.
+- Working Capital Adjustment: ONLY if evidenced by figures in your input,
+  citing them. Otherwise 0. Never estimate.
 = Equity Value (what the buyer would pay for the shares)
+Every bridge line you populate with a non-zero value must be traceable to a
+figure in your input. Unevidenced means 0.
 
 3. ASSET-BASED VALUATION (Cross-Check)
 - Net Asset Value from latest balance sheet
