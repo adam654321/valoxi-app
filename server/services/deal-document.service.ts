@@ -817,6 +817,8 @@ export class DealDocumentService {
       feeLoanArrangementAmount: model.feeLoanArrangementAmount ?? '0',
       feeDealMakerAmount: model.feeDealMakerAmount ?? '0',
       customFees: (model.customFees as Array<{ label: string; amount: string | number }>) ?? [],
+      offerDriver: model.offerDriver ?? 'ebitda',
+      targetOfferPrice: model.targetOfferPrice ?? null,
     };
 
     const adjustmentInputs = adjustments.map(a => ({

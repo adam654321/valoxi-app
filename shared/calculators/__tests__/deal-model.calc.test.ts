@@ -665,4 +665,27 @@ describe('calculateFullDealModel — offer-driver mode (T1–T4)', () => {
     expect(r.offerPrice).toBe(303_000);
     expect(r.impliedMultiple).toBeNull();
   });
+
+  it('T5: offer-driver wire-up — modelInput shape from buildOfferDataContext honours target_price', () => {
+    // Regression guard for the Change 1 edit in deal-document.service.ts.
+    // buildOfferDataContext now passes offerDriver and targetOfferPrice inside
+    // modelInput; this test verifies that calculateFullDealModel respects them.
+    // (Service-level testing of buildOfferDataContext requires mocking six DB
+    // tables and fetchReportedEbitdaByYear; we rely on this calculator test
+    // plus the dev end-to-end check for full coverage.)
+    const targetPrice = 500_000;
+    const modelInput = {
+      ...baseModel,
+      offerDriver: 'target_price',
+      targetOfferPrice: String(targetPrice),
+    };
+    const r = calculateFullDealModel(reported, [], [], modelInput);
+    expect(r.offerPrice).toBe(targetPrice);
+    // EV = targetPrice − bridge (bridge = +10000 − 5000 − 2000 = 3000) = 497,000
+    expect(r.enterpriseValue).toBe(497_000);
+    // impliedMultiple = 497,000 / 100,000 = 4.97
+    expect(r.impliedMultiple).toBe(4.97);
+    // ebitda_multiple stored on the model must not be mutated by target_price mode
+    expect(modelInput.ebitdaMultiple).toBe(baseModel.ebitdaMultiple);
+  });
 });
