@@ -543,14 +543,22 @@ export class DealModelService {
 
     const result = calculateFullDealModel(reportedEbitda, adjustments, fundingLines, modelInput, sellerPayments, contingentConsideration);
 
-    await dealModelRepository.update(model.id, {
+    const updatePayload: Record<string, string> = {
       calculatedEbitda: String(result.averageAdjustedEbitda),
       adjustedEbitda: String(result.averageAdjustedEbitda),
       enterpriseValue: String(result.enterpriseValue),
       totalPurchasePrice: String(result.offerPrice),
       totalFundingAvailable: String(result.totalFunded),
       equityRequired: String(result.fundingGap),
-    });
+    };
+    if (
+      model.offerDriver === 'target_price' &&
+      result.impliedMultiple != null &&
+      Number.isFinite(result.impliedMultiple)
+    ) {
+      updatePayload.ebitdaMultiple = String(result.impliedMultiple);
+    }
+    await dealModelRepository.update(model.id, updatePayload);
 
     return result;
   }

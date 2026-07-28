@@ -153,7 +153,7 @@ export function buildOfferLetterHtml(data: any): string {
   if (data.breakdownText) {
     data.breakdownText.split('\n').filter((l: string) => l.trim()).forEach((l: string) => breakdownLines.push(l));
   } else {
-    breakdownLines.push(`Enterprise Value (Adjusted EBITDA × ${raw.ebitdaMultiple || 0} multiple): ${fmt(raw.enterpriseValue)}`);
+    breakdownLines.push(`Enterprise Value (Adjusted EBITDA × ${Number(raw.ebitdaMultiple || 0).toFixed(2)} multiple): ${fmt(raw.enterpriseValue)}`);
     if (raw.excessCash > 0) breakdownLines.push(`Plus Excess Cash: ${fmt(raw.excessCash)}`);
     if (raw.propertyValue > 0) breakdownLines.push(`Plus Property Value: ${fmt(raw.propertyValue)}`);
     if (raw.primaryDebt > 0) breakdownLines.push(`Less Primary Debt: (${fmt(raw.primaryDebt)})`);
@@ -227,7 +227,7 @@ export function buildHoTHtml(data: any): string {
       breakdownLines.push(l.replace(/^Total Offer Price:/i, 'Total Consideration:'));
     });
   } else {
-    breakdownLines.push(`Enterprise Value (Adjusted EBITDA × ${raw.ebitdaMultiple || 0} multiple): ${fmt(raw.enterpriseValue)}`);
+    breakdownLines.push(`Enterprise Value (Adjusted EBITDA × ${Number(raw.ebitdaMultiple || 0).toFixed(2)} multiple): ${fmt(raw.enterpriseValue)}`);
     if (raw.excessCash > 0)        breakdownLines.push(`Plus Excess Cash: ${fmt(raw.excessCash)}`);
     if (raw.propertyValue > 0)     breakdownLines.push(`Plus Property Value: ${fmt(raw.propertyValue)}`);
     if (raw.primaryDebt > 0)       breakdownLines.push(`Less Primary Debt: (${fmt(raw.primaryDebt)})`);

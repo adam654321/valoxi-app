@@ -924,10 +924,10 @@ export class DealDocumentService {
       // invoice finance deduction (Adam, Jun 2026): showing the buyer's financing cost on the offer
       // invites seller questions. The buyer keeps the full breakdown on screen, not in the document.
       breakdownLines.push(`Valuation EBITDA: ${fmt(valuationEbitdaForDoc)}`);
-      breakdownLines.push(`Enterprise Value (Valuation EBITDA × ${Number(model.ebitdaMultiple) || 0} multiple): ${fmt(enterpriseValue)}`);
+      breakdownLines.push(`Enterprise Value (Valuation EBITDA × ${(Number(model.ebitdaMultiple) || 0).toFixed(2)} multiple): ${fmt(enterpriseValue)}`);
     } else {
       breakdownLines.push(`Average Adjusted EBITDA: ${fmt(calculations.averageAdjustedEbitda || 0)}`);
-      breakdownLines.push(`Enterprise Value (Adjusted EBITDA × ${Number(model.ebitdaMultiple) || 0} multiple): ${fmt(enterpriseValue)}`);
+      breakdownLines.push(`Enterprise Value (Adjusted EBITDA × ${(Number(model.ebitdaMultiple) || 0).toFixed(2)} multiple): ${fmt(enterpriseValue)}`);
     }
     if (excessCash > 0) breakdownLines.push(`Plus Excess Cash: ${fmt(excessCash)}`);
     if (propertyValue > 0) breakdownLines.push(`Plus Property Value: ${fmt(propertyValue)}`);

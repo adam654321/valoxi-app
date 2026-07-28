@@ -333,6 +333,8 @@ export default function DealModeller({ companyId }: DealModellerProps) {
     const modelInput: DealModelInput = {
       averagingYears: modelDetails.averagingYears ?? 3,
       ebitdaMultiple: modelDetails.ebitdaMultiple ?? '3.0',
+      offerDriver: modelDetails.offerDriver ?? 'ebitda',
+      targetOfferPrice: modelDetails.targetOfferPrice ?? null,
       plusExcessCash: modelDetails.plusExcessCash ?? '0',
       minusPrimaryDebt: modelDetails.minusPrimaryDebt ?? '0',
       minusOtherDebt: modelDetails.minusOtherDebt ?? '0',
