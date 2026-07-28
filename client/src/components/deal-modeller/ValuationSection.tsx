@@ -474,7 +474,7 @@ export default function ValuationSection({
                   if (isNaN(parsed) || displayValues.ebitdaMultiple.trim() === '') {
                     setDisplayValues(prev => ({ ...prev, ebitdaMultiple: local.ebitdaMultiple.toFixed(2) }));
                   } else {
-                    const clamped = Math.max(1, Math.min(10, Math.round(parsed * 10) / 10));
+                    const clamped = Math.max(1, Math.min(10, parsed));
                     setDisplayValues(prev => ({ ...prev, ebitdaMultiple: clamped.toFixed(2) }));
                     setLocal(prev => ({ ...prev, ebitdaMultiple: clamped, offerDriver: 'ebitda' }));
                     if (!isLocked) debounceSave({ ebitdaMultiple: String(clamped), offerDriver: 'ebitda' });
