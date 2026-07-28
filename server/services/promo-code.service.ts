@@ -164,9 +164,10 @@ export function getWaitlistPromoCopy(campaign: {
     };
   }
   if (campaign.referralSource === '5d_community' && campaign.freeMonthsTotal > 0) {
+    const monthsWord = campaign.freeMonthsTotal === 1 ? 'month' : 'months';
     return {
-      benefitSentence: `You've been given ${campaign.freeMonthsTotal} months of Valoxi Core free, starting when you sign up. After your free period ends, 15 percent off applies to whatever plan you choose, for life.`,
-      trialLineOverride: `Your ${campaign.freeMonthsTotal} month free period of Valoxi Core starts the moment you sign up.`,
+      benefitSentence: `You've been given ${campaign.freeMonthsTotal} ${monthsWord} of Valoxi Core free, starting when you sign up. After your free period ends, 15 percent off applies to whatever plan you choose, for life.`,
+      trialLineOverride: `Your ${campaign.freeMonthsTotal} ${monthsWord} free period of Valoxi Core starts the moment you sign up.`,
     };
   }
   if (campaign.referralSource === '5d_community' && campaign.freeMonthsTotal === 0) {

@@ -162,9 +162,9 @@ router.post('/checkout', asyncHandler(async (req: Request, res: Response) => {
     checkoutParams.subscription_data = { trial_period_days: trialDays };
   } else {
     checkoutParams.subscription_data = {
-      trial_period_days: 2,
+      trial_period_days: 7,
       metadata: {
-        trial_type: 'standard_48h',
+        trial_type: 'standard_7d',
       },
     };
   }
