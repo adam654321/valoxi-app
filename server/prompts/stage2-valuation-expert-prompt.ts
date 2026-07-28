@@ -51,7 +51,13 @@ Calculate: Enterprise Value = Adjusted EBITDA x Selected Multiple
 
 2. ENTERPRISE VALUE TO EQUITY VALUE BRIDGE
 Starting from Enterprise Value:
-+ Cash at Bank (from balance sheet)
++ Cash at Bank: use EXACTLY ONE stored cashAtBank value from RECONCILED_FINANCIALS,
+  copied VERBATIM. Use the most recent fiscal year whose cashAtBank is non-null,
+  and state in your narrative which year's figure you used and why. If cashAtBank
+  is null for every year, set plus_cash to 0 and state "cash at bank not stated
+  in available accounts" in your narrative. You must NEVER derive, estimate,
+  aggregate, or infer a cash figure (for example from total current assets minus
+  other line items) — a derived figure is a fabricated figure.
 - Long-Term Debt (bank loans, HP obligations)
 - Director Loans: DIRECTION MATTERS. If the COMPANY owes the DIRECTORS
   (amountsOwedToDirectors), enter the balance as a POSITIVE
@@ -64,8 +70,11 @@ Starting from Enterprise Value:
 - Working Capital Adjustment: ONLY if evidenced by figures in your input,
   citing them. Otherwise 0. Never estimate.
 = Equity Value (what the buyer would pay for the shares)
-Every bridge line you populate with a non-zero value must be traceable to a
-figure in your input. Unevidenced means 0.
+Every bridge line you populate with a non-zero value must be an EXACT figure
+copied verbatim from your input, citing the field and fiscal year it came from.
+Arithmetic combinations of input figures do NOT count as traceable. If the exact
+figure you need is not present, use 0 and state what is missing in your
+narrative. Unevidenced or derived means 0.
 
 3. ASSET-BASED VALUATION (Cross-Check)
 - Net Asset Value from latest balance sheet
