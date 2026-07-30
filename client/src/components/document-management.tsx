@@ -654,6 +654,7 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [viewingDocument, setViewingDocument] = useState<Document | null>(null);
   const [showViewer, setShowViewer] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const documentForm = useForm<DocumentFormData>({
@@ -930,9 +931,7 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
   };
 
   const handleDelete = (documentId: number) => {
-    if (confirm("Are you sure you want to delete this document?")) {
-      deleteMutation.mutate(documentId);
-    }
+    setDeleteTargetId(documentId);
   };
 
   const handleCloseViewer = () => {
@@ -1278,6 +1277,32 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
         onClose={handleCloseViewer}
         onDownload={handleDownload}
       />
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={deleteTargetId !== null} onOpenChange={(open) => { if (!open) setDeleteTargetId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete document</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove the document and its analysis data. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={() => {
+                if (deleteTargetId !== null) {
+                  deleteMutation.mutate(deleteTargetId);
+                  setDeleteTargetId(null);
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
