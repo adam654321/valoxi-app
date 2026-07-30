@@ -28,6 +28,11 @@ import {
   incomeStatements,
   balanceSheets,
   ebitdaAdjustments,
+  fileUploadEvents,
+  documentAnalysisResults,
+  documentEvidence,
+  documentEvidencePeriod,
+  documentEvidenceFigure,
 } from '@shared/schema';
 import { reselect } from '../projection-reselect.service';
 import { documentsFilesService } from '../documents-files.service';
@@ -210,5 +215,143 @@ describe('deleteDocument — FK detach (Slice 15)', () => {
       .from(documents)
       .where(eq(documents.id, docAId));
     expect(rows.length).toBe(0);
+  });
+});
+
+describe('evidence-layer FK detach (Slice 1a.1)', () => {
+  let testCompanyId: number;
+  let docId: number;
+  let evidenceId: number;
+
+  beforeAll(async () => {
+    // Resolve a real user in this company so uploadedBy FK is satisfied
+    const [userRow] = await db.select({ id: users.id })
+      .from(users)
+      .where(eq(users.userCompanyId, USER_COMPANY_ID))
+      .limit(1);
+    if (!userRow) throw new Error(`No user found for userCompanyId ${USER_COMPANY_ID} — seed the DB first`);
+    const userId = userRow.id;
+
+    // Test-isolated target company
+    const [company] = await db.insert(targetCompanies).values({
+      userCompanyId: USER_COMPANY_ID,
+      companyName: 'Slice-1a1 Evidence FK Test Co',
+    }).returning();
+    testCompanyId = company.id;
+
+    // file_path prefixed with 'uploads/' → fileStorageService.delete() skips it silently
+    const mkToken = () => `s1a1-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+    // Synthetic document
+    const [doc] = await db.insert(documents).values({
+      targetCompanyId: testCompanyId,
+      uploadedBy: userId,
+      documentName: 'Evidence FK Test Doc',
+      originalFilename: 'evidence-fk-test.pdf',
+      filePath: 'uploads/slice1a1-test.pdf',
+      fileSize: 1000,
+      fileType: 'application/pdf',
+      documentCategory: 'statutory_accounts',
+      publicToken: mkToken(),
+    }).returning();
+    docId = doc.id;
+
+    // File upload event (required for DAR FK)
+    const [event] = await db.insert(fileUploadEvents).values({
+      documentId: docId,
+      targetCompanyId: testCompanyId,
+      uploadedBy: userId,
+      fileName: 'evidence-fk-test.pdf',
+      fileUrl: 'uploads/slice1a1-test.pdf',
+    }).returning();
+
+    // Document analysis result referencing the doc and event
+    const [dar] = await db.insert(documentAnalysisResults).values({
+      documentId: docId,
+      fileUploadEventId: event.id,
+      documentType: 'profit_and_loss',
+      analysisData: { figures: [] },
+    }).returning();
+
+    // Evidence row referencing both the document and the DAR
+    const [ev] = await db.insert(documentEvidence).values({
+      targetCompanyId: testCompanyId,
+      documentId: docId,
+      documentAnalysisResultId: dar.id,
+      documentType: 'profit_and_loss',
+      extractionVersion: 1,
+    }).returning();
+    evidenceId = ev.id;
+
+    // One period and one figure so the child chain is present
+    const [period] = await db.insert(documentEvidencePeriod).values({
+      documentEvidenceId: evidenceId,
+      fiscalYearStated: 2024,
+      periodEnd: '2024-03-31',
+    }).returning();
+
+    await db.insert(documentEvidenceFigure).values({
+      documentEvidencePeriodId: period.id,
+      statementType: 'is',
+      fieldKey: 'revenue',
+      value: '100000',
+      isModelDerived: false,
+    });
+  });
+
+  afterAll(async () => {
+    // Best-effort cleanup — child rows first, then company
+    try {
+      const periods = await db.select({ id: documentEvidencePeriod.id })
+        .from(documentEvidencePeriod)
+        .where(eq(documentEvidencePeriod.documentEvidenceId, evidenceId));
+      for (const p of periods) {
+        await db.delete(documentEvidenceFigure)
+          .where(eq(documentEvidenceFigure.documentEvidencePeriodId, p.id));
+      }
+      await db.delete(documentEvidencePeriod)
+        .where(eq(documentEvidencePeriod.documentEvidenceId, evidenceId));
+      await db.delete(documentEvidence)
+        .where(eq(documentEvidence.id, evidenceId));
+    } catch { /* best-effort */ }
+    try {
+      // document was already deleted by the deleteDocument test; company may remain
+      await db.delete(targetCompanies).where(eq(targetCompanies.id, testCompanyId));
+    } catch { /* best-effort */ }
+  });
+
+  it('deleting the DAR succeeds and evidence row survives with document_analysis_result_id null', async () => {
+    // Confirm the FK is populated before deletion
+    const [evBefore] = await db.select({ darId: documentEvidence.documentAnalysisResultId })
+      .from(documentEvidence)
+      .where(eq(documentEvidence.id, evidenceId));
+    expect(evBefore.darId).not.toBeNull();
+
+    // Delete DAR — must NOT throw document_evidence_analysis_result_id_fkey
+    await expect(
+      db.delete(documentAnalysisResults)
+        .where(eq(documentAnalysisResults.id, evBefore.darId!)),
+    ).resolves.not.toThrow();
+
+    // Evidence row must survive with the FK nulled
+    const [evAfter] = await db.select({ darId: documentEvidence.documentAnalysisResultId })
+      .from(documentEvidence)
+      .where(eq(documentEvidence.id, evidenceId));
+    expect(evAfter).toBeDefined();
+    expect(evAfter.darId).toBeNull();
+  });
+
+  it('deleteDocument succeeds without FK error; evidence row survives with document_id null', async () => {
+    // Core regression guard — must NOT throw document_evidence_document_id_fkey
+    await expect(
+      documentsFilesService.deleteDocument(docId, USER_COMPANY_ID),
+    ).resolves.not.toThrow();
+
+    // Evidence row must survive with document_id nulled by ON DELETE SET NULL
+    const [evAfter] = await db.select({ docId: documentEvidence.documentId })
+      .from(documentEvidence)
+      .where(eq(documentEvidence.id, evidenceId));
+    expect(evAfter).toBeDefined();
+    expect(evAfter.docId).toBeNull();
   });
 });

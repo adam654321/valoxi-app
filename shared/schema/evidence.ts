@@ -20,10 +20,10 @@ export const documentEvidence = pgTable('document_evidence', {
     .references(() => targetCompanies.id)
     .notNull(),
   documentId: integer('document_id')
-    .references(() => documents.id)
-    .notNull(),
+    .references(() => documents.id, { onDelete: 'set null' }),
   documentAnalysisResultId: integer('document_analysis_result_id').references(
-    () => documentAnalysisResults.id
+    () => documentAnalysisResults.id,
+    { onDelete: 'set null' }
   ),
   documentType: varchar('document_type', { length: 100 }).notNull(),
   extractionVersion: integer('extraction_version').notNull().default(1),
