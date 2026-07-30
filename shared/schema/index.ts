@@ -13,6 +13,7 @@ export * from './dashboard';
 export * from './deal-documents';
 export * from './due-diligence';
 export * from './value-creation';
+export * from './evidence';
 
 // Relations
 export * from './relations';
