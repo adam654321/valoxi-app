@@ -20,6 +20,7 @@ server/public/
 
 # Database dumps and backups
 *.sql
+!migrations/*.sql
 *.dump
 *.dump.gz
 backup_*
