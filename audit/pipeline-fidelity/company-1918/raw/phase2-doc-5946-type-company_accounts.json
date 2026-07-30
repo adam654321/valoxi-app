@@ -1,0 +1,207 @@
+{
+  "document": "company_accounts",
+  "source": "statutory_accounts",
+  "profit_and_loss": {
+    "document": "profit_and_loss",
+    "source": "management_accounts",
+    "years_covered": [
+      2023,
+      2024
+    ],
+    "period_ends": {
+      "2023": "2023-12-31",
+      "2024": "2024-12-31"
+    },
+    "months_covered": {
+      "2023": 1,
+      "2024": 11
+    },
+    "report_date": null,
+    "years": {
+      "2023": {
+        "year": 2023,
+        "profit_and_loss": {
+          "revenue": 25279.12,
+          "cost_of_sales": null,
+          "gross_profit": 25279.12,
+          "administrative_expenses": null,
+          "depreciation_amortisation": null,
+          "other_operating_income": null,
+          "operating_profit": null,
+          "interest_receivable": null,
+          "interest_payable": null,
+          "profit_before_tax": null,
+          "corporation_tax": null,
+          "net_profit": null
+        },
+        "revenue_breakdown": {
+          "by_product": {
+            "Retainer Fees": 20964.56,
+            "Project/Recharge": 4314.56
+          },
+          "by_segment": {
+            "Foresight Associates": 5491.36,
+            "Hotspex": 4454.68,
+            "InsightsNow": 3922.4,
+            "L&E Research": 3149.69,
+            "WIN": 3519.37,
+            "Impact Research": 3000,
+            "AIDA": 1315.34,
+            "BIC SA": 944.22
+          }
+        },
+        "cost_of_sales_breakdown": {
+          "direct_materials": null,
+          "direct_labour": null,
+          "subcontractor_costs": null,
+          "other_direct_costs": null
+        },
+        "overheads_breakdown": {
+          "staff_wages_salaries": null,
+          "directors_salaries": null,
+          "directors_pension": null,
+          "employers_national_insurance": null,
+          "staff_pension_contributions": null,
+          "staff_training_recruitment": null,
+          "use_of_home_as_office": null,
+          "rent_rates": null,
+          "utilities": null,
+          "insurance": null,
+          "accountancy_bookkeeping": null,
+          "professional_fees": null,
+          "software_subscriptions": null,
+          "computer_costs": null,
+          "it_support_hosting": null,
+          "telecommunications": null,
+          "printing_stationery": null,
+          "postage_courier": null,
+          "subscriptions_memberships": null,
+          "bank_charges": null,
+          "advertising_marketing": null,
+          "travel_subsistence": null,
+          "motor_expenses": null,
+          "repairs_maintenance": null,
+          "depreciation": null,
+          "amortisation": null,
+          "other_overheads": null
+        },
+        "total_staff_costs": null,
+        "total_directors_remuneration": null,
+        "dividends_paid": null,
+        "exceptional_items": [],
+        "financial_ratios": {
+          "gross_margin_percent": 100,
+          "net_margin_percent": null,
+          "interest_coverage_ratio": null
+        }
+      },
+      "2024": {
+        "year": 2024,
+        "profit_and_loss": {
+          "revenue": 376313.87,
+          "cost_of_sales": null,
+          "gross_profit": 376313.87,
+          "administrative_expenses": null,
+          "depreciation_amortisation": null,
+          "other_operating_income": null,
+          "operating_profit": null,
+          "interest_receivable": null,
+          "interest_payable": null,
+          "profit_before_tax": null,
+          "corporation_tax": null,
+          "net_profit": null
+        },
+        "revenue_breakdown": {
+          "by_product": {
+            "Retainer Fees": 235421.15,
+            "Project/Design Fees": 140892.72
+          },
+          "by_segment": {
+            "L&E Research": 64553.82,
+            "InsightsNow": 46353.77,
+            "Foresight Associates": 44046.75,
+            "WIN": 38228.44,
+            "Integro": 46829.3,
+            "RFI Global": 16500,
+            "Forsta": 15427.18,
+            "Hotspex": 17736.21,
+            "Empathy Research": 29563.35,
+            "Inspirient GmbH": 12749.64,
+            "Illumina Research Partners": 10656.29,
+            "Candex Solutions (Flora)": 8318.15,
+            "Bounce Insights": 12474.16
+          }
+        },
+        "cost_of_sales_breakdown": {
+          "direct_materials": null,
+          "direct_labour": null,
+          "subcontractor_costs": null,
+          "other_direct_costs": null
+        },
+        "overheads_breakdown": {
+          "staff_wages_salaries": null,
+          "directors_salaries": null,
+          "directors_pension": null,
+          "employers_national_insurance": null,
+          "staff_pension_contributions": null,
+          "staff_training_recruitment": null,
+          "use_of_home_as_office": null,
+          "rent_rates": null,
+          "utilities": null,
+          "insurance": null,
+          "accountancy_bookkeeping": null,
+          "professional_fees": null,
+          "software_subscriptions": null,
+          "computer_costs": null,
+          "it_support_hosting": null,
+          "telecommunications": null,
+          "printing_stationery": null,
+          "postage_courier": null,
+          "subscriptions_memberships": null,
+          "bank_charges": null,
+          "advertising_marketing": null,
+          "travel_subsistence": null,
+          "motor_expenses": null,
+          "repairs_maintenance": null,
+          "depreciation": null,
+          "amortisation": null,
+          "other_overheads": null
+        },
+        "total_staff_costs": null,
+        "total_directors_remuneration": null,
+        "dividends_paid": null,
+        "exceptional_items": [],
+        "financial_ratios": {
+          "gross_margin_percent": 100,
+          "net_margin_percent": null,
+          "interest_coverage_ratio": null
+        }
+      }
+    },
+    "summary_insights": [
+      "Revenue shows significant momentum, with 2024 year-to-date (11 months) reaching £376,314 compared to the December 2023 baseline.",
+      "The business maintains a healthy mix of recurring revenue, with retainers accounting for approximately 63% of total 2024 billings.",
+      "Client concentration is notable, with the top five clients (L&E Research, InsightsNow, Integro, Foresight, and WIN) representing 64% of 2024 revenue.",
+      "Strong expansion into project-based work is evident in 2024, particularly in brand strategy and website design for L&E Research and RFI Global.",
+      "Geographic reach is diverse, with significant billings to entities in the USA, Australia, and Europe (Sweden/Germany).",
+      "The absence of overhead and cost of sales data in the provided transaction list prevents a full assessment of net profitability or interest coverage.",
+      "Service diversification is improving, with new revenue streams from training (MRS, The Research Society) and software-related licensing (Inspirient)."
+    ]
+  },
+  "balance_sheet": {
+    "document": "balance_sheet",
+    "source": "statutory",
+    "years_covered": [],
+    "period_ends": {},
+    "months_covered": {},
+    "report_date": null,
+    "years": {},
+    "summary_insights": [
+      "The provided document contains sales transaction data (income) rather than a balance sheet.",
+      "No balance sheet fields (assets, liabilities, or equity) could be extracted from the transaction list.",
+      "Financial ratios cannot be calculated as the document lacks a snapshot of the company's financial position.",
+      "The data shows active revenue generation across multiple international clients including Foresight Associates and WIN.",
+      "A full balance sheet document is required to assess liquidity, gearing, and net asset growth."
+    ]
+  }
+}

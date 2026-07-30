@@ -1,0 +1,116 @@
+{
+  "expert": "valuation",
+  "company_name": "[AUDIT-218] Canoports UK Limited",
+  "analysis_date": "2025-05-22",
+  "score": 55,
+  "confidence": "low",
+  "ebitda_multiple_valuation": {
+    "adjusted_ebitda_base": 1705875,
+    "sector_multiple_range": {
+      "low": 3.5,
+      "mid": 4.5,
+      "high": 6
+    },
+    "selected_multiple": 4.5,
+    "multiple_justification": "A mid-range multiple of 4.5x is selected. The business qualifies for the £10M-£20M revenue bracket (3.5x-7.0x guardrail). While it has a strong niche and significant scale, the lack of P&L transparency and aging asset base prevent a premium multiple.",
+    "premium_factors_applied": [
+      "Revenue scale (£18.3m) provides platform quality",
+      "Niche focus in specialized canopy systems",
+      "Strong liquidity and debt-free status"
+    ],
+    "discount_factors_applied": [
+      "Missing P&L data creates significant earnings quality risk",
+      "Aging asset base (60% depreciated) suggests future CapEx requirements",
+      "High working capital intensity and cash absorption"
+    ],
+    "enterprise_value_range": {
+      "conservative": 5970562,
+      "base": 7676437,
+      "optimistic": 9382312
+    }
+  },
+  "ev_to_equity_bridge": {
+    "enterprise_value_base": 7676437,
+    "plus_cash": 2949661,
+    "minus_long_term_debt": 3867,
+    "minus_director_loans": 0,
+    "minus_bad_debt_provision": 0,
+    "minus_working_capital_adjustment": 0,
+    "equity_value": {
+      "conservative": 8916356,
+      "base": 10622231,
+      "optimistic": 12328106
+    }
+  },
+  "asset_based_valuation": {
+    "net_asset_value": 7873818,
+    "property_adjustment": 0,
+    "bad_debt_adjustment": 0,
+    "adjusted_nav": 7873818,
+    "nav_as_floor": true
+  },
+  "revenue_multiple_crosscheck": {
+    "latest_revenue": 18333750,
+    "revenue_multiple_range": {
+      "low": 0.4,
+      "high": 0.8
+    },
+    "implied_ev_range": {
+      "low": 7333500,
+      "high": 14667000
+    }
+  },
+  "valuation_summary": {
+    "recommended_range": {
+      "equity_value_low": 8916000,
+      "equity_value_mid": 10622000,
+      "equity_value_high": 12328000
+    },
+    "primary_methodology": "ebitda_multiple",
+    "cross_check_alignment": "moderate"
+  },
+  "sensitivity": {
+    "ebitda_plus_10pct": {
+      "enterprise_value": 8444081,
+      "equity_value": 11389875
+    },
+    "ebitda_minus_10pct": {
+      "enterprise_value": 6908793,
+      "equity_value": 9854587
+    },
+    "multiple_plus_half": {
+      "enterprise_value": 8529375,
+      "equity_value": 11475169
+    },
+    "multiple_minus_half": {
+      "enterprise_value": 6823500,
+      "equity_value": 9769294
+    },
+    "key_customer_loss_impact": "Moderate; while specific concentration is unknown, the divisional structure provides some revenue insulation.",
+    "director_replacement_impact": 127500
+  },
+  "seller_expectations": {
+    "likely_seller_expectation_range": {
+      "low": 12000000,
+      "high": 18000000
+    },
+    "seller_anchor_points": [
+      "Strong cash balance of £2.95m",
+      "High Net Asset Value of £7.87m",
+      "Revenue scale of £18m+"
+    ],
+    "negotiation_gap_assessment": "Significant. The seller is likely to anchor on the high revenue and cash position, potentially seeking a 1x Revenue multiple (£18m) or a high EBITDA multiple on unadjusted figures. The buyer will focus on the £127.5k in necessary EBITDA deductions and the aging asset base."
+  },
+  "key_findings": [
+    "The business is exceptionally liquid with nearly £3m in cash and a current ratio of 4.44.",
+    "Valuation is heavily dependent on an inferred EBITDA, as full P&L data was missing from the reconciled financials.",
+    "The 2022 investment in a powder coating line is a key value driver, though other assets are 60% depreciated.",
+    "The business has successfully deleveraged, making it an attractive target for leveraged buyouts."
+  ],
+  "red_flags": [
+    "Missing P&L data prevents a definitive assessment of operating margins.",
+    "Significant increase in Net Working Capital (£7.07m) suggests cash is being trapped in the business cycle.",
+    "Lack of a qualified Finance Director for a business of this scale requires a post-acquisition cost adjustment."
+  ],
+  "narrative": "The valuation of Canoports UK Limited is characterized by a strong balance sheet but limited income statement visibility. Based on inferred revenue of £18.3m and a conservative 10% EBITDA margin (adjusted for FD replacement and maintenance capex), we arrive at an Adjusted EBITDA of approximately £1.7m. Using a 4.5x multiple—appropriate for a manufacturing business of this scale—the Enterprise Value is estimated at £7.68m. After adding the verbatim cash balance of £2,949,661 (from the 2026 Current Position) and deducting the remaining long-term debt of £3,867 (2026), the Base Equity Value is £10.62m. The high Net Asset Value of £7.87m provides a strong floor for the valuation. However, the 'low' confidence rating reflects the necessity of verifying the inferred revenue and margin data during due diligence, as any deviation in EBITDA will significantly swing the final price."
+}

@@ -1,0 +1,111 @@
+{
+  "expert": "quality_of_earnings",
+  "company_name": "[AUDIT-190] Spruce Pools",
+  "analysis_date": "2024-05-22",
+  "score": 62,
+  "confidence": "high",
+  "reported_figures": {
+    "operating_profit": 227845,
+    "depreciation": 71117,
+    "amortisation": 0,
+    "reported_ebitda": 298962,
+    "source_year": "2025"
+  },
+  "add_backs": [
+    {
+      "item": "Excess Directors Pension Contributions",
+      "category": "owner_salary",
+      "amount": 60000,
+      "recurrence": "recurring",
+      "year": 2025,
+      "justification": "The company pays £60,000 into directors' pensions annually (2023-2025), which is a discretionary benefit that would not be required for a replacement manager.",
+      "confidence": "high",
+      "defensibility_score": 9,
+      "case_for_inclusion": "Pension contributions for owners are a form of profit extraction and are not part of the market-rate compensation for a replacement manager.",
+      "case_for_exclusion": "The seller may argue that a high-level executive would expect a significant pension package as part of their total remuneration."
+    },
+    {
+      "item": "Personal Use of Home as Office",
+      "category": "personal_expense",
+      "amount": 1700,
+      "recurrence": "recurring",
+      "year": 2025,
+      "justification": "Identified in overheads breakdown as a recurring personal expense for the directors.",
+      "confidence": "high",
+      "defensibility_score": 10,
+      "case_for_inclusion": "This is a non-business expense that will not be incurred by a corporate buyer.",
+      "case_for_exclusion": "The amount is immaterial and the seller may argue it covers legitimate business use of residential space."
+    }
+  ],
+  "deductions": [
+    {
+      "item": "Replacement Management Salary Adjustment",
+      "category": "replacement_salary",
+      "amount": 48400,
+      "recurrence": "recurring",
+      "year": 2025,
+      "justification": "Current director salary is £9,100. For a £2.3m revenue business, a replacement MD market rate is £57,500 (mid-point of £45k-£70k range).",
+      "confidence": "high",
+      "defensibility_score": 8,
+      "case_for_inclusion": "The current salary is significantly below market rate, and a buyer must account for the true cost of hiring a manager to run the business.",
+      "case_for_exclusion": "The seller may argue that the existing staff structure handles most operations, requiring only a part-time or lower-cost manager."
+    }
+  ],
+  "total_add_backs": 61700,
+  "total_deductions": 48400,
+  "adjusted_ebitda": {
+    "conservative": 312262,
+    "base": 312262,
+    "optimistic": 312262
+  },
+  "adjustment_summary": {
+    "reported_ebitda": 298962,
+    "plus_add_backs": 61700,
+    "minus_deductions": 48400,
+    "equals_adjusted_ebitda_base": 312262
+  },
+  "director_salary_analysis": {
+    "directors": [
+      {
+        "name": "Combined Directors",
+        "current_salary": 9100,
+        "estimated_market_rate": 57500,
+        "benchmark_range_used": "Revenue £1M-£5M: Working MD/Owner-Director (£45,000–£70,000)",
+        "adjustment": 48400,
+        "adjustment_type": "deduction"
+      }
+    ]
+  },
+  "sustainability_assessment": {
+    "sustainable_for_3_years": true,
+    "key_assumptions": [
+      "Service and maintenance revenue remains stable at ~£1m per annum.",
+      "Gross margins stabilize at 29% and do not continue the downward trend seen since 2022.",
+      "The high cash balance is maintained to support working capital without debt."
+    ],
+    "sensitivity_factors": [
+      "Material cost inflation in the 'Renovation and New Build' segment.",
+      "Ability to pass on price increases to long-term maintenance contract customers."
+    ],
+    "upside_scenarios": [
+      "Operational efficiencies in labor allocation (reversing the 2024 staff cost spike).",
+      "Expansion of the higher-margin 'Chemicals and products' sales segment."
+    ],
+    "downside_scenarios": [
+      "Loss of key technical staff in the service department.",
+      "Further erosion of gross margins due to competitive pricing in the construction sector."
+    ]
+  },
+  "key_findings": [
+    "Reported EBITDA is supported by a strong recurring revenue stream from maintenance contracts.",
+    "The business is debt-free and highly liquid, with £795,164 in cash as of May 2026.",
+    "Normalised earnings are slightly higher than reported due to significant pension extractions by the directors.",
+    "Gross margin erosion (from 35% to 29%) is the primary risk to future earnings sustainability."
+  ],
+  "red_flags": [
+    "Significant volatility in staff costs between 2024 (£468k) and 2025 (£176k) suggests potential misclassification or one-off labor issues.",
+    "Asset register shows zero accumulated depreciation, contradicting the P&L charges of ~£71k.",
+    "High dividend extraction (89.7% of net profit) limits the capital available for reinvestment."
+  ],
+  "narrative": "Spruce Pools presents a solid acquisition target with a 'Base Case' Adjusted EBITDA of £312,262. The adjustment process is relatively straightforward: the directors extract significant value through pension contributions (£60k) while taking a minimal salary (£9.1k). Normalising these to market rates results in a net positive adjustment to EBITDA. The core of the business is the £1m+ service and maintenance revenue, which provides a high-quality, recurring earnings base. However, the buyer should be cautious regarding the 600-basis-point drop in gross margin over the last four years. While the business is currently healthy and debt-free, the trend of rising direct costs must be arrested to maintain the valuation multiple. The 2024 spike in staff costs requires specific due diligence to ensure no hidden liabilities or structural labor issues exist."
+}

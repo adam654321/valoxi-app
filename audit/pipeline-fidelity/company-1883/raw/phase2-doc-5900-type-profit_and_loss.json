@@ -1,0 +1,250 @@
+{
+  "document": "profit_and_loss",
+  "source": "management_forecast",
+  "years_covered": [
+    2025,
+    2026,
+    2027,
+    2028
+  ],
+  "period_ends": {
+    "2025": "2025-05-31",
+    "2026": "2026-05-31",
+    "2027": "2027-05-31",
+    "2028": "2028-05-31"
+  },
+  "months_covered": {
+    "2025": 12,
+    "2026": 12,
+    "2027": 12,
+    "2028": 12
+  },
+  "report_date": "2026-06-01",
+  "years": {
+    "2025": {
+      "year": 2025,
+      "profit_and_loss": {
+        "revenue": 18366818,
+        "cost_of_sales": 11416987,
+        "gross_profit": 6949831,
+        "administrative_expenses": 4127104,
+        "depreciation_amortisation": 293618,
+        "other_operating_income": null,
+        "operating_profit": 2822727,
+        "interest_receivable": null,
+        "interest_payable": 62056,
+        "profit_before_tax": 2538075,
+        "corporation_tax": 636375,
+        "net_profit": 1901700
+      },
+      "revenue_breakdown": {
+        "by_product": {
+          "AliDeck (B2B specification-led)": 16074168,
+          "The Milwood Group (Trade distribution)": 2292650,
+          "Lurano (D2C)": 0
+        },
+        "by_segment": {}
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": null,
+        "direct_labour": null,
+        "subcontractor_costs": null,
+        "other_direct_costs": null
+      },
+      "overheads_breakdown": {
+        "staff_wages_salaries": null,
+        "directors_salaries": null,
+        "directors_pension": null,
+        "employers_national_insurance": null,
+        "staff_pension_contributions": null,
+        "staff_training_recruitment": null,
+        "use_of_home_as_office": null,
+        "rent_rates": null,
+        "utilities": null,
+        "insurance": null,
+        "accountancy_bookkeeping": null,
+        "professional_fees": null,
+        "software_subscriptions": null,
+        "computer_costs": null,
+        "it_support_hosting": null,
+        "telecommunications": null,
+        "printing_stationery": null,
+        "postage_courier": null,
+        "subscriptions_memberships": null,
+        "bank_charges": null,
+        "advertising_marketing": null,
+        "travel_subsistence": null,
+        "motor_expenses": null,
+        "repairs_maintenance": null,
+        "depreciation": 293618,
+        "amortisation": null,
+        "other_overheads": null
+      },
+      "total_staff_costs": null,
+      "total_directors_remuneration": null,
+      "dividends_paid": null,
+      "exceptional_items": [],
+      "financial_ratios": {
+        "gross_margin_percent": 37.84,
+        "net_margin_percent": 10.35,
+        "interest_coverage_ratio": 45.49
+      }
+    },
+    "2026": {
+      "year": 2026,
+      "profit_and_loss": {
+        "revenue": 18722852,
+        "cost_of_sales": 12131327,
+        "gross_profit": 6591525,
+        "administrative_expenses": 4849129,
+        "depreciation_amortisation": 224650,
+        "other_operating_income": null,
+        "operating_profit": 1742396,
+        "interest_receivable": null,
+        "interest_payable": 836,
+        "profit_before_tax": 1516910,
+        "corporation_tax": 381336,
+        "net_profit": 1135574
+      },
+      "revenue_breakdown": {
+        "by_product": {
+          "AliDeck (B2B specification-led)": 16239347,
+          "The Milwood Group (Trade distribution)": 2323729,
+          "Lurano (D2C)": 159776
+        },
+        "by_segment": {}
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": 10322315,
+        "direct_labour": 1809012,
+        "subcontractor_costs": null,
+        "other_direct_costs": null
+      },
+      "overheads_breakdown": {
+        "staff_wages_salaries": 1998285,
+        "directors_salaries": null,
+        "directors_pension": null,
+        "employers_national_insurance": null,
+        "staff_pension_contributions": null,
+        "staff_training_recruitment": null,
+        "use_of_home_as_office": null,
+        "rent_rates": 987966,
+        "utilities": null,
+        "insurance": null,
+        "accountancy_bookkeeping": null,
+        "professional_fees": null,
+        "software_subscriptions": null,
+        "computer_costs": null,
+        "it_support_hosting": null,
+        "telecommunications": null,
+        "printing_stationery": null,
+        "postage_courier": null,
+        "subscriptions_memberships": null,
+        "bank_charges": null,
+        "advertising_marketing": null,
+        "travel_subsistence": null,
+        "motor_expenses": null,
+        "repairs_maintenance": null,
+        "depreciation": 224650,
+        "amortisation": null,
+        "other_overheads": 1722403
+      },
+      "total_staff_costs": 3807297,
+      "total_directors_remuneration": 140475,
+      "dividends_paid": null,
+      "exceptional_items": [
+        "Non-recurring items: 285072"
+      ],
+      "financial_ratios": {
+        "gross_margin_percent": 35.21,
+        "net_margin_percent": 6.06,
+        "interest_coverage_ratio": 2084.21
+      }
+    },
+    "2027": {
+      "year": 2027,
+      "profit_and_loss": {
+        "revenue": 20612840,
+        "cost_of_sales": null,
+        "gross_profit": null,
+        "administrative_expenses": null,
+        "depreciation_amortisation": null,
+        "other_operating_income": null,
+        "operating_profit": 2765526,
+        "interest_receivable": null,
+        "interest_payable": null,
+        "profit_before_tax": null,
+        "corporation_tax": null,
+        "net_profit": null
+      },
+      "revenue_breakdown": {
+        "by_product": {},
+        "by_segment": {}
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": null,
+        "direct_labour": null,
+        "subcontractor_costs": null,
+        "other_direct_costs": null
+      },
+      "overheads_breakdown": {},
+      "total_staff_costs": null,
+      "total_directors_remuneration": null,
+      "dividends_paid": null,
+      "exceptional_items": [],
+      "financial_ratios": {
+        "gross_margin_percent": null,
+        "net_margin_percent": null,
+        "interest_coverage_ratio": null
+      }
+    },
+    "2028": {
+      "year": 2028,
+      "profit_and_loss": {
+        "revenue": 22903604,
+        "cost_of_sales": null,
+        "gross_profit": null,
+        "administrative_expenses": null,
+        "depreciation_amortisation": null,
+        "other_operating_income": null,
+        "operating_profit": 3533867,
+        "interest_receivable": null,
+        "interest_payable": null,
+        "profit_before_tax": null,
+        "corporation_tax": null,
+        "net_profit": null
+      },
+      "revenue_breakdown": {
+        "by_product": {},
+        "by_segment": {}
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": null,
+        "direct_labour": null,
+        "subcontractor_costs": null,
+        "other_direct_costs": null
+      },
+      "overheads_breakdown": {},
+      "total_staff_costs": null,
+      "total_directors_remuneration": null,
+      "dividends_paid": null,
+      "exceptional_items": [],
+      "financial_ratios": {
+        "gross_margin_percent": null,
+        "net_margin_percent": null,
+        "interest_coverage_ratio": null
+      }
+    }
+  },
+  "summary_insights": [
+    "Revenue is forecast to grow by 1.9% in FY26, with a significant acceleration projected for FY27 (+10.1%) and FY28 (+11.1%).",
+    "Gross margin is expected to compress from 37.8% to 35.2% in FY26, driven by a 6.3% increase in Cost of Sales that outpaces revenue growth.",
+    "Operating profit (EBITDA) is forecast to drop by 38.3% in FY26 due to a 17.5% rise in administrative expenses, including £200k investment in AI systems.",
+    "Net profit is projected to decline by 40.3% in FY26, though management attributes this to temporary timing effects from UK Building Safety Act regulatory delays.",
+    "The company maintains a very strong interest coverage ratio, which improves significantly in FY26 as interest-bearing liabilities appear to be reduced.",
+    "Staff costs are a major overhead, representing 21.1% of turnover in FY26, which management notes is in line with industrial manufacturer benchmarks.",
+    "A new D2C division, Lurano, was launched in FY26, contributing an initial £159k to the top line with further growth expected.",
+    "Profitability is forecast to recover strongly post-FY26, with EBITDA margins projected to return to 15.4% by FY28."
+  ],
+  "_isIM": true
+}

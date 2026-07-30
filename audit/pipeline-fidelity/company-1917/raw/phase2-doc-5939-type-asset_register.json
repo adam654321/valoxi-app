@@ -1,0 +1,222 @@
+{
+  "document": "asset_register",
+  "report_date": "2026-06-02",
+  "summary": {
+    "total_asset_count": null,
+    "total_gross_book_value": 286935.2,
+    "total_accumulated_depreciation": 0,
+    "total_net_book_value": 286935.2,
+    "refinanceable_assets_value": 152782.38,
+    "fully_depreciated_still_in_use": null
+  },
+  "categories": {
+    "property": {
+      "gross_value": 24747,
+      "accumulated_depreciation": 0,
+      "net_book_value": 24747
+    },
+    "plant_machinery": {
+      "gross_value": 26716.9,
+      "accumulated_depreciation": 0,
+      "net_book_value": 26716.9
+    },
+    "vehicles": {
+      "gross_value": 149647.93,
+      "accumulated_depreciation": 0,
+      "net_book_value": 149647.93
+    },
+    "it_equipment": {
+      "gross_value": 36307.67,
+      "accumulated_depreciation": 0,
+      "net_book_value": 36307.67
+    },
+    "other": {
+      "gross_value": 49515.7,
+      "accumulated_depreciation": 0,
+      "net_book_value": 49515.7
+    }
+  },
+  "property_details": [
+    {
+      "address": "Unit 16 Portway BusinessCentre",
+      "tenure": null,
+      "purchase_price": null,
+      "market_value": null,
+      "net_book_value": 0
+    },
+    {
+      "address": "Unit 17, Portway Business Cent",
+      "tenure": null,
+      "purchase_price": null,
+      "market_value": null,
+      "net_book_value": 0
+    },
+    {
+      "address": "Property Improvements",
+      "tenure": null,
+      "purchase_price": 24747,
+      "market_value": null,
+      "net_book_value": 24747
+    }
+  ],
+  "vehicle_details": [
+    {
+      "make_model": "Commercial Vehicles",
+      "registration": null,
+      "purchase_date": null,
+      "cost": 342968.78,
+      "net_book_value": 342968.78,
+      "market_value": null
+    },
+    {
+      "make_model": "Motor vehicles",
+      "registration": null,
+      "purchase_date": null,
+      "cost": 136687.93,
+      "net_book_value": 136687.93,
+      "market_value": null
+    }
+  ],
+  "assets": [
+    {
+      "description": "Commercial Vehicles",
+      "category": "Vehicles",
+      "purchase_date": null,
+      "cost": 342968.78,
+      "accumulated_depreciation": 0,
+      "net_book_value": 342968.78,
+      "depreciation_rate": null,
+      "depreciation_method": null,
+      "location": null,
+      "condition": null
+    },
+    {
+      "description": "Motor vehicles",
+      "category": "Vehicles",
+      "purchase_date": null,
+      "cost": 136687.93,
+      "accumulated_depreciation": 0,
+      "net_book_value": 136687.93,
+      "depreciation_rate": null,
+      "depreciation_method": null,
+      "location": null,
+      "condition": null
+    },
+    {
+      "description": "Goodwill Cost",
+      "category": "Intangible",
+      "purchase_date": null,
+      "cost": 45000,
+      "accumulated_depreciation": 0,
+      "net_book_value": 45000,
+      "depreciation_rate": null,
+      "depreciation_method": null,
+      "location": null,
+      "condition": null
+    },
+    {
+      "description": "Goodwill (Trinity)",
+      "category": "Intangible",
+      "purchase_date": null,
+      "cost": 42292.23,
+      "accumulated_depreciation": 0,
+      "net_book_value": 42292.23,
+      "depreciation_rate": null,
+      "depreciation_method": null,
+      "location": null,
+      "condition": null
+    },
+    {
+      "description": "Office Equipment",
+      "category": "IT Equipment",
+      "purchase_date": null,
+      "cost": 36307.67,
+      "accumulated_depreciation": 0,
+      "net_book_value": 36307.67,
+      "depreciation_rate": null,
+      "depreciation_method": null,
+      "location": null,
+      "condition": null
+    },
+    {
+      "description": "Goodwill-Pool Construction",
+      "category": "Intangible",
+      "purchase_date": null,
+      "cost": 30000,
+      "accumulated_depreciation": 0,
+      "net_book_value": 30000,
+      "depreciation_rate": null,
+      "depreciation_method": null,
+      "location": null,
+      "condition": null
+    },
+    {
+      "description": "Plant & Equipment Cost",
+      "category": "Plant & Machinery",
+      "purchase_date": null,
+      "cost": 26716.9,
+      "accumulated_depreciation": 0,
+      "net_book_value": 26716.9,
+      "depreciation_rate": null,
+      "depreciation_method": null,
+      "location": null,
+      "condition": null
+    },
+    {
+      "description": "Property Improvements",
+      "category": "Property",
+      "purchase_date": null,
+      "cost": 24747,
+      "accumulated_depreciation": 0,
+      "net_book_value": 24747,
+      "depreciation_rate": null,
+      "depreciation_method": null,
+      "location": null,
+      "condition": null
+    },
+    {
+      "description": "Aquapool Goodwill",
+      "category": "Intangible",
+      "purchase_date": null,
+      "cost": 21500,
+      "accumulated_depreciation": 0,
+      "net_book_value": 21500,
+      "depreciation_rate": null,
+      "depreciation_method": null,
+      "location": null,
+      "condition": null
+    },
+    {
+      "description": "Motor veh depreciation",
+      "category": "Vehicles",
+      "purchase_date": null,
+      "cost": 12960,
+      "accumulated_depreciation": 0,
+      "net_book_value": 12960,
+      "depreciation_rate": null,
+      "depreciation_method": null,
+      "location": null,
+      "condition": null
+    },
+    {
+      "description": "Office Furniture",
+      "category": "Other",
+      "purchase_date": null,
+      "cost": 3134.45,
+      "accumulated_depreciation": 0,
+      "net_book_value": 3134.45,
+      "depreciation_rate": null,
+      "depreciation_method": null,
+      "location": null,
+      "condition": null
+    }
+  ],
+  "observations": [
+    "The report shows a significant discrepancy between the Balance Sheet and the Asset Register, with the Asset Register showing zero values for all items.",
+    "Total Difference of 286,935.20 indicates that assets recorded in the general ledger are not yet detailed in the sub-ledger/asset register.",
+    "Vehicle assets (Commercial and Motor Vehicles) represent the largest portion of the tangible asset base, offering high refinancing potential.",
+    "A large portion of the asset base consists of Goodwill (Intangibles), which is not suitable for traditional asset-backed refinancing.",
+    "Accumulated depreciation columns are currently showing zero or are not being netted against the cost in the 'Closing Book Value' column for the 'Difference' rows, suggesting the reconciliation is focused on gross cost alignment."
+  ],
+  "_isIM": false
+}

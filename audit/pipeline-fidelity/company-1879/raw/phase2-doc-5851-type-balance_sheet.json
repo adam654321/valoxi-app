@@ -1,0 +1,141 @@
+{
+  "document": "balance_sheet",
+  "source": "statutory",
+  "years_covered": [
+    2023,
+    2024
+  ],
+  "period_ends": {
+    "2023": "2023-03-31",
+    "2024": "2024-03-31"
+  },
+  "months_covered": {
+    "2023": 12,
+    "2024": 12
+  },
+  "report_date": "2024-12-12",
+  "years": {
+    "2023": {
+      "year": 2023,
+      "balance_sheet": {
+        "fixed_assets": {
+          "intangible_assets": 0,
+          "tangible_assets": 240767,
+          "freehold_property": null,
+          "leasehold_property": null,
+          "plant_machinery": 71142,
+          "fixtures_fittings": 9789,
+          "motor_vehicles": 159836,
+          "computer_equipment": null
+        },
+        "current_assets": {
+          "stock": null,
+          "trade_debtors": 240786,
+          "prepayments": 25143,
+          "amounts_owed_by_directors": null,
+          "amounts_owed_by_connected_companies": 79136,
+          "directors_current_account": null,
+          "other_debtors": 50267,
+          "cash_at_bank": 520102,
+          "total": 915434
+        },
+        "current_liabilities": {
+          "trade_creditors": 50908,
+          "taxation_social_security": 13890,
+          "vat_payable": null,
+          "corporation_tax": 86208,
+          "bank_loans_current": 21152,
+          "hire_purchase_current": 5961,
+          "accruals": 3410,
+          "amounts_owed_to_directors": null,
+          "other_creditors": 16254,
+          "total": 197783
+        },
+        "long_term_liabilities": {
+          "bank_loans": 36463,
+          "hire_purchase_long_term": 3974,
+          "deferred_taxation": 58641,
+          "other_debt": null,
+          "total": 99078
+        },
+        "equity": {
+          "share_capital": 120,
+          "retained_earnings": 859140,
+          "total": 859340
+        }
+      },
+      "financial_ratios": {
+        "current_ratio": 4.628476,
+        "quick_ratio": 3.847085,
+        "net_assets_growth_percent": null,
+        "gearing_ratio_percent": 11.529546
+      }
+    },
+    "2024": {
+      "year": 2024,
+      "balance_sheet": {
+        "fixed_assets": {
+          "intangible_assets": 0,
+          "tangible_assets": 106837,
+          "freehold_property": null,
+          "leasehold_property": null,
+          "plant_machinery": 7851,
+          "fixtures_fittings": 12713,
+          "motor_vehicles": 86273,
+          "computer_equipment": null
+        },
+        "current_assets": {
+          "stock": null,
+          "trade_debtors": 169850,
+          "prepayments": 12000,
+          "amounts_owed_by_directors": null,
+          "amounts_owed_by_connected_companies": 6487,
+          "directors_current_account": null,
+          "other_debtors": 6190,
+          "cash_at_bank": 362769,
+          "total": 557296
+        },
+        "current_liabilities": {
+          "trade_creditors": 59424,
+          "taxation_social_security": 15907,
+          "vat_payable": null,
+          "corporation_tax": 64051,
+          "bank_loans_current": 0,
+          "hire_purchase_current": 3974,
+          "accruals": 118093,
+          "amounts_owed_to_directors": null,
+          "other_creditors": 14419,
+          "total": 275868
+        },
+        "long_term_liabilities": {
+          "bank_loans": 0,
+          "hire_purchase_long_term": 0,
+          "deferred_taxation": 25420,
+          "other_debt": null,
+          "total": 25420
+        },
+        "equity": {
+          "share_capital": 120,
+          "retained_earnings": 362645,
+          "total": 362845
+        }
+      },
+      "financial_ratios": {
+        "current_ratio": 2.020154,
+        "quick_ratio": 1.930699,
+        "net_assets_growth_percent": -57.776317,
+        "gearing_ratio_percent": 7.005746
+      }
+    }
+  },
+  "summary_insights": [
+    "Net assets experienced a significant erosion of 57.8%, falling from £859,340 to £362,845, primarily due to a substantial reduction in retained earnings.",
+    "Liquidity remains at a healthy level with a current ratio of 2.02, although this has tightened considerably from the exceptionally high 4.63 seen in 2023.",
+    "The cash position decreased by 30.3% (£157,333), while trade debtors also fell by 29.5%, indicating a contraction in trading activity or faster collection.",
+    "Tangible fixed assets reduced by 55.6%, largely driven by a significant drop in the net book value of plant and machinery and motor vehicles.",
+    "The company has successfully deleveraged its balance sheet, eliminating all bank loans and hire purchase obligations by March 2024.",
+    "A notable red flag is the sharp increase in accruals and deferred income, which rose from £3,410 to £118,093, impacting the current liability profile.",
+    "Intercompany receivables (amounts owed by group undertakings) fell sharply from £79,136 to just £6,487, suggesting a repatriation of funds or settlement of group balances."
+  ],
+  "_isIM": false
+}

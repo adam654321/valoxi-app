@@ -1,0 +1,688 @@
+{
+  "model": {
+    "id": 495,
+    "targetCompanyId": 1918,
+    "createdBy": 89,
+    "name": "Audit Model — TC 130",
+    "status": "draft",
+    "version": 1,
+    "transactionType": "share_sale",
+    "parentModelId": null,
+    "isLocked": false,
+    "averagingYears": 3,
+    "ebitdaMultiple": "2.5",
+    "offerDriver": "ebitda",
+    "targetOfferPrice": null,
+    "multipleLow": "2",
+    "multipleHigh": "4",
+    "propertyValue": "0",
+    "cashValue": "0",
+    "otherAssets": "0",
+    "calculatedEbitda": null,
+    "adjustedEbitda": "157306",
+    "enterpriseValue": "393265",
+    "plusExcessCash": "0",
+    "minusPrimaryDebt": "6519",
+    "minusOtherDebt": "0",
+    "minusCorpTaxDue": null,
+    "minusWorkingCapitalAdj": "0",
+    "workingCapitalMonths": 3,
+    "workingCapitalMonthlyAmount": null,
+    "totalPurchasePrice": null,
+    "totalFundingAvailable": null,
+    "equityRequired": null,
+    "upfrontCash": "211750",
+    "deferredAmount": "57750",
+    "deferredTerms": null,
+    "earnoutMaximum": "115500",
+    "earnoutMetric": "Revenue Retention (USA & UK)",
+    "earnoutPeriodMonths": 18,
+    "retentionEscrow": "38500",
+    "feeLegalDdAmount": "25000",
+    "feeAccountingDdAmount": "15000",
+    "feeLoanArrangementAmount": "0",
+    "feeDealMakerAmount": "0",
+    "customFees": [],
+    "expertDataSnapshot": {
+      "qoe": {
+        "expert": "quality_of_earnings",
+        "company_name": "[AUDIT-130] Keen As Mustard",
+        "analysis_date": "2025-05-20",
+        "score": 68,
+        "confidence": "high",
+        "reported_figures": {
+          "operating_profit": 197695,
+          "depreciation": 111,
+          "amortisation": 0,
+          "reported_ebitda": 197806,
+          "source_year": "2024"
+        },
+        "add_backs": [],
+        "deductions": [
+          {
+            "item": "Director Replacement Salary Adjustment",
+            "category": "replacement_salary",
+            "amount": 39500,
+            "recurrence": "recurring",
+            "year": 2024,
+            "justification": "The sole director is currently paid £18,000, which is significantly below the UK SME market midpoint of £57,500 for a working MD in a business with <£1M revenue.",
+            "confidence": "high",
+            "defensibility_score": 9,
+            "case_for_inclusion": "A buyer will need to hire a professional manager or compensate themselves at market rates to replace the owner's full-time operational role.",
+            "case_for_exclusion": "The seller may argue that the business requires minimal management time or that the current structure is sustainable without a full-time replacement."
+          },
+          {
+            "item": "Provision for Maintenance Capex",
+            "category": "deferred_maintenance",
+            "amount": 1000,
+            "recurrence": "recurring",
+            "year": 2024,
+            "justification": "The asset base (Plant & Machinery) has a Net Book Value of only £333 as at 2024-11-30, with no additions since 2020, indicating a need for an annualised IT/equipment refresh budget.",
+            "confidence": "medium",
+            "defensibility_score": 6,
+            "case_for_inclusion": "The current depreciation charge is artificially low due to fully depreciated assets; a realistic annual cost for equipment replacement must be factored in.",
+            "case_for_exclusion": "The seller may argue that as an asset-light creative agency, no further investment is required beyond what is already in the P&L."
+          }
+        ],
+        "total_add_backs": 0,
+        "total_deductions": 40500,
+        "adjusted_ebitda": {
+          "conservative": 157306,
+          "base": 157306,
+          "optimistic": 157306
+        },
+        "adjustment_summary": {
+          "reported_ebitda": 197806,
+          "plus_add_backs": 0,
+          "minus_deductions": 40500,
+          "equals_adjusted_ebitda_base": 157306
+        },
+        "director_salary_analysis": {
+          "directors": [
+            {
+              "name": "Sole Director",
+              "current_salary": 18000,
+              "estimated_market_rate": 57500,
+              "benchmark_range_used": "Revenue £1M-£5M (adjusted for sub-£1M scale): £45,000–£70,000",
+              "adjustment": 39500,
+              "adjustment_type": "deduction"
+            }
+          ]
+        },
+        "sustainability_assessment": {
+          "sustainable_for_3_years": true,
+          "key_assumptions": [
+            "Subcontractor costs remain flexible and scale with revenue",
+            "The 2025 revenue figure represents a partial year or specific project timing rather than a permanent loss of client base",
+            "The USA market (55% of 2025 revenue) remains stable"
+          ],
+          "sensitivity_factors": [
+            "High owner dependency: loss of the principal could lead to client churn",
+            "Debtor collection: 2024 debtor days of 78.76 suggest cash flow pressure if revenue scales"
+          ],
+          "upside_scenarios": [
+            "Expansion of the USA client base which currently shows strong momentum",
+            "Reduction in travel and subsistence costs (£28k in 2024) through remote delivery"
+          ],
+          "downside_scenarios": [
+            "Key client loss in the UK or Europe",
+            "Inability to source high-quality subcontractors at current margin levels"
+          ]
+        },
+        "key_findings": [
+          "The business operates with exceptionally high margins (45% Operating Margin in 2024).",
+          "Reported EBITDA is inflated by a below-market director salary and minimal depreciation on aged assets.",
+          "The 2025 management accounts show Trade Debtors of £358,524.86 exactly matching Revenue, which is a significant data integrity red flag.",
+          "The business is highly cash-generative but pays out nearly all profit as dividends (£126,200 in 2024)."
+        ],
+        "red_flags": [
+          "Trade Debtors exactly matching Revenue in 2025 management accounts suggests revenue may not have been collected or is incorrectly recorded.",
+          "High owner dependency with no formal management structure below the director level.",
+          "Significant increase in debtor days from 55 to 79 between 2023 and 2024."
+        ],
+        "narrative": "Keen As Mustard is a high-margin creative consultancy that appears very profitable on paper. However, the reported EBITDA of £197,806 is unsustainable for a buyer because it relies on the owner taking a nominal salary of £18,000 and extracting value via dividends. After adjusting for a market-rate MD salary and a modest equipment refresh budget, the Base Adjusted EBITDA is £157,306. The primary concern for a buyer is the 2025 data, which shows a potential revenue decline and a highly unusual debtor position where 100% of revenue appears uncollected. While the core business model is attractive and asset-light, the valuation must be based on the adjusted earnings and a clear explanation of the 2025 trading position."
+      },
+      "valuation": {
+        "expert": "valuation",
+        "company_name": "[AUDIT-130] Keen As Mustard",
+        "analysis_date": "2025-05-22",
+        "score": 74,
+        "confidence": "medium",
+        "ebitda_multiple_valuation": {
+          "adjusted_ebitda_base": 157306,
+          "sector_multiple_range": {
+            "low": 2,
+            "mid": 3,
+            "high": 4
+          },
+          "selected_multiple": 2.5,
+          "multiple_justification": "A multiple of 2.5x is selected, which is slightly below the sector midpoint. While the company boasts exceptional operating margins (45%) and strong geographic growth in the USA, it is heavily discounted due to its micro-scale (<£500k revenue), high owner dependency (sole director), and significant data integrity concerns regarding the 2025 management accounts.",
+          "premium_factors_applied": [
+            "Exceptional operating margins (45.3% in 2024)",
+            "Successful geographic expansion into the USA (55% of 2025 revenue)",
+            "High interest coverage and low leverage"
+          ],
+          "discount_factors_applied": [
+            "Micro-entity scale with revenue under £500k",
+            "High owner dependency with no management depth",
+            "Deteriorating debtor collection cycle (78 days in 2024)",
+            "Data integrity red flag: 2025 Trade Debtors exactly match Revenue"
+          ],
+          "enterprise_value_range": {
+            "conservative": 314612,
+            "base": 393265,
+            "optimistic": 550571
+          }
+        },
+        "ev_to_equity_bridge": {
+          "enterprise_value_base": 393265,
+          "plus_cash": 0,
+          "minus_long_term_debt": 6519,
+          "minus_director_loans": 0,
+          "minus_bad_debt_provision": 0,
+          "minus_working_capital_adjustment": 0,
+          "equity_value": {
+            "conservative": 308093,
+            "base": 386746,
+            "optimistic": 544052
+          }
+        },
+        "asset_based_valuation": {
+          "net_asset_value": 109592,
+          "property_adjustment": 0,
+          "bad_debt_adjustment": 0,
+          "adjusted_nav": 109592,
+          "nav_as_floor": true
+        },
+        "revenue_multiple_crosscheck": {
+          "latest_revenue": 436233,
+          "revenue_multiple_range": {
+            "low": 0.4,
+            "high": 1
+          },
+          "implied_ev_range": {
+            "low": 174493,
+            "high": 436233
+          }
+        },
+        "valuation_summary": {
+          "recommended_range": {
+            "equity_value_low": 310000,
+            "equity_value_mid": 385000,
+            "equity_value_high": 545000
+          },
+          "primary_methodology": "ebitda_multiple",
+          "cross_check_alignment": "moderate"
+        },
+        "sensitivity": {
+          "ebitda_plus_10pct": {
+            "enterprise_value": 432592,
+            "equity_value": 426073
+          },
+          "ebitda_minus_10pct": {
+            "enterprise_value": 353939,
+            "equity_value": 347420
+          },
+          "multiple_plus_half": {
+            "enterprise_value": 471918,
+            "equity_value": 465399
+          },
+          "multiple_minus_half": {
+            "enterprise_value": 314612,
+            "equity_value": 308093
+          },
+          "key_customer_loss_impact": "High. Given the micro-scale, the loss of a single major US client could reduce EBITDA by 20-50%.",
+          "director_replacement_impact": 39500
+        },
+        "seller_expectations": {
+          "likely_seller_expectation_range": {
+            "low": 650000,
+            "high": 1000000
+          },
+          "seller_anchor_points": [
+            "Reported EBITDA of £197k (pre-adjustment)",
+            "High dividend extraction history (£126k in 2024)",
+            "Emotional value of a high-margin boutique brand"
+          ],
+          "negotiation_gap_assessment": "Significant. The seller is likely to anchor on the unadjusted EBITDA of ~£200k and seek a 4-5x multiple, leading to a £1M expectation. A buyer will focus on the £157k adjusted EBITDA and the high key-man risk, likely capping the offer at 2.5x-3.0x."
+        },
+        "key_findings": [
+          "The business is exceptionally profitable for its size, with a 45% operating margin in 2024.",
+          "Adjusted EBITDA of £157,306 accounts for a market-rate director salary replacement.",
+          "The 2025 management accounts show a potential revenue contraction and a major debtor anomaly.",
+          "The company is virtually debt-free with a clean balance sheet, aside from a small £6.5k loan."
+        ],
+        "red_flags": [
+          "2025 Trade Debtors exactly match 2025 Revenue (£358,524.86), suggesting either a total lack of collection or a significant accounting error.",
+          "High owner dependency: the business is effectively a 'job' for the director rather than a scalable enterprise.",
+          "Deteriorating debtor days (78.76 in 2024) indicates cash flow pressure despite high paper profits."
+        ],
+        "narrative": "Keen As Mustard is a high-performing boutique agency that presents a classic valuation challenge for micro-entities. On a reported basis, the 2024 EBITDA of £197,806 is impressive; however, this is artificially inflated by a below-market director salary of £18,000. After adjusting for a professional replacement salary (£57,500) and a modest capex provision, the sustainable EBITDA is £157,306. The valuation uses a 2.5x multiple, reflecting the high margins and US growth, but tempered by the extreme key-man risk and the small revenue base. The bridge to equity value uses the 2024 long-term debt figure of £6,519 (from the Risk Expert's analysis of the 2024-11-30 balance sheet). Cash at bank was not explicitly stated as a standalone figure in the provided financial summaries, so it is treated as zero to remain conservative. The primary due diligence focus must be the 2025 debtor balance, as any recoverability issues there would significantly impair the net asset floor and overall valuation."
+      },
+      "deal_structure": {
+        "expert": "deal_structure",
+        "company_name": "[AUDIT-130] Keen As Mustard",
+        "analysis_date": "2025-05-22",
+        "score": 65,
+        "confidence": "high",
+        "structures": [
+          {
+            "name": "Conservative Approach",
+            "strategy": "Minimize upfront exposure and link a significant portion of the value to the verification of 2025 earnings and owner transition.",
+            "risk_to_buyer": "low",
+            "suitable_when": "The buyer is highly concerned about the 2025 debtor anomaly and the lack of management depth.",
+            "consideration": {
+              "total_headline": 310000,
+              "upfront_cash": 124000,
+              "upfront_percent": 40,
+              "deferred": 62000,
+              "earnout_maximum": 124000,
+              "earnout_metric": "EBITDA and Debtor Recovery",
+              "earnout_period_months": 24,
+              "earnout_rationale": "Trigger 3 (Owner Dependency) and Trigger 4 (Unverified Earnings). The earnout is split: 50% tied to the successful collection of the 2025 debtor balance and 50% tied to maintaining adjusted EBITDA during a 24-month handover.",
+              "retention_escrow": 31000
+            },
+            "key_conditions": [
+              "Full audit of 2025 sales ledger prior to completion",
+              "24-month active handover period for the sole director",
+              "Working capital peg based on 2024 average (approx. £115k)"
+            ],
+            "notes": "Seller obligations: 24-month handover (6 months full-time, 18 months consultancy), 3-year non-compete. Key warranties: Specific indemnity for 2025 debtor recoverability; warranty cap at 100% of consideration; 24-month warranty period. Completion mechanism: Completion accounts with a pound-for-pound adjustment for debtor shortfalls. Risk to buyer: Low, as the structure heavily protects against the identified data integrity and key-man risks."
+          },
+          {
+            "name": "Balanced Approach",
+            "strategy": "A fair split that provides the seller with immediate liquidity while protecting the buyer against the immediate risk of client churn post-acquisition.",
+            "risk_to_buyer": "medium",
+            "suitable_when": "Due diligence provides reasonable comfort that the 2025 debtor issue is an accounting error rather than a bad debt crisis.",
+            "consideration": {
+              "total_headline": 385000,
+              "upfront_cash": 211750,
+              "upfront_percent": 55,
+              "deferred": 57750,
+              "earnout_maximum": 115500,
+              "earnout_metric": "Revenue Retention (USA & UK)",
+              "earnout_period_months": 18,
+              "earnout_rationale": "Trigger 3 (Owner Dependency). Given the high geographic concentration in the USA (55%) and sole director relationships, the earnout ensures the buyer is not paying for a 'melting ice cube' if clients leave with the owner.",
+              "retention_escrow": 38500
+            },
+            "key_conditions": [
+              "12-month fixed deferred payment schedule",
+              "Retention of top 3 US clients for at least 12 months",
+              "Director to remain as a consultant for 18 months"
+            ],
+            "notes": "Seller obligations: 12-month handover, 2-year non-compete. Key warranties: Standard suite with specific focus on US tax compliance and client contracts; warranty cap at 50% of consideration. Completion mechanism: Locked box based on verified 2024 accounts if 2025 data remains opaque. Risk to buyer: Medium, primarily centered on the successful transition of US-based creative relationships."
+          },
+          {
+            "name": "Competitive Approach",
+            "strategy": "Maximize upfront cash to bridge the gap with seller expectations, while using a shorter, aggressive earnout to validate the high margins.",
+            "risk_to_buyer": "high",
+            "suitable_when": "The buyer is a strategic acquirer who can quickly absorb the client base and has their own management team to mitigate key-man risk.",
+            "consideration": {
+              "total_headline": 450000,
+              "upfront_cash": 315000,
+              "upfront_percent": 70,
+              "deferred": 45000,
+              "earnout_maximum": 90000,
+              "earnout_metric": "Adjusted EBITDA",
+              "earnout_period_months": 12,
+              "earnout_rationale": "Trigger 4 (Unverified Earnings). Even in a competitive bid, the 2025 data integrity red flag necessitates an earnout to confirm that the 45% margins are sustainable and not a result of aggressive revenue recognition.",
+              "retention_escrow": 22500
+            },
+            "key_conditions": [
+              "6-month intensive handover",
+              "Clean title to all IP and client contracts",
+              "Minimal working capital adjustment"
+            ],
+            "notes": "Seller obligations: 6-month handover, 2-year non-compete. Key warranties: Fundamental warranties only; warranty cap at 25% of consideration; 12-month warranty period. Completion mechanism: Locked box. Risk to buyer: High, due to the high upfront payment and shorter protection period against the significant owner dependency and unverified 2025 performance."
+          }
+        ],
+        "recommended_structure": "Balanced Approach",
+        "recommendation_rationale": "The Balanced Approach is recommended because it addresses the significant valuation gap (Seller £1M vs Buyer £385k) by offering a fair midpoint valuation while using an earnout to mitigate the two most pressing risks: the 2025 data integrity issues and the extreme owner dependency. The 55% upfront payment is attractive enough to keep the seller engaged, while the 30% earnout provides a necessary safety net for the buyer regarding client retention in the US market.",
+        "negotiation_priorities": [
+          "Verification of the 2025 Trade Debtor balance (£358k) and its recoverability.",
+          "Securing a long-term non-compete and a structured handover from the sole director.",
+          "Establishing a clear working capital peg to prevent further cash extraction via dividends prior to close.",
+          "Confirming the contractual stability of the US-based revenue stream."
+        ],
+        "deal_breaker_terms": [
+          "Refusal of a specific indemnity for the 2025 debtor balance.",
+          "Inability of the director to commit to at least a 12-month transition period.",
+          "Discovery that the 2025 revenue is significantly overstated or uncollectible."
+        ],
+        "key_findings": [
+          "The business is highly profitable (45% margin) but lacks any structural depth beyond the owner.",
+          "There is a massive discrepancy in 2025 management accounts (Debtors = Revenue) that must be resolved.",
+          "The shift to the US market (55% of revenue) increases the risk of client churn if the owner exits abruptly.",
+          "The seller's price expectations are likely double the market value, requiring a structure that bridges the gap through performance-based pay."
+        ],
+        "narrative": "Keen As Mustard is a 'lifestyle' business performing at an elite level, which creates a difficult friction point for M&A. The high margins and US growth are attractive, but the 2025 accounting anomalies and total owner dependency are significant hurdles. A successful deal must pivot away from the seller's likely £1M anchor point by focusing on 'Adjusted EBITDA' (accounting for a replacement salary) and the risk of the 2025 debtor spike. The recommended Balanced Approach uses a mix of upfront cash and a revenue-retention earnout to align the seller's exit with the long-term stability of the agency's client base, particularly in the US."
+      },
+      "financial": {
+        "expert": "financial",
+        "company_name": "[AUDIT-130] Keen As Mustard",
+        "analysis_date": "2025-05-20",
+        "score": 72,
+        "confidence": "high",
+        "yearly_metrics": {
+          "2023": {
+            "revenue": 396623,
+            "revenue_yoy_growth_percent": null,
+            "cost_of_sales": 108601,
+            "gross_profit": 288022,
+            "gross_margin_percent": 72.62,
+            "administrative_expenses": 162308,
+            "operating_profit": 125714,
+            "operating_margin_percent": 31.7,
+            "depreciation_amortisation": 148,
+            "ebitda": 125862,
+            "interest_payable": 802,
+            "interest_coverage_ratio": 156.75,
+            "profit_before_tax": 124912,
+            "corporation_tax": 28749,
+            "effective_tax_rate_percent": 23.02,
+            "net_profit": 96163,
+            "net_margin_percent": 24.25
+          },
+          "2024": {
+            "revenue": 436233,
+            "revenue_yoy_growth_percent": 9.99,
+            "cost_of_sales": 103808,
+            "gross_profit": 332425,
+            "gross_margin_percent": 76.2,
+            "administrative_expenses": 134730,
+            "operating_profit": 197695,
+            "operating_margin_percent": 45.32,
+            "depreciation_amortisation": 111,
+            "ebitda": 197806,
+            "interest_payable": 450,
+            "interest_coverage_ratio": 439.32,
+            "profit_before_tax": 198347,
+            "corporation_tax": 50839,
+            "effective_tax_rate_percent": 25.63,
+            "net_profit": 147508,
+            "net_margin_percent": 33.81
+          },
+          "2025": {
+            "revenue": 358524.86,
+            "revenue_yoy_growth_percent": -17.81,
+            "cost_of_sales": null,
+            "gross_profit": 358524.86,
+            "gross_margin_percent": 100,
+            "administrative_expenses": null,
+            "operating_profit": null,
+            "operating_margin_percent": null,
+            "depreciation_amortisation": null,
+            "ebitda": 0,
+            "interest_payable": null,
+            "interest_coverage_ratio": null,
+            "profit_before_tax": null,
+            "corporation_tax": null,
+            "effective_tax_rate_percent": null,
+            "net_profit": null,
+            "net_margin_percent": null
+          }
+        },
+        "cagr": {
+          "revenue_cagr_percent": -4.93,
+          "gross_profit_cagr_percent": 11.58,
+          "operating_profit_cagr_percent": null,
+          "period_years": 2
+        },
+        "cost_structure": {
+          "cost_of_sales_percent_revenue": 23.8,
+          "overheads_percent_revenue": 30.88,
+          "staff_costs_percent_revenue": null,
+          "director_costs_percent_revenue": 4.13,
+          "top_5_overheads": [
+            {
+              "category": "Travel & Subsistence",
+              "value": 28310,
+              "percent_of_overheads": 21.01
+            },
+            {
+              "category": "Computer Costs",
+              "value": 20940,
+              "percent_of_overheads": 15.54
+            },
+            {
+              "category": "Directors Salaries",
+              "value": 18000,
+              "percent_of_overheads": 13.36
+            },
+            {
+              "category": "Professional Fees",
+              "value": 17640,
+              "percent_of_overheads": 13.09
+            },
+            {
+              "category": "Staff Training & Recruitment",
+              "value": 14559,
+              "percent_of_overheads": 10.81
+            }
+          ],
+          "cost_base_classification": "mixed"
+        },
+        "earnings_quality": {
+          "net_profit_tracks_operating_profit": true,
+          "exceptional_items_identified": [],
+          "tax_rate_consistent": true,
+          "ebitda_latest": 197806,
+          "ebitda_trend": "growing",
+          "limitations": [
+            "2025 data is management accounts and lacks full P&L breakdown",
+            "Staff costs (wages/salaries) are not explicitly broken out from administrative expenses"
+          ]
+        },
+        "debt_service": {
+          "latest_interest_coverage": 439.32,
+          "interest_coverage_trend": "improving",
+          "additional_debt_capacity_assessment": "High. The company has minimal interest-bearing debt and exceptionally high coverage ratios, suggesting significant headroom for acquisition financing."
+        },
+        "key_findings": [
+          "Operating margins showed significant expansion from 31.7% in 2023 to 45.3% in 2024.",
+          "Revenue growth was positive in 2024 (+10%) but 2025 management figures suggest a potential contraction or partial-year reporting.",
+          "The business maintains a high gross margin (72-76%), typical of a high-value creative consultancy.",
+          "Cost of sales is primarily driven by direct labour and subcontractors, providing some flexibility in the cost base.",
+          "Travel and subsistence is a major overhead component, accounting for over 20% of total administrative expenses in 2024.",
+          "The company is highly profitable with a net margin exceeding 33% in the latest full fiscal year.",
+          "Dividend payments are high relative to net profit, indicating a policy of full profit extraction by shareholders."
+        ],
+        "red_flags": [
+          "Significant drop in revenue reported in 2025 management accounts compared to 2024 full-year performance.",
+          "High reliance on subcontractor costs within the Cost of Sales (approx. 29% of COS)."
+        ],
+        "narrative": "Keen As Mustard demonstrates a robust financial profile characterized by high margins and strong earnings quality. Between 2023 and 2024, the company successfully increased its revenue by 10% while simultaneously reducing its administrative expense base, leading to a substantial expansion in operating margin from 31.7% to 45.3%. This suggests high operational gearing and effective cost management. The gross margin remains consistently high at over 70%, reflecting the premium nature of its marketing and creative services. \n\nThe cost structure is a mix of fixed and variable elements. While professional fees and computer costs are relatively stable, the high use of subcontractors and significant travel expenses provide some levers for cost adjustment should revenue fluctuate. However, the 2025 management data shows a revenue figure of £358k, which is a decline from the 2024 peak of £436k; further due diligence is required to determine if this represents a full-year result or a period-to-date snapshot. \n\nFrom an earnings quality perspective, net profit tracks operating profit closely, with no evidence of significant exceptional items or volatile tax treatments. The company's ability to service debt is exceptional, with interest coverage ratios far exceeding standard banking covenants. The primary consideration for a buyer is the sustainability of the 2024 margin levels and the explanation for the apparent revenue softening in the 2025 management accounts. Overall, the financial performance is strong, providing a solid foundation for acquisition, and high capacity for, acquisition-related debt."
+      }
+    },
+    "financialDataSnapshot": {
+      "balanceSheet": {
+        "id": 4961,
+        "financialPeriodId": 8073,
+        "targetCompanyId": 1918,
+        "intangibleAssets": null,
+        "tangibleFixedAssets": null,
+        "freeholdProperty": null,
+        "leaseholdProperty": null,
+        "plantMachinery": null,
+        "fixturesFittings": null,
+        "motorVehicles": null,
+        "computerEquipment": null,
+        "stockInventory": null,
+        "tradeDebtors": "358524.86",
+        "prepayments": null,
+        "amountsOwedByDirectors": null,
+        "amountsOwedByConnectedCompanies": null,
+        "directorsCurrentAccount": null,
+        "otherDebtors": null,
+        "cashAtBank": null,
+        "totalCurrentAssets": "358524.86",
+        "tradeCreditors": null,
+        "taxationSocialSecurity": null,
+        "vatPayable": null,
+        "corporationTaxDue": null,
+        "bankLoansOverdraftCurrent": null,
+        "hirePurchaseCurrent": null,
+        "accruals": null,
+        "amountsOwedToDirectors": null,
+        "otherCreditors": null,
+        "totalCurrentLiabilities": null,
+        "bankLoansLongTerm": null,
+        "hirePurchaseLongTerm": null,
+        "deferredTaxation": null,
+        "otherLongTermDebt": null,
+        "totalLongTermLiabilities": null,
+        "shareCapital": null,
+        "retainedEarnings": null,
+        "totalEquity": null,
+        "debtorsList": null,
+        "creditorsList": null,
+        "fixedAssetsDetail": null,
+        "sourceDocumentId": 5945,
+        "createdAt": "2026-07-30T02:05:00.831Z",
+        "updatedAt": "2026-07-30T02:07:54.086Z",
+        "fiscalYear": "2025",
+        "periodEnd": "2025-11-30",
+        "sourceTier": "management",
+        "_label": "CURRENT POSITION"
+      },
+      "fixedAssets": null
+    },
+    "notes": null,
+    "createdAt": "2026-07-30T02:11:06.223Z",
+    "updatedAt": "2026-07-30T02:11:06.223Z",
+    "adjustments": [
+      {
+        "id": 2067,
+        "dealModelId": 495,
+        "sourceExpertResultId": 909,
+        "adjustmentType": "deduction",
+        "category": "replacement_salary",
+        "description": "Director Replacement Salary Adjustment",
+        "amount": "39500",
+        "amountsByYear": null,
+        "sourceExpert": "qoe",
+        "reasoning": "The sole director is currently paid £18,000, which is significantly below the UK SME market midpoint of £57,500 for a working MD in a business with <£1M revenue.",
+        "confidence": "high",
+        "defensibilityScore": 9,
+        "caseForInclusion": "A buyer will need to hire a professional manager or compensate themselves at market rates to replace the owner's full-time operational role.",
+        "caseForExclusion": "The seller may argue that the business requires minimal management time or that the current structure is sustainable without a full-time replacement.",
+        "status": "suggested",
+        "isAccepted": false,
+        "isManual": false,
+        "sortOrder": 0,
+        "createdAt": "2026-07-30T02:11:06.272Z",
+        "updatedAt": "2026-07-30T02:11:06.272Z"
+      },
+      {
+        "id": 2068,
+        "dealModelId": 495,
+        "sourceExpertResultId": 909,
+        "adjustmentType": "deduction",
+        "category": "deferred_maintenance",
+        "description": "Provision for Maintenance Capex",
+        "amount": "1000",
+        "amountsByYear": null,
+        "sourceExpert": "qoe",
+        "reasoning": "The asset base (Plant & Machinery) has a Net Book Value of only £333 as at 2024-11-30, with no additions since 2020, indicating a need for an annualised IT/equipment refresh budget.",
+        "confidence": "medium",
+        "defensibilityScore": 6,
+        "caseForInclusion": "The current depreciation charge is artificially low due to fully depreciated assets; a realistic annual cost for equipment replacement must be factored in.",
+        "caseForExclusion": "The seller may argue that as an asset-light creative agency, no further investment is required beyond what is already in the P&L.",
+        "status": "suggested",
+        "isAccepted": false,
+        "isManual": false,
+        "sortOrder": 1,
+        "createdAt": "2026-07-30T02:11:06.293Z",
+        "updatedAt": "2026-07-30T02:11:06.293Z"
+      }
+    ],
+    "fundingLines": [
+      {
+        "id": 1392,
+        "dealModelId": 495,
+        "fundingType": "receivables_finance",
+        "label": "Receivables Finance (Invoice Factoring)",
+        "assetBaseValue": "358524.86",
+        "ltvPercent": "80",
+        "availableAmount": "286820",
+        "amountUsed": "0",
+        "interestRate": "4.5",
+        "arrangementFeePercent": null,
+        "termMonths": 0,
+        "monthlyRepayment": null,
+        "isDebt": true,
+        "repaymentStructure": "amortizing",
+        "isActive": false,
+        "notes": null,
+        "sortOrder": 0,
+        "createdAt": "2026-07-30T02:11:06.299Z",
+        "updatedAt": "2026-07-30T02:11:06.299Z"
+      },
+      {
+        "id": 1393,
+        "dealModelId": 495,
+        "fundingType": "cash_equity",
+        "label": "Cash Equity (Cash to Introduce)",
+        "assetBaseValue": null,
+        "ltvPercent": null,
+        "availableAmount": null,
+        "amountUsed": "0",
+        "interestRate": null,
+        "arrangementFeePercent": null,
+        "termMonths": null,
+        "monthlyRepayment": null,
+        "isDebt": false,
+        "repaymentStructure": "amortizing",
+        "isActive": true,
+        "notes": null,
+        "sortOrder": 1,
+        "createdAt": "2026-07-30T02:11:06.305Z",
+        "updatedAt": "2026-07-30T02:11:06.305Z"
+      }
+    ],
+    "sellerPayments": [],
+    "contingentConsideration": []
+  },
+  "calculations": {
+    "adjustedEbitdaByYear": {
+      "2023": 125862,
+      "2024": 197806,
+      "2025": 0
+    },
+    "averageAdjustedEbitda": 107889.33333333333,
+    "enterpriseValue": 269723.3333333333,
+    "offerPrice": 263204.3333333333,
+    "impliedMultiple": null,
+    "feeLegalDd": 25000,
+    "feeAccountingDd": 15000,
+    "feeLoanArrangement": 0,
+    "feeDealMaker": 0,
+    "customFeeAmounts": [],
+    "totalFees": 40000,
+    "totalFundingRequired": 303204.3333333333,
+    "fundingLines": [
+      {
+        "availableAmount": 0,
+        "monthlyRepayment": 0,
+        "annualRepayment": 0,
+        "arrangementFee": 0
+      },
+      {
+        "availableAmount": 0,
+        "monthlyRepayment": 0,
+        "annualRepayment": 0,
+        "arrangementFee": 0
+      }
+    ],
+    "totalFunded": 0,
+    "fundingGap": 263204.33,
+    "totalAnnualDebtService": 0,
+    "sellerAnnualDebtService": 0,
+    "earnoutAnnualDebtService": 0,
+    "revolvingInterestAnnual": 0,
+    "receivablesInterestAnnual": 0,
+    "valuationEbitda": 107889.33333333333,
+    "paymentCoverRatio": null,
+    "paymentCoverRating": "no_debt"
+  }
+}

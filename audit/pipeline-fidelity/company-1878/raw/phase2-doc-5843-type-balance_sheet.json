@@ -1,0 +1,142 @@
+{
+  "document": "balance_sheet",
+  "source": "statutory",
+  "years_covered": [
+    2023,
+    2024
+  ],
+  "period_ends": {
+    "2023": "2023-02-28",
+    "2024": "2024-02-29"
+  },
+  "months_covered": {
+    "2023": 12,
+    "2024": 12
+  },
+  "report_date": null,
+  "years": {
+    "2023": {
+      "year": 2023,
+      "balance_sheet": {
+        "fixed_assets": {
+          "intangible_assets": null,
+          "tangible_assets": 16161,
+          "freehold_property": null,
+          "leasehold_property": null,
+          "plant_machinery": null,
+          "fixtures_fittings": 4316,
+          "motor_vehicles": 801,
+          "computer_equipment": 11044
+        },
+        "current_assets": {
+          "stock": null,
+          "trade_debtors": 8205,
+          "prepayments": null,
+          "amounts_owed_by_directors": null,
+          "amounts_owed_by_connected_companies": null,
+          "directors_current_account": null,
+          "other_debtors": 70247,
+          "cash_at_bank": 98084,
+          "total": 176536
+        },
+        "current_liabilities": {
+          "trade_creditors": null,
+          "taxation_social_security": 27738,
+          "vat_payable": null,
+          "corporation_tax": null,
+          "bank_loans_current": 8000,
+          "hire_purchase_current": null,
+          "accruals": null,
+          "amounts_owed_to_directors": null,
+          "other_creditors": 41839,
+          "total": 77577
+        },
+        "long_term_liabilities": {
+          "bank_loans": 21333,
+          "hire_purchase_long_term": null,
+          "deferred_taxation": 4040,
+          "other_debt": null,
+          "total": 25373
+        },
+        "equity": {
+          "share_capital": 100,
+          "retained_earnings": 89647,
+          "total": 89747
+        }
+      },
+      "financial_ratios": {
+        "current_ratio": 2.275623058483829,
+        "quick_ratio": 1.370111011000683,
+        "net_assets_growth_percent": null,
+        "gearing_ratio_percent": 28.27169710408147
+      }
+    },
+    "2024": {
+      "year": 2024,
+      "balance_sheet": {
+        "fixed_assets": {
+          "intangible_assets": null,
+          "tangible_assets": 12170,
+          "freehold_property": null,
+          "leasehold_property": null,
+          "plant_machinery": null,
+          "fixtures_fittings": 3237,
+          "motor_vehicles": 526,
+          "computer_equipment": 8407
+        },
+        "current_assets": {
+          "stock": null,
+          "trade_debtors": 23387,
+          "prepayments": null,
+          "amounts_owed_by_directors": null,
+          "amounts_owed_by_connected_companies": null,
+          "directors_current_account": null,
+          "other_debtors": 76739,
+          "total": 181545,
+          "cash_at_bank": 81419
+        },
+        "current_liabilities": {
+          "trade_creditors": 24,
+          "taxation_social_security": 39906,
+          "vat_payable": null,
+          "corporation_tax": null,
+          "bank_loans_current": 8000,
+          "hire_purchase_current": null,
+          "accruals": null,
+          "amounts_owed_to_directors": null,
+          "other_creditors": 43909,
+          "total": 91839
+        },
+        "long_term_liabilities": {
+          "bank_loans": 13333,
+          "hire_purchase_long_term": null,
+          "deferred_taxation": 3043,
+          "other_debt": null,
+          "total": 16376
+        },
+        "equity": {
+          "share_capital": 100,
+          "retained_earnings": 85400,
+          "total": 85500
+        }
+      },
+      "financial_ratios": {
+        "current_ratio": 1.9767745728938686,
+        "quick_ratio": 1.141192739467982,
+        "net_assets_growth_percent": -4.732191605290428,
+        "gearing_ratio_percent": 19.153216374269007
+      }
+    }
+  },
+  "summary_insights": [
+    "Net assets decreased by 4.7% from £89,747 to £85,500, primarily due to a £104,000 dividend payment exceeding the year's profit of £99,753.",
+    "Liquidity remains healthy but has tightened, with the current ratio softening from 2.28 to 1.98 and the quick ratio dropping from 1.37 to 1.14.",
+    "The tangible asset base reduced by 24.7% (£16,161 to £12,170), largely driven by depreciation and disposals of computer equipment.",
+    "Trade debtors increased significantly by 185% (£8,205 to £23,387), which may indicate a slowdown in payment collections or a recent surge in sales.",
+    "Long-term leverage improved as the gearing ratio fell from 28.3% to 19.2%, following a reduction in non-current bank loans.",
+    "Taxation and social security liabilities rose by 43.9%, suggesting higher payroll or VAT obligations compared to the prior year.",
+    "Cash reserves decreased by 17% (£98,084 to £81,419), though the company maintains a robust cash position relative to its size.",
+    "The company continues to be funded almost entirely through retained earnings, with a nominal share capital of only £100."
+  ],
+  "_isIM": false
+}

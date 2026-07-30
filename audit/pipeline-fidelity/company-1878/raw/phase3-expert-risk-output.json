@@ -1,0 +1,125 @@
+{
+  "expert": "risk",
+  "company_name": "[AUDIT-196] Compassion Home Care Limited",
+  "analysis_date": "2024-05-22",
+  "score": 68,
+  "confidence": "medium",
+  "customer_concentration": {
+    "risk_level": "unknown",
+    "top_customer_percent": null,
+    "top_3_customers_percent": null,
+    "top_5_customers_percent": null,
+    "hhi_index": null,
+    "hhi_classification": "diversified",
+    "total_customers": null,
+    "customers_over_15_percent": [],
+    "observations": [
+      "Sales ledger data was not provided in the input; customer concentration cannot be quantified.",
+      "Revenue is primarily care staff placement, which typically involves local authority or private client contracts."
+    ]
+  },
+  "financial_risk": {
+    "risk_level": "low",
+    "technically_insolvent": false,
+    "current_ratio_trend": "improving",
+    "creditor_growth_vs_revenue": "Creditors increased 5.5% (2025-2026) while revenue increased 5.1%.",
+    "director_loans_balance": null,
+    "intercompany_balances": null,
+    "interest_coverage_adequate": true,
+    "going_concern_indicators": [
+      "Positive net assets of £116,782 as at 2026-02-28.",
+      "Strong cash position of £103,302 as at 2026-02-28."
+    ],
+    "observations": [
+      "Current ratio as at 2026-02-28 is 2.25, up from 1.93 as at 2025-02-28.",
+      "Interest coverage is exceptionally high (Operating Profit £132,427 / Interest Payable £242).",
+      "The company has successfully reduced long-term bank loans from £21,333 (2023) to zero (2026)."
+    ]
+  },
+  "key_person_risk": {
+    "risk_level": "high",
+    "highest_individual_payroll_percent": null,
+    "single_points_of_failure": [
+      "Business Director",
+      "Registered Manager"
+    ],
+    "management_depth": "critical",
+    "average_tenure_years": 4.8,
+    "observations": [
+      "Both the Business Director and Registered Manager are not remaining post-sale, creating a significant leadership and regulatory compliance gap.",
+      "The workforce is heavily reliant on part-time/zero-hours staff (22 out of 24), which increases operational volatility.",
+      "Average tenure is healthy (approx 4.8 years), but concentrated in frontline staff rather than management."
+    ]
+  },
+  "revenue_quality": {
+    "risk_level": "moderate",
+    "revenue_type": "recurring",
+    "customer_trend": "unknown",
+    "seasonality_detected": false,
+    "observations": [
+      "Revenue has fluctuated between £770k and £836k over 4 years, showing stability but lack of clear growth trajectory.",
+      "Revenue is described as care staff placement, which is generally recurring in nature."
+    ]
+  },
+  "balance_sheet_risks": {
+    "director_loans": null,
+    "connected_company_balances": null,
+    "deferred_tax": 1596,
+    "pension_obligations": null,
+    "contingent_liabilities": "unable_to_assess",
+    "observations": [
+      "Deferred taxation liability of £1,596 as at 2026-02-28.",
+      "Director loans were not disclosed in the balance sheet entries provided (null fields).",
+      "Tangible fixed assets are low (£6,383 as at 2026-02-28), typical for a service-based care business."
+    ]
+  },
+  "bad_debt": {
+    "total_overdue_90_plus": null,
+    "recommended_provision": null,
+    "existing_provision": null,
+    "net_profit_impact": null,
+    "observations": [
+      "Trade debtors increased significantly from £19,102 (2025-02-28) to £98,020 (2026-02-28).",
+      "Without an aged debt profile, it is impossible to determine if this increase represents growth or slow-paying accounts."
+    ]
+  },
+  "risk_register": [
+    {
+      "risk": "Management Transition Gap",
+      "category": "people",
+      "severity": "critical",
+      "likelihood": "high",
+      "financial_impact": null,
+      "impact_description": "Loss of CQC Registered Manager and Business Director simultaneously could lead to regulatory non-compliance or operational collapse.",
+      "mitigation": "Make the deal contingent on the recruitment of a new Registered Manager or a handover period for the outgoing director."
+    },
+    {
+      "risk": "Debtor Spike",
+      "category": "financial",
+      "severity": "medium",
+      "likelihood": "medium",
+      "financial_impact": 78918,
+      "impact_description": "Trade debtors rose by 413% in one year. If these are uncollectable, it wipes out 78% of FY2026 net profit.",
+      "mitigation": "Perform a full audit of the £98,020 debtor balance and implement a debt collection guarantee in the SPA."
+    },
+    {
+      "risk": "Zero-Hours Contract Reliance",
+      "category": "operational",
+      "severity": "medium",
+      "likelihood": "medium",
+      "financial_impact": null,
+      "impact_description": "92% of staff are on part-time/zero-hours contracts, creating risk of staff shortages if competitors offer guaranteed hours.",
+      "mitigation": "Review staff satisfaction and consider moving key personnel to contracted hours post-acquisition."
+    }
+  ],
+  "deal_breakers": [
+    "Simultaneous exit of Business Director and Registered Manager without identified successors."
+  ],
+  "key_findings": [
+    "The company is financially stable with strong liquidity (Current Ratio 2.25) and no long-term bank debt.",
+    "Profitability is consistent, with EBITDA margins ranging between 13% and 16%.",
+    "There is a significant unexplained spike in Trade Debtors in the latest fiscal year.",
+    "The business faces a critical 'Key Person' risk due to the planned exit of all senior management."
+  ],
+  "narrative": "Compassion Home Care Limited presents as a financially healthy, debt-free business with consistent profitability. However, the acquisition carries high execution risk due to the total exit of the management team (Director and Registered Manager). Furthermore, the 413% increase in trade debtors in the 2026 fiscal year requires urgent investigation to ensure revenue is being converted to cash and is not masking bad debt. The deal is viable but requires a robust management succession plan and a thorough audit of the current debtor book."
+}

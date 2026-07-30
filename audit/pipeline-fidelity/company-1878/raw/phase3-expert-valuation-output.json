@@ -1,0 +1,118 @@
+{
+  "expert": "valuation",
+  "company_name": "[AUDIT-196] Compassion Home Care Limited",
+  "analysis_date": "2026-07-30",
+  "score": 75,
+  "confidence": "high",
+  "ebitda_multiple_valuation": {
+    "adjusted_ebitda_base": 93976,
+    "sector_multiple_range": {
+      "low": 1.5,
+      "mid": 2.25,
+      "high": 3
+    },
+    "selected_multiple": 2,
+    "multiple_justification": "A multiple of 2.0x is selected, which is slightly below the sector midpoint. While the company shows stable margins and high interest coverage, it is heavily discounted due to its micro-cap size (revenue <£1M), the critical 'Key Person' risk with both the Director and Registered Manager exiting, and the significant 413% spike in trade debtors which suggests operational or collection instability.",
+    "premium_factors_applied": [
+      "Consistent operating margin growth (12.2% to 16.2%)",
+      "High interest coverage ratio (547.22)",
+      "Debt-free balance sheet"
+    ],
+    "discount_factors_applied": [
+      "Micro-cap status (Revenue <£1M)",
+      "Simultaneous exit of Business Director and Registered Manager",
+      "Significant deterioration in debtor days (43.7 days vs 8.9 days)",
+      "Aging asset base (Motor vehicles at £0 NBV)"
+    ],
+    "enterprise_value_range": {
+      "conservative": 121764,
+      "base": 187952,
+      "optimistic": 271940
+    }
+  },
+  "ev_to_equity_bridge": {
+    "enterprise_value_base": 187952,
+    "plus_cash": 103302,
+    "minus_long_term_debt": 0,
+    "minus_director_loans": 0,
+    "minus_bad_debt_provision": 9802,
+    "minus_working_capital_adjustment": 0,
+    "equity_value": {
+      "conservative": 215264,
+      "base": 281452,
+      "optimistic": 365440
+    }
+  },
+  "asset_based_valuation": {
+    "net_asset_value": 116782,
+    "property_adjustment": 0,
+    "bad_debt_adjustment": 9802,
+    "adjusted_nav": 106980,
+    "nav_as_floor": true
+  },
+  "revenue_multiple_crosscheck": {
+    "latest_revenue": 818060,
+    "revenue_multiple_range": {
+      "low": 0.4,
+      "high": 0.6
+    },
+    "implied_ev_range": {
+      "low": 327224,
+      "high": 490836
+    }
+  },
+  "valuation_summary": {
+    "recommended_range": {
+      "equity_value_low": 215000,
+      "equity_value_mid": 281000,
+      "equity_value_high": 365000
+    },
+    "primary_methodology": "ebitda_multiple",
+    "cross_check_alignment": "moderate"
+  },
+  "sensitivity": {
+    "ebitda_plus_10pct": {
+      "enterprise_value": 206747,
+      "equity_value": 300247
+    },
+    "ebitda_minus_10pct": {
+      "enterprise_value": 169157,
+      "equity_value": 262657
+    },
+    "multiple_plus_half": {
+      "enterprise_value": 234940,
+      "equity_value": 328440
+    },
+    "multiple_minus_half": {
+      "enterprise_value": 140964,
+      "equity_value": 234464
+    },
+    "key_customer_loss_impact": "Unknown due to lack of customer concentration data, but a 10% revenue loss would likely reduce EBITDA by approx. £25k-£30k given the high variable cost structure.",
+    "director_replacement_impact": 42500
+  },
+  "seller_expectations": {
+    "likely_seller_expectation_range": {
+      "low": 400000,
+      "high": 600000
+    },
+    "seller_anchor_points": [
+      "Reported EBITDA of £135k (ignoring replacement management costs)",
+      "Revenue multiple of 0.5x-0.7x",
+      "Strong cash balance of £103k"
+    ],
+    "negotiation_gap_assessment": "Significant. The seller is likely to anchor on the reported EBITDA of £135k, whereas the buyer must normalize this to ~£94k to account for the mandatory Registered Manager replacement. The seller may also expect a full 'pound-for-pound' value for the cash, while the buyer will point to the debtor spike as a reason to hold back funds."
+  },
+  "key_findings": [
+    "The business is fundamentally profitable but highly dependent on a management team that is exiting.",
+    "Adjusted EBITDA (Base Case) of £93,976 accounts for the market-rate replacement of the Registered Manager and Director.",
+    "The company is effectively debt-free with a strong cash position of £103,302 (FY2026).",
+    "The 413% increase in trade debtors in FY2026 is a major liquidity and valuation risk.",
+    "Asset-based valuation provides a solid floor of ~£107k, well below the earnings-based value."
+  ],
+  "red_flags": [
+    "Management Vacuum: Simultaneous exit of Business Director and Registered Manager.",
+    "Working Capital: Debtor days increased from 9 to 44 in a single year.",
+    "Capex Cliff: Motor vehicles are fully depreciated and IT assets are aging."
+  ],
+  "narrative": "Compassion Home Care Limited is a stable, micro-cap domiciliary care provider. The valuation is driven by a normalized EBITDA of £93,976, which reflects the necessary costs to replace the exiting management team with a CQC-compliant Registered Manager. While the business has grown its operating margins to 16.2% and maintains a healthy cash balance of £103,302 (as of 2026-02-28), it faces significant headwinds. The primary valuation discount stems from the 'Key Person' risk and a concerning spike in trade debtors from £19k to £98k in the latest fiscal year. A multiple of 2.0x is applied to reflect these risks against the backdrop of a fragmented and labor-intensive sector. The equity value bridge includes the FY2026 cash balance and a prudent bad debt provision of £9,802 as recommended by the Risk Expert. The resulting fair value range of £215k to £365k is likely to meet resistance from a seller anchoring on unadjusted figures, but it represents a sustainable entry point for a buyer who must immediately reinvest in management and fleet replacement."
+}

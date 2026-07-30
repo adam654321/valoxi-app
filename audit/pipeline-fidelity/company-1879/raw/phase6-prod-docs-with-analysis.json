@@ -1,0 +1,3463 @@
+[
+  {
+    "id": 1418,
+    "document_name": "staff matrix.pdf",
+    "original_filename": "staff matrix.pdf",
+    "document_category": "Staff Matrix",
+    "file_path": "companies/172/doc-1782745506616-343766368.pdf",
+    "file_type": "application/pdf",
+    "file_size": 202179,
+    "upload_date": "2026-06-29T15:05:08.251Z",
+    "analysisResults": [
+      {
+        "id": 2781,
+        "document_type": "staff_matrix",
+        "created_at": "2026-06-29T15:05:18.902Z",
+        "analysis_data": {
+          "document": "staff_matrix",
+          "report_date": "2026-06-29",
+          "summary": {
+            "total_headcount": 11,
+            "total_staff_costs": null,
+            "total_gross_salaries": null,
+            "total_employer_ni": null,
+            "total_employer_pension": null,
+            "director_count": 2,
+            "director_remuneration": null,
+            "working_director_count": 2,
+            "non_working_director_count": 0,
+            "employee_count": 9,
+            "employee_costs": null
+          },
+          "staff": [
+            {
+              "name": "Mark Jones",
+              "position": "Managing Director, Company Secretary, Deputy Rail Sentinel Co-Ordinator",
+              "gross_salary": null,
+              "employer_ni": null,
+              "employer_pension": null,
+              "total_cost": null,
+              "is_director": true,
+              "is_owner": null,
+              "employment_type": null,
+              "start_date": null
+            },
+            {
+              "name": "Deborah Jones",
+              "position": "Director",
+              "gross_salary": null,
+              "employer_ni": null,
+              "employer_pension": null,
+              "total_cost": null,
+              "is_director": true,
+              "is_owner": null,
+              "employment_type": null,
+              "start_date": null
+            },
+            {
+              "name": "Martin Ward",
+              "position": "General Manager",
+              "gross_salary": null,
+              "employer_ni": null,
+              "employer_pension": null,
+              "total_cost": null,
+              "is_director": false,
+              "is_owner": null,
+              "employment_type": null,
+              "start_date": null
+            },
+            {
+              "name": "John Morgan",
+              "position": "HSQE Advisor (Consultancy 360)",
+              "gross_salary": null,
+              "employer_ni": null,
+              "employer_pension": null,
+              "total_cost": null,
+              "is_director": false,
+              "is_owner": null,
+              "employment_type": null,
+              "start_date": null
+            },
+            {
+              "name": "Demi Streeter",
+              "position": "Office Manager & Rail Sentinel Co-Ordinator",
+              "gross_salary": null,
+              "employer_ni": null,
+              "employer_pension": null,
+              "total_cost": null,
+              "is_director": false,
+              "is_owner": null,
+              "employment_type": null,
+              "start_date": null
+            },
+            {
+              "name": "Robert Williamson",
+              "position": "Supervisor/Scaffold Inspector",
+              "gross_salary": null,
+              "employer_ni": null,
+              "employer_pension": null,
+              "total_cost": null,
+              "is_director": false,
+              "is_owner": null,
+              "employment_type": null,
+              "start_date": null
+            },
+            {
+              "name": "Paul Rest",
+              "position": "Advanced Scaffolder",
+              "gross_salary": null,
+              "employer_ni": null,
+              "employer_pension": null,
+              "total_cost": null,
+              "is_director": false,
+              "is_owner": null,
+              "employment_type": null,
+              "start_date": null
+            },
+            {
+              "name": "Kalen Holligan",
+              "position": "Advanced Scaffolder",
+              "gross_salary": null,
+              "employer_ni": null,
+              "employer_pension": null,
+              "total_cost": null,
+              "is_director": false,
+              "is_owner": null,
+              "employment_type": null,
+              "start_date": null
+            },
+            {
+              "name": "Labourers",
+              "position": "Labourers",
+              "gross_salary": null,
+              "employer_ni": null,
+              "employer_pension": null,
+              "total_cost": null,
+              "is_director": false,
+              "is_owner": null,
+              "employment_type": null,
+              "start_date": null
+            },
+            {
+              "name": "Trainee Scaffolders",
+              "position": "Trainee Scaffolders",
+              "gross_salary": null,
+              "employer_ni": null,
+              "employer_pension": null,
+              "total_cost": null,
+              "is_director": false,
+              "is_owner": null,
+              "employment_type": null,
+              "start_date": null
+            },
+            {
+              "name": "Scaffolders",
+              "position": "Scaffolders",
+              "gross_salary": null,
+              "employer_ni": null,
+              "employer_pension": null,
+              "total_cost": null,
+              "is_director": false,
+              "is_owner": null,
+              "employment_type": null,
+              "start_date": null
+            },
+            {
+              "name": "Scaffold Yardmen",
+              "position": "Scaffold Yardmen",
+              "gross_salary": null,
+              "employer_ni": null,
+              "employer_pension": null,
+              "total_cost": null,
+              "is_director": false,
+              "is_owner": null,
+              "employment_type": null,
+              "start_date": null
+            }
+          ],
+          "employment_type_breakdown": {
+            "Full-Time": null,
+            "Part-Time": null
+          },
+          "observations": [
+            "The organization chart identifies 2 directors: Mark Jones and Deborah Jones.",
+            "John Morgan is noted as an HSQE Advisor with a handwritten annotation 'CONSULTANCY 360', suggesting he may be an external contractor.",
+            "The chart includes generic roles (Labourers, Trainee Scaffolders, Scaffolders, Yardmen) without individual names, indicating these may be departments or multiple staff members.",
+            "No financial data (salaries, NI, pension) was provided in the source document."
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": 1419,
+    "document_name": "Aged Creditors.pdf",
+    "original_filename": "Aged Creditors.pdf",
+    "document_category": "Deal Documents",
+    "file_path": "companies/172/doc-1782745536494-290817100.pdf",
+    "file_type": "application/pdf",
+    "file_size": 46389,
+    "upload_date": "2026-06-29T15:05:37.432Z",
+    "analysisResults": [
+      {
+        "id": 2782,
+        "document_type": "sales_ledger",
+        "created_at": "2026-06-29T15:05:46.061Z",
+        "analysis_data": {
+          "document": "aged_creditors_analysis",
+          "report_date": "2026-05-21",
+          "summary": {
+            "total_trade_debtors": 18295.18,
+            "debtor_days": null,
+            "recent_revenue": 192230.28,
+            "bad_debt_provision": null,
+            "doubtful_debts": null
+          },
+          "aging": {
+            "current_0_to_30": 11213.33,
+            "days_31_to_60": 6941.85,
+            "days_61_to_90": 0,
+            "days_90_plus": 140
+          },
+          "top_debtors": [
+            {
+              "name": "GB DIGGER HIRE LTD",
+              "amount": 7080,
+              "days_bucket": "0-30"
+            },
+            {
+              "name": "Generation Hire and Sale",
+              "amount": 4335.54,
+              "days_bucket": "0-30"
+            },
+            {
+              "name": "THE HOIST PEOPLE LTD",
+              "amount": 3082.94,
+              "days_bucket": "0-30"
+            },
+            {
+              "name": "Mick Moy Tyres Ltd",
+              "amount": 1212,
+              "days_bucket": "31-60"
+            },
+            {
+              "name": "ANGLIAN SAFTEY TRAINING",
+              "amount": 660,
+              "days_bucket": "31-60"
+            },
+            {
+              "name": "C J Spares Ltd",
+              "amount": 592.43,
+              "days_bucket": "0-30"
+            },
+            {
+              "name": "BRACKEN BRAE GARAGE",
+              "amount": 496.02,
+              "days_bucket": "0-30"
+            },
+            {
+              "name": "SASUK - NORWICH CLOUD",
+              "amount": 372,
+              "days_bucket": "31-60"
+            },
+            {
+              "name": "PDC LOGISTIC SERVICES LTD",
+              "amount": 360,
+              "days_bucket": "0-30"
+            },
+            {
+              "name": "Fire Assess and Extinguish",
+              "amount": 291.6,
+              "days_bucket": "31-60"
+            }
+          ],
+          "invoice_status_summary": {
+            "Paid": {
+              "count": null,
+              "value": null
+            },
+            "Part Paid": {
+              "count": null,
+              "value": null
+            },
+            "Unpaid": {
+              "count": null,
+              "value": null
+            }
+          },
+          "observations": [
+            "High concentration risk with GB DIGGER HIRE LTD representing 38.7% of the total outstanding balance.",
+            "61.3% of the ledger is current (0-30 days), while 37.9% is in the 31-60 day bucket, suggesting a slight lag in recent collections.",
+            "A debit balance of -1,530.00 exists for PRIME SCAFFOLD & STRUCTURAL DESIGNS, which may indicate an overpayment or credit note requiring reconciliation."
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": 1420,
+    "document_name": "Balance sheet.pdf",
+    "original_filename": "Balance sheet.pdf",
+    "document_category": "YTD Balance Sheet",
+    "file_path": "companies/172/doc-1782745553429-98334794.pdf",
+    "file_type": "application/pdf",
+    "file_size": 35258,
+    "upload_date": "2026-06-29T15:05:54.498Z",
+    "analysisResults": [
+      {
+        "id": 2783,
+        "document_type": "balance_sheet",
+        "created_at": "2026-06-29T15:06:05.186Z",
+        "analysis_data": {
+          "document": "balance_sheet",
+          "source": "statutory",
+          "years_covered": [
+            2025,
+            2026
+          ],
+          "period_ends": {
+            "2025": "2025-03-31",
+            "2026": "2026-03-31"
+          },
+          "years": {
+            "2025": {
+              "year": 2025,
+              "balance_sheet": {
+                "fixed_assets": {
+                  "intangible_assets": null,
+                  "tangible_assets": 54998.38,
+                  "freehold_property": null,
+                  "leasehold_property": null,
+                  "plant_machinery": 29840,
+                  "fixtures_fittings": null,
+                  "motor_vehicles": 22100,
+                  "computer_equipment": 3058.38
+                },
+                "current_assets": {
+                  "stock": null,
+                  "trade_debtors": 8159.5,
+                  "prepayments": null,
+                  "amounts_owed_by_directors": null,
+                  "amounts_owed_by_connected_companies": null,
+                  "directors_current_account": null,
+                  "other_debtors": null,
+                  "cash_at_bank": -111407.54,
+                  "total": -103248.04
+                },
+                "current_liabilities": {
+                  "trade_creditors": -97764.12,
+                  "taxation_social_security": -3555.38,
+                  "vat_payable": 22838.72,
+                  "corporation_tax": null,
+                  "bank_loans_current": 22633.12,
+                  "hire_purchase_current": null,
+                  "accruals": null,
+                  "amounts_owed_to_directors": null,
+                  "other_creditors": -3229.7,
+                  "total": -59077.36
+                },
+                "long_term_liabilities": {
+                  "bank_loans": null,
+                  "hire_purchase_long_term": null,
+                  "deferred_taxation": null,
+                  "other_debt": -71386.61,
+                  "total": -71386.61
+                },
+                "equity": {
+                  "share_capital": 0,
+                  "retained_earnings": 82214.31,
+                  "total": 82214.31
+                }
+              },
+              "financial_ratios": {
+                "current_ratio": 1.7476,
+                "quick_ratio": 1.7476,
+                "net_assets_growth_percent": null,
+                "gearing_ratio_percent": -86.83
+              }
+            },
+            "2026": {
+              "year": 2026,
+              "balance_sheet": {
+                "fixed_assets": {
+                  "intangible_assets": null,
+                  "tangible_assets": 225179.38,
+                  "freehold_property": null,
+                  "leasehold_property": null,
+                  "plant_machinery": 48267,
+                  "fixtures_fittings": null,
+                  "motor_vehicles": 163396,
+                  "computer_equipment": 13516.38
+                },
+                "current_assets": {
+                  "stock": null,
+                  "trade_debtors": 250591.03,
+                  "prepayments": null,
+                  "amounts_owed_by_directors": null,
+                  "amounts_owed_by_connected_companies": null,
+                  "directors_current_account": null,
+                  "other_debtors": 21230.63,
+                  "cash_at_bank": 101055.65,
+                  "total": 372877.31
+                },
+                "current_liabilities": {
+                  "trade_creditors": 90607.95,
+                  "taxation_social_security": 13648.41,
+                  "vat_payable": 0,
+                  "corporation_tax": null,
+                  "bank_loans_current": 0,
+                  "hire_purchase_current": null,
+                  "accruals": null,
+                  "amounts_owed_to_directors": null,
+                  "other_creditors": 11667.28,
+                  "total": 115923.64
+                },
+                "long_term_liabilities": {
+                  "bank_loans": null,
+                  "hire_purchase_long_term": null,
+                  "deferred_taxation": null,
+                  "other_debt": 7347.64,
+                  "total": 7347.64
+                },
+                "equity": {
+                  "share_capital": 200,
+                  "retained_earnings": 474585.41,
+                  "total": 474785.41
+                }
+              },
+              "financial_ratios": {
+                "current_ratio": 3.2165,
+                "quick_ratio": 3.0334,
+                "net_assets_growth_percent": 477.49,
+                "gearing_ratio_percent": 1.54
+              }
+            }
+          },
+          "summary_insights": [
+            "The company experienced exceptional growth, with net assets increasing by 477% from £82,214 to £474,785 within one year.",
+            "The fixed asset base expanded significantly (309%), driven primarily by a substantial investment in motor vehicles, which rose from £22,100 to £163,396.",
+            "Liquidity has improved dramatically; the current ratio rose from 1.75 to 3.22, indicating a much stronger ability to cover short-term obligations.",
+            "Cash position moved from a significant deficit/overdraft of (£111,407) to a healthy positive balance of £101,055, marking a major turnaround in working capital management.",
+            "Trade debtors increased nearly 30-fold to £250,591, suggesting a massive scale-up in operations, though this requires monitoring for credit risk.",
+            "Long-term liabilities were significantly reduced, and the gearing ratio is now negligible at 1.54%, indicating a very low-risk capital structure.",
+            "The balance sheet reflects a highly profitable year with retained earnings growing by over £390,000, providing a robust cushion for future expansion."
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": 1421,
+    "document_name": "PNL.pdf",
+    "original_filename": "PNL.pdf",
+    "document_category": "YTD Profit & Loss",
+    "file_path": "companies/172/doc-1782745572400-43519776.pdf",
+    "file_type": "application/pdf",
+    "file_size": 37601,
+    "upload_date": "2026-06-29T15:06:13.297Z",
+    "analysisResults": [
+      {
+        "id": 2784,
+        "document_type": "profit_and_loss",
+        "created_at": "2026-06-29T15:06:23.783Z",
+        "analysis_data": {
+          "document": "profit_and_loss",
+          "source": "management",
+          "years_covered": [
+            2026
+          ],
+          "period_ends": {
+            "2026": "2026-03-12"
+          },
+          "years": {
+            "2026": {
+              "year": 2026,
+              "profit_and_loss": {
+                "revenue": 1869199.89,
+                "cost_of_sales": 971147.23,
+                "gross_profit": 898052.66,
+                "administrative_expenses": 714144.14,
+                "depreciation_amortisation": null,
+                "other_operating_income": null,
+                "operating_profit": 183908.52,
+                "interest_receivable": 1787.29,
+                "interest_payable": 0,
+                "profit_before_tax": 183908.52,
+                "corporation_tax": null,
+                "net_profit": 183908.52
+              },
+              "revenue_breakdown": {
+                "by_product": {
+                  "Scaffolding Sales": 1867412.6,
+                  "Interest": 1787.29
+                },
+                "by_segment": {}
+              },
+              "cost_of_sales_breakdown": {
+                "direct_materials": 93592.89,
+                "direct_labour": 873770.98,
+                "subcontractor_costs": 485324.26,
+                "other_direct_costs": 3783.36
+              },
+              "overheads_breakdown": {
+                "staff_wages_salaries": 208119.82,
+                "directors_salaries": null,
+                "directors_pension": null,
+                "employers_national_insurance": null,
+                "staff_pension_contributions": null,
+                "staff_training_recruitment": 25853.53,
+                "use_of_home_as_office": null,
+                "rent_rates": 46758.59,
+                "utilities": null,
+                "insurance": 53657.68,
+                "accountancy_bookkeeping": 18832,
+                "professional_fees": 93574.08,
+                "software_subscriptions": 6597,
+                "computer_costs": 16983.74,
+                "it_support_hosting": null,
+                "telecommunications": null,
+                "printing_stationery": 1251.88,
+                "postage_courier": null,
+                "subscriptions_memberships": 14065.64,
+                "bank_charges": 3183.95,
+                "advertising_marketing": 490,
+                "travel_subsistence": 5259.64,
+                "motor_expenses": 189125.16,
+                "repairs_maintenance": 6032,
+                "depreciation": null,
+                "amortisation": null,
+                "other_overheads": 44314.43
+              },
+              "total_staff_costs": 208119.82,
+              "total_directors_remuneration": 0,
+              "dividends_paid": null,
+              "exceptional_items": [],
+              "financial_ratios": {
+                "gross_margin_percent": 48.04,
+                "net_margin_percent": 9.84,
+                "interest_coverage_ratio": null
+              }
+            }
+          },
+          "summary_insights": [
+            "The company achieved a turnover of £1.87m for the period ending March 2026, primarily driven by scaffolding sales.",
+            "Gross profit margin is healthy at 48.0%, though heavily impacted by direct labour and subcontractor costs totalling over £870k.",
+            "Net profit margin stands at 9.8%, reflecting significant overhead pressures, particularly in vehicle-related expenses and staff wages.",
+            "Motor expenses represent a major overhead category at approximately £189k (10% of revenue), including fuel, repairs, and insurance.",
+            "Professional and consultancy fees are notably high at over £94k, suggesting a reliance on external advisory services.",
+            "The business maintains a positive bottom line with a net profit of £183,908, demonstrating operational viability.",
+            "Interest income of £1,787 suggests a positive cash position, though no interest-bearing debt is serviced in this period.",
+            "Staff-related costs (including direct labour and overhead wages) are the primary cost driver, exceeding £1m in total."
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": 1422,
+    "document_name": "draft year end 25.pdf",
+    "original_filename": "draft year end 25.pdf",
+    "document_category": "Company Accounts",
+    "file_path": "companies/172/doc-1782745600050-281519454.pdf",
+    "file_type": "application/pdf",
+    "file_size": 167993,
+    "upload_date": "2026-06-29T15:06:41.314Z",
+    "analysisResults": [
+      {
+        "id": 2785,
+        "document_type": "company_accounts",
+        "created_at": "2026-06-29T15:07:14.244Z",
+        "analysis_data": {
+          "document": "company_accounts",
+          "source": "statutory_accounts",
+          "profit_and_loss": {
+            "document": "profit_and_loss",
+            "source": "statutory",
+            "years_covered": [
+              2024,
+              2025
+            ],
+            "period_ends": {
+              "2024": "2024-03-31",
+              "2025": "2025-03-31"
+            },
+            "years": {
+              "2024": {
+                "year": 2024,
+                "profit_and_loss": {
+                  "revenue": 1636215,
+                  "cost_of_sales": 861049,
+                  "gross_profit": 775166,
+                  "administrative_expenses": 662120,
+                  "depreciation_amortisation": 145685,
+                  "other_operating_income": null,
+                  "operating_profit": 113046,
+                  "interest_receivable": 7576,
+                  "interest_payable": 1836,
+                  "profit_before_tax": 118786,
+                  "corporation_tax": 30830,
+                  "net_profit": 87956
+                },
+                "revenue_breakdown": {
+                  "by_product": {
+                    "Sales": 1633903,
+                    "Insurance claims received": 2312
+                  },
+                  "by_segment": {}
+                },
+                "cost_of_sales_breakdown": {
+                  "direct_materials": 52187,
+                  "direct_labour": 418396,
+                  "subcontractor_costs": 35522,
+                  "other_direct_costs": 354944
+                },
+                "overheads_breakdown": {
+                  "staff_wages_salaries": 32000,
+                  "directors_salaries": 116328,
+                  "directors_pension": null,
+                  "employers_national_insurance": 13800,
+                  "staff_pension_contributions": 9674,
+                  "staff_training_recruitment": 14775,
+                  "use_of_home_as_office": null,
+                  "rent_rates": 32750,
+                  "utilities": null,
+                  "insurance": 74342,
+                  "accountancy_bookkeeping": 17355,
+                  "professional_fees": 12379,
+                  "software_subscriptions": null,
+                  "computer_costs": null,
+                  "it_support_hosting": null,
+                  "telecommunications": 3248,
+                  "printing_stationery": 2137,
+                  "postage_courier": null,
+                  "subscriptions_memberships": 9819,
+                  "bank_charges": 544,
+                  "advertising_marketing": null,
+                  "travel_subsistence": 5531,
+                  "motor_expenses": 141335,
+                  "repairs_maintenance": 8241,
+                  "depreciation": 145685,
+                  "amortisation": null,
+                  "other_overheads": 12449
+                },
+                "total_staff_costs": 41674,
+                "total_directors_remuneration": 130128,
+                "dividends_paid": 584451,
+                "exceptional_items": [],
+                "financial_ratios": {
+                  "gross_margin_percent": 47.38,
+                  "net_margin_percent": 5.38,
+                  "interest_coverage_ratio": 61.57
+                }
+              },
+              "2025": {
+                "year": 2025,
+                "profit_and_loss": {
+                  "revenue": 1777001,
+                  "cost_of_sales": 995977,
+                  "gross_profit": 781024,
+                  "administrative_expenses": 527166,
+                  "depreciation_amortisation": 92854,
+                  "other_operating_income": null,
+                  "operating_profit": 253858,
+                  "interest_receivable": 4266,
+                  "interest_payable": 0,
+                  "profit_before_tax": 258124,
+                  "corporation_tax": 64813,
+                  "net_profit": 193311
+                },
+                "revenue_breakdown": {
+                  "by_product": {
+                    "Sales": 1772833,
+                    "Insurance claims received": 4168
+                  },
+                  "by_segment": {}
+                },
+                "cost_of_sales_breakdown": {
+                  "direct_materials": 62446,
+                  "direct_labour": 485753,
+                  "subcontractor_costs": 25432,
+                  "other_direct_costs": 422346
+                },
+                "overheads_breakdown": {
+                  "staff_wages_salaries": 42472,
+                  "directors_salaries": 9524,
+                  "directors_pension": null,
+                  "employers_national_insurance": 0,
+                  "staff_pension_contributions": 9878,
+                  "staff_training_recruitment": 15900,
+                  "use_of_home_as_office": null,
+                  "rent_rates": 45900,
+                  "utilities": null,
+                  "insurance": 65980,
+                  "accountancy_bookkeeping": 19685,
+                  "professional_fees": 16109,
+                  "software_subscriptions": null,
+                  "computer_costs": null,
+                  "it_support_hosting": null,
+                  "telecommunications": 3229,
+                  "printing_stationery": 1694,
+                  "postage_courier": null,
+                  "subscriptions_memberships": 10054,
+                  "bank_charges": 577,
+                  "advertising_marketing": null,
+                  "travel_subsistence": 5727,
+                  "motor_expenses": 153877,
+                  "repairs_maintenance": 12543,
+                  "depreciation": 92854,
+                  "amortisation": null,
+                  "other_overheads": 17413
+                },
+                "total_staff_costs": 52350,
+                "total_directors_remuneration": 9524,
+                "dividends_paid": null,
+                "exceptional_items": [],
+                "financial_ratios": {
+                  "gross_margin_percent": 43.95,
+                  "net_margin_percent": 10.88,
+                  "interest_coverage_ratio": null
+                }
+              }
+            },
+            "summary_insights": [
+              "Revenue grew by 8.6% year-on-year, reaching £1.78m, driven primarily by core sales growth.",
+              "Gross margin experienced compression, falling from 47.4% to 44.0% due to a 15.7% increase in cost of sales.",
+              "Net profit more than doubled (+119.8%) to £193,311, largely due to a significant 20.4% reduction in administrative overheads.",
+              "A major driver of improved profitability was the sharp reduction in directors' salaries from £116,328 to £9,524.",
+              "Operating profit margin improved significantly from 6.9% to 14.3%, indicating much stronger operational efficiency.",
+              "The company eliminated interest-bearing debt costs in 2025, improving the overall financial risk profile.",
+              "Staff costs (excluding directors) rose by 25.6%, reflecting increased investment in the workforce alongside revenue growth.",
+              "The business shows strong resilience with a substantial increase in net margin despite the slight decline in gross margin."
+            ]
+          },
+          "balance_sheet": {
+            "document": "balance_sheet",
+            "source": "statutory",
+            "years_covered": [
+              2024,
+              2025
+            ],
+            "period_ends": {
+              "2024": "2024-03-31",
+              "2025": "2025-03-31"
+            },
+            "years": {
+              "2024": {
+                "year": 2024,
+                "balance_sheet": {
+                  "fixed_assets": {
+                    "intangible_assets": 0,
+                    "tangible_assets": 106837,
+                    "freehold_property": null,
+                    "leasehold_property": null,
+                    "plant_machinery": 7851,
+                    "fixtures_fittings": 12713,
+                    "motor_vehicles": 86273,
+                    "computer_equipment": null
+                  },
+                  "current_assets": {
+                    "stock": null,
+                    "trade_debtors": 169850,
+                    "prepayments": 12000,
+                    "amounts_owed_by_directors": null,
+                    "amounts_owed_by_connected_companies": 6487,
+                    "directors_current_account": null,
+                    "other_debtors": 6190,
+                    "cash_at_bank": 362769,
+                    "total": 557296
+                  },
+                  "current_liabilities": {
+                    "trade_creditors": 59424,
+                    "taxation_social_security": 15907,
+                    "vat_payable": null,
+                    "corporation_tax": 64051,
+                    "bank_loans_current": null,
+                    "hire_purchase_current": 3974,
+                    "accruals": 118093,
+                    "amounts_owed_to_directors": null,
+                    "other_creditors": 14419,
+                    "total": 275868
+                  },
+                  "long_term_liabilities": {
+                    "bank_loans": null,
+                    "hire_purchase_long_term": 0,
+                    "deferred_taxation": 25420,
+                    "other_debt": null,
+                    "total": 25420
+                  },
+                  "equity": {
+                    "share_capital": 120,
+                    "retained_earnings": 362645,
+                    "total": 362845
+                  }
+                },
+                "financial_ratios": {
+                  "current_ratio": 2.020154566676817,
+                  "quick_ratio": 1.9306987399770905,
+                  "net_assets_growth_percent": null,
+                  "gearing_ratio_percent": 7.005746255286693
+                }
+              },
+              "2025": {
+                "year": 2025,
+                "balance_sheet": {
+                  "fixed_assets": {
+                    "intangible_assets": 0,
+                    "tangible_assets": 170749,
+                    "freehold_property": null,
+                    "leasehold_property": null,
+                    "plant_machinery": 9283,
+                    "fixtures_fittings": 12818,
+                    "motor_vehicles": 148648,
+                    "computer_equipment": null
+                  },
+                  "current_assets": {
+                    "stock": null,
+                    "trade_debtors": 228042,
+                    "prepayments": 7477,
+                    "amounts_owed_by_directors": null,
+                    "amounts_owed_by_connected_companies": 212457,
+                    "directors_current_account": null,
+                    "other_debtors": 44338,
+                    "cash_at_bank": 240408,
+                    "total": 732722
+                  },
+                  "current_liabilities": {
+                    "trade_creditors": 98865,
+                    "taxation_social_security": 17204,
+                    "vat_payable": null,
+                    "corporation_tax": 49752,
+                    "bank_loans_current": null,
+                    "hire_purchase_current": 19800,
+                    "accruals": 4519,
+                    "amounts_owed_to_directors": 27852,
+                    "other_creditors": 59494,
+                    "total": 249634
+                  },
+                  "long_term_liabilities": {
+                    "bank_loans": null,
+                    "hire_purchase_long_term": 57200,
+                    "deferred_taxation": 40481,
+                    "other_debt": null,
+                    "total": 97681
+                  },
+                  "equity": {
+                    "share_capital": 120,
+                    "retained_earnings": 555956,
+                    "total": 556156
+                  }
+                },
+                "financial_ratios": {
+                  "current_ratio": 2.935185110998502,
+                  "quick_ratio": 1.8765468645134478,
+                  "net_assets_growth_percent": 53.27646791329631,
+                  "gearing_ratio_percent": 17.563597264073376
+                }
+              }
+            },
+            "summary_insights": [
+              "Net assets grew significantly by 53.3% during the year, rising from £362,845 to £556,156, driven by strong retained profits.",
+              "The current ratio improved from 2.02 to 2.94, indicating a very robust short-term liquidity position with nearly £3 of current assets for every £1 of current liability.",
+              "Tangible fixed assets increased by 59.8%, primarily due to significant investment in motor vehicles, which rose from £86,273 to £148,648.",
+              "Intercompany receivables (amounts owed by group undertakings) surged from £6,487 to £212,457, suggesting a substantial shift of cash/value to the parent or sister companies.",
+              "Long-term leverage has increased via new hire purchase obligations of £57,200, though the gearing ratio remains manageable at 17.6%.",
+              "The company maintains a healthy cash balance of £240,408, although this is a reduction from the previous year's £362,769 due to asset investment and group lending.",
+              "A new related party liability has emerged, with £27,852 now owed to directors at the year-end."
+            ]
+          }
+        }
+      },
+      {
+        "id": 2786,
+        "document_type": "profit_and_loss",
+        "created_at": "2026-06-29T15:07:14.308Z",
+        "analysis_data": {
+          "document": "profit_and_loss",
+          "source": "statutory",
+          "years_covered": [
+            2024,
+            2025
+          ],
+          "period_ends": {
+            "2024": "2024-03-31",
+            "2025": "2025-03-31"
+          },
+          "years": {
+            "2024": {
+              "year": 2024,
+              "profit_and_loss": {
+                "revenue": 1636215,
+                "cost_of_sales": 861049,
+                "gross_profit": 775166,
+                "administrative_expenses": 662120,
+                "depreciation_amortisation": 145685,
+                "other_operating_income": null,
+                "operating_profit": 113046,
+                "interest_receivable": 7576,
+                "interest_payable": 1836,
+                "profit_before_tax": 118786,
+                "corporation_tax": 30830,
+                "net_profit": 87956
+              },
+              "revenue_breakdown": {
+                "by_product": {
+                  "Sales": 1633903,
+                  "Insurance claims received": 2312
+                },
+                "by_segment": {}
+              },
+              "cost_of_sales_breakdown": {
+                "direct_materials": 52187,
+                "direct_labour": 418396,
+                "subcontractor_costs": 35522,
+                "other_direct_costs": 354944
+              },
+              "overheads_breakdown": {
+                "staff_wages_salaries": 32000,
+                "directors_salaries": 116328,
+                "directors_pension": null,
+                "employers_national_insurance": 13800,
+                "staff_pension_contributions": 9674,
+                "staff_training_recruitment": 14775,
+                "use_of_home_as_office": null,
+                "rent_rates": 32750,
+                "utilities": null,
+                "insurance": 74342,
+                "accountancy_bookkeeping": 17355,
+                "professional_fees": 12379,
+                "software_subscriptions": null,
+                "computer_costs": null,
+                "it_support_hosting": null,
+                "telecommunications": 3248,
+                "printing_stationery": 2137,
+                "postage_courier": null,
+                "subscriptions_memberships": 9819,
+                "bank_charges": 544,
+                "advertising_marketing": null,
+                "travel_subsistence": 5531,
+                "motor_expenses": 141335,
+                "repairs_maintenance": 8241,
+                "depreciation": 145685,
+                "amortisation": null,
+                "other_overheads": 12449
+              },
+              "total_staff_costs": 41674,
+              "total_directors_remuneration": 130128,
+              "dividends_paid": 584451,
+              "exceptional_items": [],
+              "financial_ratios": {
+                "gross_margin_percent": 47.38,
+                "net_margin_percent": 5.38,
+                "interest_coverage_ratio": 61.57
+              }
+            },
+            "2025": {
+              "year": 2025,
+              "profit_and_loss": {
+                "revenue": 1777001,
+                "cost_of_sales": 995977,
+                "gross_profit": 781024,
+                "administrative_expenses": 527166,
+                "depreciation_amortisation": 92854,
+                "other_operating_income": null,
+                "operating_profit": 253858,
+                "interest_receivable": 4266,
+                "interest_payable": 0,
+                "profit_before_tax": 258124,
+                "corporation_tax": 64813,
+                "net_profit": 193311
+              },
+              "revenue_breakdown": {
+                "by_product": {
+                  "Sales": 1772833,
+                  "Insurance claims received": 4168
+                },
+                "by_segment": {}
+              },
+              "cost_of_sales_breakdown": {
+                "direct_materials": 62446,
+                "direct_labour": 485753,
+                "subcontractor_costs": 25432,
+                "other_direct_costs": 422346
+              },
+              "overheads_breakdown": {
+                "staff_wages_salaries": 42472,
+                "directors_salaries": 9524,
+                "directors_pension": null,
+                "employers_national_insurance": 0,
+                "staff_pension_contributions": 9878,
+                "staff_training_recruitment": 15900,
+                "use_of_home_as_office": null,
+                "rent_rates": 45900,
+                "utilities": null,
+                "insurance": 65980,
+                "accountancy_bookkeeping": 19685,
+                "professional_fees": 16109,
+                "software_subscriptions": null,
+                "computer_costs": null,
+                "it_support_hosting": null,
+                "telecommunications": 3229,
+                "printing_stationery": 1694,
+                "postage_courier": null,
+                "subscriptions_memberships": 10054,
+                "bank_charges": 577,
+                "advertising_marketing": null,
+                "travel_subsistence": 5727,
+                "motor_expenses": 153877,
+                "repairs_maintenance": 12543,
+                "depreciation": 92854,
+                "amortisation": null,
+                "other_overheads": 17413
+              },
+              "total_staff_costs": 52350,
+              "total_directors_remuneration": 9524,
+              "dividends_paid": null,
+              "exceptional_items": [],
+              "financial_ratios": {
+                "gross_margin_percent": 43.95,
+                "net_margin_percent": 10.88,
+                "interest_coverage_ratio": null
+              }
+            }
+          },
+          "summary_insights": [
+            "Revenue grew by 8.6% year-on-year, reaching £1.78m, driven primarily by core sales growth.",
+            "Gross margin experienced compression, falling from 47.4% to 44.0% due to a 15.7% increase in cost of sales.",
+            "Net profit more than doubled (+119.8%) to £193,311, largely due to a significant 20.4% reduction in administrative overheads.",
+            "A major driver of improved profitability was the sharp reduction in directors' salaries from £116,328 to £9,524.",
+            "Operating profit margin improved significantly from 6.9% to 14.3%, indicating much stronger operational efficiency.",
+            "The company eliminated interest-bearing debt costs in 2025, improving the overall financial risk profile.",
+            "Staff costs (excluding directors) rose by 25.6%, reflecting increased investment in the workforce alongside revenue growth.",
+            "The business shows strong resilience with a substantial increase in net margin despite the slight decline in gross margin."
+          ]
+        }
+      },
+      {
+        "id": 2787,
+        "document_type": "balance_sheet",
+        "created_at": "2026-06-29T15:07:14.596Z",
+        "analysis_data": {
+          "document": "balance_sheet",
+          "source": "statutory",
+          "years_covered": [
+            2024,
+            2025
+          ],
+          "period_ends": {
+            "2024": "2024-03-31",
+            "2025": "2025-03-31"
+          },
+          "years": {
+            "2024": {
+              "year": 2024,
+              "balance_sheet": {
+                "fixed_assets": {
+                  "intangible_assets": 0,
+                  "tangible_assets": 106837,
+                  "freehold_property": null,
+                  "leasehold_property": null,
+                  "plant_machinery": 7851,
+                  "fixtures_fittings": 12713,
+                  "motor_vehicles": 86273,
+                  "computer_equipment": null
+                },
+                "current_assets": {
+                  "stock": null,
+                  "trade_debtors": 169850,
+                  "prepayments": 12000,
+                  "amounts_owed_by_directors": null,
+                  "amounts_owed_by_connected_companies": 6487,
+                  "directors_current_account": null,
+                  "other_debtors": 6190,
+                  "cash_at_bank": 362769,
+                  "total": 557296
+                },
+                "current_liabilities": {
+                  "trade_creditors": 59424,
+                  "taxation_social_security": 15907,
+                  "vat_payable": null,
+                  "corporation_tax": 64051,
+                  "bank_loans_current": null,
+                  "hire_purchase_current": 3974,
+                  "accruals": 118093,
+                  "amounts_owed_to_directors": null,
+                  "other_creditors": 14419,
+                  "total": 275868
+                },
+                "long_term_liabilities": {
+                  "bank_loans": null,
+                  "hire_purchase_long_term": 0,
+                  "deferred_taxation": 25420,
+                  "other_debt": null,
+                  "total": 25420
+                },
+                "equity": {
+                  "share_capital": 120,
+                  "retained_earnings": 362645,
+                  "total": 362845
+                }
+              },
+              "financial_ratios": {
+                "current_ratio": 2.020154566676817,
+                "quick_ratio": 1.9306987399770905,
+                "net_assets_growth_percent": null,
+                "gearing_ratio_percent": 7.005746255286693
+              }
+            },
+            "2025": {
+              "year": 2025,
+              "balance_sheet": {
+                "fixed_assets": {
+                  "intangible_assets": 0,
+                  "tangible_assets": 170749,
+                  "freehold_property": null,
+                  "leasehold_property": null,
+                  "plant_machinery": 9283,
+                  "fixtures_fittings": 12818,
+                  "motor_vehicles": 148648,
+                  "computer_equipment": null
+                },
+                "current_assets": {
+                  "stock": null,
+                  "trade_debtors": 228042,
+                  "prepayments": 7477,
+                  "amounts_owed_by_directors": null,
+                  "amounts_owed_by_connected_companies": 212457,
+                  "directors_current_account": null,
+                  "other_debtors": 44338,
+                  "cash_at_bank": 240408,
+                  "total": 732722
+                },
+                "current_liabilities": {
+                  "trade_creditors": 98865,
+                  "taxation_social_security": 17204,
+                  "vat_payable": null,
+                  "corporation_tax": 49752,
+                  "bank_loans_current": null,
+                  "hire_purchase_current": 19800,
+                  "accruals": 4519,
+                  "amounts_owed_to_directors": 27852,
+                  "other_creditors": 59494,
+                  "total": 249634
+                },
+                "long_term_liabilities": {
+                  "bank_loans": null,
+                  "hire_purchase_long_term": 57200,
+                  "deferred_taxation": 40481,
+                  "other_debt": null,
+                  "total": 97681
+                },
+                "equity": {
+                  "share_capital": 120,
+                  "retained_earnings": 555956,
+                  "total": 556156
+                }
+              },
+              "financial_ratios": {
+                "current_ratio": 2.935185110998502,
+                "quick_ratio": 1.8765468645134478,
+                "net_assets_growth_percent": 53.27646791329631,
+                "gearing_ratio_percent": 17.563597264073376
+              }
+            }
+          },
+          "summary_insights": [
+            "Net assets grew significantly by 53.3% during the year, rising from £362,845 to £556,156, driven by strong retained profits.",
+            "The current ratio improved from 2.02 to 2.94, indicating a very robust short-term liquidity position with nearly £3 of current assets for every £1 of current liability.",
+            "Tangible fixed assets increased by 59.8%, primarily due to significant investment in motor vehicles, which rose from £86,273 to £148,648.",
+            "Intercompany receivables (amounts owed by group undertakings) surged from £6,487 to £212,457, suggesting a substantial shift of cash/value to the parent or sister companies.",
+            "Long-term leverage has increased via new hire purchase obligations of £57,200, though the gearing ratio remains manageable at 17.6%.",
+            "The company maintains a healthy cash balance of £240,408, although this is a reduction from the previous year's £362,769 due to asset investment and group lending.",
+            "A new related party liability has emerged, with £27,852 now owed to directors at the year-end."
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": 1423,
+    "document_name": "year end 23.pdf",
+    "original_filename": "year end 23.pdf",
+    "document_category": "Company Accounts",
+    "file_path": "companies/172/doc-1782745615640-147464204.pdf",
+    "file_type": "application/pdf",
+    "file_size": 177855,
+    "upload_date": "2026-06-29T15:06:57.245Z",
+    "analysisResults": [
+      {
+        "id": 2788,
+        "document_type": "company_accounts",
+        "created_at": "2026-06-29T15:07:39.740Z",
+        "analysis_data": {
+          "document": "company_accounts",
+          "source": "statutory_accounts",
+          "balance_sheet": {
+            "document": "balance_sheet",
+            "source": "statutory",
+            "years_covered": [
+              2022,
+              2023
+            ],
+            "period_ends": {
+              "2022": "2022-03-31",
+              "2023": "2023-03-31"
+            },
+            "years": {
+              "2022": {
+                "year": 2022,
+                "balance_sheet": {
+                  "fixed_assets": {
+                    "intangible_assets": 0,
+                    "tangible_assets": 253602,
+                    "freehold_property": null,
+                    "leasehold_property": null,
+                    "plant_machinery": 107460,
+                    "fixtures_fittings": 10690,
+                    "motor_vehicles": 135452,
+                    "computer_equipment": null
+                  },
+                  "current_assets": {
+                    "stock": null,
+                    "trade_debtors": 365750,
+                    "prepayments": 119189,
+                    "amounts_owed_by_directors": null,
+                    "amounts_owed_by_connected_companies": 0,
+                    "directors_current_account": null,
+                    "other_debtors": 36195,
+                    "cash_at_bank": 407432,
+                    "total": 928566
+                  },
+                  "current_liabilities": {
+                    "trade_creditors": 104481,
+                    "taxation_social_security": 14650,
+                    "vat_payable": null,
+                    "corporation_tax": 70620,
+                    "bank_loans_current": 18182,
+                    "hire_purchase_current": 0,
+                    "accruals": 3100,
+                    "amounts_owed_to_directors": null,
+                    "other_creditors": 353320,
+                    "total": 564353
+                  },
+                  "long_term_liabilities": {
+                    "bank_loans": 57581,
+                    "hire_purchase_long_term": 0,
+                    "deferred_taxation": 61655,
+                    "other_debt": null,
+                    "total": 119236
+                  },
+                  "equity": {
+                    "share_capital": 120,
+                    "retained_earnings": 498379,
+                    "total": 498579
+                  }
+                },
+                "financial_ratios": {
+                  "current_ratio": 1.6453637882,
+                  "quick_ratio": 1.370032586,
+                  "net_assets_growth_percent": null,
+                  "gearing_ratio_percent": 23.9151669043
+                }
+              },
+              "2023": {
+                "year": 2023,
+                "balance_sheet": {
+                  "fixed_assets": {
+                    "intangible_assets": 0,
+                    "tangible_assets": 240767,
+                    "freehold_property": null,
+                    "leasehold_property": null,
+                    "plant_machinery": 71142,
+                    "fixtures_fittings": 9789,
+                    "motor_vehicles": 159836,
+                    "computer_equipment": null
+                  },
+                  "current_assets": {
+                    "stock": null,
+                    "trade_debtors": 240786,
+                    "prepayments": 25143,
+                    "amounts_owed_by_directors": null,
+                    "amounts_owed_by_connected_companies": 79136,
+                    "directors_current_account": null,
+                    "other_debtors": 50267,
+                    "cash_at_bank": 520102,
+                    "total": 915434
+                  },
+                  "current_liabilities": {
+                    "trade_creditors": 50908,
+                    "taxation_social_security": 13890,
+                    "vat_payable": null,
+                    "corporation_tax": 86208,
+                    "bank_loans_current": 21152,
+                    "hire_purchase_current": 5961,
+                    "accruals": 3410,
+                    "amounts_owed_to_directors": null,
+                    "other_creditors": 16254,
+                    "total": 197783
+                  },
+                  "long_term_liabilities": {
+                    "bank_loans": 36463,
+                    "hire_purchase_long_term": 3974,
+                    "deferred_taxation": 58641,
+                    "other_debt": null,
+                    "total": 99078
+                  },
+                  "equity": {
+                    "share_capital": 120,
+                    "retained_earnings": 859140,
+                    "total": 859340
+                  }
+                },
+                "financial_ratios": {
+                  "current_ratio": 4.6284766633,
+                  "quick_ratio": 3.8470849365,
+                  "net_assets_growth_percent": 72.3578409841,
+                  "gearing_ratio_percent": 11.5295459306
+                }
+              }
+            },
+            "summary_insights": [
+              "Net assets grew significantly by 72.4%, rising from £498,579 to £859,340, driven by strong retained profits.",
+              "Liquidity has improved dramatically, with the current ratio increasing from 1.65 to 4.63, indicating a very robust short-term financial position.",
+              "The quick ratio of 3.85 confirms that the company can comfortably meet its immediate obligations using only cash and trade receivables.",
+              "Net current assets nearly doubled, expanding from £364,213 to £717,651, providing substantial working capital for operations.",
+              "Total liabilities decreased significantly, particularly current creditors which fell by 65% as intercompany and other creditor balances were cleared.",
+              "Long-term leverage remains low and has improved, with the gearing ratio falling from 23.9% to 11.5%.",
+              "The asset base shifted slightly as tangible fixed assets depreciated, but this was more than offset by a £112,670 increase in cash reserves."
+            ]
+          }
+        }
+      },
+      {
+        "id": 2789,
+        "document_type": "balance_sheet",
+        "created_at": "2026-06-29T15:07:39.805Z",
+        "analysis_data": {
+          "document": "balance_sheet",
+          "source": "statutory",
+          "years_covered": [
+            2022,
+            2023
+          ],
+          "period_ends": {
+            "2022": "2022-03-31",
+            "2023": "2023-03-31"
+          },
+          "years": {
+            "2022": {
+              "year": 2022,
+              "balance_sheet": {
+                "fixed_assets": {
+                  "intangible_assets": 0,
+                  "tangible_assets": 253602,
+                  "freehold_property": null,
+                  "leasehold_property": null,
+                  "plant_machinery": 107460,
+                  "fixtures_fittings": 10690,
+                  "motor_vehicles": 135452,
+                  "computer_equipment": null
+                },
+                "current_assets": {
+                  "stock": null,
+                  "trade_debtors": 365750,
+                  "prepayments": 119189,
+                  "amounts_owed_by_directors": null,
+                  "amounts_owed_by_connected_companies": 0,
+                  "directors_current_account": null,
+                  "other_debtors": 36195,
+                  "cash_at_bank": 407432,
+                  "total": 928566
+                },
+                "current_liabilities": {
+                  "trade_creditors": 104481,
+                  "taxation_social_security": 14650,
+                  "vat_payable": null,
+                  "corporation_tax": 70620,
+                  "bank_loans_current": 18182,
+                  "hire_purchase_current": 0,
+                  "accruals": 3100,
+                  "amounts_owed_to_directors": null,
+                  "other_creditors": 353320,
+                  "total": 564353
+                },
+                "long_term_liabilities": {
+                  "bank_loans": 57581,
+                  "hire_purchase_long_term": 0,
+                  "deferred_taxation": 61655,
+                  "other_debt": null,
+                  "total": 119236
+                },
+                "equity": {
+                  "share_capital": 120,
+                  "retained_earnings": 498379,
+                  "total": 498579
+                }
+              },
+              "financial_ratios": {
+                "current_ratio": 1.6453637882,
+                "quick_ratio": 1.370032586,
+                "net_assets_growth_percent": null,
+                "gearing_ratio_percent": 23.9151669043
+              }
+            },
+            "2023": {
+              "year": 2023,
+              "balance_sheet": {
+                "fixed_assets": {
+                  "intangible_assets": 0,
+                  "tangible_assets": 240767,
+                  "freehold_property": null,
+                  "leasehold_property": null,
+                  "plant_machinery": 71142,
+                  "fixtures_fittings": 9789,
+                  "motor_vehicles": 159836,
+                  "computer_equipment": null
+                },
+                "current_assets": {
+                  "stock": null,
+                  "trade_debtors": 240786,
+                  "prepayments": 25143,
+                  "amounts_owed_by_directors": null,
+                  "amounts_owed_by_connected_companies": 79136,
+                  "directors_current_account": null,
+                  "other_debtors": 50267,
+                  "cash_at_bank": 520102,
+                  "total": 915434
+                },
+                "current_liabilities": {
+                  "trade_creditors": 50908,
+                  "taxation_social_security": 13890,
+                  "vat_payable": null,
+                  "corporation_tax": 86208,
+                  "bank_loans_current": 21152,
+                  "hire_purchase_current": 5961,
+                  "accruals": 3410,
+                  "amounts_owed_to_directors": null,
+                  "other_creditors": 16254,
+                  "total": 197783
+                },
+                "long_term_liabilities": {
+                  "bank_loans": 36463,
+                  "hire_purchase_long_term": 3974,
+                  "deferred_taxation": 58641,
+                  "other_debt": null,
+                  "total": 99078
+                },
+                "equity": {
+                  "share_capital": 120,
+                  "retained_earnings": 859140,
+                  "total": 859340
+                }
+              },
+              "financial_ratios": {
+                "current_ratio": 4.6284766633,
+                "quick_ratio": 3.8470849365,
+                "net_assets_growth_percent": 72.3578409841,
+                "gearing_ratio_percent": 11.5295459306
+              }
+            }
+          },
+          "summary_insights": [
+            "Net assets grew significantly by 72.4%, rising from £498,579 to £859,340, driven by strong retained profits.",
+            "Liquidity has improved dramatically, with the current ratio increasing from 1.65 to 4.63, indicating a very robust short-term financial position.",
+            "The quick ratio of 3.85 confirms that the company can comfortably meet its immediate obligations using only cash and trade receivables.",
+            "Net current assets nearly doubled, expanding from £364,213 to £717,651, providing substantial working capital for operations.",
+            "Total liabilities decreased significantly, particularly current creditors which fell by 65% as intercompany and other creditor balances were cleared.",
+            "Long-term leverage remains low and has improved, with the gearing ratio falling from 23.9% to 11.5%.",
+            "The asset base shifted slightly as tangible fixed assets depreciated, but this was more than offset by a £112,670 increase in cash reserves."
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": 1424,
+    "document_name": "year end 24.pdf",
+    "original_filename": "year end 24.pdf",
+    "document_category": "Company Accounts",
+    "file_path": "companies/172/doc-1782745628074-406531217.pdf",
+    "file_type": "application/pdf",
+    "file_size": 362236,
+    "upload_date": "2026-06-29T15:07:09.835Z",
+    "analysisResults": [
+      {
+        "id": 2790,
+        "document_type": "company_accounts",
+        "created_at": "2026-06-29T15:08:05.933Z",
+        "analysis_data": {
+          "document": "company_accounts",
+          "source": "statutory_accounts",
+          "profit_and_loss": {
+            "document": "profit_and_loss",
+            "source": "statutory",
+            "years_covered": [
+              2023,
+              2024
+            ],
+            "period_ends": {
+              "2023": "2023-03-31",
+              "2024": "2024-03-31"
+            },
+            "years": {
+              "2023": {
+                "year": 2023,
+                "profit_and_loss": {
+                  "revenue": 2038844,
+                  "cost_of_sales": 1007456,
+                  "gross_profit": 1031388,
+                  "administrative_expenses": 585138,
+                  "depreciation_amortisation": 148547,
+                  "other_operating_income": null,
+                  "operating_profit": 446250,
+                  "interest_receivable": 708,
+                  "interest_payable": 3004,
+                  "profit_before_tax": 443954,
+                  "corporation_tax": 83194,
+                  "net_profit": 360760
+                },
+                "revenue_breakdown": {
+                  "by_product": {
+                    "sales": 2023789,
+                    "insurance_claims_received": 15055
+                  },
+                  "by_segment": {}
+                },
+                "cost_of_sales_breakdown": {
+                  "direct_materials": 79745,
+                  "direct_labour": 469657,
+                  "subcontractor_costs": 43892,
+                  "other_direct_costs": 414162
+                },
+                "overheads_breakdown": {
+                  "staff_wages_salaries": 32066,
+                  "directors_salaries": 16328,
+                  "directors_pension": null,
+                  "employers_national_insurance": 52019,
+                  "staff_pension_contributions": 10042,
+                  "staff_training_recruitment": 18933,
+                  "use_of_home_as_office": null,
+                  "rent_rates": 28744,
+                  "utilities": null,
+                  "insurance": 75864,
+                  "accountancy_bookkeeping": 22980,
+                  "professional_fees": 27379,
+                  "software_subscriptions": null,
+                  "computer_costs": null,
+                  "it_support_hosting": null,
+                  "telecommunications": 3123,
+                  "printing_stationery": 2136,
+                  "postage_courier": null,
+                  "subscriptions_memberships": 7809,
+                  "bank_charges": 549,
+                  "advertising_marketing": null,
+                  "travel_subsistence": 4698,
+                  "motor_expenses": 165824,
+                  "repairs_maintenance": 6148,
+                  "depreciation": 148547,
+                  "amortisation": null,
+                  "other_overheads": 17749
+                },
+                "total_staff_costs": 563784,
+                "total_directors_remuneration": 16328,
+                "dividends_paid": null,
+                "exceptional_items": [],
+                "financial_ratios": {
+                  "gross_margin_percent": 50.59,
+                  "net_margin_percent": 17.69,
+                  "interest_coverage_ratio": 148.55
+                }
+              },
+              "2024": {
+                "year": 2024,
+                "profit_and_loss": {
+                  "revenue": 1636215,
+                  "cost_of_sales": 861049,
+                  "gross_profit": 775166,
+                  "administrative_expenses": 662120,
+                  "depreciation_amortisation": 145685,
+                  "other_operating_income": null,
+                  "operating_profit": 113046,
+                  "interest_receivable": 7576,
+                  "interest_payable": 1836,
+                  "profit_before_tax": 118786,
+                  "corporation_tax": 30830,
+                  "net_profit": 87956
+                },
+                "revenue_breakdown": {
+                  "by_product": {
+                    "sales": 1633903,
+                    "insurance_claims_received": 2312
+                  },
+                  "by_segment": {}
+                },
+                "cost_of_sales_breakdown": {
+                  "direct_materials": 52187,
+                  "direct_labour": 418396,
+                  "subcontractor_costs": 35522,
+                  "other_direct_costs": 354944
+                },
+                "overheads_breakdown": {
+                  "staff_wages_salaries": 32000,
+                  "directors_salaries": 116328,
+                  "directors_pension": null,
+                  "employers_national_insurance": 58852,
+                  "staff_pension_contributions": 9674,
+                  "staff_training_recruitment": 14775,
+                  "use_of_home_as_office": null,
+                  "rent_rates": 32750,
+                  "utilities": null,
+                  "insurance": 74342,
+                  "accountancy_bookkeeping": 17355,
+                  "professional_fees": 12379,
+                  "software_subscriptions": null,
+                  "computer_costs": null,
+                  "it_support_hosting": null,
+                  "telecommunications": 3248,
+                  "printing_stationery": 2137,
+                  "postage_courier": null,
+                  "subscriptions_memberships": 9819,
+                  "bank_charges": 544,
+                  "advertising_marketing": null,
+                  "travel_subsistence": 5531,
+                  "motor_expenses": 141335,
+                  "repairs_maintenance": 8241,
+                  "depreciation": 145685,
+                  "amortisation": null,
+                  "other_overheads": 17145
+                },
+                "total_staff_costs": 515592,
+                "total_directors_remuneration": 130128,
+                "dividends_paid": null,
+                "exceptional_items": [],
+                "financial_ratios": {
+                  "gross_margin_percent": 47.38,
+                  "net_margin_percent": 5.38,
+                  "interest_coverage_ratio": 61.57
+                }
+              }
+            },
+            "summary_insights": [
+              "Revenue declined significantly by 19.7%, falling from £2.04m to £1.64m, indicating a contraction in trading activity.",
+              "Gross margin compressed from 50.6% to 47.4%, suggesting increased direct cost pressures or less favourable pricing.",
+              "Net profit experienced a sharp 75.6% decrease, dropping from £360,760 to £87,956, driven by lower turnover and rising overheads.",
+              "Administrative expenses rose by 13.2% despite falling revenues, primarily due to a substantial increase in directors' salaries from £16,328 to £116,328.",
+              "Operating profit margin fell from 21.9% to 6.9%, highlighting a significant reduction in operational efficiency.",
+              "Interest coverage remains healthy at 61.6x, though it has declined from the previous year's exceptionally high level.",
+              "The average monthly number of employees decreased from 11 to 9, reflecting the overall reduction in business scale.",
+              "Net assets decreased from £859,340 to £362,845, though this appears to be impacted by a significant reduction in cash balances and debtors."
+            ]
+          },
+          "balance_sheet": {
+            "document": "balance_sheet",
+            "source": "statutory",
+            "years_covered": [
+              2023,
+              2024
+            ],
+            "period_ends": {
+              "2023": "2023-03-31",
+              "2024": "2024-03-31"
+            },
+            "years": {
+              "2023": {
+                "year": 2023,
+                "balance_sheet": {
+                  "fixed_assets": {
+                    "intangible_assets": 0,
+                    "tangible_assets": 240767,
+                    "freehold_property": null,
+                    "leasehold_property": null,
+                    "plant_machinery": 71142,
+                    "fixtures_fittings": 9789,
+                    "motor_vehicles": 159836,
+                    "computer_equipment": null
+                  },
+                  "current_assets": {
+                    "stock": null,
+                    "trade_debtors": 240786,
+                    "prepayments": 25143,
+                    "amounts_owed_by_directors": null,
+                    "amounts_owed_by_connected_companies": 79136,
+                    "directors_current_account": null,
+                    "other_debtors": 50267,
+                    "cash_at_bank": 520102,
+                    "total": 915434
+                  },
+                  "current_liabilities": {
+                    "trade_creditors": 50908,
+                    "taxation_social_security": 13890,
+                    "vat_payable": null,
+                    "corporation_tax": 86208,
+                    "bank_loans_current": 21152,
+                    "hire_purchase_current": 5961,
+                    "accruals": 3410,
+                    "amounts_owed_to_directors": null,
+                    "other_creditors": 16254,
+                    "total": 197783
+                  },
+                  "long_term_liabilities": {
+                    "bank_loans": 36463,
+                    "hire_purchase_long_term": 3974,
+                    "deferred_taxation": 58641,
+                    "other_debt": null,
+                    "total": 99078
+                  },
+                  "equity": {
+                    "share_capital": 120,
+                    "retained_earnings": 859140,
+                    "total": 859340
+                  }
+                },
+                "financial_ratios": {
+                  "current_ratio": 4.628476153157754,
+                  "quick_ratio": 3.847084936521339,
+                  "net_assets_growth_percent": null,
+                  "gearing_ratio_percent": 11.5295459305979
+                }
+              },
+              "2024": {
+                "year": 2024,
+                "balance_sheet": {
+                  "fixed_assets": {
+                    "intangible_assets": 0,
+                    "tangible_assets": 106837,
+                    "freehold_property": null,
+                    "leasehold_property": null,
+                    "plant_machinery": 7851,
+                    "fixtures_fittings": 12713,
+                    "motor_vehicles": 86273,
+                    "computer_equipment": null
+                  },
+                  "current_assets": {
+                    "stock": null,
+                    "trade_debtors": 169850,
+                    "prepayments": 12000,
+                    "amounts_owed_by_directors": null,
+                    "amounts_owed_by_connected_companies": 6487,
+                    "directors_current_account": null,
+                    "other_debtors": 6190,
+                    "cash_at_bank": 362769,
+                    "total": 557296
+                  },
+                  "current_liabilities": {
+                    "trade_creditors": 59424,
+                    "taxation_social_security": 15907,
+                    "vat_payable": null,
+                    "corporation_tax": 64051,
+                    "bank_loans_current": 0,
+                    "hire_purchase_current": 3974,
+                    "accruals": 118093,
+                    "amounts_owed_to_directors": null,
+                    "other_creditors": 14419,
+                    "total": 275868
+                  },
+                  "long_term_liabilities": {
+                    "bank_loans": 0,
+                    "hire_purchase_long_term": 0,
+                    "deferred_taxation": 25420,
+                    "other_debt": null,
+                    "total": 25420
+                  },
+                  "equity": {
+                    "share_capital": 120,
+                    "retained_earnings": 362645,
+                    "total": 362845
+                  }
+                },
+                "financial_ratios": {
+                  "current_ratio": 2.020154566676817,
+                  "quick_ratio": 1.9306987399770905,
+                  "net_assets_growth_percent": -57.77747951916587,
+                  "gearing_ratio_percent": 7.005746255286693
+                }
+              }
+            },
+            "summary_insights": [
+              "Net assets experienced a significant contraction of 57.8%, falling from £859,340 to £362,845, primarily driven by a reduction in retained earnings.",
+              "Liquidity remains positive but has weakened, with the current ratio dropping from 4.63 to 2.02 and the quick ratio nearly halving to 1.93.",
+              "The tangible asset base reduced by 55.6% (£133,930), largely due to depreciation and a significant reduction in the net book value of plant and machinery.",
+              "Cash reserves decreased by 30.3% (£157,333), while intercompany receivables from the parent company fell sharply from £79,136 to £6,487.",
+              "Short-term liabilities increased by 39.5%, largely due to a substantial rise in accruals and deferred income, which grew from £3,410 to £118,093.",
+              "The company has successfully deleveraged its long-term debt, eliminating bank loans and hire purchase obligations that totalled over £40,000 in the prior year.",
+              "Despite the reduction in net assets, the company maintains a debt-free position regarding external bank borrowings as of 31 March 2024."
+            ]
+          }
+        }
+      },
+      {
+        "id": 2791,
+        "document_type": "profit_and_loss",
+        "created_at": "2026-06-29T15:08:06.025Z",
+        "analysis_data": {
+          "document": "profit_and_loss",
+          "source": "statutory",
+          "years_covered": [
+            2023,
+            2024
+          ],
+          "period_ends": {
+            "2023": "2023-03-31",
+            "2024": "2024-03-31"
+          },
+          "years": {
+            "2023": {
+              "year": 2023,
+              "profit_and_loss": {
+                "revenue": 2038844,
+                "cost_of_sales": 1007456,
+                "gross_profit": 1031388,
+                "administrative_expenses": 585138,
+                "depreciation_amortisation": 148547,
+                "other_operating_income": null,
+                "operating_profit": 446250,
+                "interest_receivable": 708,
+                "interest_payable": 3004,
+                "profit_before_tax": 443954,
+                "corporation_tax": 83194,
+                "net_profit": 360760
+              },
+              "revenue_breakdown": {
+                "by_product": {
+                  "sales": 2023789,
+                  "insurance_claims_received": 15055
+                },
+                "by_segment": {}
+              },
+              "cost_of_sales_breakdown": {
+                "direct_materials": 79745,
+                "direct_labour": 469657,
+                "subcontractor_costs": 43892,
+                "other_direct_costs": 414162
+              },
+              "overheads_breakdown": {
+                "staff_wages_salaries": 32066,
+                "directors_salaries": 16328,
+                "directors_pension": null,
+                "employers_national_insurance": 52019,
+                "staff_pension_contributions": 10042,
+                "staff_training_recruitment": 18933,
+                "use_of_home_as_office": null,
+                "rent_rates": 28744,
+                "utilities": null,
+                "insurance": 75864,
+                "accountancy_bookkeeping": 22980,
+                "professional_fees": 27379,
+                "software_subscriptions": null,
+                "computer_costs": null,
+                "it_support_hosting": null,
+                "telecommunications": 3123,
+                "printing_stationery": 2136,
+                "postage_courier": null,
+                "subscriptions_memberships": 7809,
+                "bank_charges": 549,
+                "advertising_marketing": null,
+                "travel_subsistence": 4698,
+                "motor_expenses": 165824,
+                "repairs_maintenance": 6148,
+                "depreciation": 148547,
+                "amortisation": null,
+                "other_overheads": 17749
+              },
+              "total_staff_costs": 563784,
+              "total_directors_remuneration": 16328,
+              "dividends_paid": null,
+              "exceptional_items": [],
+              "financial_ratios": {
+                "gross_margin_percent": 50.59,
+                "net_margin_percent": 17.69,
+                "interest_coverage_ratio": 148.55
+              }
+            },
+            "2024": {
+              "year": 2024,
+              "profit_and_loss": {
+                "revenue": 1636215,
+                "cost_of_sales": 861049,
+                "gross_profit": 775166,
+                "administrative_expenses": 662120,
+                "depreciation_amortisation": 145685,
+                "other_operating_income": null,
+                "operating_profit": 113046,
+                "interest_receivable": 7576,
+                "interest_payable": 1836,
+                "profit_before_tax": 118786,
+                "corporation_tax": 30830,
+                "net_profit": 87956
+              },
+              "revenue_breakdown": {
+                "by_product": {
+                  "sales": 1633903,
+                  "insurance_claims_received": 2312
+                },
+                "by_segment": {}
+              },
+              "cost_of_sales_breakdown": {
+                "direct_materials": 52187,
+                "direct_labour": 418396,
+                "subcontractor_costs": 35522,
+                "other_direct_costs": 354944
+              },
+              "overheads_breakdown": {
+                "staff_wages_salaries": 32000,
+                "directors_salaries": 116328,
+                "directors_pension": null,
+                "employers_national_insurance": 58852,
+                "staff_pension_contributions": 9674,
+                "staff_training_recruitment": 14775,
+                "use_of_home_as_office": null,
+                "rent_rates": 32750,
+                "utilities": null,
+                "insurance": 74342,
+                "accountancy_bookkeeping": 17355,
+                "professional_fees": 12379,
+                "software_subscriptions": null,
+                "computer_costs": null,
+                "it_support_hosting": null,
+                "telecommunications": 3248,
+                "printing_stationery": 2137,
+                "postage_courier": null,
+                "subscriptions_memberships": 9819,
+                "bank_charges": 544,
+                "advertising_marketing": null,
+                "travel_subsistence": 5531,
+                "motor_expenses": 141335,
+                "repairs_maintenance": 8241,
+                "depreciation": 145685,
+                "amortisation": null,
+                "other_overheads": 17145
+              },
+              "total_staff_costs": 515592,
+              "total_directors_remuneration": 130128,
+              "dividends_paid": null,
+              "exceptional_items": [],
+              "financial_ratios": {
+                "gross_margin_percent": 47.38,
+                "net_margin_percent": 5.38,
+                "interest_coverage_ratio": 61.57
+              }
+            }
+          },
+          "summary_insights": [
+            "Revenue declined significantly by 19.7%, falling from £2.04m to £1.64m, indicating a contraction in trading activity.",
+            "Gross margin compressed from 50.6% to 47.4%, suggesting increased direct cost pressures or less favourable pricing.",
+            "Net profit experienced a sharp 75.6% decrease, dropping from £360,760 to £87,956, driven by lower turnover and rising overheads.",
+            "Administrative expenses rose by 13.2% despite falling revenues, primarily due to a substantial increase in directors' salaries from £16,328 to £116,328.",
+            "Operating profit margin fell from 21.9% to 6.9%, highlighting a significant reduction in operational efficiency.",
+            "Interest coverage remains healthy at 61.6x, though it has declined from the previous year's exceptionally high level.",
+            "The average monthly number of employees decreased from 11 to 9, reflecting the overall reduction in business scale.",
+            "Net assets decreased from £859,340 to £362,845, though this appears to be impacted by a significant reduction in cash balances and debtors."
+          ]
+        }
+      },
+      {
+        "id": 2792,
+        "document_type": "balance_sheet",
+        "created_at": "2026-06-29T15:08:06.285Z",
+        "analysis_data": {
+          "document": "balance_sheet",
+          "source": "statutory",
+          "years_covered": [
+            2023,
+            2024
+          ],
+          "period_ends": {
+            "2023": "2023-03-31",
+            "2024": "2024-03-31"
+          },
+          "years": {
+            "2023": {
+              "year": 2023,
+              "balance_sheet": {
+                "fixed_assets": {
+                  "intangible_assets": 0,
+                  "tangible_assets": 240767,
+                  "freehold_property": null,
+                  "leasehold_property": null,
+                  "plant_machinery": 71142,
+                  "fixtures_fittings": 9789,
+                  "motor_vehicles": 159836,
+                  "computer_equipment": null
+                },
+                "current_assets": {
+                  "stock": null,
+                  "trade_debtors": 240786,
+                  "prepayments": 25143,
+                  "amounts_owed_by_directors": null,
+                  "amounts_owed_by_connected_companies": 79136,
+                  "directors_current_account": null,
+                  "other_debtors": 50267,
+                  "cash_at_bank": 520102,
+                  "total": 915434
+                },
+                "current_liabilities": {
+                  "trade_creditors": 50908,
+                  "taxation_social_security": 13890,
+                  "vat_payable": null,
+                  "corporation_tax": 86208,
+                  "bank_loans_current": 21152,
+                  "hire_purchase_current": 5961,
+                  "accruals": 3410,
+                  "amounts_owed_to_directors": null,
+                  "other_creditors": 16254,
+                  "total": 197783
+                },
+                "long_term_liabilities": {
+                  "bank_loans": 36463,
+                  "hire_purchase_long_term": 3974,
+                  "deferred_taxation": 58641,
+                  "other_debt": null,
+                  "total": 99078
+                },
+                "equity": {
+                  "share_capital": 120,
+                  "retained_earnings": 859140,
+                  "total": 859340
+                }
+              },
+              "financial_ratios": {
+                "current_ratio": 4.628476153157754,
+                "quick_ratio": 3.847084936521339,
+                "net_assets_growth_percent": null,
+                "gearing_ratio_percent": 11.5295459305979
+              }
+            },
+            "2024": {
+              "year": 2024,
+              "balance_sheet": {
+                "fixed_assets": {
+                  "intangible_assets": 0,
+                  "tangible_assets": 106837,
+                  "freehold_property": null,
+                  "leasehold_property": null,
+                  "plant_machinery": 7851,
+                  "fixtures_fittings": 12713,
+                  "motor_vehicles": 86273,
+                  "computer_equipment": null
+                },
+                "current_assets": {
+                  "stock": null,
+                  "trade_debtors": 169850,
+                  "prepayments": 12000,
+                  "amounts_owed_by_directors": null,
+                  "amounts_owed_by_connected_companies": 6487,
+                  "directors_current_account": null,
+                  "other_debtors": 6190,
+                  "cash_at_bank": 362769,
+                  "total": 557296
+                },
+                "current_liabilities": {
+                  "trade_creditors": 59424,
+                  "taxation_social_security": 15907,
+                  "vat_payable": null,
+                  "corporation_tax": 64051,
+                  "bank_loans_current": 0,
+                  "hire_purchase_current": 3974,
+                  "accruals": 118093,
+                  "amounts_owed_to_directors": null,
+                  "other_creditors": 14419,
+                  "total": 275868
+                },
+                "long_term_liabilities": {
+                  "bank_loans": 0,
+                  "hire_purchase_long_term": 0,
+                  "deferred_taxation": 25420,
+                  "other_debt": null,
+                  "total": 25420
+                },
+                "equity": {
+                  "share_capital": 120,
+                  "retained_earnings": 362645,
+                  "total": 362845
+                }
+              },
+              "financial_ratios": {
+                "current_ratio": 2.020154566676817,
+                "quick_ratio": 1.9306987399770905,
+                "net_assets_growth_percent": -57.77747951916587,
+                "gearing_ratio_percent": 7.005746255286693
+              }
+            }
+          },
+          "summary_insights": [
+            "Net assets experienced a significant contraction of 57.8%, falling from £859,340 to £362,845, primarily driven by a reduction in retained earnings.",
+            "Liquidity remains positive but has weakened, with the current ratio dropping from 4.63 to 2.02 and the quick ratio nearly halving to 1.93.",
+            "The tangible asset base reduced by 55.6% (£133,930), largely due to depreciation and a significant reduction in the net book value of plant and machinery.",
+            "Cash reserves decreased by 30.3% (£157,333), while intercompany receivables from the parent company fell sharply from £79,136 to £6,487.",
+            "Short-term liabilities increased by 39.5%, largely due to a substantial rise in accruals and deferred income, which grew from £3,410 to £118,093.",
+            "The company has successfully deleveraged its long-term debt, eliminating bank loans and hire purchase obligations that totalled over £40,000 in the prior year.",
+            "Despite the reduction in net assets, the company maintains a debt-free position regarding external bank borrowings as of 31 March 2024."
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": 1427,
+    "document_name": "Aged Debtors.pdf",
+    "original_filename": "Aged Debtors.pdf",
+    "document_category": "Deal Documents",
+    "file_path": "companies/172/doc-1782745745753-152767478.pdf",
+    "file_type": "application/pdf",
+    "file_size": 40949,
+    "upload_date": "2026-06-29T15:09:06.807Z",
+    "analysisResults": [
+      {
+        "id": 2793,
+        "document_type": "sales_ledger",
+        "created_at": "2026-06-29T15:09:14.244Z",
+        "analysis_data": {
+          "document": "sales_ledger",
+          "report_date": "2026-05-21",
+          "summary": {
+            "total_trade_debtors": 79406.28,
+            "debtor_days": null,
+            "recent_revenue": 903601.58,
+            "bad_debt_provision": null,
+            "doubtful_debts": null
+          },
+          "aging": {
+            "current_0_to_30": 71748.28,
+            "days_31_to_60": 7578,
+            "days_61_to_90": 0,
+            "days_90_plus": 80
+          },
+          "top_debtors": [
+            {
+              "name": "Charter Property Repairs Ltd",
+              "amount": 24333.88,
+              "days_bucket": "0-30"
+            },
+            {
+              "name": "Dodd Group (Eastern) Ltd",
+              "amount": 13560,
+              "days_bucket": "0-30"
+            },
+            {
+              "name": "DMD Installations Ltd",
+              "amount": 12242,
+              "days_bucket": "0-30"
+            },
+            {
+              "name": "Gasway Services Limited",
+              "amount": 8682,
+              "days_bucket": "0-30"
+            },
+            {
+              "name": "Global Rail Construction Ltd",
+              "amount": 4320,
+              "days_bucket": "31-60"
+            },
+            {
+              "name": "Doors Plus Limited",
+              "amount": 3794,
+              "days_bucket": "0-30"
+            },
+            {
+              "name": "MSI Defence Systems Ltd",
+              "amount": 3258,
+              "days_bucket": "31-60"
+            },
+            {
+              "name": "Asset Fineline",
+              "amount": 2950,
+              "days_bucket": "0-30"
+            },
+            {
+              "name": "Norwich Glass Company",
+              "amount": 1860,
+              "days_bucket": "0-30"
+            },
+            {
+              "name": "Ashford Commercials",
+              "amount": 1395,
+              "days_bucket": "0-30"
+            }
+          ],
+          "invoice_status_summary": {
+            "Paid": {
+              "count": null,
+              "value": null
+            },
+            "Part Paid": {
+              "count": null,
+              "value": null
+            },
+            "Unpaid": {
+              "count": null,
+              "value": null
+            }
+          },
+          "observations": [
+            "90.36% of receivables are current (0-30 days), indicating a very healthy collection cycle.",
+            "The top 3 debtors (Charter Property, Dodd Group, and DMD Installations) represent 63.14% of the total ledger, indicating high customer concentration risk.",
+            "Only £80.00 (0.1%) is overdue by 90+ days, suggesting minimal immediate bad debt risk."
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": 1428,
+    "document_name": "Top 10 Customers 21.05.26.xlsx",
+    "original_filename": "Top 10 Customers 21.05.26.xlsx",
+    "document_category": "Deal Documents",
+    "file_path": "companies/172/doc-1782745776593-732346438.xlsx",
+    "file_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "file_size": 10362,
+    "upload_date": "2026-06-29T15:09:37.483Z",
+    "analysisResults": []
+  },
+  {
+    "id": 1429,
+    "document_name": "april management accs.pdf",
+    "original_filename": "april management accs.pdf",
+    "document_category": "Company Accounts",
+    "file_path": "companies/172/doc-1782745795060-407329196.pdf",
+    "file_type": "application/pdf",
+    "file_size": 35017,
+    "upload_date": "2026-06-29T15:09:55.984Z",
+    "analysisResults": [
+      {
+        "id": 2794,
+        "document_type": "company_accounts",
+        "created_at": "2026-06-29T15:10:10.438Z",
+        "analysis_data": {
+          "document": "company_accounts",
+          "source": "statutory_accounts",
+          "profit_and_loss": {
+            "document": "profit_and_loss",
+            "source": "management",
+            "years_covered": [
+              2026
+            ],
+            "period_ends": {
+              "2026": "2026-04-30"
+            },
+            "years": {
+              "2026": {
+                "year": 2026,
+                "profit_and_loss": {
+                  "revenue": 231364.06,
+                  "cost_of_sales": 56341.03,
+                  "gross_profit": 175023.03,
+                  "administrative_expenses": 46898.13,
+                  "depreciation_amortisation": null,
+                  "other_operating_income": null,
+                  "operating_profit": 128124.9,
+                  "interest_receivable": null,
+                  "interest_payable": null,
+                  "profit_before_tax": 128124.9,
+                  "corporation_tax": null,
+                  "net_profit": 128124.9
+                },
+                "revenue_breakdown": {
+                  "by_product": {
+                    "Scaffolding Sales": 231364.06
+                  },
+                  "by_segment": {}
+                },
+                "cost_of_sales_breakdown": {
+                  "direct_materials": 6309.62,
+                  "direct_labour": 25008.59,
+                  "subcontractor_costs": 24052.82,
+                  "other_direct_costs": 970
+                },
+                "overheads_breakdown": {
+                  "staff_wages_salaries": 15560.18,
+                  "directors_salaries": null,
+                  "directors_pension": null,
+                  "employers_national_insurance": null,
+                  "staff_pension_contributions": null,
+                  "staff_training_recruitment": 140,
+                  "use_of_home_as_office": null,
+                  "rent_rates": 2950,
+                  "utilities": null,
+                  "insurance": 5731.03,
+                  "accountancy_bookkeeping": 1355,
+                  "professional_fees": 3900,
+                  "software_subscriptions": 566.75,
+                  "computer_costs": 1123.23,
+                  "it_support_hosting": null,
+                  "telecommunications": null,
+                  "printing_stationery": 17.99,
+                  "postage_courier": null,
+                  "subscriptions_memberships": 190.45,
+                  "bank_charges": 40.35,
+                  "advertising_marketing": null,
+                  "travel_subsistence": 280.8,
+                  "motor_expenses": 13134.78,
+                  "repairs_maintenance": 836.69,
+                  "depreciation": null,
+                  "amortisation": null,
+                  "other_overheads": 1070.88
+                },
+                "total_staff_costs": 15700.18,
+                "total_directors_remuneration": null,
+                "dividends_paid": null,
+                "exceptional_items": [],
+                "financial_ratios": {
+                  "gross_margin_percent": 75.65,
+                  "net_margin_percent": 55.38,
+                  "interest_coverage_ratio": null
+                }
+              }
+            },
+            "summary_insights": [
+              "The company achieved a high gross margin of 75.7% for the period ending April 2026, indicating a strong value-add on scaffolding services.",
+              "Net profitability is exceptionally high at 55.4%, reflecting efficient management of overheads relative to the revenue generated.",
+              "Direct labour and CIS subcontractor costs represent the largest portion of the cost of sales, totalling £49,061.41.",
+              "Motor-related expenses (fuel, repairs, insurance, lease, trackers) are a significant overhead, totalling £13,134.78, or approximately 5.7% of revenue.",
+              "The business maintains a lean administrative structure, with total overheads accounting for only 20.3% of total turnover.",
+              "Staff-related costs (wages and training) are well-controlled at £15,700.18 for the month.",
+              "Operating profit of £128,124.90 provides a very strong foundation for the start of the financial year."
+            ]
+          },
+          "balance_sheet": {
+            "document": "balance_sheet",
+            "source": "statutory",
+            "years_covered": [
+              2026
+            ],
+            "period_ends": {
+              "2026": "2026-04-30"
+            },
+            "years": {
+              "2026": {
+                "year": 2026,
+                "balance_sheet": {
+                  "fixed_assets": {
+                    "intangible_assets": null,
+                    "tangible_assets": null,
+                    "freehold_property": null,
+                    "leasehold_property": null,
+                    "plant_machinery": null,
+                    "fixtures_fittings": null,
+                    "motor_vehicles": null,
+                    "computer_equipment": null
+                  },
+                  "current_assets": {
+                    "stock": null,
+                    "trade_debtors": null,
+                    "prepayments": null,
+                    "amounts_owed_by_directors": null,
+                    "amounts_owed_by_connected_companies": null,
+                    "directors_current_account": null,
+                    "other_debtors": null,
+                    "cash_at_bank": null,
+                    "total": null
+                  },
+                  "current_liabilities": {
+                    "trade_creditors": null,
+                    "taxation_social_security": null,
+                    "vat_payable": null,
+                    "corporation_tax": null,
+                    "bank_loans_current": null,
+                    "hire_purchase_current": null,
+                    "accruals": null,
+                    "amounts_owed_to_directors": null,
+                    "other_creditors": null,
+                    "total": null
+                  },
+                  "long_term_liabilities": {
+                    "bank_loans": null,
+                    "hire_purchase_long_term": null,
+                    "deferred_taxation": null,
+                    "other_debt": null,
+                    "total": null
+                  },
+                  "equity": {
+                    "share_capital": null,
+                    "retained_earnings": 128124.9,
+                    "total": 128124.9
+                  }
+                },
+                "financial_ratios": {
+                  "current_ratio": null,
+                  "quick_ratio": null,
+                  "net_assets_growth_percent": null,
+                  "gearing_ratio_percent": null
+                }
+              }
+            },
+            "summary_insights": [
+              "The provided document is a Profit and Loss statement rather than a full Balance Sheet, limiting the assessment of the company's total asset base.",
+              "The company generated a significant Net Profit of £128,124.90 for the single month of April 2026.",
+              "Gross Profit margin is strong at approximately 75.6%, indicating high efficiency in direct service delivery.",
+              "Overheads are well-managed at 20.3% of turnover, with Gross Wages (£15,560) and Vehicle Fuel (£6,208) being the primary cost drivers.",
+              "The Net Profit margin is exceptionally high at 55.4% for the period, suggesting a highly profitable operating model.",
+              "Without a full Balance Sheet, liquidity ratios (Current/Quick) and long-term solvency cannot be verified from this specific document."
+            ]
+          }
+        }
+      },
+      {
+        "id": 2795,
+        "document_type": "profit_and_loss",
+        "created_at": "2026-06-29T15:10:10.500Z",
+        "analysis_data": {
+          "document": "profit_and_loss",
+          "source": "management",
+          "years_covered": [
+            2026
+          ],
+          "period_ends": {
+            "2026": "2026-04-30"
+          },
+          "years": {
+            "2026": {
+              "year": 2026,
+              "profit_and_loss": {
+                "revenue": 231364.06,
+                "cost_of_sales": 56341.03,
+                "gross_profit": 175023.03,
+                "administrative_expenses": 46898.13,
+                "depreciation_amortisation": null,
+                "other_operating_income": null,
+                "operating_profit": 128124.9,
+                "interest_receivable": null,
+                "interest_payable": null,
+                "profit_before_tax": 128124.9,
+                "corporation_tax": null,
+                "net_profit": 128124.9
+              },
+              "revenue_breakdown": {
+                "by_product": {
+                  "Scaffolding Sales": 231364.06
+                },
+                "by_segment": {}
+              },
+              "cost_of_sales_breakdown": {
+                "direct_materials": 6309.62,
+                "direct_labour": 25008.59,
+                "subcontractor_costs": 24052.82,
+                "other_direct_costs": 970
+              },
+              "overheads_breakdown": {
+                "staff_wages_salaries": 15560.18,
+                "directors_salaries": null,
+                "directors_pension": null,
+                "employers_national_insurance": null,
+                "staff_pension_contributions": null,
+                "staff_training_recruitment": 140,
+                "use_of_home_as_office": null,
+                "rent_rates": 2950,
+                "utilities": null,
+                "insurance": 5731.03,
+                "accountancy_bookkeeping": 1355,
+                "professional_fees": 3900,
+                "software_subscriptions": 566.75,
+                "computer_costs": 1123.23,
+                "it_support_hosting": null,
+                "telecommunications": null,
+                "printing_stationery": 17.99,
+                "postage_courier": null,
+                "subscriptions_memberships": 190.45,
+                "bank_charges": 40.35,
+                "advertising_marketing": null,
+                "travel_subsistence": 280.8,
+                "motor_expenses": 13134.78,
+                "repairs_maintenance": 836.69,
+                "depreciation": null,
+                "amortisation": null,
+                "other_overheads": 1070.88
+              },
+              "total_staff_costs": 15700.18,
+              "total_directors_remuneration": null,
+              "dividends_paid": null,
+              "exceptional_items": [],
+              "financial_ratios": {
+                "gross_margin_percent": 75.65,
+                "net_margin_percent": 55.38,
+                "interest_coverage_ratio": null
+              }
+            }
+          },
+          "summary_insights": [
+            "The company achieved a high gross margin of 75.7% for the period ending April 2026, indicating a strong value-add on scaffolding services.",
+            "Net profitability is exceptionally high at 55.4%, reflecting efficient management of overheads relative to the revenue generated.",
+            "Direct labour and CIS subcontractor costs represent the largest portion of the cost of sales, totalling £49,061.41.",
+            "Motor-related expenses (fuel, repairs, insurance, lease, trackers) are a significant overhead, totalling £13,134.78, or approximately 5.7% of revenue.",
+            "The business maintains a lean administrative structure, with total overheads accounting for only 20.3% of total turnover.",
+            "Staff-related costs (wages and training) are well-controlled at £15,700.18 for the month.",
+            "Operating profit of £128,124.90 provides a very strong foundation for the start of the financial year."
+          ]
+        }
+      },
+      {
+        "id": 2796,
+        "document_type": "balance_sheet",
+        "created_at": "2026-06-29T15:10:10.679Z",
+        "analysis_data": {
+          "document": "balance_sheet",
+          "source": "statutory",
+          "years_covered": [
+            2026
+          ],
+          "period_ends": {
+            "2026": "2026-04-30"
+          },
+          "years": {
+            "2026": {
+              "year": 2026,
+              "balance_sheet": {
+                "fixed_assets": {
+                  "intangible_assets": null,
+                  "tangible_assets": null,
+                  "freehold_property": null,
+                  "leasehold_property": null,
+                  "plant_machinery": null,
+                  "fixtures_fittings": null,
+                  "motor_vehicles": null,
+                  "computer_equipment": null
+                },
+                "current_assets": {
+                  "stock": null,
+                  "trade_debtors": null,
+                  "prepayments": null,
+                  "amounts_owed_by_directors": null,
+                  "amounts_owed_by_connected_companies": null,
+                  "directors_current_account": null,
+                  "other_debtors": null,
+                  "cash_at_bank": null,
+                  "total": null
+                },
+                "current_liabilities": {
+                  "trade_creditors": null,
+                  "taxation_social_security": null,
+                  "vat_payable": null,
+                  "corporation_tax": null,
+                  "bank_loans_current": null,
+                  "hire_purchase_current": null,
+                  "accruals": null,
+                  "amounts_owed_to_directors": null,
+                  "other_creditors": null,
+                  "total": null
+                },
+                "long_term_liabilities": {
+                  "bank_loans": null,
+                  "hire_purchase_long_term": null,
+                  "deferred_taxation": null,
+                  "other_debt": null,
+                  "total": null
+                },
+                "equity": {
+                  "share_capital": null,
+                  "retained_earnings": 128124.9,
+                  "total": 128124.9
+                }
+              },
+              "financial_ratios": {
+                "current_ratio": null,
+                "quick_ratio": null,
+                "net_assets_growth_percent": null,
+                "gearing_ratio_percent": null
+              }
+            }
+          },
+          "summary_insights": [
+            "The provided document is a Profit and Loss statement rather than a full Balance Sheet, limiting the assessment of the company's total asset base.",
+            "The company generated a significant Net Profit of £128,124.90 for the single month of April 2026.",
+            "Gross Profit margin is strong at approximately 75.6%, indicating high efficiency in direct service delivery.",
+            "Overheads are well-managed at 20.3% of turnover, with Gross Wages (£15,560) and Vehicle Fuel (£6,208) being the primary cost drivers.",
+            "The Net Profit margin is exceptionally high at 55.4% for the period, suggesting a highly profitable operating model.",
+            "Without a full Balance Sheet, liquidity ratios (Current/Quick) and long-term solvency cannot be verified from this specific document."
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": 1430,
+    "document_name": "Business Overview.pdf",
+    "original_filename": "Business Overview.pdf",
+    "document_category": "Company Accounts",
+    "file_path": "companies/172/doc-1782745955640-799391522.pdf",
+    "file_type": "application/pdf",
+    "file_size": 5147128,
+    "upload_date": "2026-06-29T15:13:09.209Z",
+    "analysisResults": [
+      {
+        "id": 2797,
+        "document_type": "company_accounts",
+        "created_at": "2026-06-29T15:13:48.705Z",
+        "analysis_data": {
+          "document": "company_accounts",
+          "source": "statutory_accounts",
+          "profit_and_loss": {
+            "document": "profit_and_loss",
+            "source": "statutory",
+            "years_covered": [
+              2022,
+              2023,
+              2024
+            ],
+            "period_ends": {
+              "2022": "2022-03-31",
+              "2023": "2023-03-31",
+              "2024": "2024-03-31"
+            },
+            "years": {
+              "2022": {
+                "year": 2022,
+                "profit_and_loss": {
+                  "revenue": 2142601,
+                  "cost_of_sales": 951259,
+                  "gross_profit": 1191342,
+                  "administrative_expenses": 486118,
+                  "depreciation_amortisation": 117453,
+                  "other_operating_income": null,
+                  "operating_profit": 705224,
+                  "interest_receivable": null,
+                  "interest_payable": 1801,
+                  "profit_before_tax": null,
+                  "corporation_tax": null,
+                  "net_profit": null
+                },
+                "revenue_breakdown": {
+                  "by_product": {},
+                  "by_segment": {}
+                },
+                "cost_of_sales_breakdown": {
+                  "direct_materials": null,
+                  "direct_labour": null,
+                  "subcontractor_costs": null,
+                  "other_direct_costs": null
+                },
+                "overheads_breakdown": {
+                  "staff_wages_salaries": null,
+                  "directors_salaries": 25000,
+                  "directors_pension": null,
+                  "employers_national_insurance": null,
+                  "staff_pension_contributions": null,
+                  "staff_training_recruitment": null,
+                  "use_of_home_as_office": null,
+                  "rent_rates": null,
+                  "utilities": null,
+                  "insurance": null,
+                  "accountancy_bookkeeping": null,
+                  "professional_fees": null,
+                  "software_subscriptions": null,
+                  "computer_costs": null,
+                  "it_support_hosting": null,
+                  "telecommunications": null,
+                  "printing_stationery": null,
+                  "postage_courier": null,
+                  "subscriptions_memberships": null,
+                  "bank_charges": 1801,
+                  "advertising_marketing": null,
+                  "travel_subsistence": null,
+                  "motor_expenses": null,
+                  "repairs_maintenance": null,
+                  "depreciation": 117453,
+                  "amortisation": null,
+                  "other_overheads": 14602
+                },
+                "total_staff_costs": null,
+                "total_directors_remuneration": 25000,
+                "dividends_paid": null,
+                "exceptional_items": [],
+                "financial_ratios": {
+                  "gross_margin_percent": 55.6,
+                  "net_margin_percent": null,
+                  "interest_coverage_ratio": 391.57
+                }
+              },
+              "2023": {
+                "year": 2023,
+                "profit_and_loss": {
+                  "revenue": 2039552,
+                  "cost_of_sales": 1007456,
+                  "gross_profit": 1032096,
+                  "administrative_expenses": 588142,
+                  "depreciation_amortisation": 148547,
+                  "other_operating_income": null,
+                  "operating_profit": 443954,
+                  "interest_receivable": null,
+                  "interest_payable": 3004,
+                  "profit_before_tax": null,
+                  "corporation_tax": null,
+                  "net_profit": null
+                },
+                "revenue_breakdown": {
+                  "by_product": {},
+                  "by_segment": {}
+                },
+                "cost_of_sales_breakdown": {
+                  "direct_materials": null,
+                  "direct_labour": null,
+                  "subcontractor_costs": null,
+                  "other_direct_costs": null
+                },
+                "overheads_breakdown": {
+                  "staff_wages_salaries": null,
+                  "directors_salaries": 25000,
+                  "directors_pension": null,
+                  "employers_national_insurance": null,
+                  "staff_pension_contributions": null,
+                  "staff_training_recruitment": null,
+                  "use_of_home_as_office": null,
+                  "rent_rates": null,
+                  "utilities": null,
+                  "insurance": null,
+                  "accountancy_bookkeeping": null,
+                  "professional_fees": null,
+                  "software_subscriptions": null,
+                  "computer_costs": null,
+                  "it_support_hosting": null,
+                  "telecommunications": null,
+                  "printing_stationery": null,
+                  "postage_courier": null,
+                  "subscriptions_memberships": null,
+                  "bank_charges": 3004,
+                  "advertising_marketing": null,
+                  "travel_subsistence": null,
+                  "motor_expenses": null,
+                  "repairs_maintenance": null,
+                  "depreciation": 148547,
+                  "amortisation": null,
+                  "other_overheads": 20623
+                },
+                "total_staff_costs": null,
+                "total_directors_remuneration": 25000,
+                "dividends_paid": null,
+                "exceptional_items": [],
+                "financial_ratios": {
+                  "gross_margin_percent": 50.6,
+                  "net_margin_percent": null,
+                  "interest_coverage_ratio": 147.79
+                }
+              },
+              "2024": {
+                "year": 2024,
+                "profit_and_loss": {
+                  "revenue": 1636215,
+                  "cost_of_sales": 861049,
+                  "gross_profit": 775166,
+                  "administrative_expenses": 656413,
+                  "depreciation_amortisation": 145685,
+                  "other_operating_income": null,
+                  "operating_profit": 118753,
+                  "interest_receivable": null,
+                  "interest_payable": 1836,
+                  "profit_before_tax": null,
+                  "corporation_tax": null,
+                  "net_profit": null
+                },
+                "revenue_breakdown": {
+                  "by_product": {},
+                  "by_segment": {
+                    "Client 1": 250000,
+                    "Client 2": 160000,
+                    "Client 3": 130500,
+                    "Client 4": 125000,
+                    "Client 5": 110000,
+                    "Client 6": 100000,
+                    "Client 7": 96000
+                  }
+                },
+                "cost_of_sales_breakdown": {
+                  "direct_materials": null,
+                  "direct_labour": null,
+                  "subcontractor_costs": null,
+                  "other_direct_costs": null
+                },
+                "overheads_breakdown": {
+                  "staff_wages_salaries": null,
+                  "directors_salaries": 25000,
+                  "directors_pension": null,
+                  "employers_national_insurance": null,
+                  "staff_pension_contributions": null,
+                  "staff_training_recruitment": null,
+                  "use_of_home_as_office": null,
+                  "rent_rates": null,
+                  "utilities": null,
+                  "insurance": null,
+                  "accountancy_bookkeeping": null,
+                  "professional_fees": null,
+                  "software_subscriptions": null,
+                  "computer_costs": null,
+                  "it_support_hosting": null,
+                  "telecommunications": null,
+                  "printing_stationery": null,
+                  "postage_courier": null,
+                  "subscriptions_memberships": null,
+                  "bank_charges": 1836,
+                  "advertising_marketing": null,
+                  "travel_subsistence": null,
+                  "motor_expenses": null,
+                  "repairs_maintenance": null,
+                  "depreciation": 145685,
+                  "amortisation": null,
+                  "other_overheads": 5927
+                },
+                "total_staff_costs": null,
+                "total_directors_remuneration": 25000,
+                "dividends_paid": null,
+                "exceptional_items": [
+                  {
+                    "description": "Bad Debts",
+                    "amount": 3721
+                  }
+                ],
+                "financial_ratios": {
+                  "gross_margin_percent": 47.38,
+                  "net_margin_percent": null,
+                  "interest_coverage_ratio": 64.68
+                }
+              }
+            },
+            "summary_insights": [
+              "Revenue has experienced a significant decline of 23.6% between 2022 and 2024, falling from £2.14m to £1.64m.",
+              "Gross margin has compressed steadily from 55.6% in 2022 to 47.4% in 2024, indicating rising direct costs or pricing pressure.",
+              "Operating profit has seen a sharp contraction of 83.2% over the three-year period, primarily driven by the combination of lower turnover and rising administrative expenses.",
+              "Administrative expenses increased by 35% between 2022 and 2024 despite the falling revenue, which is a significant red flag for operational efficiency.",
+              "The company maintains a high level of customer concentration, with the top three clients accounting for 56% of total revenue in the 2024/25 period.",
+              "Interest coverage remains healthy at 64.7x in 2024, though it has declined substantially from 391.6x in 2022 due to the drop in operating profit.",
+              "Adjusted EBITDA has followed the downward trend of operating profit, decreasing from £863k in 2022 to £301k in 2024.",
+              "Forecasts for 2025 and 2026 suggest a planned recovery in both revenue and margins, though historical trends show recent performance has been challenging."
+            ]
+          },
+          "balance_sheet": {
+            "document": "balance_sheet",
+            "source": "statutory",
+            "years_covered": [
+              2022,
+              2023,
+              2024
+            ],
+            "period_ends": {
+              "2022": "2022-03-31",
+              "2023": "2023-03-31",
+              "2024": "2024-03-31"
+            },
+            "years": {
+              "2022": {
+                "year": 2022,
+                "balance_sheet": {
+                  "fixed_assets": {
+                    "intangible_assets": null,
+                    "tangible_assets": null,
+                    "freehold_property": null,
+                    "leasehold_property": null,
+                    "plant_machinery": null,
+                    "fixtures_fittings": null,
+                    "motor_vehicles": null,
+                    "computer_equipment": null
+                  },
+                  "current_assets": {
+                    "stock": null,
+                    "trade_debtors": null,
+                    "prepayments": null,
+                    "amounts_owed_by_directors": null,
+                    "amounts_owed_by_connected_companies": null,
+                    "directors_current_account": null,
+                    "other_debtors": null,
+                    "cash_at_bank": null,
+                    "total": null
+                  },
+                  "current_liabilities": {
+                    "trade_creditors": null,
+                    "taxation_social_security": null,
+                    "vat_payable": null,
+                    "corporation_tax": null,
+                    "bank_loans_current": null,
+                    "hire_purchase_current": null,
+                    "accruals": null,
+                    "amounts_owed_to_directors": null,
+                    "other_creditors": null,
+                    "total": null
+                  },
+                  "long_term_liabilities": {
+                    "bank_loans": null,
+                    "hire_purchase_long_term": null,
+                    "deferred_taxation": null,
+                    "other_debt": null,
+                    "total": null
+                  },
+                  "equity": {
+                    "share_capital": null,
+                    "retained_earnings": null,
+                    "total": null
+                  }
+                },
+                "financial_ratios": {
+                  "current_ratio": null,
+                  "quick_ratio": null,
+                  "net_assets_growth_percent": null,
+                  "gearing_ratio_percent": null
+                }
+              },
+              "2023": {
+                "year": 2023,
+                "balance_sheet": {
+                  "fixed_assets": {
+                    "intangible_assets": null,
+                    "tangible_assets": null,
+                    "freehold_property": null,
+                    "leasehold_property": null,
+                    "plant_machinery": null,
+                    "fixtures_fittings": null,
+                    "motor_vehicles": null,
+                    "computer_equipment": null
+                  },
+                  "current_assets": {
+                    "stock": null,
+                    "trade_debtors": null,
+                    "prepayments": null,
+                    "amounts_owed_by_directors": null,
+                    "amounts_owed_by_connected_companies": null,
+                    "directors_current_account": null,
+                    "other_debtors": null,
+                    "cash_at_bank": null,
+                    "total": null
+                  },
+                  "current_liabilities": {
+                    "trade_creditors": null,
+                    "taxation_social_security": null,
+                    "vat_payable": null,
+                    "corporation_tax": null,
+                    "bank_loans_current": null,
+                    "hire_purchase_current": null,
+                    "accruals": null,
+                    "amounts_owed_to_directors": null,
+                    "other_creditors": null,
+                    "total": null
+                  },
+                  "long_term_liabilities": {
+                    "bank_loans": null,
+                    "hire_purchase_long_term": null,
+                    "deferred_taxation": null,
+                    "other_debt": null,
+                    "total": null
+                  },
+                  "equity": {
+                    "share_capital": null,
+                    "retained_earnings": null,
+                    "total": null
+                  }
+                },
+                "financial_ratios": {
+                  "current_ratio": null,
+                  "quick_ratio": null,
+                  "net_assets_growth_percent": null,
+                  "gearing_ratio_percent": null
+                }
+              },
+              "2024": {
+                "year": 2024,
+                "balance_sheet": {
+                  "fixed_assets": {
+                    "intangible_assets": null,
+                    "tangible_assets": null,
+                    "freehold_property": null,
+                    "leasehold_property": null,
+                    "plant_machinery": null,
+                    "fixtures_fittings": null,
+                    "motor_vehicles": null,
+                    "computer_equipment": null
+                  },
+                  "current_assets": {
+                    "stock": null,
+                    "trade_debtors": null,
+                    "prepayments": null,
+                    "amounts_owed_by_directors": null,
+                    "amounts_owed_by_connected_companies": null,
+                    "directors_current_account": null,
+                    "other_debtors": null,
+                    "cash_at_bank": null,
+                    "total": null
+                  },
+                  "current_liabilities": {
+                    "trade_creditors": null,
+                    "taxation_social_security": null,
+                    "vat_payable": null,
+                    "corporation_tax": null,
+                    "bank_loans_current": null,
+                    "hire_purchase_current": null,
+                    "accruals": null,
+                    "amounts_owed_to_directors": null,
+                    "other_creditors": null,
+                    "total": null
+                  },
+                  "long_term_liabilities": {
+                    "bank_loans": null,
+                    "hire_purchase_long_term": null,
+                    "deferred_taxation": null,
+                    "other_debt": null,
+                    "total": null
+                  },
+                  "equity": {
+                    "share_capital": null,
+                    "retained_earnings": null,
+                    "total": null
+                  }
+                },
+                "financial_ratios": {
+                  "current_ratio": null,
+                  "quick_ratio": null,
+                  "net_assets_growth_percent": null,
+                  "gearing_ratio_percent": null
+                }
+              }
+            },
+            "summary_insights": [
+              "The Information Memorandum explicitly states 'Information Required' on the Balance Sheet page, meaning no statutory balance sheet data was provided for extraction.",
+              "While Income Statement data is present, the lack of asset and liability figures prevents the calculation of liquidity or gearing ratios.",
+              "The company operates from a leasehold property with an annual rent of £35,400, expiring in September 2029.",
+              "Revenue has seen a decline from £2.14m in 2022 to £1.64m in 2024, which likely impacts the cash position on the balance sheet.",
+              "Adjusted EBITDA margins have compressed significantly from 40.3% in 2022 to 18.4% in 2024, suggesting a potential reduction in the rate of equity growth from retained earnings.",
+              "The business maintains a significant workforce of 18 payroll staff and 14 sub-contractors, representing a substantial ongoing operational commitment."
+            ]
+          }
+        }
+      },
+      {
+        "id": 2798,
+        "document_type": "profit_and_loss",
+        "created_at": "2026-06-29T15:13:48.793Z",
+        "analysis_data": {
+          "document": "profit_and_loss",
+          "source": "statutory",
+          "years_covered": [
+            2022,
+            2023,
+            2024
+          ],
+          "period_ends": {
+            "2022": "2022-03-31",
+            "2023": "2023-03-31",
+            "2024": "2024-03-31"
+          },
+          "years": {
+            "2022": {
+              "year": 2022,
+              "profit_and_loss": {
+                "revenue": 2142601,
+                "cost_of_sales": 951259,
+                "gross_profit": 1191342,
+                "administrative_expenses": 486118,
+                "depreciation_amortisation": 117453,
+                "other_operating_income": null,
+                "operating_profit": 705224,
+                "interest_receivable": null,
+                "interest_payable": 1801,
+                "profit_before_tax": null,
+                "corporation_tax": null,
+                "net_profit": null
+              },
+              "revenue_breakdown": {
+                "by_product": {},
+                "by_segment": {}
+              },
+              "cost_of_sales_breakdown": {
+                "direct_materials": null,
+                "direct_labour": null,
+                "subcontractor_costs": null,
+                "other_direct_costs": null
+              },
+              "overheads_breakdown": {
+                "staff_wages_salaries": null,
+                "directors_salaries": 25000,
+                "directors_pension": null,
+                "employers_national_insurance": null,
+                "staff_pension_contributions": null,
+                "staff_training_recruitment": null,
+                "use_of_home_as_office": null,
+                "rent_rates": null,
+                "utilities": null,
+                "insurance": null,
+                "accountancy_bookkeeping": null,
+                "professional_fees": null,
+                "software_subscriptions": null,
+                "computer_costs": null,
+                "it_support_hosting": null,
+                "telecommunications": null,
+                "printing_stationery": null,
+                "postage_courier": null,
+                "subscriptions_memberships": null,
+                "bank_charges": 1801,
+                "advertising_marketing": null,
+                "travel_subsistence": null,
+                "motor_expenses": null,
+                "repairs_maintenance": null,
+                "depreciation": 117453,
+                "amortisation": null,
+                "other_overheads": 14602
+              },
+              "total_staff_costs": null,
+              "total_directors_remuneration": 25000,
+              "dividends_paid": null,
+              "exceptional_items": [],
+              "financial_ratios": {
+                "gross_margin_percent": 55.6,
+                "net_margin_percent": null,
+                "interest_coverage_ratio": 391.57
+              }
+            },
+            "2023": {
+              "year": 2023,
+              "profit_and_loss": {
+                "revenue": 2039552,
+                "cost_of_sales": 1007456,
+                "gross_profit": 1032096,
+                "administrative_expenses": 588142,
+                "depreciation_amortisation": 148547,
+                "other_operating_income": null,
+                "operating_profit": 443954,
+                "interest_receivable": null,
+                "interest_payable": 3004,
+                "profit_before_tax": null,
+                "corporation_tax": null,
+                "net_profit": null
+              },
+              "revenue_breakdown": {
+                "by_product": {},
+                "by_segment": {}
+              },
+              "cost_of_sales_breakdown": {
+                "direct_materials": null,
+                "direct_labour": null,
+                "subcontractor_costs": null,
+                "other_direct_costs": null
+              },
+              "overheads_breakdown": {
+                "staff_wages_salaries": null,
+                "directors_salaries": 25000,
+                "directors_pension": null,
+                "employers_national_insurance": null,
+                "staff_pension_contributions": null,
+                "staff_training_recruitment": null,
+                "use_of_home_as_office": null,
+                "rent_rates": null,
+                "utilities": null,
+                "insurance": null,
+                "accountancy_bookkeeping": null,
+                "professional_fees": null,
+                "software_subscriptions": null,
+                "computer_costs": null,
+                "it_support_hosting": null,
+                "telecommunications": null,
+                "printing_stationery": null,
+                "postage_courier": null,
+                "subscriptions_memberships": null,
+                "bank_charges": 3004,
+                "advertising_marketing": null,
+                "travel_subsistence": null,
+                "motor_expenses": null,
+                "repairs_maintenance": null,
+                "depreciation": 148547,
+                "amortisation": null,
+                "other_overheads": 20623
+              },
+              "total_staff_costs": null,
+              "total_directors_remuneration": 25000,
+              "dividends_paid": null,
+              "exceptional_items": [],
+              "financial_ratios": {
+                "gross_margin_percent": 50.6,
+                "net_margin_percent": null,
+                "interest_coverage_ratio": 147.79
+              }
+            },
+            "2024": {
+              "year": 2024,
+              "profit_and_loss": {
+                "revenue": 1636215,
+                "cost_of_sales": 861049,
+                "gross_profit": 775166,
+                "administrative_expenses": 656413,
+                "depreciation_amortisation": 145685,
+                "other_operating_income": null,
+                "operating_profit": 118753,
+                "interest_receivable": null,
+                "interest_payable": 1836,
+                "profit_before_tax": null,
+                "corporation_tax": null,
+                "net_profit": null
+              },
+              "revenue_breakdown": {
+                "by_product": {},
+                "by_segment": {
+                  "Client 1": 250000,
+                  "Client 2": 160000,
+                  "Client 3": 130500,
+                  "Client 4": 125000,
+                  "Client 5": 110000,
+                  "Client 6": 100000,
+                  "Client 7": 96000
+                }
+              },
+              "cost_of_sales_breakdown": {
+                "direct_materials": null,
+                "direct_labour": null,
+                "subcontractor_costs": null,
+                "other_direct_costs": null
+              },
+              "overheads_breakdown": {
+                "staff_wages_salaries": null,
+                "directors_salaries": 25000,
+                "directors_pension": null,
+                "employers_national_insurance": null,
+                "staff_pension_contributions": null,
+                "staff_training_recruitment": null,
+                "use_of_home_as_office": null,
+                "rent_rates": null,
+                "utilities": null,
+                "insurance": null,
+                "accountancy_bookkeeping": null,
+                "professional_fees": null,
+                "software_subscriptions": null,
+                "computer_costs": null,
+                "it_support_hosting": null,
+                "telecommunications": null,
+                "printing_stationery": null,
+                "postage_courier": null,
+                "subscriptions_memberships": null,
+                "bank_charges": 1836,
+                "advertising_marketing": null,
+                "travel_subsistence": null,
+                "motor_expenses": null,
+                "repairs_maintenance": null,
+                "depreciation": 145685,
+                "amortisation": null,
+                "other_overheads": 5927
+              },
+              "total_staff_costs": null,
+              "total_directors_remuneration": 25000,
+              "dividends_paid": null,
+              "exceptional_items": [
+                {
+                  "description": "Bad Debts",
+                  "amount": 3721
+                }
+              ],
+              "financial_ratios": {
+                "gross_margin_percent": 47.38,
+                "net_margin_percent": null,
+                "interest_coverage_ratio": 64.68
+              }
+            }
+          },
+          "summary_insights": [
+            "Revenue has experienced a significant decline of 23.6% between 2022 and 2024, falling from £2.14m to £1.64m.",
+            "Gross margin has compressed steadily from 55.6% in 2022 to 47.4% in 2024, indicating rising direct costs or pricing pressure.",
+            "Operating profit has seen a sharp contraction of 83.2% over the three-year period, primarily driven by the combination of lower turnover and rising administrative expenses.",
+            "Administrative expenses increased by 35% between 2022 and 2024 despite the falling revenue, which is a significant red flag for operational efficiency.",
+            "The company maintains a high level of customer concentration, with the top three clients accounting for 56% of total revenue in the 2024/25 period.",
+            "Interest coverage remains healthy at 64.7x in 2024, though it has declined substantially from 391.6x in 2022 due to the drop in operating profit.",
+            "Adjusted EBITDA has followed the downward trend of operating profit, decreasing from £863k in 2022 to £301k in 2024.",
+            "Forecasts for 2025 and 2026 suggest a planned recovery in both revenue and margins, though historical trends show recent performance has been challenging."
+          ]
+        }
+      },
+      {
+        "id": 2799,
+        "document_type": "balance_sheet",
+        "created_at": "2026-06-29T15:13:49.124Z",
+        "analysis_data": {
+          "document": "balance_sheet",
+          "source": "statutory",
+          "years_covered": [
+            2022,
+            2023,
+            2024
+          ],
+          "period_ends": {
+            "2022": "2022-03-31",
+            "2023": "2023-03-31",
+            "2024": "2024-03-31"
+          },
+          "years": {
+            "2022": {
+              "year": 2022,
+              "balance_sheet": {
+                "fixed_assets": {
+                  "intangible_assets": null,
+                  "tangible_assets": null,
+                  "freehold_property": null,
+                  "leasehold_property": null,
+                  "plant_machinery": null,
+                  "fixtures_fittings": null,
+                  "motor_vehicles": null,
+                  "computer_equipment": null
+                },
+                "current_assets": {
+                  "stock": null,
+                  "trade_debtors": null,
+                  "prepayments": null,
+                  "amounts_owed_by_directors": null,
+                  "amounts_owed_by_connected_companies": null,
+                  "directors_current_account": null,
+                  "other_debtors": null,
+                  "cash_at_bank": null,
+                  "total": null
+                },
+                "current_liabilities": {
+                  "trade_creditors": null,
+                  "taxation_social_security": null,
+                  "vat_payable": null,
+                  "corporation_tax": null,
+                  "bank_loans_current": null,
+                  "hire_purchase_current": null,
+                  "accruals": null,
+                  "amounts_owed_to_directors": null,
+                  "other_creditors": null,
+                  "total": null
+                },
+                "long_term_liabilities": {
+                  "bank_loans": null,
+                  "hire_purchase_long_term": null,
+                  "deferred_taxation": null,
+                  "other_debt": null,
+                  "total": null
+                },
+                "equity": {
+                  "share_capital": null,
+                  "retained_earnings": null,
+                  "total": null
+                }
+              },
+              "financial_ratios": {
+                "current_ratio": null,
+                "quick_ratio": null,
+                "net_assets_growth_percent": null,
+                "gearing_ratio_percent": null
+              }
+            },
+            "2023": {
+              "year": 2023,
+              "balance_sheet": {
+                "fixed_assets": {
+                  "intangible_assets": null,
+                  "tangible_assets": null,
+                  "freehold_property": null,
+                  "leasehold_property": null,
+                  "plant_machinery": null,
+                  "fixtures_fittings": null,
+                  "motor_vehicles": null,
+                  "computer_equipment": null
+                },
+                "current_assets": {
+                  "stock": null,
+                  "trade_debtors": null,
+                  "prepayments": null,
+                  "amounts_owed_by_directors": null,
+                  "amounts_owed_by_connected_companies": null,
+                  "directors_current_account": null,
+                  "other_debtors": null,
+                  "cash_at_bank": null,
+                  "total": null
+                },
+                "current_liabilities": {
+                  "trade_creditors": null,
+                  "taxation_social_security": null,
+                  "vat_payable": null,
+                  "corporation_tax": null,
+                  "bank_loans_current": null,
+                  "hire_purchase_current": null,
+                  "accruals": null,
+                  "amounts_owed_to_directors": null,
+                  "other_creditors": null,
+                  "total": null
+                },
+                "long_term_liabilities": {
+                  "bank_loans": null,
+                  "hire_purchase_long_term": null,
+                  "deferred_taxation": null,
+                  "other_debt": null,
+                  "total": null
+                },
+                "equity": {
+                  "share_capital": null,
+                  "retained_earnings": null,
+                  "total": null
+                }
+              },
+              "financial_ratios": {
+                "current_ratio": null,
+                "quick_ratio": null,
+                "net_assets_growth_percent": null,
+                "gearing_ratio_percent": null
+              }
+            },
+            "2024": {
+              "year": 2024,
+              "balance_sheet": {
+                "fixed_assets": {
+                  "intangible_assets": null,
+                  "tangible_assets": null,
+                  "freehold_property": null,
+                  "leasehold_property": null,
+                  "plant_machinery": null,
+                  "fixtures_fittings": null,
+                  "motor_vehicles": null,
+                  "computer_equipment": null
+                },
+                "current_assets": {
+                  "stock": null,
+                  "trade_debtors": null,
+                  "prepayments": null,
+                  "amounts_owed_by_directors": null,
+                  "amounts_owed_by_connected_companies": null,
+                  "directors_current_account": null,
+                  "other_debtors": null,
+                  "cash_at_bank": null,
+                  "total": null
+                },
+                "current_liabilities": {
+                  "trade_creditors": null,
+                  "taxation_social_security": null,
+                  "vat_payable": null,
+                  "corporation_tax": null,
+                  "bank_loans_current": null,
+                  "hire_purchase_current": null,
+                  "accruals": null,
+                  "amounts_owed_to_directors": null,
+                  "other_creditors": null,
+                  "total": null
+                },
+                "long_term_liabilities": {
+                  "bank_loans": null,
+                  "hire_purchase_long_term": null,
+                  "deferred_taxation": null,
+                  "other_debt": null,
+                  "total": null
+                },
+                "equity": {
+                  "share_capital": null,
+                  "retained_earnings": null,
+                  "total": null
+                }
+              },
+              "financial_ratios": {
+                "current_ratio": null,
+                "quick_ratio": null,
+                "net_assets_growth_percent": null,
+                "gearing_ratio_percent": null
+              }
+            }
+          },
+          "summary_insights": [
+            "The Information Memorandum explicitly states 'Information Required' on the Balance Sheet page, meaning no statutory balance sheet data was provided for extraction.",
+            "While Income Statement data is present, the lack of asset and liability figures prevents the calculation of liquidity or gearing ratios.",
+            "The company operates from a leasehold property with an annual rent of £35,400, expiring in September 2029.",
+            "Revenue has seen a decline from £2.14m in 2022 to £1.64m in 2024, which likely impacts the cash position on the balance sheet.",
+            "Adjusted EBITDA margins have compressed significantly from 40.3% in 2022 to 18.4% in 2024, suggesting a potential reduction in the rate of equity growth from retained earnings.",
+            "The business maintains a significant workforce of 18 payroll staff and 14 sub-contractors, representing a substantial ongoing operational commitment."
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": 1431,
+    "document_name": "Asset register.xlsx",
+    "original_filename": "Asset register.xlsx",
+    "document_category": "Asset Register",
+    "file_path": "companies/172/doc-1782746843001-523269281.xlsx",
+    "file_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "file_size": 88328,
+    "upload_date": "2026-06-29T15:27:24.325Z",
+    "analysisResults": []
+  }
+]

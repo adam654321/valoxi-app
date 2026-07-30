@@ -1,0 +1,328 @@
+{
+  "document": "MAC Fixed Asset Register 08.09.25.csv",
+  "report_date": "2025-09-08",
+  "summary": {
+    "total_asset_count": 31,
+    "total_gross_book_value": 410039.92,
+    "total_accumulated_depreciation": 77576.1,
+    "total_net_book_value": 332463.82,
+    "refinanceable_assets_value": 297992.12,
+    "fully_depreciated_still_in_use": 0
+  },
+  "categories": {
+    "property": {
+      "gross_value": 16761.29,
+      "accumulated_depreciation": 9882.19,
+      "net_book_value": 6879.1
+    },
+    "plant_machinery": {
+      "gross_value": 3765,
+      "accumulated_depreciation": 1757,
+      "net_book_value": 2008
+    },
+    "vehicles": {
+      "gross_value": 345776.69,
+      "accumulated_depreciation": 47784.57,
+      "net_book_value": 297992.12
+    },
+    "it_equipment": {
+      "gross_value": 24286.62,
+      "accumulated_depreciation": 11488.18,
+      "net_book_value": 12798.44
+    },
+    "other": {
+      "gross_value": 19450.32,
+      "accumulated_depreciation": 6664.16,
+      "net_book_value": 12786.16
+    }
+  },
+  "property_details": [
+    {
+      "address": "Garage/store & land to rear of premises, Castle Bromwich",
+      "tenure": null,
+      "purchase_price": 16761.29,
+      "market_value": null,
+      "net_book_value": 6879.1
+    }
+  ],
+  "vehicle_details": [
+    {
+      "make_model": "Range Rover Sport D300 Dynamic SE",
+      "registration": "BK73 HSZ",
+      "purchase_date": "2023-09-15",
+      "cost": 62495,
+      "net_book_value": 55488.31,
+      "market_value": null
+    },
+    {
+      "make_model": "Volvo XC60 B4 Plus",
+      "registration": "YY23 RPV",
+      "purchase_date": "2023-03-24",
+      "cost": 43625,
+      "net_book_value": 37551.74,
+      "market_value": null
+    },
+    {
+      "make_model": "Ford Transit Custom 300 Trend",
+      "registration": "BD24 HKO",
+      "purchase_date": "2024-09-02",
+      "cost": 35200,
+      "net_book_value": 33177.71,
+      "market_value": null
+    },
+    {
+      "make_model": "Ford Transit Custom 320 Limited",
+      "registration": "BL23 ZRN",
+      "purchase_date": "2023-07-03",
+      "cost": 33900,
+      "net_book_value": 29710.82,
+      "market_value": null
+    },
+    {
+      "make_model": "Ford Transit Custom 300 Limited",
+      "registration": "BV72 KXT",
+      "purchase_date": "2022-11-07",
+      "cost": 32450,
+      "net_book_value": 27244.04,
+      "market_value": null
+    },
+    {
+      "make_model": "Ford Transit Custom 320 DCIV",
+      "registration": "BP24 LFA",
+      "purchase_date": "2024-06-10",
+      "cost": 27531.69,
+      "net_book_value": 25591.83,
+      "market_value": null
+    },
+    {
+      "make_model": "Ford Transit Custom 300 Trend",
+      "registration": "BN22 WRE",
+      "purchase_date": "2022-06-20",
+      "cost": 29875,
+      "net_book_value": 24434.46,
+      "market_value": null
+    },
+    {
+      "make_model": "Citroen Dispatch Enterprise",
+      "registration": "BJ22 PYD",
+      "purchase_date": "2022-03-14",
+      "cost": 26450,
+      "net_book_value": 21231.79,
+      "market_value": null
+    },
+    {
+      "make_model": "Vauxhall Vivaro Dynamic",
+      "registration": "BG21 TFJ",
+      "purchase_date": "2021-08-09",
+      "cost": 24100,
+      "net_book_value": 18535.56,
+      "market_value": null
+    },
+    {
+      "make_model": "Peugeot Expert Professional",
+      "registration": "MF19 JYA",
+      "purchase_date": "2019-06-14",
+      "cost": 17950,
+      "net_book_value": 13381.29,
+      "market_value": null
+    },
+    {
+      "make_model": "Ford Transit Connect",
+      "registration": "BK68 XCP",
+      "purchase_date": "2024-11-18",
+      "cost": 12200,
+      "net_book_value": 11644.57,
+      "market_value": null
+    }
+  ],
+  "assets": [
+    {
+      "description": "Director's vehicle",
+      "category": "Motor Vehicles",
+      "purchase_date": "2023-09-15",
+      "cost": 62495,
+      "accumulated_depreciation": 7006.69,
+      "net_book_value": 55488.31,
+      "depreciation_rate": 20,
+      "depreciation_method": "Straight line",
+      "location": "Anthony Smith",
+      "condition": null
+    },
+    {
+      "description": "GM vehicle",
+      "category": "Motor Vehicles",
+      "purchase_date": "2023-03-24",
+      "cost": 43625,
+      "accumulated_depreciation": 6073.26,
+      "net_book_value": 37551.74,
+      "depreciation_rate": 20,
+      "depreciation_method": "Straight line",
+      "location": "Nathan Graham",
+      "condition": null
+    },
+    {
+      "description": "Panel van",
+      "category": "Motor Vehicles",
+      "purchase_date": "2024-09-02",
+      "cost": 35200,
+      "accumulated_depreciation": 2022.29,
+      "net_book_value": 33177.71,
+      "depreciation_rate": 20,
+      "depreciation_method": "Straight line",
+      "location": "Marcus Bell",
+      "condition": null
+    },
+    {
+      "description": "Panel van",
+      "category": "Motor Vehicles",
+      "purchase_date": "2023-07-03",
+      "cost": 33900,
+      "accumulated_depreciation": 4189.18,
+      "net_book_value": 29710.82,
+      "depreciation_rate": 20,
+      "depreciation_method": "Straight line",
+      "location": "Josh Cartwright",
+      "condition": null
+    },
+    {
+      "description": "Panel van",
+      "category": "Motor Vehicles",
+      "purchase_date": "2022-11-07",
+      "cost": 32450,
+      "accumulated_depreciation": 5205.96,
+      "net_book_value": 27244.04,
+      "depreciation_rate": 20,
+      "depreciation_method": "Straight line",
+      "location": "Callum Jackson",
+      "condition": null
+    },
+    {
+      "description": "Crew van",
+      "category": "Motor Vehicles",
+      "purchase_date": "2024-06-10",
+      "cost": 27531.69,
+      "accumulated_depreciation": 1939.86,
+      "net_book_value": 25591.83,
+      "depreciation_rate": 20,
+      "depreciation_method": "Straight line",
+      "location": "Install team / apprentices",
+      "condition": null
+    },
+    {
+      "description": "Panel van",
+      "category": "Motor Vehicles",
+      "purchase_date": "2022-06-20",
+      "cost": 29875,
+      "accumulated_depreciation": 5440.54,
+      "net_book_value": 24434.46,
+      "depreciation_rate": 20,
+      "depreciation_method": "Straight line",
+      "location": "Dean Whitehouse",
+      "condition": null
+    },
+    {
+      "description": "Panel van",
+      "category": "Motor Vehicles",
+      "purchase_date": "2022-03-14",
+      "cost": 26450,
+      "accumulated_depreciation": 5218.21,
+      "net_book_value": 21231.79,
+      "depreciation_rate": 20,
+      "depreciation_method": "Straight line",
+      "location": "Liam O'Connor",
+      "condition": null
+    },
+    {
+      "description": "Panel van",
+      "category": "Motor Vehicles",
+      "purchase_date": "2021-08-09",
+      "cost": 24100,
+      "accumulated_depreciation": 5564.44,
+      "net_book_value": 18535.56,
+      "depreciation_rate": 20,
+      "depreciation_method": "Straight line",
+      "location": "Wayne Harley",
+      "condition": null
+    },
+    {
+      "description": "Panel van",
+      "category": "Motor Vehicles",
+      "purchase_date": "2019-06-14",
+      "cost": 17950,
+      "accumulated_depreciation": 4568.71,
+      "net_book_value": 13381.29,
+      "depreciation_rate": 20,
+      "depreciation_method": "Straight line",
+      "location": "Pool / stores run",
+      "condition": null
+    },
+    {
+      "description": "Panel van (used)",
+      "category": "Motor Vehicles",
+      "purchase_date": "2024-11-18",
+      "cost": 12200,
+      "accumulated_depreciation": 555.43,
+      "net_book_value": 11644.57,
+      "depreciation_rate": 20,
+      "depreciation_method": "Straight line",
+      "location": "Tom Price",
+      "condition": null
+    },
+    {
+      "description": "Showroom fit-out",
+      "category": "Fixtures & Fittings",
+      "purchase_date": "2020-08-10",
+      "cost": 10850,
+      "accumulated_depreciation": 3834.79,
+      "net_book_value": 7015.21,
+      "depreciation_rate": 10,
+      "depreciation_method": "Straight line",
+      "location": "Showroom",
+      "condition": null
+    },
+    {
+      "description": "Investment property",
+      "category": "Investment Property",
+      "purchase_date": "2015-07-20",
+      "cost": 16761.29,
+      "accumulated_depreciation": 9882.19,
+      "net_book_value": 6879.1,
+      "depreciation_rate": 4,
+      "depreciation_method": "Straight line",
+      "location": "Let to third party",
+      "condition": null
+    },
+    {
+      "description": "Laptops x6 (office team)",
+      "category": "Office Equipment",
+      "purchase_date": "2023-02-13",
+      "cost": 4920,
+      "accumulated_depreciation": 2412.5,
+      "net_book_value": 2507.5,
+      "depreciation_rate": 33,
+      "depreciation_method": "Straight line",
+      "location": "Office",
+      "condition": null
+    },
+    {
+      "description": "Engineer tablets x8",
+      "category": "Office Equipment",
+      "purchase_date": "2023-10-02",
+      "cost": 3560,
+      "accumulated_depreciation": 1315.72,
+      "net_book_value": 2244.28,
+      "depreciation_rate": 33,
+      "depreciation_method": "Straight line",
+      "location": "Engineering (Simpro)",
+      "condition": null
+    }
+  ],
+  "observations": [
+    "The asset base is heavily weighted towards Motor Vehicles, which comprise approximately 90% of the total Net Book Value.",
+    "Significant recent capital investment in the vehicle fleet is evident, with several high-value acquisitions in 2023 and 2024.",
+    "The vehicle fleet offers high refinancing potential, although most are currently held under Hire Purchase agreements.",
+    "The investment property has a low NBV relative to its age, suggesting potential hidden value if market prices in Castle Bromwich have appreciated since 2015.",
+    "IT and Office Equipment are being depreciated rapidly (33% SL), reflecting a modern but short-lived asset cycle."
+  ],
+  "_isIM": false
+}

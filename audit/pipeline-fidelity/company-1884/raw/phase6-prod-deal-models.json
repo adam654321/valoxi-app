@@ -1,0 +1,44 @@
+[
+  {
+    "id": 130,
+    "name": "Deal Model v1",
+    "created_at": "2026-07-01T11:15:54.326Z",
+    "updated_at": "2026-07-02T12:49:21.204Z",
+    "averaging_years": 3,
+    "calculated_ebitda": "4488010.666666667",
+    "adjusted_ebitda": "4488010.666666667",
+    "ebitda_multiple": "4.25",
+    "offer_driver": "ebitda",
+    "target_offer_price": null,
+    "total_purchase_price": "21662159.333333336",
+    "is_locked": false
+  },
+  {
+    "id": 131,
+    "name": "Deal Model v2",
+    "created_at": "2026-07-01T11:47:23.788Z",
+    "updated_at": "2026-07-01T11:53:08.419Z",
+    "averaging_years": 3,
+    "calculated_ebitda": "2138647.6666666665",
+    "adjusted_ebitda": "2138647.6666666665",
+    "ebitda_multiple": "4.25",
+    "offer_driver": "ebitda",
+    "target_offer_price": null,
+    "total_purchase_price": "11677366.583333332",
+    "is_locked": false
+  },
+  {
+    "id": 134,
+    "name": "Deal Model v3",
+    "created_at": "2026-07-02T12:49:27.472Z",
+    "updated_at": "2026-07-03T12:40:59.018Z",
+    "averaging_years": 3,
+    "calculated_ebitda": "4488010.666666667",
+    "adjusted_ebitda": "4488010.666666667",
+    "ebitda_multiple": "4.25",
+    "offer_driver": "ebitda",
+    "target_offer_price": null,
+    "total_purchase_price": "21662159.333333336",
+    "is_locked": false
+  }
+]

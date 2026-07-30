@@ -1,0 +1,134 @@
+{
+  "expert": "risk",
+  "company_name": "[AUDIT-130] Keen As Mustard",
+  "analysis_date": "2025-05-22",
+  "score": 72,
+  "confidence": "medium",
+  "customer_concentration": {
+    "risk_level": "low",
+    "top_customer_percent": null,
+    "top_3_customers_percent": null,
+    "top_5_customers_percent": null,
+    "hhi_index": null,
+    "hhi_classification": "diversified",
+    "total_customers": null,
+    "customers_over_15_percent": [],
+    "observations": [
+      "Sales ledger data was not provided in the input; unable to calculate specific HHI or concentration percentages.",
+      "Revenue breakdown for 2025 shows a split between 'Brand' (87.5%) and 'Supplier' (12.5%) categories.",
+      "Geographic distribution in 2025 shows significant USA exposure (55.3%) followed by UK (25.2%) and Europe (19.5%)."
+    ]
+  },
+  "financial_risk": {
+    "risk_level": "low",
+    "technically_insolvent": false,
+    "current_ratio_trend": "deteriorating",
+    "creditor_growth_vs_revenue": "Creditors grew by 45.9% (2023-2024) while revenue grew by 10.0%.",
+    "director_loans_balance": 0,
+    "intercompany_balances": 0,
+    "interest_coverage_adequate": true,
+    "going_concern_indicators": [
+      "Positive net assets of 109,592 as at 2024-11-30.",
+      "Strong operating profit of 197,695 in FY2024."
+    ],
+    "observations": [
+      "Current ratio was 3.03 as at 2023-11-30, decreasing to 2.54 as at 2024-11-30.",
+      "Interest coverage is exceptionally high (439x in 2024).",
+      "Dividends paid (126,200) in 2024 represent 85.5% of net profit, indicating high cash extraction by shareholders."
+    ]
+  },
+  "key_person_risk": {
+    "risk_level": "moderate",
+    "highest_individual_payroll_percent": null,
+    "single_points_of_failure": [
+      "Directors"
+    ],
+    "management_depth": "thin",
+    "average_tenure_years": null,
+    "observations": [
+      "Staff matrix not provided; however, P&L shows 'Directors Salaries' of 18,000 but no 'Staff Wages' line item in overheads, suggesting heavy reliance on directors and subcontractors.",
+      "Subcontractor costs (30,021 in 2024) and Direct Labour (70,742 in 2024) suggest a flexible but potentially transient workforce."
+    ]
+  },
+  "revenue_quality": {
+    "risk_level": "moderate",
+    "revenue_type": "unknown",
+    "customer_trend": "unknown",
+    "seasonality_detected": false,
+    "observations": [
+      "Revenue grew from 396,623 (2023) to 436,233 (2024).",
+      "Significant shift to US-based revenue in 2025 management accounts (55% of total).",
+      "Lack of sales ledger prevents determination of recurring vs project-based split."
+    ]
+  },
+  "balance_sheet_risks": {
+    "director_loans": 0,
+    "connected_company_balances": 0,
+    "deferred_tax": null,
+    "pension_obligations": null,
+    "contingent_liabilities": "unable_to_assess",
+    "observations": [
+      "No director loans or intercompany balances reported in balance sheets for 2023 or 2024.",
+      "Bank loans (long term) reduced from 16,717 (2023-11-30) to 6,519 (2024-11-30).",
+      "Current position (2025-11-30) only discloses Trade Debtors of 358,524.86; other fields are null/undisclosed."
+    ]
+  },
+  "bad_debt": {
+    "total_overdue_90_plus": null,
+    "recommended_provision": null,
+    "existing_provision": null,
+    "net_profit_impact": null,
+    "observations": [
+      "Sales ledger not provided; unable to perform aged debt analysis.",
+      "Trade debtors increased significantly to 358,524.86 in the current position (2025-11-30) compared to 94,118 in 2024-11-30, which may indicate collection issues or a large unbilled project."
+    ]
+  },
+  "risk_register": [
+    {
+      "risk": "High Dividend Extraction",
+      "category": "financial",
+      "severity": "medium",
+      "likelihood": "high",
+      "financial_impact": 126200,
+      "impact_description": "Large portion of profit is removed annually, limiting reinvestment and cash reserves.",
+      "mitigation": "Implement post-acquisition restrictive covenants on dividend payments and ensure adequate working capital peg."
+    },
+    {
+      "risk": "Geographic Concentration (USA)",
+      "category": "revenue",
+      "severity": "medium",
+      "likelihood": "medium",
+      "financial_impact": 198244,
+      "impact_description": "Over 55% of 2025 revenue is from the USA, exposing the firm to FX risk and US market volatility.",
+      "mitigation": "Hedge currency exposure and diversify client acquisition efforts in UK/EU markets."
+    },
+    {
+      "risk": "Thin Management Structure",
+      "category": "people",
+      "severity": "high",
+      "likelihood": "medium",
+      "financial_impact": null,
+      "impact_description": "Business appears heavily reliant on directors with minimal permanent staff overheads.",
+      "mitigation": "Key person insurance and multi-year earn-out structures for existing directors."
+    },
+    {
+      "risk": "Rapid Debtor Growth",
+      "category": "bad_debt",
+      "severity": "high",
+      "likelihood": "medium",
+      "financial_impact": 264406,
+      "impact_description": "Trade debtors increased by ~280% between Nov 2024 and Nov 2025, far outstripping historical levels.",
+      "mitigation": "Full audit of 2025 sales ledger and verification of debtor recoverability prior to completion."
+    }
+  ],
+  "deal_breakers": [
+    "None identified from the provided financial data, though the spike in 2025 debtors requires urgent investigation."
+  ],
+  "key_findings": [
+    "The company is profitable with a strong EBITDA margin (45.3% in 2024).",
+    "The balance sheet is clean of director loans and significant long-term debt.",
+    "There is a notable shift toward the US market in the most recent period.",
+    "Working capital management appears to be changing, evidenced by the sharp rise in trade debtors in 2025."
+  ],
+  "narrative": "Keen As Mustard presents a solid financial profile with high margins and low leverage. The primary risks are operational and structural rather than solvency-based. The business model appears to rely on a lean internal team (directors) and external subcontractors, which creates key person risk but allows for high profitability. The most significant red flag is the 2025 debtor balance, which is nearly equal to the total annual revenue of 2025, suggesting either a major change in payment terms or potential recoverability issues that must be addressed in due diligence."
+}

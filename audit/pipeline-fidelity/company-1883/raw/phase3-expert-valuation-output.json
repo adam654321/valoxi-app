@@ -1,0 +1,120 @@
+{
+  "expert": "valuation",
+  "company_name": "[AUDIT-220] Canoports UK Limited",
+  "analysis_date": "2025-07-24",
+  "score": 82,
+  "confidence": "high",
+  "ebitda_multiple_valuation": {
+    "adjusted_ebitda_base": 1863717,
+    "sector_multiple_range": {
+      "low": 3.5,
+      "mid": 4.75,
+      "high": 6
+    },
+    "selected_multiple": 5,
+    "multiple_justification": "A multiple of 5.0x is selected, placing the company in the upper-mid quartile of the sector range. This is justified by the company's revenue scale (£14m+), which exceeds the £10m institutional interest threshold, its robust 11.6% EBITDA margin, and the significant £17.4m secured pipeline which provides high revenue visibility. The 91% repeat order rate in the AliDeck division further supports a premium over general fabrication shops.",
+    "premium_factors_applied": [
+      "Revenue scale > £10m threshold",
+      "High repeat order rate (91%)",
+      "Substantial secured pipeline of £17.4m",
+      "Modern asset base following £1.3m powder coating investment",
+      "Strong management continuity with 15-year tenure CEO"
+    ],
+    "discount_factors_applied": [
+      "Heavy working capital intensity",
+      "Exposure to cyclical construction/home improvement markets",
+      "Leasehold property dependency"
+    ],
+    "enterprise_value_range": {
+      "conservative": 7454868,
+      "base": 9318585,
+      "optimistic": 11182302
+    }
+  },
+  "ev_to_equity_bridge": {
+    "enterprise_value_base": 9318585,
+    "plus_cash": 2951434,
+    "minus_long_term_debt": 3867,
+    "minus_director_loans": 0,
+    "minus_bad_debt_provision": 0,
+    "minus_working_capital_adjustment": 0,
+    "equity_value": {
+      "conservative": 10402435,
+      "base": 12266152,
+      "optimistic": 14129869
+    }
+  },
+  "asset_based_valuation": {
+    "net_asset_value": 7873818,
+    "property_adjustment": 0,
+    "bad_debt_adjustment": 0,
+    "adjusted_nav": 7873818,
+    "nav_as_floor": true
+  },
+  "revenue_multiple_crosscheck": {
+    "latest_revenue": 14010534,
+    "revenue_multiple_range": {
+      "low": 0.5,
+      "high": 0.9
+    },
+    "implied_ev_range": {
+      "low": 7005267,
+      "high": 12609480
+    }
+  },
+  "valuation_summary": {
+    "recommended_range": {
+      "equity_value_low": 10400000,
+      "equity_value_mid": 12250000,
+      "equity_value_high": 14150000
+    },
+    "primary_methodology": "ebitda_multiple",
+    "cross_check_alignment": "strong"
+  },
+  "sensitivity": {
+    "ebitda_plus_10pct": {
+      "enterprise_value": 10250443,
+      "equity_value": 13198010
+    },
+    "ebitda_minus_10pct": {
+      "enterprise_value": 8386726,
+      "equity_value": 11334293
+    },
+    "multiple_plus_half": {
+      "enterprise_value": 10250443,
+      "equity_value": 13198010
+    },
+    "multiple_minus_half": {
+      "enterprise_value": 8386726,
+      "equity_value": 11334293
+    },
+    "key_customer_loss_impact": "Low risk; top customer is <10% of turnover. A 10% revenue loss at 37% gross margin would impact EBITDA by approx £518k, reducing EV by £2.59m.",
+    "director_replacement_impact": "Already accounted for in Adjusted EBITDA via a £64,525 deduction to reflect market rates."
+  },
+  "seller_expectations": {
+    "likely_seller_expectation_range": {
+      "low": 15000000,
+      "high": 20000000
+    },
+    "seller_anchor_points": [
+      "Secured pipeline of £17.4m",
+      "Strong cash position of £2.95m",
+      "Recent £1.3m capital investment",
+      "Emotional value of building a 92-staff operation"
+    ],
+    "negotiation_gap_assessment": "The gap is likely significant. Sellers of £10m+ revenue businesses often anchor on turnover multiples (e.g., 1x-1.5x revenue) or optimistic future earnings from the pipeline. A buyer will focus on the heavy working capital requirement (£7m NWC) and the need to normalize director pay, likely landing the deal between £11.5m and £13m."
+  },
+  "key_findings": [
+    "Adjusted EBITDA of £1.86m provides a robust valuation base, significantly higher than reported figures due to non-recurring items.",
+    "The company is effectively debt-free with only £3.8k in long-term bank loans remaining as of May 2026.",
+    "Cash at bank of £2,951,434 (from 2026 current position) provides a significant boost to equity value.",
+    "The business is highly liquid but capital intensive, with £7.07m tied up in net working capital.",
+    "The £17.4m secured pipeline is a critical value driver that justifies a multiple at the higher end of the sector range."
+  ],
+  "red_flags": [
+    "Effective tax rate of 50% in FY24 requires investigation as it impacts net cash flow, though not EBITDA.",
+    "Stock levels have increased to £3.3m, suggesting potential obsolescence or capital inefficiency.",
+    "Debtor days are extending (62.9 days), which may require a working capital price adjustment at completion."
+  ],
+  "narrative": "Canoports UK Limited is a high-quality manufacturing target with a clean balance sheet and strong market positioning. The valuation is primarily driven by an Adjusted EBITDA of £1.86m, which accounts for £302k in non-recurring add-backs and a £64.5k deduction for market-rate director salaries. Using a 5.0x multiple—justified by the company's scale, modern assets, and impressive £17.4m pipeline—we arrive at a Base Enterprise Value of £9.3m. The equity value is significantly enhanced by the company's successful deleveraging strategy, which has left nearly £3m in cash and negligible debt. The resulting Base Equity Value of £12.26m is well-supported by an asset-based floor of £7.87m and aligns with revenue-multiple cross-checks. The primary negotiation point will be the 'heavy' working capital profile; while the business is cash-rich, the £7m tied up in NWC suggests that a 'cash-free/debt-free' deal with a normalized working capital target will be essential for the buyer."
+}

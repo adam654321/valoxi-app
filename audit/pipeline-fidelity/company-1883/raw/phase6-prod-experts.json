@@ -1,0 +1,1347 @@
+[
+  {
+    "id": 2501,
+    "expert_type": "data_quality",
+    "status": "success",
+    "score": 72,
+    "confidence": "medium",
+    "created_at": "2026-07-04T08:50:53.261Z",
+    "analysis_data": {
+      "stage": "data_quality",
+      "company_name": "Canoports UK Limited",
+      "assessment_date": "2024-05-20",
+      "overall_completeness_score": 72,
+      "overall_completeness_rating": "medium",
+      "confidence_for_analysis": "medium",
+      "data_sources": {
+        "company_accounts": {
+          "status": "complete",
+          "years_available": 3,
+          "years_list": [
+            2022,
+            2023,
+            2024
+          ],
+          "most_recent_period_end": "2024-05-31",
+          "data_staleness_months": 11,
+          "consecutive_years": true,
+          "key_fields_populated": [
+            "revenue",
+            "gross_profit",
+            "operating_profit",
+            "net_profit"
+          ],
+          "key_fields_missing": []
+        },
+        "profit_and_loss": {
+          "status": "complete",
+          "key_fields_populated": [
+            "revenue",
+            "cost_of_sales",
+            "gross_profit",
+            "administrative_expenses",
+            "operating_profit",
+            "net_profit"
+          ],
+          "key_fields_missing": [],
+          "has_overheads_breakdown": true,
+          "has_cost_of_sales_breakdown": true
+        },
+        "balance_sheet": {
+          "status": "complete",
+          "key_fields_populated": [
+            "fixed_assets",
+            "current_assets.total",
+            "current_liabilities.total",
+            "equity.total"
+          ],
+          "key_fields_missing": [],
+          "has_detailed_breakdown": true
+        },
+        "asset_register": {
+          "status": "partial",
+          "asset_count": 1,
+          "has_category_breakdown": false,
+          "has_individual_assets": true
+        },
+        "sales_ledger": {
+          "status": "partial",
+          "has_aging_breakdown": false,
+          "has_customer_breakdown": false,
+          "customer_count": 0
+        },
+        "staff_matrix": {
+          "status": "complete",
+          "headcount_reported": 92,
+          "has_individual_records": true,
+          "has_director_identification": true
+        }
+      },
+      "consistency_checks": {
+        "pl_revenue_vs_accounts": {
+          "result": "consistent",
+          "pl_value": 14010534,
+          "accounts_value": 14010534,
+          "variance_percent": 0
+        },
+        "bs_net_assets_vs_accounts": {
+          "result": "consistent",
+          "bs_value": 5022306,
+          "accounts_value": 5022306,
+          "variance_percent": 0
+        },
+        "staff_costs_vs_pl": {
+          "result": "unable_to_check",
+          "matrix_value": 3949165,
+          "pl_value": null,
+          "variance_percent": null
+        },
+        "assets_nbv_vs_bs": {
+          "result": "major_discrepancy",
+          "register_value": 898600,
+          "bs_value": 1078975,
+          "variance_percent": 16.7
+        },
+        "debtors_vs_bs": {
+          "result": "major_discrepancy",
+          "ledger_value": 3165261,
+          "bs_value": 2015706,
+          "variance_percent": 57
+        }
+      },
+      "red_flags": [
+        "Sales ledger total trade debtors (£3.16m) significantly exceeds Balance Sheet trade debtors (£2.01m).",
+        "Asset register is missing gross book value and accumulated depreciation breakdowns.",
+        "Sales ledger lacks an aging breakdown (0-90+ days).",
+        "FY25 statutory accounts noted to have a qualified audit opinion regarding inventory verification.",
+        "Anomalously high effective tax rate (50%) in FY24 statutory accounts."
+      ],
+      "gaps_requiring_seller_action": [
+        "Provide full aged debtor listing as of the most recent month-end.",
+        "Provide a detailed asset-by-asset register including cost and accumulated depreciation.",
+        "Clarify the discrepancy between the Sales Ledger report (£3.16m) and the FY24 Balance Sheet (£2.01m).",
+        "Provide breakdown of 'Other Overheads' which account for a significant portion of administrative expenses."
+      ],
+      "analysis_limitations": [
+        "Liquidity analysis for FY22 is impossible as balance sheet data was not provided for that year.",
+        "Staff cost consistency check could not be performed as P&L overheads do not explicitly break out staff costs."
+      ]
+    }
+  },
+  {
+    "id": 3075,
+    "expert_type": "deal_structure",
+    "status": "success",
+    "score": 75,
+    "confidence": "high",
+    "created_at": "2026-07-27T13:14:12.678Z",
+    "analysis_data": {
+      "expert": "deal_structure",
+      "company_name": "Canoports UK Limited",
+      "analysis_date": "2025-07-25",
+      "score": 75,
+      "confidence": "high",
+      "structures": [
+        {
+          "name": "Conservative Approach",
+          "strategy": "Minimize upfront risk by tying a significant portion of the value to the verification of normalized EBITDA and a successful founder transition.",
+          "risk_to_buyer": "low",
+          "suitable_when": "The buyer is concerned about the 'negative depreciation' accounting anomaly and the high working capital intensity.",
+          "consideration": {
+            "total_headline": 13010000,
+            "upfront_cash": 7806000,
+            "upfront_percent": 60,
+            "deferred": 2602000,
+            "earnout_maximum": 2602000,
+            "earnout_metric": "EBITDA",
+            "earnout_period_months": 24,
+            "earnout_rationale": "Triggered by Trigger 4 (Unverified add-backs) and Trigger 3 (Owner dependency). The QoE expert flagged a £224k negative depreciation credit and persistent non-recurring items that require verification through post-completion performance.",
+            "retention_escrow": 500000
+          },
+          "key_conditions": [
+            "Founders Mark and Louisa Wood to remain for a 12-month handover period.",
+            "Specific indemnity for any bad debt identified in the 90+ day ledger during DD.",
+            "Working capital peg set at 33% of revenue (historical average) rather than the current 37.7%."
+          ],
+          "notes": "Seller obligations: 12-month handover, 36-month non-compete. Warranties: Cap at 50% of consideration, 24-month period. Completion mechanism: Completion accounts with a rigorous Net Working Capital (NWC) target. Risk to buyer is low due to high deferment and specific indemnities for accounting anomalies."
+        },
+        {
+          "name": "Balanced Approach",
+          "strategy": "A fair split that provides the seller with significant liquidity while protecting the buyer against the immediate working capital drag.",
+          "risk_to_buyer": "medium",
+          "suitable_when": "Due diligence confirms the 'negative depreciation' was a one-off correction and the debtor book is largely collectible.",
+          "consideration": {
+            "total_headline": 13010000,
+            "upfront_cash": 9757500,
+            "upfront_percent": 75,
+            "deferred": 1951500,
+            "earnout_maximum": 1301000,
+            "earnout_metric": "EBITDA",
+            "earnout_period_months": 12,
+            "earnout_rationale": "Triggered by Trigger 4 (Unverified add-backs). Used to ensure the £2.12m adjusted EBITDA is sustainable once market-rate management salaries are implemented.",
+            "retention_escrow": 250000
+          },
+          "key_conditions": [
+            "CEO Richard to sign a new 3-year service agreement.",
+            "Locked-box mechanism based on the May 2026 balance sheet with 'no leakage' provisions.",
+            "Warranty basket (de minimis) set at 0.5% of Enterprise Value."
+          ],
+          "notes": "Seller obligations: 6-month handover, 24-month non-compete. Warranties: Cap at 25% of consideration, 18-month period. Completion mechanism: Locked box to provide price certainty. Risk to buyer is medium, primarily centered on the high inventory levels (100+ days) and potential obsolescence."
+        },
+        {
+          "name": "Competitive Approach",
+          "strategy": "Maximize upfront cash to win the deal in a competitive process, relying on robust warranties rather than contingent payments.",
+          "risk_to_buyer": "high",
+          "suitable_when": "The buyer has high confidence in the AliDeck brand's 91% repeat order rate and the existing CEO's ability to manage the business without the founders.",
+          "consideration": {
+            "total_headline": 13010000,
+            "upfront_cash": 11709000,
+            "upfront_percent": 90,
+            "deferred": 1301000,
+            "earnout_maximum": 0,
+            "earnout_metric": "N/A",
+            "earnout_period_months": 0,
+            "earnout_rationale": "No earnout included to maximize offer competitiveness. Risks are managed via a larger upfront payment and a fixed deferred retention.",
+            "retention_escrow": 150000
+          },
+          "key_conditions": [
+            "Clean exit for founders after a 3-month transition.",
+            "Standard manufacturing warranty suite with a 12-month duration.",
+            "Completion accounts with a 'normalized' stock level adjustment."
+          ],
+          "notes": "Seller obligations: 3-month transition, 24-month non-compete. Warranties: Cap at 15% of consideration, 12-month period. Completion mechanism: Completion accounts. Risk to buyer is high due to the lack of performance-contingent pay and the significant cash outlay upfront."
+        }
+      ],
+      "recommended_structure": "Balanced Approach",
+      "recommendation_rationale": "The Balanced Approach is recommended because it addresses the two primary risks identified by the experts: the uncertainty in the 2026 management accounts (specifically the negative depreciation) and the increasing working capital intensity. By keeping 25% of the consideration as deferred/earnout, the buyer ensures the seller remains motivated to assist in the transition and validates the adjusted EBITDA figures. The use of a 12-month earnout specifically targets the QoE expert's concerns regarding the sustainability of the £2.12m EBITDA base.",
+      "negotiation_priorities": [
+        "Establish a Net Working Capital (NWC) peg that accounts for the recent spike to 37.7% of revenue.",
+        "Reconcile the £224k negative depreciation credit to ensure it is not masking underlying operational costs.",
+        "Secure a long-term commitment from CEO Richard, who is the primary mitigator of key person risk.",
+        "Audit the 100+ days of inventory to identify potential obsolescence before completion."
+      ],
+      "deal_breaker_terms": [
+        "Failure to reconcile the negative depreciation entry in the FY26 accounts.",
+        "Refusal of the CEO to sign a post-acquisition service agreement.",
+        "Discovery of material undisclosed bad debt in the AliDeck division."
+      ],
+      "key_findings": [
+        "The business is highly liquid with £2.95m in cash, which significantly inflates the equity value.",
+        "AliDeck's 91% repeat order rate provides a strong 'moat' and justifies the 4.75x multiple.",
+        "The transition from founder-led to CEO-led is already well-advanced, reducing execution risk.",
+        "Working capital management is the primary operational lever for post-acquisition value creation."
+      ],
+      "narrative": "Canoports UK Limited is a high-quality target with a clean balance sheet and a dominant product brand in AliDeck. The deal structuring must balance the company's excellent cash position against the 'noise' in the recent management accounts. A Balanced Approach is optimal, providing the sellers with the liquidity they expect (anchored by their £3m cash pile) while using a 12-month earnout to verify that the adjusted EBITDA of £2.12m is a true reflection of sustainable earnings. The most critical negotiation point will be the Net Working Capital peg; the buyer must ensure they are not overpaying for a cash balance that has been artificially inflated by stretching creditors or failing to reinvest in inventory."
+    }
+  },
+  {
+    "id": 3069,
+    "expert_type": "financial",
+    "status": "success",
+    "score": 72,
+    "confidence": "high",
+    "created_at": "2026-07-27T13:14:12.204Z",
+    "analysis_data": {
+      "expert": "financial",
+      "company_name": "Canoports UK Limited",
+      "analysis_date": "2025-07-20",
+      "score": 72,
+      "confidence": "high",
+      "yearly_metrics": {
+        "2022": {
+          "revenue": 14930000,
+          "revenue_yoy_growth_percent": null,
+          "cost_of_sales": 9650000,
+          "gross_profit": 5280000,
+          "gross_margin_percent": 35.37,
+          "administrative_expenses": 2764000,
+          "operating_profit": 2516000,
+          "operating_margin_percent": 16.85,
+          "depreciation_amortisation": 262000,
+          "ebitda": 2778000,
+          "interest_payable": null,
+          "interest_coverage_ratio": null,
+          "profit_before_tax": null,
+          "corporation_tax": null,
+          "effective_tax_rate_percent": null,
+          "net_profit": null,
+          "net_margin_percent": null
+        },
+        "2023": {
+          "revenue": 15388788,
+          "revenue_yoy_growth_percent": 3.07,
+          "cost_of_sales": 11164982,
+          "gross_profit": 4223806,
+          "gross_margin_percent": 27.45,
+          "administrative_expenses": 3776150,
+          "operating_profit": 447656,
+          "operating_margin_percent": 2.91,
+          "depreciation_amortisation": 372563,
+          "ebitda": 820219,
+          "interest_payable": 118463,
+          "interest_coverage_ratio": 3.78,
+          "profit_before_tax": 329193,
+          "corporation_tax": 99241,
+          "effective_tax_rate_percent": 30.15,
+          "net_profit": 229952,
+          "net_margin_percent": 1.49
+        },
+        "2024": {
+          "revenue": 14010534,
+          "revenue_yoy_growth_percent": -8.96,
+          "cost_of_sales": 8831654,
+          "gross_profit": 5178880,
+          "gross_margin_percent": 36.96,
+          "administrative_expenses": 3552710,
+          "operating_profit": 1626170,
+          "operating_margin_percent": 11.61,
+          "depreciation_amortisation": 303929,
+          "ebitda": 1930099,
+          "interest_payable": 102433,
+          "interest_coverage_ratio": 15.88,
+          "profit_before_tax": 1237523,
+          "corporation_tax": 618517,
+          "effective_tax_rate_percent": 49.98,
+          "net_profit": 619006,
+          "net_margin_percent": 4.42
+        },
+        "2025": {
+          "revenue": 18366818,
+          "revenue_yoy_growth_percent": 31.09,
+          "cost_of_sales": 11416987,
+          "gross_profit": 6949831,
+          "gross_margin_percent": 37.84,
+          "administrative_expenses": 4127104,
+          "operating_profit": 2529109,
+          "operating_margin_percent": 13.77,
+          "depreciation_amortisation": 293618,
+          "ebitda": 2822727,
+          "interest_payable": 62056,
+          "interest_coverage_ratio": 40.76,
+          "profit_before_tax": 2538075,
+          "corporation_tax": 636375,
+          "effective_tax_rate_percent": 25.07,
+          "net_profit": 1901700,
+          "net_margin_percent": 10.35
+        },
+        "2026": {
+          "revenue": 18722852,
+          "revenue_yoy_growth_percent": 1.94,
+          "cost_of_sales": 12131327,
+          "gross_profit": 6591525,
+          "gross_margin_percent": 35.21,
+          "administrative_expenses": 4849129,
+          "operating_profit": 1742396,
+          "operating_margin_percent": 9.31,
+          "depreciation_amortisation": 224650,
+          "ebitda": 1967046,
+          "interest_payable": 836,
+          "interest_coverage_ratio": 2084.21,
+          "profit_before_tax": 1516910,
+          "corporation_tax": 381336,
+          "effective_tax_rate_percent": 25.14,
+          "net_profit": 1135574,
+          "net_margin_percent": 6.06
+        }
+      },
+      "cagr": {
+        "revenue_cagr_percent": 5.83,
+        "gross_profit_cagr_percent": 5.7,
+        "operating_profit_cagr_percent": -8.78,
+        "period_years": 4
+      },
+      "cost_structure": {
+        "cost_of_sales_percent_revenue": 64.79,
+        "overheads_percent_revenue": 25.9,
+        "staff_costs_percent_revenue": 20.33,
+        "director_costs_percent_revenue": 0.75,
+        "top_5_overheads": [
+          {
+            "category": "Staff Wages & Salaries",
+            "value": 1998285,
+            "percent_of_overheads": 41.21
+          },
+          {
+            "category": "Other Overheads",
+            "value": 1722403,
+            "percent_of_overheads": 35.52
+          },
+          {
+            "category": "Rent & Rates",
+            "value": 987966,
+            "percent_of_overheads": 20.37
+          },
+          {
+            "category": "Directors Salaries",
+            "value": 140475,
+            "percent_of_overheads": 2.9
+          },
+          {
+            "category": "Depreciation",
+            "value": -224650,
+            "percent_of_overheads": -4.63
+          }
+        ],
+        "cost_base_classification": "mixed"
+      },
+      "earnings_quality": {
+        "net_profit_tracks_operating_profit": true,
+        "exceptional_items_identified": [
+          "Non-recurring items FY22-FY26",
+          "Prior period tax adjustments FY25"
+        ],
+        "tax_rate_consistent": false,
+        "ebitda_latest": 1967046,
+        "ebitda_trend": "stable",
+        "limitations": [
+          "FY22 Net Profit and Tax not disclosed",
+          "FY26 data based on management accounts",
+          "Negative depreciation value in FY26 management accounts requires verification"
+        ]
+      },
+      "debt_service": {
+        "latest_interest_coverage": 2084.21,
+        "interest_coverage_trend": "improving",
+        "additional_debt_capacity_assessment": "High capacity. Interest coverage has improved significantly as bank loans have been amortised, with negligible interest payable in the latest period."
+      },
+      "key_findings": [
+        "Revenue has grown from £14.9m to £18.7m over four years, though growth has been volatile with a dip in FY24.",
+        "Gross margins are relatively stable in the 35-37% range, excluding a significant compression in FY23.",
+        "Operating margins have been inconsistent, peaking at 16.8% in FY22 but falling to 9.3% in the latest management accounts.",
+        "The business is currently in a strong net cash position with £2.95m cash at bank as of May 2026.",
+        "Debt levels are very low, with total bank loans (current and long-term) reduced to approximately £15.8k by May 2026.",
+        "Staff costs represent the largest overhead component at 20.3% of revenue, indicating a service-heavy manufacturing model.",
+        "The AliDeck division is the primary revenue driver, accounting for 86.7% of total turnover in FY26."
+      ],
+      "red_flags": [
+        "Significant margin compression in FY23 where operating profit fell by over 80% despite revenue growth.",
+        "Effective tax rate in FY24 was unusually high at 50%, suggesting significant non-deductible expenses or prior year adjustments.",
+        "Negative depreciation figure in FY26 management accounts suggests an accounting adjustment or error that needs reconciling."
+      ],
+      "narrative": "Canoports UK Limited exhibits a solid financial profile characterized by strong cash generation and a de-leveraged balance sheet. Revenue has increased by 25% since FY22, primarily driven by the AliDeck specification-led B2B division. While the top-line trajectory is positive, the earnings quality has shown some volatility. Specifically, FY23 saw a sharp contraction in margins due to cost of sales and administrative expenses rising faster than revenue. However, the business recovered in FY25, posting its highest revenue and EBITDA to date. The cost structure is a mix of variable material costs (55% of revenue) and semi-fixed staff costs. A key strength for a buyer is the clean balance sheet; the company has successfully amortised its long-term debt from £935k in FY23 to negligible levels in FY26, while simultaneously building a cash reserve of nearly £3m. The interest coverage ratio is exceptionally high, indicating significant headroom for acquisition debt. The primary area for due diligence should be the consistency of overheads and the reconciliation of management accounts to statutory filings, particularly regarding the treatment of depreciation and non-recurring items which have been present in every period analysed. Overall, the financial performance supports a stable valuation, provided the FY25 recovery is maintained."
+    }
+  },
+  {
+    "id": 3070,
+    "expert_type": "operational",
+    "status": "success",
+    "score": 72,
+    "confidence": "high",
+    "created_at": "2026-07-27T13:14:12.337Z",
+    "analysis_data": {
+      "expert": "operational",
+      "company_name": "Canoports UK Limited",
+      "analysis_date": "2025-05-22",
+      "score": 72,
+      "confidence": "high",
+      "working_capital": {
+        "yearly_metrics": {
+          "2023": {
+            "debtor_days": 56.88,
+            "creditor_days": 60.84,
+            "stock_days": 103.23,
+            "cash_conversion_cycle_days": 99.27,
+            "net_working_capital": 4461010,
+            "working_capital_percent_revenue": 28.99
+          },
+          "2024": {
+            "debtor_days": 52.51,
+            "creditor_days": 69.06,
+            "stock_days": 107.68,
+            "cash_conversion_cycle_days": 91.13,
+            "net_working_capital": 4515046,
+            "working_capital_percent_revenue": 32.23
+          },
+          "2025": {
+            "debtor_days": 62.91,
+            "creditor_days": 73.01,
+            "stock_days": 84.15,
+            "cash_conversion_cycle_days": 74.05,
+            "net_working_capital": 5964606,
+            "working_capital_percent_revenue": 32.48
+          },
+          "2026": {
+            "debtor_days": 44,
+            "creditor_days": 30.01,
+            "stock_days": 100.06,
+            "cash_conversion_cycle_days": 114.05,
+            "net_working_capital": 7069707,
+            "working_capital_percent_revenue": 37.76
+          }
+        },
+        "trend": "deteriorating",
+        "working_capital_intensity": "heavy",
+        "observations": [
+          "The Cash Conversion Cycle has fluctuated significantly, peaking at 114 days in the 2026 management accounts due to a sharp reduction in trade creditors.",
+          "Working capital as a % of revenue has increased from 28.99% in 2023 to 37.76% in 2026, suggesting the business is becoming more capital-intensive as it scales.",
+          "Stock levels are high, consistently exceeding 80 days, which represents a significant cash tie-up.",
+          "Debtor days improved significantly in the 2026 management accounts (44 days) compared to the 2025 year-end (62.9 days)."
+        ]
+      },
+      "capex": {
+        "total_gross_asset_value": 1300000,
+        "total_nbv": 807981,
+        "asset_freshness_percent": 62.15,
+        "recent_additions_24m_value": 1300000,
+        "recent_additions_percent": 100,
+        "annual_depreciation_charge": 293618,
+        "estimated_maintenance_capex": 293618,
+        "capex_cliff_risk": false,
+        "assets_requiring_replacement": [],
+        "category_breakdown": {
+          "property": {
+            "cost": null,
+            "nbv": null
+          },
+          "plant_machinery": {
+            "cost": 1300000,
+            "nbv": 807981
+          },
+          "vehicles": {
+            "cost": null,
+            "nbv": null
+          },
+          "it_equipment": {
+            "cost": null,
+            "nbv": null
+          },
+          "other": {
+            "cost": null,
+            "nbv": null
+          }
+        },
+        "observations": [
+          "The business is relatively asset-light with tangible fixed assets representing only 4.3% of 2026 revenue.",
+          "Significant investment in a QualiCoat powder coating line (c.£1.3m) in 2022/23 provides modern core manufacturing capacity.",
+          "Asset register detail is limited; NBV of £807,981 as at 2026-05-31 (Current Position) suggests the asset base is relatively fresh following the 2022 investment.",
+          "Depreciation has trended downwards from £372k in 2023 to £293k in 2025, suggesting a stabilizing maintenance capex requirement."
+        ]
+      },
+      "workforce": {
+        "headcount": 92,
+        "total_payroll": 3949165,
+        "revenue_per_employee": 203509,
+        "payroll_percent_revenue": 21.1,
+        "average_salary_all": 42925,
+        "average_salary_excl_directors": 37391,
+        "director_remuneration_total": 140475,
+        "director_percent_of_payroll": 3.56,
+        "ft_pt_split": {
+          "full_time": 92,
+          "part_time": 0
+        },
+        "longest_tenured_years": 15,
+        "newest_hire_months_ago": null,
+        "observations": [
+          "Revenue per employee of £203k is healthy for a manufacturing/distribution hybrid.",
+          "Payroll as a % of revenue (21.1%) is well-controlled.",
+          "The CEO (Richard) has a 15-year tenure, providing significant operational stability and mitigating founder-exit risk.",
+          "The workforce is entirely full-time, suggesting a stable but potentially less flexible cost base."
+        ]
+      },
+      "owner_dependency": {
+        "risk_level": "low",
+        "director_count": 2,
+        "highest_individual_salary": 125000,
+        "highest_individual_percent_of_payroll": 3.17,
+        "critical_function_concentration": "Low; CEO is a non-owner with long tenure.",
+        "observations": [
+          "Director remuneration is significantly below market rates for a £18m+ turnover business, suggesting potential 'hidden' costs if replaced by market-rate executives.",
+          "The presence of a long-tenured CEO (Richard) who is not a founder reduces dependency on Mark Wood.",
+          "No single person's salary exceeds 25% of total payroll."
+        ]
+      },
+      "scalability": {
+        "rating": "high",
+        "headcount_for_25pct_growth": 23,
+        "capex_needed_for_growth": "Low; recent £1.3m investment in powder coating line provides capacity.",
+        "working_capital_supports_growth": false,
+        "bottlenecks": [
+          "Working capital consumption",
+          "Stock management",
+          "Leasehold capacity"
+        ],
+        "observations": [
+          "The business has demonstrated the ability to scale revenue from £14m to £18.7m (33% growth) between 2024 and 2026.",
+          "The powder coating line investment provides a competitive advantage and internal capacity for growth.",
+          "The primary bottleneck is cash flow; the business is a net consumer of working capital as it grows, with NWC increasing by £2.5m since 2023."
+        ]
+      },
+      "key_findings": [
+        "Strong revenue growth (33% over 2 years) supported by recent capital investment.",
+        "Operational stability provided by a long-tenured CEO and high repeat order rates (91%).",
+        "Asset-light model with modern core manufacturing equipment.",
+        "Efficient payroll management at 21% of revenue."
+      ],
+      "red_flags": [
+        "Significant increase in Working Capital as % of Revenue (from 29% to 38%).",
+        "High stock holding (100+ days) suggests potential inefficiencies in inventory management or supply chain.",
+        "Director remuneration is below market, which will likely increase post-acquisition overheads."
+      ],
+      "narrative": "Canoports UK Limited exhibits strong operational fundamentals with a modern, recently upgraded manufacturing base and a stable management structure led by a long-tenured CEO. The business has successfully scaled revenue recently; however, this growth is capital-intensive. The working capital cycle is lengthening, primarily driven by high inventory levels and a recent contraction in creditor terms. While the business is operationally scalable due to its 'asset-light' nature and recent capex, an acquirer must focus on optimizing the inventory cycle to prevent cash-flow drag during further expansion."
+    }
+  },
+  {
+    "id": 3072,
+    "expert_type": "qoe",
+    "status": "success",
+    "score": 74,
+    "confidence": "high",
+    "created_at": "2026-07-27T13:14:12.477Z",
+    "analysis_data": {
+      "expert": "quality_of_earnings",
+      "company_name": "Canoports UK Limited",
+      "analysis_date": "2025-07-20",
+      "score": 74,
+      "confidence": "high",
+      "reported_figures": {
+        "operating_profit": 1742396,
+        "depreciation": -224650,
+        "amortisation": 0,
+        "reported_ebitda": 1967046,
+        "source_year": "2026"
+      },
+      "add_backs": [
+        {
+          "item": "Non-recurring items FY26",
+          "category": "one_off_cost",
+          "amount": 285072,
+          "recurrence": "one_off",
+          "year": "2026",
+          "justification": "Exceptional items identified in the 2026 management accounts as non-recurring in nature.",
+          "confidence": "high",
+          "defensibility_score": 9,
+          "case_for_inclusion": "These costs are explicitly flagged as non-recurring and should be added back to reflect the underlying profitability of the business.",
+          "case_for_exclusion": "The seller may argue that 'non-recurring' items appear in every year of the data (FY22-FY26), suggesting they are actually a recurring cost of doing business."
+        },
+        {
+          "item": "Negative Depreciation Adjustment",
+          "category": "one_off_cost",
+          "amount": 224650,
+          "recurrence": "one_off",
+          "year": "2026",
+          "justification": "The 2026 management accounts show a negative depreciation figure of -£224,650, which is an accounting credit rather than a cash expense or standard depreciation charge.",
+          "confidence": "high",
+          "defensibility_score": 10,
+          "case_for_inclusion": "EBITDA should be calculated by adding back depreciation; since this is a credit, it must be reversed to reach a true operating cash flow figure.",
+          "case_for_exclusion": "The seller might argue this is a correction of over-depreciation in prior years and should be ignored."
+        }
+      ],
+      "deductions": [
+        {
+          "item": "Director Salary Market Rate Adjustment",
+          "category": "replacement_salary",
+          "amount": 64525,
+          "recurrence": "recurring",
+          "year": "2026",
+          "justification": "Current director remuneration of £140,475 for two directors is below the market rate for a £18.7m revenue business.",
+          "confidence": "high",
+          "defensibility_score": 8,
+          "case_for_inclusion": "A buyer will need to pay market rates for executive management; the current 'discount' provided by the owners is not a transferable saving.",
+          "case_for_exclusion": "The seller may argue that the existing CEO (Richard) is already at a market rate and the owners' roles are non-critical."
+        },
+        {
+          "item": "Normalized Depreciation Charge",
+          "category": "deferred_maintenance",
+          "amount": 293618,
+          "recurrence": "recurring",
+          "year": "2026",
+          "justification": "Because the 2026 accounts show a negative depreciation credit, a normalized annual depreciation charge based on the 2025 actuals must be deducted to reflect ongoing maintenance capex requirements.",
+          "confidence": "medium",
+          "defensibility_score": 7,
+          "case_for_inclusion": "The business requires ongoing investment in its plant and machinery; ignoring depreciation entirely due to a one-off accounting credit overstates sustainable earnings.",
+          "case_for_exclusion": "The seller will argue that EBITDA is a pre-depreciation metric and no deduction should be made."
+        }
+      ],
+      "total_add_backs": 509722,
+      "total_deductions": 358143,
+      "adjusted_ebitda": {
+        "conservative": 1893325,
+        "base": 2118625,
+        "optimistic": 2118625
+      },
+      "adjustment_summary": {
+        "reported_ebitda": 1967046,
+        "plus_add_backs": 509722,
+        "minus_deductions": 358143,
+        "equals_adjusted_ebitda_base": 2118625
+      },
+      "director_salary_analysis": {
+        "directors": [
+          {
+            "name": "Mark & Louisa Wood",
+            "current_salary": 140475,
+            "estimated_market_rate": 205000,
+            "benchmark_range_used": "Revenue £10M-£20M: MD (£102.5k mid) + Ops Dir (£75k mid) + 15% load",
+            "adjustment": 64525,
+            "adjustment_type": "deduction"
+          }
+        ]
+      },
+      "sustainability_assessment": {
+        "sustainable_for_3_years": true,
+        "key_assumptions": [
+          "AliDeck division maintains its 86.7% revenue contribution and high repeat order rate.",
+          "The QualiCoat powder coating line remains operational without major unplanned capex.",
+          "Management accounts for 2026 are accurate regarding the underlying operating profit."
+        ],
+        "sensitivity_factors": [
+          "Raw material price volatility (aluminum) impacting gross margins.",
+          "Working capital intensity: NWC has increased to 37.7% of revenue, which may constrain cash flow."
+        ],
+        "upside_scenarios": [
+          "Optimization of inventory levels (currently 100+ days) to release cash.",
+          "Expansion of the AliDeck specification-led model into new geographic markets."
+        ],
+        "downside_scenarios": [
+          "Loss of key personnel (CEO Richard) who has 15 years of tenure.",
+          "Contraction in the UK construction/specification market affecting B2B sales."
+        ]
+      },
+      "key_findings": [
+        "Reported EBITDA is significantly impacted by a negative depreciation entry in the 2026 management accounts.",
+        "The business is highly cash-generative but increasingly working-capital intensive.",
+        "Owner-directors are currently underpaid relative to the scale of the business, requiring a pro-forma deduction.",
+        "Exceptional items are persistent across all years, suggesting a need for tighter cost controls post-acquisition."
+      ],
+      "red_flags": [
+        "Negative depreciation of £224k in FY26 management accounts requires urgent reconciliation.",
+        "Working capital as a % of revenue has deteriorated from 28.9% to 37.7% in three years.",
+        "High stock holding (over 100 days) suggests potential obsolescence or supply chain inefficiency."
+      ],
+      "narrative": "The Quality of Earnings for Canoports UK Limited is generally high, supported by a strong recovery in FY25 and FY26. The primary adjustments relate to normalizing the 2026 management accounts, which contain a non-cash depreciation credit that overstates operating profit. While we have added back £285k in non-recurring costs, we have also applied a deduction for market-rate management salaries. The resulting Base Case Adjusted EBITDA of £2.12m is considered a defensible starting point for valuation. However, the buyer should be aware that the business is becoming more capital-intensive, and the 'clean' EBITDA figure must be weighed against the significant cash tied up in inventory and the lengthening cash conversion cycle."
+    }
+  },
+  {
+    "id": 3071,
+    "expert_type": "risk",
+    "status": "success",
+    "score": 78,
+    "confidence": "medium",
+    "created_at": "2026-07-27T13:14:12.411Z",
+    "analysis_data": {
+      "expert": "risk",
+      "company_name": "Canoports UK Limited",
+      "analysis_date": "2025-07-24",
+      "score": 78,
+      "confidence": "medium",
+      "customer_concentration": {
+        "risk_level": "low",
+        "top_customer_percent": 10,
+        "top_3_customers_percent": null,
+        "top_5_customers_percent": null,
+        "hhi_index": null,
+        "hhi_classification": "diversified",
+        "total_customers": null,
+        "customers_over_15_percent": [],
+        "observations": [
+          "Customer concentration is reported as low with the largest single customer representing less than 10% of turnover.",
+          "AliDeck division shows high customer loyalty with a 91% repeat order rate.",
+          "Specific customer-by-customer breakdown was not provided in the sales ledger data to calculate HHI."
+        ]
+      },
+      "financial_risk": {
+        "risk_level": "low",
+        "technically_insolvent": false,
+        "current_ratio_trend": "improving",
+        "creditor_growth_vs_revenue": "Creditors decreased by 40.3% in FY26 while revenue grew by 1.9%.",
+        "director_loans_balance": null,
+        "intercompany_balances": null,
+        "interest_coverage_adequate": true,
+        "going_concern_indicators": [],
+        "observations": [
+          "The company is highly solvent with Total Equity of £7,873,818 as at 2026-05-31 (CURRENT POSITION).",
+          "Current ratio has improved significantly from 2.78 in FY25 (2025-05-31) to 4.44 in FY26 (2026-05-31).",
+          "Interest coverage is exceptionally strong; interest payable was only £836 in FY26 against an operating profit of £1,742,396.",
+          "Bank debt has been aggressively paid down, with long-term bank loans falling from £934,926 in FY23 to £3,867 in FY26."
+        ]
+      },
+      "key_person_risk": {
+        "risk_level": "moderate",
+        "highest_individual_payroll_percent": null,
+        "single_points_of_failure": [
+          "Founder-shareholder Mark Wood",
+          "CEO Richard"
+        ],
+        "management_depth": "adequate",
+        "average_tenure_years": 15,
+        "observations": [
+          "Richard (CEO) has a 15-year tenure, providing significant stability and a clear succession path from the founders.",
+          "Director remuneration of £140,475 is noted as being materially below market-rate, suggesting a potential 'hidden' cost for the buyer to replace management.",
+          "The business relies on 2 working directors (Mark and Louisa Wood)."
+        ]
+      },
+      "revenue_quality": {
+        "risk_level": "moderate",
+        "revenue_type": "mixed",
+        "customer_trend": "stable_base",
+        "seasonality_detected": false,
+        "observations": [
+          "Revenue is split between AliDeck (B2B specification-led), Milwood Group (Trade distribution), and Lurano (D2C).",
+          "AliDeck represents the vast majority of revenue (£16.2m of £18.7m in FY26).",
+          "High repeat order rate (91%) in AliDeck suggests strong recurring-like revenue despite being project-based."
+        ]
+      },
+      "balance_sheet_risks": {
+        "director_loans": null,
+        "connected_company_balances": null,
+        "deferred_tax": null,
+        "pension_obligations": null,
+        "contingent_liabilities": "unable_to_assess",
+        "observations": [
+          "Director loan accounts and intercompany balances were not disclosed in the provided balance sheets.",
+          "One outstanding fixed charge exists with Metro Bank PLC (dated 26 April 2022).",
+          "Corporation tax due was £636,375 as at 2025-05-31, but not explicitly broken out in the FY26 management accounts."
+        ]
+      },
+      "bad_debt": {
+        "total_overdue_90_plus": null,
+        "recommended_provision": null,
+        "existing_provision": null,
+        "net_profit_impact": null,
+        "observations": [
+          "Aged debtor breakdown (90+ days) was not provided in the source documents.",
+          "Debtor days are moderate at 62.91 days.",
+          "Trade debtors decreased from £3,165,261 (2025-05-31) to £2,257,001 (2026-05-31), suggesting improved collection or lower recent billings."
+        ]
+      },
+      "risk_register": [
+        {
+          "risk": "Aged Debt Visibility",
+          "category": "bad_debt",
+          "severity": "medium",
+          "likelihood": "medium",
+          "financial_impact": null,
+          "impact_description": "Potential for uncollectible old debt to inflate the NAV.",
+          "mitigation": "Perform a full aged debt audit during DD and include a completion accounts mechanism with a bad debt indemnity."
+        },
+        {
+          "risk": "Below-Market Director Salaries",
+          "category": "people",
+          "severity": "medium",
+          "likelihood": "high",
+          "financial_impact": 150000,
+          "impact_description": "Post-acquisition EBITDA will likely be lower when directors are replaced with market-rate executives.",
+          "mitigation": "Adjust EBITDA in the valuation model to reflect market-rate management costs."
+        },
+        {
+          "risk": "Product Concentration",
+          "category": "revenue",
+          "severity": "medium",
+          "likelihood": "low",
+          "financial_impact": null,
+          "impact_description": "Over 85% of revenue is derived from the AliDeck brand.",
+          "mitigation": "Assess the intellectual property strength and specification 'moat' of the AliDeck product range."
+        }
+      ],
+      "deal_breakers": [],
+      "key_findings": [
+        "The company is in a very strong cash position with £2,949,661 in cash at bank as at 2026-05-31.",
+        "The business has successfully deleveraged, with almost no long-term bank debt remaining (£3,867).",
+        "Profitability is healthy but volatile, with Net Profit dropping from £1,901,700 in FY25 to £1,135,574 in FY26.",
+        "The lack of a detailed aged debtor report is the primary operational due diligence gap."
+      ],
+      "narrative": "Canoports UK Limited presents a low-to-moderate risk profile. Financially, the company is robust, characterized by high liquidity, minimal debt, and strong net assets. The primary risks are operational and structural: specifically, the lack of transparency regarding aged debtors and the fact that current profitability is supported by below-market director remuneration. The heavy reliance on the AliDeck brand is mitigated by a high repeat-order rate and a long-tenured CEO who provides a viable succession path. The deal structure should focus on verifying the quality of the debtor book and normalizing management costs."
+    }
+  },
+  {
+    "id": 2502,
+    "expert_type": "screening",
+    "status": "success",
+    "score": null,
+    "confidence": null,
+    "created_at": "2026-07-04T08:50:59.848Z",
+    "analysis_data": {
+      "stage": "screening",
+      "company_name": "Canoports UK Limited",
+      "sector": "Manufacturing",
+      "analysis_date": "2024-05-22",
+      "data_quality_score": 72,
+      "analysis_period": {
+        "earliest_year": 2022,
+        "latest_year": 2024,
+        "years_of_data": 3
+      },
+      "dimensions": {
+        "earnings_trajectory": {
+          "rag": "AMBER",
+          "score": 55,
+          "revenue_cagr_percent": -3.1,
+          "latest_revenue": 14010534,
+          "latest_gross_margin_percent": 37,
+          "latest_operating_margin_percent": 11.6,
+          "latest_net_margin_percent": 4.4,
+          "margin_direction": "expanding",
+          "explanation": "Revenue has slightly declined from 14.9m in 2022 to 14.0m in 2024, though gross margins have recovered to 37.0% from a 2023 dip. Profitability is currently thin at 4.4% net margin, heavily impacted by an anomalously high effective tax rate."
+        },
+        "balance_sheet_health": {
+          "rag": "GREEN",
+          "score": 85,
+          "latest_current_ratio": 2.5,
+          "latest_net_assets": 5022306,
+          "net_asset_growth_percent": 5.6,
+          "long_term_debt": 571715,
+          "explanation": "The balance sheet is robust with a current ratio of 2.5 and low gearing of 11.4%. Net assets have grown steadily, supported by a healthy mix of tangible assets and liquid cash reserves."
+        },
+        "cash_reality": {
+          "rag": "GREEN",
+          "score": 80,
+          "latest_cash_at_bank": 2290456,
+          "cash_trend": "growing",
+          "cash_vs_profit_alignment": "aligned",
+          "explanation": "Cash position has improved significantly from 1.3m in 2023 to 2.3m in 2024, exceeding reported net profits. This suggests strong cash conversion and disciplined working capital management."
+        },
+        "customer_risk": {
+          "rag": "GREEN",
+          "score": 75,
+          "top_customer_concentration_percent": 10,
+          "aged_debt_90_plus_percent": null,
+          "total_customers": null,
+          "explanation": "Customer concentration is low with the largest client representing less than 10% of turnover. While specific aged debt buckets were not provided, the 91% repeat order rate in the AliDeck division indicates high customer stickiness."
+        },
+        "asset_quality": {
+          "rag": "AMBER",
+          "score": 60,
+          "nbv_to_cost_percent": 69.1,
+          "recent_additions_percent": null,
+          "total_nbv": 1078975,
+          "explanation": "The company recently invested 1.3m in a new powder coating line, indicating modern production capability. However, the overall asset base is relatively light and detailed depreciation schedules were unavailable."
+        },
+        "people_capability": {
+          "rag": "GREEN",
+          "score": 82,
+          "headcount": 92,
+          "revenue_per_employee": 152288,
+          "payroll_to_revenue_percent": 21.1,
+          "director_cost_percent_of_payroll": 3.6,
+          "explanation": "Revenue per head is healthy for the sector and director remuneration is notably low at 3.6% of total payroll. The presence of a long-tenured CEO (15 years) mitigates owner-dependency risk."
+        }
+      },
+      "overall_score": 71,
+      "recommendation": "PROCEED",
+      "recommendation_justification": "The company exhibits strong liquidity, low debt, and a highly professionalised management structure. While revenue has been flat, the underlying cash generation and asset quality provide a solid foundation for growth.",
+      "key_strengths": [
+        "Strong liquidity position with a current ratio of 2.5 and 2.3m in cash.",
+        "Low customer concentration risk with no single client exceeding 10% of revenue.",
+        "Significant recent capital investment in a QualiCoat-accredited powder coating line."
+      ],
+      "key_concerns": [
+        "Anomalously high effective tax rate in FY24 (50%) impacting net profitability.",
+        "Qualified audit opinion in FY25 forecasts regarding 2.6m of inventory verification.",
+        "Revenue growth is currently constrained by regulatory delays in the UK Building Safety Act."
+      ],
+      "questions_for_seller": [
+        "Can you explain the 50% effective tax rate in FY24 and any associated prior-year adjustments?",
+        "What specific issues led to the qualified audit opinion regarding inventory verification in the FY25 period?",
+        "What is the current status of the Metro Bank fixed charge dated April 2022?",
+        "Can you provide a breakdown of the 284k in non-recurring expenses added back in FY24?"
+      ],
+      "comparable_context": "The company's 37% gross margin is above the typical 25-30% range for UK industrial manufacturers. Its gearing of 11% is significantly more conservative than the sector average of 35-45%.",
+      "executive_summary": "Canoports UK Limited is a strong candidate for acquisition, characterised by exceptional balance sheet health and robust cash reserves. With a current ratio of 2.5 and 2.3m in cash, the business is highly liquid and carries minimal debt (11.4% gearing). While revenue has remained flat at approximately 14m-15m due to regulatory headwinds in the construction sector, gross margins remain healthy at 37%. The business has successfully transitioned from owner-dependency to a professional management structure, led by a CEO with 15 years of tenure. Key risks include a recent qualified audit opinion regarding inventory and an unexplained high tax charge in 2024. However, the core manufacturing capability—bolstered by a recent 1.3m investment in a powder coating line—and a 91% repeat customer rate make this a high-quality target. We recommend proceeding to detailed due diligence, focusing specifically on tax compliance and inventory controls."
+    }
+  },
+  {
+    "id": 3073,
+    "expert_type": "sector",
+    "status": "success",
+    "score": 62,
+    "confidence": "medium",
+    "created_at": "2026-07-27T13:14:12.544Z",
+    "analysis_data": {
+      "expert": "sector",
+      "company_name": "Canoports UK Limited",
+      "sector": "Manufacturing",
+      "analysis_date": "2023-10-27",
+      "score": 62,
+      "confidence": "medium",
+      "sector_overview": {
+        "growth_outlook": "stable",
+        "uk_market_size_estimate": "£190bn (Total UK Manufacturing GVA)",
+        "key_trends": [
+          "Shift towards sustainable and recycled metal sourcing",
+          "Increased automation in welding and fabrication processes",
+          "Reshoring of supply chains to mitigate global logistics risks",
+          "Rising demand for bespoke architectural metalwork in commercial sectors"
+        ],
+        "regulatory_factors": [
+          "UKCA marking compliance post-Brexit",
+          "Health and Safety Executive (HSE) focus on welding fume extraction (EH40/2005)",
+          "Carbon Border Adjustment Mechanism (CBAM) implications for raw material costs"
+        ],
+        "observations": [
+          "The UK metal fabrication sector is highly fragmented with many small players.",
+          "Input cost volatility (steel/aluminum) remains a primary concern for fixed-price contracts.",
+          "Energy costs have stabilized but remain a significant overhead for heavy fabrication."
+        ]
+      },
+      "competitive_positioning": {
+        "company_size_classification": "lower_mid",
+        "typical_gross_margin_range": {
+          "low": 25,
+          "high": 35
+        },
+        "typical_operating_margin_range": {
+          "low": 5,
+          "high": 10
+        },
+        "typical_ebitda_margin_range": {
+          "low": 8,
+          "high": 12
+        },
+        "positioning_assessment": "With revenue of £18.3m and 92 staff, Canoports sits at the upper end of the UK SME bracket, transitioning into the lower mid-market. Its headcount suggests a labor-intensive operation typical of fabrication, but its revenue-per-head (~£200k) indicates a relatively efficient or high-value product mix compared to general jobbing shops."
+      },
+      "comparable_multiples": {
+        "ev_revenue_range": {
+          "low": 0.4,
+          "mid": 0.6,
+          "high": 0.8
+        },
+        "ev_ebitda_range": {
+          "low": 3.5,
+          "mid": 4.5,
+          "high": 6
+        },
+        "factors_affecting_multiple": [
+          "Revenue scale (£10m-£20m bracket)",
+          "Labor intensity (92 employees)",
+          "Project vs. recurring revenue mix",
+          "Customer concentration levels"
+        ],
+        "premium_factors": [
+          "Revenue exceeds £10m threshold, attracting more sophisticated trade and PE buyers",
+          "Established workforce of 92 suggests a scalable operational structure",
+          "Potential for proprietary designs in canopy/port systems rather than pure contract fabrication"
+        ],
+        "discount_factors": [
+          "Likely project-based revenue with low visibility on multi-year contracts",
+          "High sensitivity to construction and CAPEX cycles",
+          "Significant labor dependency and rising wage pressures in skilled welding"
+        ],
+        "data_confidence": "based_on_training_data"
+      },
+      "growth_opportunities": [
+        {
+          "opportunity": "Product Standardization",
+          "effort": "medium",
+          "potential_impact": "high",
+          "timeframe": "medium_term",
+          "description": "Moving from bespoke fabrication to modular, standardized canopy kits to improve margins and reduce engineering lead times."
+        },
+        {
+          "opportunity": "Digital Sales Channel",
+          "effort": "low",
+          "potential_impact": "medium",
+          "timeframe": "short_term",
+          "description": "Implementing a B2B configurator for trade customers to automate the quoting process for standard products."
+        },
+        {
+          "opportunity": "Geographic Expansion",
+          "effort": "high",
+          "potential_impact": "medium",
+          "timeframe": "long_term",
+          "description": "Establishing regional installation hubs to reduce logistics costs and expand service coverage across the UK."
+        }
+      ],
+      "sector_risks": [
+        {
+          "risk": "Raw Material Volatility",
+          "severity": "high",
+          "timeframe": "immediate",
+          "description": "Fluctuations in global steel and aluminum prices can rapidly erode margins on fixed-price contracts."
+        },
+        {
+          "risk": "Skilled Labor Shortage",
+          "severity": "medium",
+          "timeframe": "near_term",
+          "description": "Difficulty in recruiting and retaining coded welders and fabricators in a competitive UK labor market."
+        },
+        {
+          "risk": "Economic Cyclicality",
+          "severity": "high",
+          "timeframe": "medium_term",
+          "description": "Canopies and ports are often discretionary CAPEX; a downturn in commercial construction would directly impact the order book."
+        }
+      ],
+      "key_findings": [
+        "Canoports is a significant player in its niche, evidenced by its £18m+ revenue.",
+        "The business has reached a scale where it is likely to have a management layer, reducing owner dependency.",
+        "Valuation will be heavily sensitive to the 'recurring' nature of its revenue vs. one-off projects.",
+        "EBITDA data is required to confirm if the business is operating at the 8-12% sector norm."
+      ],
+      "narrative": "Canoports UK Limited represents a solid lower mid-market acquisition target within the UK fabrication sector. Its revenue scale places it above the 'micro' volatility of smaller shops, offering a platform for further consolidation. While the sector faces headwinds from material costs and labor shortages, the company's size suggests a level of resilience and market presence. A valuation in the 3.5x - 6.0x EBITDA range is appropriate, with the higher end achievable only if the company can demonstrate high customer diversification and a move away from pure project-based work toward a more productized or recurring service model."
+    }
+  },
+  {
+    "id": 3076,
+    "expert_type": "synthesis",
+    "status": "success",
+    "score": null,
+    "confidence": null,
+    "created_at": "2026-07-27T13:14:12.744Z",
+    "analysis_data": {
+      "stage": "synthesis",
+      "company_name": "Canoports UK Limited",
+      "sector": "Manufacturing",
+      "analysis_date": "2025-07-26",
+      "overall_score": 73,
+      "recommendation": "PROCEED_WITH_CAUTION",
+      "scores_dashboard": {
+        "financial": {
+          "score": 72,
+          "confidence": "high"
+        },
+        "operational": {
+          "score": 72,
+          "confidence": "high"
+        },
+        "risk": {
+          "score": 78,
+          "confidence": "medium"
+        },
+        "quality_of_earnings": {
+          "score": 74,
+          "confidence": "high"
+        },
+        "sector": {
+          "score": 62,
+          "confidence": "medium"
+        },
+        "valuation": {
+          "score": 75,
+          "confidence": "high"
+        },
+        "deal_structure": {
+          "score": 75,
+          "confidence": "high"
+        }
+      },
+      "executive_summary": "Canoports UK Limited is a robust manufacturing and distribution business with a dominant market position in the specification-led B2B sector via its AliDeck brand. The company has demonstrated strong revenue growth, scaling from £14.9m in FY22 to £18.7m in FY26, supported by a recent £1.3m capital investment in powder coating capacity. Financially, the business is in an enviable position with nearly £3m in cash and negligible debt. However, the acquisition is complicated by 'noisy' management accounts—specifically a negative depreciation credit in FY26—and a deteriorating working capital cycle where inventory levels now exceed 100 days. The core value driver is the AliDeck division's 91% repeat order rate and the stability provided by a long-tenured CEO (Richard). We recommend proceeding with a 'Balanced' deal structure that anchors the valuation on an Adjusted EBITDA of £2.12m but protects the buyer through a 12-month earnout and a rigorous Net Working Capital peg. Verdict: A high-quality asset with specific accounting and operational inefficiencies that must be addressed during due diligence and post-acquisition integration.",
+      "expert_consensus": {
+        "agreements": [
+          "The AliDeck brand is the primary value driver, contributing over 86% of revenue with high customer loyalty.",
+          "The company is highly liquid and successfully de-leveraged, providing a clean balance sheet for acquisition.",
+          "The current management structure, led by a 15-year tenured CEO, significantly mitigates founder-exit risk.",
+          "Working capital intensity is increasing and represents the primary operational risk to future cash flows."
+        ],
+        "contradictions": [
+          {
+            "topic": "Sustainability of FY26 Margins",
+            "expert_a": "Financial",
+            "expert_a_view": "Operating margins have fallen to 9.3% in FY26 management accounts, suggesting a downward trend.",
+            "expert_b": "Quality of Earnings",
+            "expert_b_view": "Adjusted EBITDA is actually higher (£2.12m) once non-recurring items are added back, suggesting underlying strength.",
+            "resolution": "The QoE view is more accurate for valuation, but the Financial expert's concern regarding margin volatility highlights the need for a performance-linked earnout."
+          },
+          {
+            "topic": "Depreciation Treatment",
+            "expert_a": "Operational",
+            "expert_a_view": "Depreciation is trending down, suggesting stabilizing maintenance capex.",
+            "expert_b": "Quality of Earnings",
+            "expert_b_view": "The FY26 negative depreciation is an accounting anomaly that must be reversed and normalized.",
+            "resolution": "The negative depreciation is clearly a non-cash accounting adjustment; for valuation purposes, we must use the QoE expert's normalized deduction of £293k."
+          }
+        ]
+      },
+      "devils_advocate": {
+        "worst_case_scenario": "The 'specification-led' revenue of AliDeck is actually a series of one-off projects tied to a specific building safety cycle that is now peaking. As the UK construction market cools, revenue drops 20%, while the high fixed-cost base (92 full-time staff) and £1.3m in specialized machinery create a massive margin squeeze. Simultaneously, the 100+ days of inventory are found to be obsolete or slow-moving, leading to a £1m+ write-down that wipes out the cash reserve.",
+        "weakest_assumptions": [
+          "The 91% repeat order rate implies recurring revenue, but it may just reflect a small number of large contractors working through a finite backlog.",
+          "The negative depreciation in FY26 is a 'one-off' rather than a sign of systemic accounting mismanagement.",
+          "The CEO (Richard) will remain motivated post-acquisition despite being underpaid for 15 years."
+        ],
+        "underweighted_risks": [
+          "Raw material price volatility: Aluminum prices are highly volatile; a 10% increase in COGS could wipe out 40% of net profit.",
+          "Leasehold risk: The business is asset-light but dependent on its manufacturing site; lease terms were not fully disclosed.",
+          "Hidden management costs: Replacing the founders and normalizing the CEO's salary may cost significantly more than the £64k adjustment."
+        ],
+        "post_mortem_predictions": [
+          "The buyer realized too late that the £3m cash balance was 'trapped' by the need to fund a ballooning working capital cycle.",
+          "The 'non-recurring' costs proved to be recurring operational expenses that the seller successfully reclassified."
+        ]
+      },
+      "investment_thesis": {
+        "positive_case": "Acquiring a market leader in a niche manufacturing segment with proprietary brand strength (AliDeck). The business offers a 'platform' opportunity: it has the capacity (new powder coating line), the management (tenured CEO), and the cash flow to support further bolt-on acquisitions or geographic expansion.",
+        "conditions_for_success": [
+          "Reconciliation of FY26 management accounts to statutory filings.",
+          "Retention of CEO Richard through a long-term incentive plan (LTIP).",
+          "Successful implementation of an inventory management system to reduce stock days from 100+ to 70."
+        ],
+        "integration_priorities_100_days": [
+          "Appoint a Group Financial Controller to clean up management reporting and depreciation schedules.",
+          "Conduct a full SKU-level inventory audit to identify and liquidate slow-moving stock.",
+          "Formalize the AliDeck sales process into a CRM to track the 'specification' pipeline more accurately."
+        ]
+      },
+      "information_requests": {
+        "critical": [
+          {
+            "request": "Full reconciliation of the -£224,650 depreciation credit in FY26.",
+            "source_expert": "Quality of Earnings",
+            "rationale": "To ensure EBITDA is not fundamentally overstated by an accounting error."
+          },
+          {
+            "request": "Aged Debtor and Creditor Ledgers as of May 2026.",
+            "source_expert": "Risk",
+            "rationale": "To assess the quality of the £2.2m debtor book and identify potential bad debt."
+          }
+        ],
+        "important": [
+          {
+            "request": "Detailed breakdown of 'Other Overheads' (£1.7m) in FY26.",
+            "source_expert": "Financial",
+            "rationale": "This is a large, opaque cost category that may hide recurring operational expenses."
+          },
+          {
+            "request": "Inventory valuation report and 'last sold' date by SKU.",
+            "source_expert": "Operational",
+            "rationale": "To determine if the 100+ days of stock contains material obsolescence."
+          }
+        ],
+        "nice_to_have": [
+          {
+            "request": "Customer contract templates for AliDeck.",
+            "source_expert": "Sector",
+            "rationale": "To understand the 'stickiness' of the B2B relationships and any fixed-price risk."
+          }
+        ]
+      },
+      "valuation_summary": {
+        "equity_value_range": {
+          "low": 11420000,
+          "mid": 13010000,
+          "high": 15660000
+        },
+        "recommended_offer": 13010000,
+        "recommended_structure": "Balanced Approach: 75% Upfront Cash, 15% Deferred (12 months), 10% Earnout based on EBITDA targets."
+      },
+      "narrative_report": "INVESTMENT MEMORANDUM: CANOPORTS UK LIMITED\n\n1. STRATEGIC OVERVIEW\nCanoports UK Limited ('the Company') represents a compelling opportunity to acquire a leading UK manufacturer of aluminum decking and canopy systems. The business has successfully pivoted toward the high-margin, specification-led B2B market through its AliDeck brand, which now accounts for nearly 87% of turnover. This strategic focus has insulated the business from the commoditized end of the fabrication market and created a 'moat' characterized by a 91% repeat order rate among architects and Tier-1 contractors.\n\n2. FINANCIAL PERFORMANCE & QUALITY OF EARNINGS\nThe Company’s financial profile is characterized by strong top-line growth (CAGR 5.8%) and exceptional liquidity. Revenue reached £18.7m in FY26, a significant recovery from a volatile FY24. However, the 'Quality of Earnings' analysis reveals several complexities. The reported EBITDA of £1.97m for FY26 is distorted by a negative depreciation credit of £224k—an accounting anomaly that suggests a prior-period correction rather than operational cash flow. Our adjusted EBITDA of £2.12m accounts for this by normalizing depreciation and adding back £285k in non-recurring costs, while also deducting £64k to reflect market-rate management salaries. The buyer must remain vigilant regarding margin volatility; operating margins have fluctuated between 2.9% and 16.8% over the last four years, necessitating a structure that protects against future compression.\n\n3. OPERATIONAL EFFICIENCY & CAPACITY\nOperationally, Canoports is well-positioned for growth. A recent £1.3m investment in a QualiCoat powder coating line provides significant internal capacity and a competitive lead-time advantage. The business is 'asset-light' in terms of its balance sheet but labor-intensive, employing 92 full-time staff. The primary operational concern is the deteriorating working capital cycle. Net Working Capital as a percentage of revenue has climbed from 29% to 38% in three years, driven largely by inventory levels exceeding 100 days. This suggests either supply chain inefficiencies or a buildup of slow-moving stock that could represent a future cash drag.\n\n4. RISK ASSESSMENT & MANAGEMENT\nThe risk profile is moderate. Key person risk is mitigated by the presence of a long-tenured CEO, Richard, who has managed the business for 15 years and provides a clear succession path from the founders, Mark and Louisa Wood. Customer concentration is low, with no single client exceeding 10% of turnover. The primary risks are external: sensitivity to the UK construction cycle and raw material (aluminum) price volatility. The lack of visibility into the aged debtor ledger is a notable due diligence gap that must be closed to confirm the validity of the £7.8m Net Asset Value.\n\n5. VALUATION & DEAL STRUCTURE\nWe value Canoports at an Enterprise Value of £10.06m, based on a 4.75x multiple of Adjusted EBITDA. This multiple reflects a premium for the Company’s scale and brand strength, tempered by its capital intensity. The 'Equity Value' is significantly bolstered by a £2.95m cash balance and negligible debt, leading to a mid-point valuation of £13.01m. \n\nTo mitigate the identified risks, we recommend a 'Balanced' deal structure. This includes 75% upfront cash, with the remaining 25% split between deferred consideration and a 12-month EBITDA-linked earnout. This structure ensures the sellers remain committed to a smooth transition and provides a mechanism to adjust the price if the FY26 accounting anomalies or working capital spikes prove to be structural rather than temporary.\n\n6. CONCLUSION\nCanoports UK Limited is a high-quality manufacturing asset with a strong brand and a clean balance sheet. While the accounting 'noise' and inventory levels require rigorous due diligence, the underlying business model is scalable and highly cash-generative. We recommend proceeding with the acquisition subject to the reconciliation of the FY26 management accounts and the securing of a long-term service agreement with the incumbent CEO."
+    }
+  },
+  {
+    "id": 3074,
+    "expert_type": "valuation",
+    "status": "success",
+    "score": 75,
+    "confidence": "high",
+    "created_at": "2026-07-27T13:14:12.610Z",
+    "analysis_data": {
+      "expert": "valuation",
+      "company_name": "Canoports UK Limited",
+      "analysis_date": "2025-07-25",
+      "score": 75,
+      "confidence": "high",
+      "ebitda_multiple_valuation": {
+        "adjusted_ebitda_base": 2118625,
+        "sector_multiple_range": {
+          "low": 3.5,
+          "mid": 4.5,
+          "high": 6
+        },
+        "selected_multiple": 4.75,
+        "multiple_justification": "A multiple of 4.75x is selected, slightly above the sector midpoint. This reflects the company's significant scale (£18m+ revenue), strong recovery in FY25/26, and the high repeat order rate (91%) in the AliDeck division which provides quasi-recurring revenue. The multiple is tempered by the capital-intensive nature of the business and the recent deterioration in the cash conversion cycle.",
+        "premium_factors_applied": [
+          "Revenue exceeds £10m threshold attracting mid-market buyers",
+          "High repeat order rate (91%) in core AliDeck division",
+          "Strong management depth with long-tenured CEO (15 years)",
+          "Modern manufacturing assets following £1.3m investment"
+        ],
+        "discount_factors_applied": [
+          "Increasing working capital intensity (37.7% of revenue)",
+          "High inventory holding (100+ days) creating cash drag",
+          "Sensitivity to construction and CAPEX cycles",
+          "Volatility in historical operating margins"
+        ],
+        "enterprise_value_range": {
+          "conservative": 8474500,
+          "base": 10063469,
+          "optimistic": 12711750
+        }
+      },
+      "ev_to_equity_bridge": {
+        "enterprise_value_base": 10063469,
+        "plus_cash": 2949661,
+        "minus_long_term_debt": 3867,
+        "minus_director_loans": 0,
+        "minus_bad_debt_provision": 0,
+        "minus_working_capital_adjustment": 0,
+        "equity_value": {
+          "conservative": 11420294,
+          "base": 13009263,
+          "optimistic": 15657544
+        }
+      },
+      "asset_based_valuation": {
+        "net_asset_value": 7873818,
+        "property_adjustment": 0,
+        "bad_debt_adjustment": 0,
+        "adjusted_nav": 7873818,
+        "nav_as_floor": true
+      },
+      "revenue_multiple_crosscheck": {
+        "latest_revenue": 18722852,
+        "revenue_multiple_range": {
+          "low": 0.4,
+          "high": 0.8
+        },
+        "implied_ev_range": {
+          "low": 7489141,
+          "high": 14978282
+        }
+      },
+      "valuation_summary": {
+        "recommended_range": {
+          "equity_value_low": 11420000,
+          "equity_value_mid": 13010000,
+          "equity_value_high": 15660000
+        },
+        "primary_methodology": "ebitda_multiple",
+        "cross_check_alignment": "strong"
+      },
+      "sensitivity": {
+        "ebitda_plus_10pct": {
+          "enterprise_value": 11069816,
+          "equity_value": 14015610
+        },
+        "ebitda_minus_10pct": {
+          "enterprise_value": 9057122,
+          "equity_value": 12002916
+        },
+        "multiple_plus_half": {
+          "enterprise_value": 11122781,
+          "equity_value": 14068575
+        },
+        "multiple_minus_half": {
+          "enterprise_value": 9004156,
+          "equity_value": 11949950
+        },
+        "key_customer_loss_impact": "Low risk; top customer is <10% of turnover.",
+        "director_replacement_impact": 64525
+      },
+      "seller_expectations": {
+        "likely_seller_expectation_range": {
+          "low": 15000000,
+          "high": 20000000
+        },
+        "seller_anchor_points": [
+          "FY25 peak performance",
+          "Strong cash balance of £2.95m",
+          "Recent £1.3m capital investment",
+          "High net asset value of £7.87m"
+        ],
+        "negotiation_gap_assessment": "The gap is likely moderate. Sellers will likely anchor on the £18.7m turnover and the £3m cash pile, potentially seeking a 1x Revenue multiple (£18.7m Equity Value). A buyer will focus on the margin volatility and the high working capital requirement. A deal is likely to land near the optimistic range (£15m+) if the seller accepts a normalized working capital target."
+      },
+      "key_findings": [
+        "The business has successfully deleveraged, leaving a clean balance sheet for acquisition financing.",
+        "AliDeck's 91% repeat order rate is a significant value driver that justifies a mid-to-high sector multiple.",
+        "Adjusted EBITDA of £2.12m accounts for necessary management salary normalization and non-recurring items.",
+        "The business is highly liquid with nearly £3m in cash, significantly boosting the final equity value."
+      ],
+      "red_flags": [
+        "Negative depreciation in FY26 management accounts requires reconciliation to ensure EBITDA is not overstated.",
+        "Working capital intensity has increased to 37.7% of revenue, which may require a price adjustment if NWC at completion exceeds a historical peg.",
+        "High stock levels (100+ days) suggest potential obsolescence or cash flow inefficiency."
+      ],
+      "narrative": "Canoports UK Limited is a high-quality manufacturing target with a strong market position in the specification-led B2B sector via its AliDeck brand. The valuation is underpinned by a robust Adjusted EBITDA of £2.12m and a very strong cash position. While the sector typically commands multiples between 3.5x and 6.0x, Canoports justifies a 4.75x multiple due to its scale and the stability provided by a long-tenured CEO. The primary valuation bridge from Enterprise Value to Equity Value is heavily influenced by the £2.95m cash balance and the absence of debt. However, the increasing working capital requirement is a point of concern; a buyer should implement a 'locked-box' or completion accounts mechanism with a rigorous Net Working Capital target to ensure the cash balance isn't artificially inflated by stretched creditors or excessive inventory."
+    }
+  }
+]

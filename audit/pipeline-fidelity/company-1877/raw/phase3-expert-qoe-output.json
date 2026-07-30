@@ -1,0 +1,123 @@
+{
+  "expert": "quality_of_earnings",
+  "company_name": "[AUDIT-228] Thor-CON",
+  "analysis_date": "2025-09-08",
+  "score": 68,
+  "confidence": "medium",
+  "reported_figures": {
+    "operating_profit": 278403.9,
+    "depreciation": 0,
+    "amortisation": 0,
+    "reported_ebitda": 278403.9,
+    "source_year": "2025"
+  },
+  "add_backs": [
+    {
+      "item": "Director Pension Contribution",
+      "category": "personal_expense",
+      "amount": 6000,
+      "recurrence": "recurring",
+      "year": 2024,
+      "justification": "The 2024 accounts show a £6,000 director pension contribution which is a discretionary benefit for the owner and would not be required under new ownership.",
+      "confidence": "high",
+      "defensibility_score": 9,
+      "case_for_inclusion": "This is a discretionary benefit paid to the owner that does not contribute to the operational performance of the business.",
+      "case_for_exclusion": "The seller may argue this is a standard part of a market-rate compensation package for an MD."
+    }
+  ],
+  "deductions": [
+    {
+      "item": "Director Salary Market Rate Adjustment",
+      "category": "replacement_salary",
+      "amount": 48904,
+      "recurrence": "recurring",
+      "year": 2025,
+      "justification": "The Director's current salary is £8,580. For a business with £1.94m revenue, the benchmark for a working MD is £45,000–£70,000. Using the midpoint of £57,500, an adjustment of £48,920 is required (rounded to £48,904 based on 2025 reported salary of £9,096).",
+      "confidence": "high",
+      "defensibility_score": 9,
+      "case_for_inclusion": "The current salary is significantly below market rate; a buyer would need to pay a replacement MD a commercial salary to run the operations.",
+      "case_for_exclusion": "The seller may argue the General Manager already handles most operations, reducing the need for a high-salaried MD."
+    },
+    {
+      "item": "Specific Bad Debt Provision (INV-8412)",
+      "category": "bad_debt_provision",
+      "amount": 2269.82,
+      "recurrence": "one_off",
+      "year": 2025,
+      "justification": "Sales ledger analysis identifies invoice INV-8412 as over 180 days overdue and explicitly marked 'IN DISPUTE'.",
+      "confidence": "high",
+      "defensibility_score": 10,
+      "case_for_inclusion": "This specific debt is in dispute and highly unlikely to be collected, necessitating a 100% provision.",
+      "case_for_exclusion": "The seller may claim the dispute is resolvable and the amount is still collectible."
+    },
+    {
+      "item": "Pro-forma Depreciation Charge",
+      "category": "deferred_maintenance",
+      "amount": 51911,
+      "recurrence": "recurring",
+      "year": 2025,
+      "justification": "The 2025 management accounts do not disclose depreciation. Using the 2024 audited figure of £51,911 as a proxy for the ongoing maintenance capex/depreciation requirement.",
+      "confidence": "medium",
+      "defensibility_score": 7,
+      "case_for_inclusion": "EBITDA must reflect the wear and tear of the fleet; omitting depreciation in management accounts overstates true earnings.",
+      "case_for_exclusion": "The seller may argue that actual depreciation for the period is lower due to the age of certain assets."
+    }
+  ],
+  "total_add_backs": 6000,
+  "total_deductions": 103084.82,
+  "adjusted_ebitda": {
+    "conservative": 175319.08,
+    "base": 181319.08,
+    "optimistic": 181319.08
+  },
+  "adjustment_summary": {
+    "reported_ebitda": 278403.9,
+    "plus_add_backs": 6000,
+    "minus_deductions": 103084.82,
+    "equals_adjusted_ebitda_base": 181319.08
+  },
+  "director_salary_analysis": {
+    "directors": [
+      {
+        "name": "Director",
+        "current_salary": 9096,
+        "estimated_market_rate": 57500,
+        "benchmark_range_used": "Revenue £1M-£5M: Working MD/Owner-Director (£45,000–£70,000)",
+        "adjustment": 48404,
+        "adjustment_type": "deduction"
+      }
+    ]
+  },
+  "sustainability_assessment": {
+    "sustainable_for_3_years": true,
+    "key_assumptions": [
+      "Marketing spend of £115k remains efficient at generating leads for the AC installation segment.",
+      "The General Manager remains in post to provide operational continuity.",
+      "The apprentice-heavy engineering team successfully transitions to senior roles."
+    ],
+    "sensitivity_factors": [
+      "Cost of customer acquisition (marketing efficiency).",
+      "Retention of the General Manager.",
+      "Fuel and motor expense volatility."
+    ],
+    "upside_scenarios": [
+      "Expansion of the Solar and EV installation segments which currently represent <5% of revenue.",
+      "Reduction in subcontractor reliance as apprentices become fully qualified."
+    ],
+    "downside_scenarios": [
+      "Compression of gross margins if direct labour costs continue to rise faster than pricing.",
+      "Failure to collect the 32% of the ledger currently in the 31-60 day bracket."
+    ]
+  },
+  "key_findings": [
+    "Reported 2025 EBITDA of £278k is significantly overstated due to the absence of depreciation and a sub-market director salary.",
+    "The business has successfully pivoted to Air Conditioning installations, which now accounts for 74% of revenue.",
+    "The asset base is very modern (81% freshness), reducing the risk of near-term capital spikes, though HP liabilities are high."
+  ],
+  "red_flags": [
+    "Management accounts for 2025 show a negative Hire Purchase Long Term balance (-£167,914), suggesting significant accounting misclassification.",
+    "Intercompany loan of £122k is currently sitting in working capital, which may not be recoverable or operational.",
+    "Debtor days have spiked to 42.5 days with a specific £2.2k debt in formal dispute."
+  ],
+  "narrative": "Thor-CON shows strong top-line growth, but the 'Quality of Earnings' analysis reveals that the headline 2025 EBITDA of £278k is not representative of the sustainable cash flow available to a buyer. After adjusting for a commercial MD salary, reinstating a realistic depreciation charge for the fleet, and provisioning for disputed debts, the Base Case Adjusted EBITDA is £181,319. The business is operationally sound with a professional General Manager in place, but the high reliance on marketing spend (£115k) and the recent slowdown in debtor collections warrant caution. The valuation should be applied to the adjusted figure of c.£181k rather than the management account profit."
+}

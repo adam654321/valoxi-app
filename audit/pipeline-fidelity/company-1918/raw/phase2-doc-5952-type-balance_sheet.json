@@ -1,0 +1,141 @@
+{
+  "document": "balance_sheet",
+  "source": "statutory",
+  "years_covered": [
+    2021,
+    2022
+  ],
+  "period_ends": {
+    "2021": "2021-11-30",
+    "2022": "2022-11-30"
+  },
+  "months_covered": {
+    "2021": 12,
+    "2022": 12
+  },
+  "report_date": "2023-02-22",
+  "years": {
+    "2021": {
+      "year": 2021,
+      "balance_sheet": {
+        "fixed_assets": {
+          "intangible_assets": null,
+          "tangible_assets": 789,
+          "freehold_property": null,
+          "leasehold_property": null,
+          "plant_machinery": 789,
+          "fixtures_fittings": null,
+          "motor_vehicles": null,
+          "computer_equipment": null
+        },
+        "current_assets": {
+          "stock": null,
+          "trade_debtors": 86249,
+          "prepayments": null,
+          "amounts_owed_by_directors": null,
+          "amounts_owed_by_connected_companies": null,
+          "directors_current_account": null,
+          "other_debtors": null,
+          "cash_at_bank": 115407,
+          "total": 201656
+        },
+        "current_liabilities": {
+          "trade_creditors": 1184,
+          "taxation_social_security": 57278,
+          "vat_payable": null,
+          "corporation_tax": null,
+          "bank_loans_current": null,
+          "hire_purchase_current": null,
+          "accruals": null,
+          "amounts_owed_to_directors": null,
+          "other_creditors": 5725,
+          "total": 64187
+        },
+        "long_term_liabilities": {
+          "bank_loans": null,
+          "hire_purchase_long_term": null,
+          "deferred_taxation": null,
+          "other_debt": null,
+          "total": 0
+        },
+        "equity": {
+          "share_capital": 1150,
+          "retained_earnings": 137108,
+          "total": 138258
+        }
+      },
+      "financial_ratios": {
+        "current_ratio": 3.141695358873292,
+        "quick_ratio": 3.141695358873292,
+        "net_assets_growth_percent": null,
+        "gearing_ratio_percent": 0
+      }
+    },
+    "2022": {
+      "year": 2022,
+      "balance_sheet": {
+        "fixed_assets": {
+          "intangible_assets": null,
+          "tangible_assets": 592,
+          "freehold_property": null,
+          "leasehold_property": null,
+          "plant_machinery": 592,
+          "fixtures_fittings": null,
+          "motor_vehicles": null,
+          "computer_equipment": null
+        },
+        "current_assets": {
+          "stock": null,
+          "trade_debtors": 104517,
+          "prepayments": null,
+          "amounts_owed_by_directors": null,
+          "amounts_owed_by_connected_companies": null,
+          "directors_current_account": null,
+          "other_debtors": null,
+          "cash_at_bank": 87874,
+          "total": 192391
+        },
+        "current_liabilities": {
+          "trade_creditors": 0,
+          "taxation_social_security": 34244,
+          "vat_payable": null,
+          "corporation_tax": null,
+          "bank_loans_current": null,
+          "hire_purchase_current": null,
+          "accruals": null,
+          "amounts_owed_to_directors": null,
+          "other_creditors": 5803,
+          "total": 40047
+        },
+        "long_term_liabilities": {
+          "bank_loans": 25915,
+          "hire_purchase_long_term": null,
+          "deferred_taxation": null,
+          "other_debt": null,
+          "total": 25915
+        },
+        "equity": {
+          "share_capital": 1150,
+          "retained_earnings": 125871,
+          "total": 127021
+        }
+      },
+      "financial_ratios": {
+        "current_ratio": 4.804125152945289,
+        "quick_ratio": 4.804125152945289,
+        "net_assets_growth_percent": -8.12755862228587,
+        "gearing_ratio_percent": 20.40213822911172
+      }
+    }
+  },
+  "summary_insights": [
+    "The company maintains a very strong liquidity position, with the current ratio improving from 3.14 to 4.80 in 2022.",
+    "Net assets decreased by 8.1% (£11,237) despite a profitable year, primarily due to a significant dividend payment of £127,000.",
+    "The asset base is light, with tangible fixed assets (plant and machinery) depreciating to a net book value of just £592.",
+    "A new long-term bank loan of £25,915 was introduced in 2022, resulting in a gearing ratio of 20.4%.",
+    "Trade debtors increased by 21.2%, while cash reserves decreased by 23.8%, suggesting a slight shift in working capital towards receivables.",
+    "Current liabilities reduced significantly by 37.6%, driven by a decrease in taxation and social security obligations.",
+    "The business remains entirely funded by retained earnings and the new bank loan, with a stable share capital of £1,150."
+  ],
+  "_isIM": false
+}

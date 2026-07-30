@@ -1,0 +1,231 @@
+{
+  "document": "doc-1777320831981-40650166.xlsx",
+  "report_date": "2026-03-31",
+  "summary": {
+    "total_asset_count": 53,
+    "total_gross_book_value": 849608.84,
+    "total_accumulated_depreciation": 564943.26,
+    "total_net_book_value": 284665.58,
+    "refinanceable_assets_value": 262792.56,
+    "fully_depreciated_still_in_use": 13855.39
+  },
+  "categories": {
+    "property": {
+      "gross_value": 0,
+      "accumulated_depreciation": 0,
+      "net_book_value": 0
+    },
+    "plant_machinery": {
+      "gross_value": 803748.05,
+      "accumulated_depreciation": 540955.49,
+      "net_book_value": 262792.56
+    },
+    "vehicles": {
+      "gross_value": 0,
+      "accumulated_depreciation": 0,
+      "net_book_value": 0
+    },
+    "it_equipment": {
+      "gross_value": 45860.79,
+      "accumulated_depreciation": 23987.77,
+      "net_book_value": 21873.02
+    },
+    "other": {
+      "gross_value": null,
+      "accumulated_depreciation": null,
+      "net_book_value": null
+    }
+  },
+  "property_details": [],
+  "vehicle_details": [],
+  "assets": [
+    {
+      "description": "Ney Ltd - M.KDT K5-543H Front Load Twin Pusher Beamsaw",
+      "category": "Plant & Machinery",
+      "purchase_date": "2026-02-28",
+      "cost": 92185.04,
+      "accumulated_depreciation": 3072.83,
+      "net_book_value": 89112.21,
+      "depreciation_rate": 20,
+      "depreciation_method": "Reducing Balance",
+      "location": "Shop Floor",
+      "condition": null
+    },
+    {
+      "description": "M. Fravol Fast F625-23 Edgebander",
+      "category": "Plant & Machinery",
+      "purchase_date": "2023-06-26",
+      "cost": 60882.72,
+      "accumulated_depreciation": 27546.05,
+      "net_book_value": 33336.67,
+      "depreciation_rate": 20,
+      "depreciation_method": "Reducing Balance",
+      "location": "Shop Floor",
+      "condition": null
+    },
+    {
+      "description": "Panotec 1.40 Midi Packaging Machine",
+      "category": "Plant & Machinery",
+      "purchase_date": "2025-09-15",
+      "cost": 25000,
+      "accumulated_depreciation": 2847.22,
+      "net_book_value": 22152.78,
+      "depreciation_rate": 20,
+      "depreciation_method": "Reducing Balance",
+      "location": "Shop Floor",
+      "condition": null
+    },
+    {
+      "description": "Biesse Rover B - Praetura 102364",
+      "category": "Plant & Machinery",
+      "purchase_date": null,
+      "cost": 126000,
+      "accumulated_depreciation": 106622.32,
+      "net_book_value": 19377.68,
+      "depreciation_rate": 20,
+      "depreciation_method": "Reducing Balance",
+      "location": "Shop Floor",
+      "condition": null
+    },
+    {
+      "description": "Ney Ltd - Lohmeyer NCB2806 CNC drilling machine",
+      "category": "Plant & Machinery",
+      "purchase_date": "2024-08-02",
+      "cost": 14350,
+      "accumulated_depreciation": 4177.44,
+      "net_book_value": 10172.56,
+      "depreciation_rate": 20,
+      "depreciation_method": "Reducing Balance",
+      "location": "Shop Floor",
+      "condition": null
+    },
+    {
+      "description": "HPE ProLiant ML350 Gen11 Server system",
+      "category": "Office Equipment",
+      "purchase_date": "2025-02-01",
+      "cost": 12145,
+      "accumulated_depreciation": 4385.69,
+      "net_book_value": 7759.31,
+      "depreciation_rate": 33.33,
+      "depreciation_method": "Straight-line",
+      "location": "Server",
+      "condition": null
+    },
+    {
+      "description": "Biesse Rover A (Nestor) Serial no. 67667",
+      "category": "Plant & Machinery",
+      "purchase_date": null,
+      "cost": 40936.04,
+      "accumulated_depreciation": 34640.44,
+      "net_book_value": 6295.6,
+      "depreciation_rate": 20,
+      "depreciation_method": "Reducing Balance",
+      "location": "Shop Floor",
+      "condition": null
+    },
+    {
+      "description": "2013 Biesse Skipper 130 Serial no. 43256",
+      "category": "Plant & Machinery",
+      "purchase_date": null,
+      "cost": 40936.04,
+      "accumulated_depreciation": 34640.44,
+      "net_book_value": 6295.6,
+      "depreciation_rate": 20,
+      "depreciation_method": "Reducing Balance",
+      "location": "Shop Floor",
+      "condition": null
+    },
+    {
+      "description": "Strapack SQ-800 Strapping Machine",
+      "category": "Plant & Machinery",
+      "purchase_date": "2025-11-01",
+      "cost": 6020,
+      "accumulated_depreciation": 501.67,
+      "net_book_value": 5518.33,
+      "depreciation_rate": 20,
+      "depreciation_method": "Reducing Balance",
+      "location": "Shop Floor",
+      "condition": null
+    },
+    {
+      "description": "2013 Biesse/Selco Sektor 470 Beamsaw",
+      "category": "Plant & Machinery",
+      "purchase_date": null,
+      "cost": 26056.09,
+      "accumulated_depreciation": 22048.89,
+      "net_book_value": 4007.2,
+      "depreciation_rate": 20,
+      "depreciation_method": "Reducing Balance",
+      "location": "Shop Floor",
+      "condition": null
+    },
+    {
+      "description": "2012 SCM Stefani Solution Ltd Single Sided Edgebander",
+      "category": "Plant & Machinery",
+      "purchase_date": null,
+      "cost": 24190.32,
+      "accumulated_depreciation": 20470.06,
+      "net_book_value": 3720.26,
+      "depreciation_rate": 20,
+      "depreciation_method": "Reducing Balance",
+      "location": "Shop Floor",
+      "condition": null
+    },
+    {
+      "description": "2013 Biesse Skipper 130 Serial no. 89802",
+      "category": "Plant & Machinery",
+      "purchase_date": null,
+      "cost": 42801.81,
+      "accumulated_depreciation": 39601.76,
+      "net_book_value": 3200.05,
+      "depreciation_rate": 20,
+      "depreciation_method": "Reducing Balance",
+      "location": "Shop Floor",
+      "condition": null
+    },
+    {
+      "description": "IOSAFE Fireproof/Waterproof backup device",
+      "category": "Office Equipment",
+      "purchase_date": "2025-02-01",
+      "cost": 2530,
+      "accumulated_depreciation": 913.61,
+      "net_book_value": 1616.39,
+      "depreciation_rate": 33.33,
+      "depreciation_method": "Straight-line",
+      "location": "Server",
+      "condition": null
+    },
+    {
+      "description": "Dell Precision Tower Core i7 (R Brooks)",
+      "category": "Office Equipment",
+      "purchase_date": "2024-10-09",
+      "cost": 2560,
+      "accumulated_depreciation": 1280,
+      "net_book_value": 1280,
+      "depreciation_rate": 33.33,
+      "depreciation_method": "Straight-line",
+      "location": "Main Office",
+      "condition": null
+    },
+    {
+      "description": "Dell Precision Tower Core i7 (H McLellan)",
+      "category": "Office Equipment",
+      "purchase_date": "2024-10-09",
+      "cost": 2560,
+      "accumulated_depreciation": 1280,
+      "net_book_value": 1280,
+      "depreciation_rate": 33.33,
+      "depreciation_method": "Straight-line",
+      "location": "Main Office",
+      "condition": null
+    }
+  ],
+  "observations": [
+    "Significant recent capital investment in 2026 with the purchase of a Ney Ltd Beamsaw (£92k).",
+    "The asset base includes several high-value plant items that are over 10 years old but still operational, suggesting good maintenance but potential future replacement risk.",
+    "Plant & Machinery represents 92% of the total Net Book Value, providing strong collateral for asset-based refinancing.",
+    "Approximately £13.8k of IT and Office assets are fully depreciated but remain in active use.",
+    "The company transitioned several assets from 'Payment to Fortis' to 'Buy Back', indicating a completed finance lease or hire purchase cycle."
+  ],
+  "_isIM": false
+}

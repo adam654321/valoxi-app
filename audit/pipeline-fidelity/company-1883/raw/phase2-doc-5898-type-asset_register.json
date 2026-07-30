@@ -1,0 +1,79 @@
+{
+  "document": "asset_register",
+  "report_date": "2025-05-31",
+  "summary": {
+    "total_asset_count": null,
+    "total_gross_book_value": null,
+    "total_accumulated_depreciation": null,
+    "total_net_book_value": 898600,
+    "refinanceable_assets_value": 1300000,
+    "fully_depreciated_still_in_use": null
+  },
+  "categories": {
+    "property": {
+      "gross_value": null,
+      "accumulated_depreciation": null,
+      "net_book_value": null
+    },
+    "plant_machinery": {
+      "gross_value": null,
+      "accumulated_depreciation": null,
+      "net_book_value": null
+    },
+    "vehicles": {
+      "gross_value": null,
+      "accumulated_depreciation": null,
+      "net_book_value": null
+    },
+    "it_equipment": {
+      "gross_value": null,
+      "accumulated_depreciation": null,
+      "net_book_value": null
+    },
+    "other": {
+      "gross_value": null,
+      "accumulated_depreciation": null,
+      "net_book_value": null
+    }
+  },
+  "property_details": [
+    {
+      "address": "Europa & Jenner House, Rochester (AliDeck)",
+      "tenure": "Leasehold",
+      "purchase_price": null,
+      "market_value": null,
+      "net_book_value": null
+    },
+    {
+      "address": "Hinckley site (Milwood)",
+      "tenure": "Leasehold",
+      "purchase_price": null,
+      "market_value": null,
+      "net_book_value": null
+    }
+  ],
+  "vehicle_details": [],
+  "assets": [
+    {
+      "description": "QualiCoat-accredited powder coating line",
+      "category": "Plant & Machinery",
+      "purchase_date": "2022-07-01",
+      "cost": 1300000,
+      "accumulated_depreciation": null,
+      "net_book_value": null,
+      "depreciation_rate": null,
+      "depreciation_method": null,
+      "location": "Europa & Jenner House, Rochester",
+      "condition": null
+    }
+  ],
+  "observations": [
+    "Asset-by-asset register at cost and accumulated depreciation not disclosed in seller-supplied pack.",
+    "Asset base is characterised as asset-light, representing 4.9% of turnover.",
+    "Significant recent capital investment in a powder coating line (c.£1.3m) in FY22-23.",
+    "One outstanding fixed charge on file at Companies House to Metro Bank PLC dated 26 April 2022.",
+    "The property portfolio is entirely leasehold, limiting property-backed refinancing potential.",
+    "Depreciation charges are provided by category for FY26 AliDeck and FY25 Milwood, but NBV by category is missing."
+  ],
+  "_isIM": true
+}

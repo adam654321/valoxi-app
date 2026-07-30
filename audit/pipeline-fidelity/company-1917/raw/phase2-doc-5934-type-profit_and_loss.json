@@ -1,0 +1,167 @@
+{
+  "document": "profit_and_loss",
+  "source": "statutory",
+  "years_covered": [
+    2024,
+    2025
+  ],
+  "period_ends": {
+    "2024": "2024-12-31",
+    "2025": "2025-12-31"
+  },
+  "months_covered": {
+    "2024": 12,
+    "2025": 12
+  },
+  "report_date": null,
+  "years": {
+    "2024": {
+      "year": 2024,
+      "profit_and_loss": {
+        "revenue": 1982111,
+        "cost_of_sales": 1467076,
+        "gross_profit": 515035,
+        "administrative_expenses": 396134,
+        "depreciation_amortisation": 64397,
+        "other_operating_income": null,
+        "operating_profit": 118901,
+        "interest_receivable": 11661,
+        "interest_payable": 0,
+        "profit_before_tax": 130562,
+        "corporation_tax": 50389,
+        "net_profit": 80173
+      },
+      "revenue_breakdown": {
+        "by_product": {
+          "Service and maintenance": 913931,
+          "Renovation and new build": 616146,
+          "Chemicals and products": 452034
+        },
+        "by_segment": {}
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": 743236,
+        "direct_labour": null,
+        "subcontractor_costs": 91158,
+        "other_direct_costs": 632682
+      },
+      "overheads_breakdown": {
+        "staff_wages_salaries": 145718,
+        "directors_salaries": 9100,
+        "directors_pension": 55000,
+        "employers_national_insurance": null,
+        "staff_pension_contributions": 55000,
+        "staff_training_recruitment": 199,
+        "use_of_home_as_office": 1650,
+        "rent_rates": 49846,
+        "utilities": 3907,
+        "insurance": 15438,
+        "accountancy_bookkeeping": 3778,
+        "professional_fees": 11762,
+        "software_subscriptions": 7228,
+        "computer_costs": null,
+        "it_support_hosting": null,
+        "telecommunications": 9043,
+        "printing_stationery": 843,
+        "postage_courier": null,
+        "subscriptions_memberships": 2758,
+        "bank_charges": 5273,
+        "advertising_marketing": 3767,
+        "travel_subsistence": null,
+        "motor_expenses": null,
+        "repairs_maintenance": 10307,
+        "depreciation": 64396,
+        "amortisation": null,
+        "other_overheads": null
+      },
+      "total_staff_costs": 200718,
+      "total_directors_remuneration": 64100,
+      "dividends_paid": 164500,
+      "exceptional_items": [],
+      "financial_ratios": {
+        "gross_margin_percent": 25.98,
+        "net_margin_percent": 4.04,
+        "interest_coverage_ratio": null
+      }
+    },
+    "2025": {
+      "year": 2025,
+      "profit_and_loss": {
+        "revenue": 2313955,
+        "cost_of_sales": 1645039,
+        "gross_profit": 668916,
+        "administrative_expenses": 441071,
+        "depreciation_amortisation": 71116,
+        "other_operating_income": null,
+        "operating_profit": 227845,
+        "interest_receivable": 13346,
+        "interest_payable": 0,
+        "profit_before_tax": 241191,
+        "corporation_tax": 60674,
+        "net_profit": 180517
+      },
+      "revenue_breakdown": {
+        "by_product": {
+          "Service and maintenance": 1007351,
+          "Renovation and new build": 733729,
+          "Chemicals and products": 572875
+        },
+        "by_segment": {}
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": 913598,
+        "direct_labour": null,
+        "subcontractor_costs": 98410,
+        "other_direct_costs": 633031
+      },
+      "overheads_breakdown": {
+        "staff_wages_salaries": 176078,
+        "directors_salaries": 9100,
+        "directors_pension": 60000,
+        "employers_national_insurance": null,
+        "staff_pension_contributions": 60000,
+        "staff_training_recruitment": 700,
+        "use_of_home_as_office": 1700,
+        "rent_rates": 50962,
+        "utilities": 3929,
+        "insurance": 21153,
+        "accountancy_bookkeeping": 2700,
+        "professional_fees": 9456,
+        "software_subscriptions": 10104,
+        "computer_costs": null,
+        "it_support_hosting": null,
+        "telecommunications": 10138,
+        "printing_stationery": 655,
+        "postage_courier": null,
+        "subscriptions_memberships": 2302,
+        "bank_charges": 5519,
+        "advertising_marketing": 5797,
+        "travel_subsistence": null,
+        "motor_expenses": null,
+        "repairs_maintenance": 5958,
+        "depreciation": 71117,
+        "amortisation": null,
+        "other_overheads": null
+      },
+      "total_staff_costs": 236078,
+      "total_directors_remuneration": 69100,
+      "dividends_paid": 162000,
+      "exceptional_items": [],
+      "financial_ratios": {
+        "gross_margin_percent": 28.91,
+        "net_margin_percent": 7.8,
+        "interest_coverage_ratio": null
+      }
+    }
+  },
+  "summary_insights": [
+    "Revenue grew by 16.7% year-on-year, driven by strong performance across all service lines, particularly renovation and new builds.",
+    "Gross margin improved from 26.0% to 28.9%, indicating better control over direct costs and materials procurement.",
+    "Net profit more than doubled, increasing by 125% from £80,173 to £180,517, reflecting significant operational gearing.",
+    "Administrative expenses were well-managed, increasing by only 11.3% despite the 16.7% rise in turnover.",
+    "The company maintains a strong cash position of £724,569, providing high liquidity and financial resilience.",
+    "Dividends of £162,000 were paid in 2025, representing a high payout ratio relative to net profit but supported by strong cash reserves.",
+    "Staff costs (excluding directors) rose by 17.6%, aligning with revenue growth and suggesting increased operational capacity."
+  ],
+  "_isIM": false
+}

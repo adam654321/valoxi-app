@@ -1,0 +1,161 @@
+{
+  "expert": "operational",
+  "company_name": "[AUDIT-137] MANOR BUILDING SOLUTIONS (UK) LTD",
+  "analysis_date": "2024-05-22",
+  "score": 68,
+  "confidence": "high",
+  "working_capital": {
+    "yearly_metrics": {
+      "2023": {
+        "debtor_days": 69.75,
+        "creditor_days": 60.52,
+        "stock_days": 54.83,
+        "cash_conversion_cycle_days": 64.06,
+        "net_working_capital": 169975,
+        "working_capital_percent_revenue": 26.09
+      },
+      "2024": {
+        "debtor_days": 53.88,
+        "creditor_days": 47.97,
+        "stock_days": 26.67,
+        "cash_conversion_cycle_days": 32.58,
+        "net_working_capital": 211287,
+        "working_capital_percent_revenue": 14.53
+      },
+      "2025": {
+        "debtor_days": 50.17,
+        "creditor_days": 31.21,
+        "stock_days": 25.72,
+        "cash_conversion_cycle_days": 44.68,
+        "net_working_capital": 462003,
+        "working_capital_percent_revenue": 22.17
+      },
+      "2026": {
+        "debtor_days": 54.81,
+        "creditor_days": 22.14,
+        "stock_days": 23.92,
+        "cash_conversion_cycle_days": 56.59,
+        "net_working_capital": 702731,
+        "working_capital_percent_revenue": 29.42
+      }
+    },
+    "trend": "deteriorating",
+    "working_capital_intensity": "moderate",
+    "observations": [
+      "Debtor days have improved from 69.75 in 2023 to a stable range of 50-55 days, indicating better collection processes despite revenue growth.",
+      "Creditor days have significantly tightened from 60.52 to 22.14, suggesting the company is paying suppliers much faster, which puts pressure on cash flow.",
+      "The Cash Conversion Cycle lengthened in 2026 due to the rapid reduction in creditor days.",
+      "Net working capital has grown significantly, but is increasingly tied up in 'Amounts Owed by Directors' (£159,863 in 2026 and £176,625 in the current position)."
+    ]
+  },
+  "capex": {
+    "total_gross_asset_value": 157421.85,
+    "total_nbv": 71131.77,
+    "asset_freshness_percent": 45.19,
+    "recent_additions_24m_value": null,
+    "recent_additions_percent": null,
+    "annual_depreciation_charge": 18747,
+    "estimated_maintenance_capex": 18747,
+    "capex_cliff_risk": true,
+    "assets_requiring_replacement": [
+      {
+        "description": "Office Equipment",
+        "nbv_percent_of_cost": 22.33
+      },
+      {
+        "description": "Furniture and Fixtures",
+        "nbv_percent_of_cost": 26.69
+      }
+    ],
+    "category_breakdown": {
+      "property": {
+        "cost": 20348.88,
+        "nbv": 12718.05
+      },
+      "plant_machinery": {
+        "cost": 26121.67,
+        "nbv": 17117.52
+      },
+      "vehicles": {
+        "cost": 99322.3,
+        "nbv": 38559.4
+      },
+      "it_equipment": {
+        "cost": 8422.17,
+        "nbv": 1880.8
+      },
+      "other": {
+        "cost": 3206.83,
+        "nbv": 856
+      }
+    },
+    "observations": [
+      "The vehicle fleet is the largest asset category and is 61% depreciated, indicating a likely replacement cycle within 24 months.",
+      "IT and Office equipment are heavily aged (77% depreciated), though these are low-materiality items.",
+      "Depreciation charges have fluctuated, but the 2026 charge of £18,747 serves as a baseline for maintenance capex.",
+      "Asset freshness of 45% is moderate but trending toward a 'cliff' for the vehicle pool."
+    ]
+  },
+  "workforce": {
+    "headcount": 12,
+    "total_payroll": 290788,
+    "revenue_per_employee": 199063.67,
+    "payroll_percent_revenue": 12.17,
+    "average_salary_all": 24232.33,
+    "average_salary_excl_directors": 26564.8,
+    "director_remuneration_total": 25140,
+    "director_percent_of_payroll": 8.65,
+    "ft_pt_split": {
+      "full_time": 12,
+      "part_time": 0
+    },
+    "longest_tenured_years": null,
+    "newest_hire_months_ago": null,
+    "observations": [
+      "Revenue per employee is strong at approx £199k, reflecting a high reliance on sub-contractors (£803k in 2026).",
+      "Direct staff costs as a % of revenue are low (12.17%), which is typical for a construction firm using a flexible sub-contractor model.",
+      "The workforce is entirely full-time, providing operational stability.",
+      "Staff costs increased by 26% in 2026, slightly ahead of revenue growth (14.6%), suggesting a slight dip in marginal productivity."
+    ]
+  },
+  "owner_dependency": {
+    "risk_level": "medium",
+    "director_count": 2,
+    "highest_individual_salary": null,
+    "highest_individual_percent_of_payroll": null,
+    "critical_function_concentration": "Concentrated in Managing Director and Operations Director.",
+    "observations": [
+      "The business is led by two directors covering management and operations, providing some redundancy.",
+      "Director remuneration is notably low (£25,140 total), but there is a significant and growing Director Loan Account (Asset) of £176,625, suggesting value extraction via loans rather than salary.",
+      "The MD and Operations Director appear to hold all key strategic and client relationships."
+    ]
+  },
+  "scalability": {
+    "rating": "medium",
+    "headcount_for_25pct_growth": 3,
+    "capex_needed_for_growth": "Moderate; primarily additional vehicles and plant for new crews.",
+    "working_capital_supports_growth": true,
+    "bottlenecks": [
+      "Sub-contractor availability",
+      "Vehicle fleet capacity",
+      "Director bandwidth for project oversight"
+    ],
+    "observations": [
+      "The sub-contractor-heavy model allows for scaling without massive fixed payroll increases.",
+      "Current cash reserves (£668k) are excellent and provide a strong buffer for funding the working capital requirements of larger contracts.",
+      "The aging vehicle fleet is the primary physical bottleneck to scaling direct delivery."
+    ]
+  },
+  "key_findings": [
+    "Strong revenue growth from £651k (2023) to £2.38m (2026).",
+    "Excellent liquidity position with over £660k cash at bank in the latest management accounts.",
+    "Efficient use of sub-contractors keeps fixed overheads manageable.",
+    "Working capital is increasingly absorbed by director-related receivables."
+  ],
+  "red_flags": [
+    "Significant Director Loan Account (£176,625) which represents a substantial portion of current assets.",
+    "Rapidly declining creditor days (from 60 to 22) suggests potential supplier pressure or inefficient cash management.",
+    "Aging vehicle fleet (61% depreciated) will require capital outlay soon."
+  ],
+  "narrative": "Manor Building Solutions (UK) Ltd demonstrates strong operational scaling, having nearly quadrupled revenue over four years while maintaining healthy profitability. The operational model is lean, leveraging a small core of 12 staff and a large pool of sub-contractors. While the balance sheet is liquid, the quality of working capital is slightly marred by a growing director loan account. The primary operational risk is the aging vehicle fleet and the high dependency on the two directors for contract management. However, the business is well-positioned to fund its own growth and necessary capex from existing cash reserves."
+}

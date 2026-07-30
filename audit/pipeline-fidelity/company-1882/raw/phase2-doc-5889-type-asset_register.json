@@ -1,0 +1,127 @@
+{
+  "document": "asset_register",
+  "report_date": "2024-01-31",
+  "summary": {
+    "total_asset_count": 5,
+    "total_gross_book_value": 157421.85,
+    "total_accumulated_depreciation": 86290.08,
+    "total_net_book_value": 71131.77,
+    "refinanceable_assets_value": 38559.4,
+    "fully_depreciated_still_in_use": null
+  },
+  "categories": {
+    "property": {
+      "gross_value": 20348.88,
+      "accumulated_depreciation": 7630.83,
+      "net_book_value": 12718.05
+    },
+    "plant_machinery": {
+      "gross_value": 26121.67,
+      "accumulated_depreciation": 9004.15,
+      "net_book_value": 17117.52
+    },
+    "vehicles": {
+      "gross_value": 99322.3,
+      "accumulated_depreciation": 60762.9,
+      "net_book_value": 38559.4
+    },
+    "it_equipment": {
+      "gross_value": 8422.17,
+      "accumulated_depreciation": 6541.37,
+      "net_book_value": 1880.8
+    },
+    "other": {
+      "gross_value": 3206.83,
+      "accumulated_depreciation": 2350.83,
+      "net_book_value": 856
+    }
+  },
+  "property_details": [
+    {
+      "address": null,
+      "tenure": "Leasehold",
+      "purchase_price": 20348.88,
+      "market_value": null,
+      "net_book_value": 12718.05
+    }
+  ],
+  "vehicle_details": [
+    {
+      "make_model": "Motor Vehicles (Pool)",
+      "registration": null,
+      "purchase_date": null,
+      "cost": 99322.3,
+      "net_book_value": 38559.4,
+      "market_value": null
+    }
+  ],
+  "assets": [
+    {
+      "description": "Motor Vehicles",
+      "category": "Vehicles",
+      "purchase_date": null,
+      "cost": 99322.3,
+      "accumulated_depreciation": 60762.9,
+      "net_book_value": 38559.4,
+      "depreciation_rate": null,
+      "depreciation_method": null,
+      "location": null,
+      "condition": null
+    },
+    {
+      "description": "Plant and Machinery",
+      "category": "Plant & Machinery",
+      "purchase_date": null,
+      "cost": 26121.67,
+      "accumulated_depreciation": 9004.15,
+      "net_book_value": 17117.52,
+      "depreciation_rate": null,
+      "depreciation_method": null,
+      "location": null,
+      "condition": null
+    },
+    {
+      "description": "Leasehold Property",
+      "category": "Property",
+      "purchase_date": null,
+      "cost": 20348.88,
+      "accumulated_depreciation": 7630.83,
+      "net_book_value": 12718.05,
+      "depreciation_rate": null,
+      "depreciation_method": "Amortisation",
+      "location": null,
+      "condition": null
+    },
+    {
+      "description": "Office Equipment",
+      "category": "IT Equipment",
+      "purchase_date": null,
+      "cost": 8422.17,
+      "accumulated_depreciation": 6541.37,
+      "net_book_value": 1880.8,
+      "depreciation_rate": null,
+      "depreciation_method": null,
+      "location": null,
+      "condition": null
+    },
+    {
+      "description": "Furniture and Fixtures",
+      "category": "Other",
+      "purchase_date": null,
+      "cost": 3206.83,
+      "accumulated_depreciation": 2350.83,
+      "net_book_value": 856,
+      "depreciation_rate": null,
+      "depreciation_method": null,
+      "location": null,
+      "condition": null
+    }
+  ],
+  "observations": [
+    "The vehicle fleet is significantly depreciated (approx 61%), suggesting a potential need for replacement or capital expenditure in the near term.",
+    "Motor vehicles represent the largest category by value and offer the most significant potential for asset-backed refinancing.",
+    "Office equipment and furniture are heavily depreciated (77% and 73% respectively), indicating an aging administrative asset base.",
+    "The property is leasehold and subject to amortisation rather than depreciation of freehold land/buildings."
+  ],
+  "_isIM": false
+}

@@ -1,0 +1,127 @@
+{
+  "expert": "quality_of_earnings",
+  "company_name": "[AUDIT-218] Canoports UK Limited",
+  "analysis_date": "2025-05-22",
+  "score": 65,
+  "confidence": "medium",
+  "reported_figures": {
+    "operating_profit": null,
+    "depreciation": 180200,
+    "amortisation": 0,
+    "reported_ebitda": null,
+    "source_year": "2025"
+  },
+  "add_backs": [
+    {
+      "item": "Excess Director Remuneration (CEO/MD)",
+      "category": "owner_salary",
+      "amount": 0,
+      "recurrence": "recurring",
+      "year": "2025",
+      "justification": "Total director remuneration is not disclosed in the reconciled financials, preventing calculation of an add-back despite the presence of 3 directors.",
+      "confidence": "low",
+      "defensibility_score": 0,
+      "case_for_inclusion": "Owner-directors in SMEs often take dividends or salaries that do not reflect market rates for their operational roles.",
+      "case_for_exclusion": "Without specific salary data for the individuals, any adjustment is speculative and would be rejected by the seller."
+    }
+  ],
+  "deductions": [
+    {
+      "item": "Replacement Finance Director Cost",
+      "category": "missing_management",
+      "amount": 82500,
+      "recurrence": "recurring",
+      "year": "2025",
+      "justification": "The business currently employs a Controller 'working toward FD'. For a £18m+ revenue business, a fully qualified FD is required. Benchmark for £10m-£20m revenue is £70k-£95k; mid-point used.",
+      "confidence": "high",
+      "defensibility_score": 8,
+      "case_for_inclusion": "A buyer will require a qualified FD to manage the complex working capital and growth profile of this manufacturing entity.",
+      "case_for_exclusion": "The seller may argue the current Controller is sufficient and the cost is already partially reflected in the staff cost base."
+    },
+    {
+      "item": "Increased Maintenance Capex / IT Infrastructure",
+      "category": "deferred_maintenance",
+      "amount": 45000,
+      "recurrence": "recurring",
+      "year": "2025",
+      "justification": "Operational data shows IT hardware and office equipment are 71% and 67% depreciated respectively. An annualised provision for infrastructure refresh is required.",
+      "confidence": "medium",
+      "defensibility_score": 6,
+      "case_for_inclusion": "The aging IT and office asset base represents a looming capital requirement that should be reflected as an annualised operating cost.",
+      "case_for_exclusion": "The seller will argue that maintenance is already captured in the P&L and that capital replacement is a balance sheet item, not an EBITDA deduction."
+    }
+  ],
+  "total_add_backs": 0,
+  "total_deductions": 127500,
+  "adjusted_ebitda": {
+    "conservative": null,
+    "base": null,
+    "optimistic": null
+  },
+  "adjustment_summary": {
+    "reported_ebitda": null,
+    "plus_add_backs": 0,
+    "minus_deductions": 127500,
+    "equals_adjusted_ebitda_base": null
+  },
+  "director_salary_analysis": {
+    "directors": [
+      {
+        "name": "CEO / MD, Div 1",
+        "current_salary": null,
+        "estimated_market_rate": 102500,
+        "benchmark_range_used": "Revenue £10M-£20M: £85,000–£120,000",
+        "adjustment": null,
+        "adjustment_type": "none"
+      },
+      {
+        "name": "MD, Division 2",
+        "current_salary": null,
+        "estimated_market_rate": 75000,
+        "benchmark_range_used": "Revenue £10M-£20M: £65,000–£85,000",
+        "adjustment": null,
+        "adjustment_type": "none"
+      },
+      {
+        "name": "MD, Division 3",
+        "current_salary": null,
+        "estimated_market_rate": 75000,
+        "benchmark_range_used": "Revenue £10M-£20M: £65,000–£85,000",
+        "adjustment": null,
+        "adjustment_type": "none"
+      }
+    ]
+  },
+  "sustainability_assessment": {
+    "sustainable_for_3_years": true,
+    "key_assumptions": [
+      "Revenue remains stable at approximately £18.3m.",
+      "The powder coating line maintains its QualiCoat accreditation and operational efficiency.",
+      "Staff costs remain controlled at ~15.6% of turnover."
+    ],
+    "sensitivity_factors": [
+      "Working capital absorption: The sharp increase in NWC (£7.07m in 2026) could constrain cash flow for growth.",
+      "Raw material price volatility affecting gross margins (not visible in current data)."
+    ],
+    "upside_scenarios": [
+      "Capacity utilization of the 2022 powder coating line investment increases.",
+      "Professionalization of the finance function leads to better inventory management and cash conversion."
+    ],
+    "downside_scenarios": [
+      "Failure to replace aging IT/Office infrastructure leads to operational disruption.",
+      "Loss of key personnel (CEO has 15-year tenure)."
+    ]
+  },
+  "key_findings": [
+    "The business has successfully deleveraged, with bank debt falling from £1.34m in 2023 to £15.8k in 2026.",
+    "Strong liquidity with £2.95m cash at bank as of May 2026.",
+    "Significant working capital intensity, with stock and debtors tying up over £5.5m in the latest period.",
+    "Asset base is 60% depreciated, suggesting a medium-term requirement for reinvestment despite the recent powder coating line purchase."
+  ],
+  "red_flags": [
+    "Missing P&L data prevents a definitive calculation of Reported EBITDA and margin trends.",
+    "Trade creditors dropped by over 50% in FY26, suggesting a significant cash outflow to suppliers that may not be sustainable.",
+    "Lack of a qualified Finance Director in a business of this scale."
+  ],
+  "narrative": "Canoports UK Limited presents as a financially stable, deleveraged manufacturing business with a strong asset core (the 2022 powder coating line). However, the Quality of Earnings analysis is severely limited by the absence of a full Income Statement in the reconciled data. While balance sheet growth and cash reserves are impressive, the business is becoming increasingly working-capital heavy, with Net Working Capital reaching £7.07m in 2026. We have identified a requirement for a qualified Finance Director (£82.5k deduction) and a provision for infrastructure renewal (£45k deduction). The sustainability of earnings is high given the niche manufacturing capability, but the buyer must investigate the 'missing' P&L data to confirm that the inferred £18.3m revenue translates into healthy operating margins before proceeding with a valuation based on these figures."
+}

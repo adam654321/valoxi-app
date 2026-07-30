@@ -1,0 +1,22 @@
+{
+  "id": 113,
+  "targetCompanyId": 1881,
+  "userCompanyId": 5,
+  "dealModelId": 490,
+  "portalTokenId": null,
+  "templateId": null,
+  "documentType": "offer_letter",
+  "status": "draft",
+  "deliveryMethod": "portal",
+  "version": 1,
+  "parentDocumentId": null,
+  "documentData": null,
+  "sectionConfig": null,
+  "generatedFileUrl": null,
+  "createdBy": 89,
+  "sentAt": null,
+  "viewedAt": null,
+  "respondedAt": null,
+  "expiresAt": null,
+  "createdAt": "2026-07-30T01:42:14.605Z"
+}

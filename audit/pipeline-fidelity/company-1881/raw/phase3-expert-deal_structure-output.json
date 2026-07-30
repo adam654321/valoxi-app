@@ -1,0 +1,97 @@
+{
+  "expert": "deal_structure",
+  "company_name": "[AUDIT-138] Cooper Gibson",
+  "analysis_date": "2024-05-22",
+  "score": 35,
+  "confidence": "high",
+  "structures": [
+    {
+      "name": "Conservative Approach",
+      "strategy": "Asset-based valuation with heavy contingencies to protect against the 88% customer concentration and negative adjusted EBITDA.",
+      "risk_to_buyer": "low",
+      "suitable_when": "The buyer prioritizes capital preservation and is unwilling to pay for 'goodwill' that may vanish if the primary client leaves.",
+      "consideration": {
+        "total_headline": 46046,
+        "upfront_cash": 11511,
+        "upfront_percent": 25,
+        "deferred": 11511,
+        "earnout_maximum": 23024,
+        "earnout_metric": "Retention of Client 1 and Revenue Floor",
+        "earnout_period_months": 24,
+        "earnout_rationale": "Addresses extreme customer concentration (88.31% from Client 1) and revenue decline (-49% YoY) as identified by Risk and Valuation experts.",
+        "retention_escrow": 10000
+      },
+      "key_conditions": [
+        "Full waiver or settlement of £149,587 director loan from the cash on balance sheet prior to completion",
+        "Minimum 12-month handover from the owner-director",
+        "Specific indemnity for any loss of Client 1 within 6 months of completion"
+      ],
+      "notes": "Seller obligations: 12-month handover, 36-month non-compete covering professional services sector. Key warranties: Specific indemnity for Client 1 contract validity, 100% warranty cap, 24-month period, £5k de minimis. Completion mechanism: Completion accounts with a cash-free/debt-free adjustment. Risk to buyer: High, due to the binary nature of the primary client relationship and negative adjusted earnings."
+    },
+    {
+      "name": "Balanced Approach",
+      "strategy": "A middle-ground structure using the mid-point valuation, splitting the risk of client retention between buyer and seller.",
+      "risk_to_buyer": "medium",
+      "suitable_when": "The buyer has verified the stability of the Client 1 relationship during due diligence but still requires protection against volatility.",
+      "consideration": {
+        "total_headline": 114563,
+        "upfront_cash": 57281,
+        "upfront_percent": 50,
+        "deferred": 28641,
+        "earnout_maximum": 28641,
+        "earnout_metric": "Client 1 Revenue Retention",
+        "earnout_period_months": 12,
+        "earnout_rationale": "Addresses customer concentration (Trigger 1) and owner dependency (Trigger 3) identified by Risk and Operational experts.",
+        "retention_escrow": 15000
+      },
+      "key_conditions": [
+        "Director loan must be cleared using company cash; purchase price is for equity value after this settlement",
+        "6-month full-time handover followed by 6-month consultancy",
+        "Verification of subcontractor contracts and pricing stability"
+      ],
+      "notes": "Seller obligations: 6-month handover + 6-month consultancy, 24-month non-compete. Key warranties: Standard professional services warranties, 50% warranty cap, 18-month period. Completion mechanism: Locked box based on the most recent balance sheet. Risk to buyer: High, as the business is not self-sustaining without the owner or the primary client."
+    },
+    {
+      "name": "Competitive Approach",
+      "strategy": "Anchored to the Net Asset Value (NAV) to satisfy seller expectations while still using an earnout to mitigate the most extreme risk.",
+      "risk_to_buyer": "high",
+      "suitable_when": "A strategic buyer sees high value in the subcontractor network or the specific niche and is willing to pay NAV to secure the deal.",
+      "consideration": {
+        "total_headline": 183083,
+        "upfront_cash": 128158,
+        "upfront_percent": 70,
+        "deferred": 18308,
+        "earnout_maximum": 36617,
+        "earnout_metric": "Gross Revenue Stability",
+        "earnout_period_months": 12,
+        "earnout_rationale": "Addresses revenue volatility (Trigger 2) and customer concentration (Trigger 1) identified by Valuation and QoE experts.",
+        "retention_escrow": 20000
+      },
+      "key_conditions": [
+        "Upfront payment includes the settlement of the director loan account",
+        "3-month intensive handover",
+        "Non-solicitation of subcontractors for 3 years"
+      ],
+      "notes": "Seller obligations: 3-month handover, 24-month non-compete. Key warranties: Fundamental warranties only, 25% warranty cap, 12-month period. Completion mechanism: Completion accounts. Risk to buyer: Very High, paying NAV for a business with negative adjusted EBITDA and 88% concentration is highly speculative."
+    }
+  ],
+  "recommended_structure": "Conservative Approach",
+  "recommendation_rationale": "The business has negative adjusted EBITDA (-£5,526) once a market-rate manager is factored in, meaning it has no value as a going concern beyond its net assets. Furthermore, the 88% revenue concentration in one client is a 'cliff-edge' risk. The Conservative Approach protects the buyer by only paying for the business if the primary client remains and the cash position is secured.",
+  "negotiation_priorities": [
+    "Settlement of the £149,587 director loan account within the headline price",
+    "Securing a long-term handover from the owner to transition the Client 1 relationship",
+    "Confirming the legal status and 'stickiness' of the Client 1 contract"
+  ],
+  "deal_breaker_terms": [
+    "Any notice of termination or significant volume reduction from Client 1 during DD",
+    "Refusal by the director to waive or settle the loan account from existing cash reserves",
+    "Discovery of undisclosed liabilities that exceed the current cash balance"
+  ],
+  "key_findings": [
+    "The business is technically worth more in liquidation than as a going concern due to negative adjusted earnings.",
+    "The £195k cash balance is largely offset by a £149k director loan, leaving limited 'free' cash.",
+    "The shift to subcontractors makes the business agile but increases the risk of the owner taking the 'talent' and 'client' elsewhere.",
+    "Revenue has halved in 12 months, indicating significant instability."
+  ],
+  "narrative": "Cooper Gibson is a classic 'lifestyle' consultancy that has become highly profitable but extremely fragile. The valuation is problematic because the reported profits rely on the owner taking a below-market salary. When normalized, the business loses money. The primary value is the cash on the balance sheet, but this is encumbered by a large director loan. Any deal must be structured to ensure the buyer is not simply 'buying the cash' while taking on the risk of a failing client relationship. A heavy earnout and a clear resolution of the director's loan are non-negotiable for a prudent buyer."
+}

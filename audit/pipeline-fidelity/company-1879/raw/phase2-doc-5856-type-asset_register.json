@@ -1,0 +1,271 @@
+{
+  "document": "asset_register",
+  "report_date": "2026-03-31",
+  "summary": {
+    "total_asset_count": 85,
+    "total_gross_book_value": 1147436.43,
+    "total_accumulated_depreciation": 996520.73,
+    "total_net_book_value": 150915.69,
+    "refinanceable_assets_value": 140102.18,
+    "fully_depreciated_still_in_use": 815343.33
+  },
+  "categories": {
+    "property": {
+      "gross_value": 0,
+      "accumulated_depreciation": 0,
+      "net_book_value": 0
+    },
+    "plant_machinery": {
+      "gross_value": 681223.8,
+      "accumulated_depreciation": 647793.62,
+      "net_book_value": 33430.18
+    },
+    "vehicles": {
+      "gross_value": 434883.51,
+      "accumulated_depreciation": 328211.51,
+      "net_book_value": 106672
+    },
+    "it_equipment": {
+      "gross_value": 19516.16,
+      "accumulated_depreciation": 10302.23,
+      "net_book_value": 9213.93
+    },
+    "other": {
+      "gross_value": 11812.96,
+      "accumulated_depreciation": 10213.38,
+      "net_book_value": 1599.58
+    }
+  },
+  "property_details": [],
+  "vehicle_details": [
+    {
+      "make_model": "PJ71KWU - DAF LF 260",
+      "registration": "PJ71KWU",
+      "purchase_date": "2026-01-29",
+      "cost": 38500,
+      "net_book_value": 28875,
+      "market_value": null
+    },
+    {
+      "make_model": "EO25XKZ - RANGER P703 WILDTRACK",
+      "registration": "EO25XKZ",
+      "purchase_date": "2025-03-10",
+      "cost": 44665,
+      "net_book_value": 22333,
+      "market_value": null
+    },
+    {
+      "make_model": "PN72FXX - DAF LF 260 FLAT",
+      "registration": "PN72FXX",
+      "purchase_date": "2025-03-26",
+      "cost": 46500,
+      "net_book_value": 23250,
+      "market_value": null
+    },
+    {
+      "make_model": "AD72TVA - FORD RANGER PICK-UP",
+      "registration": "AD72TVA",
+      "purchase_date": "2025-02-05",
+      "cost": 23495,
+      "net_book_value": 11747,
+      "market_value": null
+    },
+    {
+      "make_model": "FN68HPV - HGV 12 TONNE",
+      "registration": "FN68HPV",
+      "purchase_date": "2024-08-09",
+      "cost": 20000,
+      "net_book_value": 10000,
+      "market_value": null
+    }
+  ],
+  "assets": [
+    {
+      "description": "PJ71KWU - DAF LF 260",
+      "category": "Motor Vehicles",
+      "purchase_date": "2026-01-29",
+      "cost": 38500,
+      "accumulated_depreciation": 9625,
+      "net_book_value": 28875,
+      "depreciation_rate": 25,
+      "depreciation_method": "Straight-line",
+      "location": null,
+      "condition": null
+    },
+    {
+      "description": "EO25XKZ - RANGER P703 WILDTRACK",
+      "category": "Motor Vehicles",
+      "purchase_date": "2025-03-10",
+      "cost": 44665,
+      "accumulated_depreciation": 22332,
+      "net_book_value": 22333,
+      "depreciation_rate": 25,
+      "depreciation_method": "Straight-line",
+      "location": null,
+      "condition": null
+    },
+    {
+      "description": "PN72FXX - DAF LF 260 FLAT",
+      "category": "Motor Vehicles",
+      "purchase_date": "2025-03-26",
+      "cost": 46500,
+      "accumulated_depreciation": 23250,
+      "net_book_value": 23250,
+      "depreciation_rate": 25,
+      "depreciation_method": "Straight-line",
+      "location": null,
+      "condition": null
+    },
+    {
+      "description": "AD72TVA - FORD RANGER PICK-UP",
+      "category": "Motor Vehicles",
+      "purchase_date": "2025-02-05",
+      "cost": 23495,
+      "accumulated_depreciation": 11748,
+      "net_book_value": 11747,
+      "depreciation_rate": 25,
+      "depreciation_method": "Straight-line",
+      "location": null,
+      "condition": null
+    },
+    {
+      "description": "Scaffold boards",
+      "category": "Plant & Machinery",
+      "purchase_date": "2025-08-12",
+      "cost": 13030,
+      "accumulated_depreciation": 2606,
+      "net_book_value": 10424,
+      "depreciation_rate": 20,
+      "depreciation_method": "Straight-line",
+      "location": null,
+      "condition": null
+    },
+    {
+      "description": "FN68HPV - HGV 12 TONNE",
+      "category": "Motor Vehicles",
+      "purchase_date": "2024-08-09",
+      "cost": 20000,
+      "accumulated_depreciation": 10000,
+      "net_book_value": 10000,
+      "depreciation_rate": 25,
+      "depreciation_method": "Straight-line",
+      "location": null,
+      "condition": null
+    },
+    {
+      "description": "AV22UVZ - TRANSIT CONNECT VAN",
+      "category": "Motor Vehicles",
+      "purchase_date": "2025-02-13",
+      "cost": 12995,
+      "accumulated_depreciation": 6498,
+      "net_book_value": 6497,
+      "depreciation_rate": 25,
+      "depreciation_method": "Straight-line",
+      "location": null,
+      "condition": null
+    },
+    {
+      "description": "Scaffold boards",
+      "category": "Plant & Machinery",
+      "purchase_date": "2025-10-27",
+      "cost": 5250,
+      "accumulated_depreciation": 1050,
+      "net_book_value": 4200,
+      "depreciation_rate": 20,
+      "depreciation_method": "Straight-line",
+      "location": null,
+      "condition": null
+    },
+    {
+      "description": "FORKLIFT",
+      "category": "Plant & Machinery",
+      "purchase_date": "2024-06-27",
+      "cost": 3800,
+      "accumulated_depreciation": 1520,
+      "net_book_value": 2280,
+      "depreciation_rate": 20,
+      "depreciation_method": "Straight-line",
+      "location": null,
+      "condition": null
+    },
+    {
+      "description": "WU67ENO - VAUXHALL CORSA 1.3",
+      "category": "Motor Vehicles",
+      "purchase_date": "2025-03-31",
+      "cost": 4195,
+      "accumulated_depreciation": 2098,
+      "net_book_value": 2097,
+      "depreciation_rate": 25,
+      "depreciation_method": "Straight-line",
+      "location": null,
+      "condition": null
+    },
+    {
+      "description": "Galv Tubes",
+      "category": "Plant & Machinery",
+      "purchase_date": "2025-01-31",
+      "cost": 6049.98,
+      "accumulated_depreciation": 4030,
+      "net_book_value": 2019.98,
+      "depreciation_rate": 33.3,
+      "depreciation_method": "Straight-line",
+      "location": null,
+      "condition": null
+    },
+    {
+      "description": "Digi DL Remote",
+      "category": "Plant & Machinery",
+      "purchase_date": "2026-02-27",
+      "cost": 2310,
+      "accumulated_depreciation": 462,
+      "net_book_value": 1848,
+      "depreciation_rate": 20,
+      "depreciation_method": "Straight-line",
+      "location": null,
+      "condition": null
+    },
+    {
+      "description": "2 X Big Ben Anchor Test Kit",
+      "category": "Plant & Machinery",
+      "purchase_date": "2025-10-14",
+      "cost": 2300,
+      "accumulated_depreciation": 460,
+      "net_book_value": 1840,
+      "depreciation_rate": 20,
+      "depreciation_method": "Straight-line",
+      "location": null,
+      "condition": null
+    },
+    {
+      "description": "40 x ladder guards",
+      "category": "Plant & Machinery",
+      "purchase_date": "2026-03-16",
+      "cost": 2400,
+      "accumulated_depreciation": 480,
+      "net_book_value": 1920,
+      "depreciation_rate": 20,
+      "depreciation_method": "Straight-line",
+      "location": null,
+      "condition": null
+    },
+    {
+      "description": "Scaffold boards",
+      "category": "Plant & Machinery",
+      "purchase_date": "2025-10-27",
+      "cost": 2400,
+      "accumulated_depreciation": 480,
+      "net_book_value": 1920,
+      "depreciation_rate": 20,
+      "depreciation_method": "Straight-line",
+      "location": null,
+      "condition": null
+    }
+  ],
+  "observations": [
+    "Significant portion of the asset base (approx 71% of gross value) is fully depreciated but remains in use, particularly scaffolding and older vehicles.",
+    "Recent capital investment is concentrated in the vehicle fleet, with several high-value DAF and Ford Ranger additions in 2025 and 2026.",
+    "Refinancing potential exists within the motor vehicle category, specifically the newer HGV and pickup fleet with a combined NBV of over 100,000.",
+    "The scaffolding inventory is largely written down to zero book value, suggesting a potential hidden value if market value exceeds book value."
+  ],
+  "_isIM": false
+}

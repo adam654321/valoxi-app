@@ -1,0 +1,183 @@
+{
+  "document": "company_accounts",
+  "source": "statutory_accounts",
+  "profit_and_loss": {
+    "document": "profit_and_loss",
+    "source": "management_accounts",
+    "years_covered": [
+      2025
+    ],
+    "period_ends": {
+      "2025": "2025-11-30"
+    },
+    "months_covered": {
+      "2025": 12
+    },
+    "report_date": null,
+    "years": {
+      "2025": {
+        "year": 2025,
+        "profit_and_loss": {
+          "revenue": 358524.86,
+          "cost_of_sales": null,
+          "gross_profit": 358524.86,
+          "administrative_expenses": null,
+          "depreciation_amortisation": null,
+          "other_operating_income": null,
+          "operating_profit": null,
+          "interest_receivable": null,
+          "interest_payable": null,
+          "profit_before_tax": null,
+          "corporation_tax": null,
+          "net_profit": null
+        },
+        "revenue_breakdown": {
+          "by_product": {
+            "Brand": 313557.86,
+            "Supplier": 44967
+          },
+          "by_segment": {
+            "USA": 198244.35,
+            "UK": 90200.4,
+            "Europe": 70080.11
+          }
+        },
+        "cost_of_sales_breakdown": {
+          "direct_materials": null,
+          "direct_labour": null,
+          "subcontractor_costs": null,
+          "other_direct_costs": null
+        },
+        "overheads_breakdown": {
+          "staff_wages_salaries": null,
+          "directors_salaries": null,
+          "directors_pension": null,
+          "employers_national_insurance": null,
+          "staff_pension_contributions": null,
+          "staff_training_recruitment": null,
+          "use_of_home_as_office": null,
+          "rent_rates": null,
+          "utilities": null,
+          "insurance": null,
+          "accountancy_bookkeeping": null,
+          "professional_fees": null,
+          "software_subscriptions": null,
+          "computer_costs": null,
+          "it_support_hosting": null,
+          "telecommunications": null,
+          "printing_stationery": null,
+          "postage_courier": null,
+          "subscriptions_memberships": null,
+          "bank_charges": null,
+          "advertising_marketing": null,
+          "travel_subsistence": null,
+          "motor_expenses": null,
+          "repairs_maintenance": null,
+          "depreciation": null,
+          "amortisation": null,
+          "other_overheads": null
+        },
+        "total_staff_costs": null,
+        "total_directors_remuneration": null,
+        "dividends_paid": null,
+        "exceptional_items": [],
+        "financial_ratios": {
+          "gross_margin_percent": 100,
+          "net_margin_percent": null,
+          "interest_coverage_ratio": null
+        }
+      }
+    },
+    "summary_insights": [
+      "Total revenue for the 2025 financial period reached £358,525, driven heavily by retainer-based marketing communications.",
+      "The business shows significant geographic concentration, with the USA market accounting for 55.3% of total income.",
+      "Revenue is highly reliant on a core group of clients, with Integro, InsightsNow, and Brand Genetics together contributing over 48% of total turnover.",
+      "The 'Brand' service line is the primary revenue driver, representing 87.5% of total sales compared to the 'Supplier' line.",
+      "Average monthly income is stable at approximately £23,902, suggesting a consistent and predictable cash flow from retainers.",
+      "The absence of cost of sales and overhead data in this document prevents a full assessment of net profitability or operational efficiency.",
+      "A significant portion of revenue is billed in USD and EUR, exposing the business to potential currency fluctuation risks."
+    ]
+  },
+  "balance_sheet": {
+    "document": "balance_sheet",
+    "source": "management_accounts",
+    "years_covered": [
+      2025
+    ],
+    "period_ends": {
+      "2025": "2025-11-30"
+    },
+    "months_covered": {
+      "2025": 12
+    },
+    "report_date": null,
+    "years": {
+      "2025": {
+        "year": 2025,
+        "balance_sheet": {
+          "fixed_assets": {
+            "intangible_assets": null,
+            "tangible_assets": null,
+            "freehold_property": null,
+            "leasehold_property": null,
+            "plant_machinery": null,
+            "fixtures_fittings": null,
+            "motor_vehicles": null,
+            "computer_equipment": null
+          },
+          "current_assets": {
+            "stock": null,
+            "trade_debtors": 358524.86,
+            "prepayments": null,
+            "amounts_owed_by_directors": null,
+            "amounts_owed_by_connected_companies": null,
+            "directors_current_account": null,
+            "other_debtors": null,
+            "cash_at_bank": null,
+            "total": 358524.86
+          },
+          "current_liabilities": {
+            "trade_creditors": null,
+            "taxation_social_security": null,
+            "vat_payable": null,
+            "corporation_tax": null,
+            "bank_loans_current": null,
+            "hire_purchase_current": null,
+            "accruals": null,
+            "amounts_owed_to_directors": null,
+            "other_creditors": null,
+            "total": null
+          },
+          "long_term_liabilities": {
+            "bank_loans": null,
+            "hire_purchase_long_term": null,
+            "deferred_taxation": null,
+            "other_debt": null,
+            "total": null
+          },
+          "equity": {
+            "share_capital": null,
+            "retained_earnings": null,
+            "total": null
+          }
+        },
+        "financial_ratios": {
+          "current_ratio": null,
+          "quick_ratio": null,
+          "net_assets_growth_percent": null,
+          "gearing_ratio_percent": null
+        }
+      }
+    },
+    "summary_insights": [
+      "The provided document is a Sales Transaction ledger rather than a full Balance Sheet, limiting the assessment of the total asset base.",
+      "The company generated £358,524.86 in total sales for the 12-month period ending November 2025.",
+      "Revenue is heavily weighted towards the USA market, which accounts for 55% (£198,244) of total income.",
+      "The business maintains a strong blue-chip client base including Coca-Cola, JTI, and Mintel, suggesting high-quality trade receivables.",
+      "Average monthly income is approximately £23,901, providing a baseline for working capital requirements.",
+      "A significant portion of revenue (£313,557) is categorised as 'Brand' related, indicating a specialised service offering.",
+      "Without liability or cash data, a formal liquidity or gearing assessment cannot be performed from this specific document.",
+      "The reliance on a few key retainers (e.g., Integro and InsightsNow) represents a concentration risk that should be monitored."
+    ]
+  }
+}

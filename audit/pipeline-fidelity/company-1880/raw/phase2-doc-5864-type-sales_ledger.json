@@ -1,0 +1,89 @@
+{
+  "document": "sales_ledger",
+  "report_date": "2026-04-27",
+  "summary": {
+    "total_trade_debtors": 268889.68,
+    "debtor_days": null,
+    "recent_revenue": null,
+    "bad_debt_provision": null,
+    "doubtful_debts": null
+  },
+  "aging": {
+    "current_0_to_30": 201855.42,
+    "days_31_to_60": 5424.12,
+    "days_61_to_90": 8621.91,
+    "days_90_plus": 52988.23
+  },
+  "top_debtors": [
+    {
+      "name": "COMMERCIAL SERVICES EDUCATION LTD (WF)",
+      "amount": 184829.59,
+      "days_bucket": "0-30"
+    },
+    {
+      "name": "COVENTRY COLLEGE",
+      "amount": 21485.5,
+      "days_bucket": "90+"
+    },
+    {
+      "name": "SWALCLIFFE PARK SCHOOL",
+      "amount": 16005.14,
+      "days_bucket": "90+"
+    },
+    {
+      "name": "THE AUTOMATION PARTNERSHIP (CAMBRIDGE) LIMITED",
+      "amount": 8037.74,
+      "days_bucket": "0-30"
+    },
+    {
+      "name": "KING'S HEATH SECONDARY SCHOOL",
+      "amount": 7490.78,
+      "days_bucket": "0-30"
+    },
+    {
+      "name": "CONCEPT LIFE SCIENCES INTEGRATED DISCOVERY & DEVELOPMENT SERVICES LTD",
+      "amount": 5579.12,
+      "days_bucket": "31-60"
+    },
+    {
+      "name": "RUGBY HIGH SCHOOL",
+      "amount": 5010.2,
+      "days_bucket": "90+"
+    },
+    {
+      "name": "ST MARY'S SENIOR SCHOOL FOR GIRLS",
+      "amount": 5053.91,
+      "days_bucket": "61-90"
+    },
+    {
+      "name": "SILVERGLIDE LTD",
+      "amount": 9467.89,
+      "days_bucket": "90+"
+    },
+    {
+      "name": "SPELLER METCALFE MALVERN LTD",
+      "amount": 3568,
+      "days_bucket": "61-90"
+    }
+  ],
+  "invoice_status_summary": {
+    "Paid": {
+      "count": null,
+      "value": null
+    },
+    "Part Paid": {
+      "count": null,
+      "value": null
+    },
+    "Unpaid": {
+      "count": null,
+      "value": null
+    }
+  },
+  "observations": [
+    "High customer concentration risk: Commercial Services Education Ltd (WF) represents approximately 68.7% of the total trade debtors balance.",
+    "Significant aging issues: £52,988.23 (19.7% of total) is overdue by more than 121 days, primarily driven by Coventry College and Silverglide Ltd.",
+    "Several large balances are flagged with queries such as 'client not happy' or 'retention', which may delay collection and necessitate bad debt provisions."
+  ],
+  "_isIM": false
+}

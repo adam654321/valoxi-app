@@ -1,0 +1,82 @@
+{
+  "document": "balance_sheet",
+  "source": "management",
+  "years_covered": [
+    2026
+  ],
+  "period_ends": {
+    "2026": "2026-06-25"
+  },
+  "months_covered": {
+    "2026": 3
+  },
+  "report_date": "2026-06-25",
+  "years": {
+    "2026": {
+      "year": 2026,
+      "balance_sheet": {
+        "fixed_assets": {
+          "intangible_assets": 20291.36,
+          "tangible_assets": 6389.47,
+          "freehold_property": null,
+          "leasehold_property": null,
+          "plant_machinery": null,
+          "fixtures_fittings": 0,
+          "motor_vehicles": null,
+          "computer_equipment": 6389.47
+        },
+        "current_assets": {
+          "stock": 0,
+          "trade_debtors": 0,
+          "prepayments": 7616.93,
+          "amounts_owed_by_directors": null,
+          "amounts_owed_by_connected_companies": 0,
+          "directors_current_account": null,
+          "other_debtors": 32171.51,
+          "cash_at_bank": 75312.48,
+          "total": 115100.92
+        },
+        "current_liabilities": {
+          "trade_creditors": 8960,
+          "taxation_social_security": -1399.37,
+          "vat_payable": 7379.09,
+          "corporation_tax": 87.81,
+          "bank_loans_current": null,
+          "hire_purchase_current": null,
+          "accruals": 0,
+          "amounts_owed_to_directors": -149587.37,
+          "other_creditors": -16633.34,
+          "total": -151193.18
+        },
+        "long_term_liabilities": {
+          "bank_loans": null,
+          "hire_purchase_long_term": null,
+          "deferred_taxation": null,
+          "other_debt": null,
+          "total": 0
+        },
+        "equity": {
+          "share_capital": 2,
+          "retained_earnings": 377972.93,
+          "total": 292974.93
+        }
+      },
+      "financial_ratios": {
+        "current_ratio": -0.76128381,
+        "quick_ratio": -0.49812088,
+        "net_assets_growth_percent": null,
+        "gearing_ratio_percent": 0
+      }
+    }
+  },
+  "summary_insights": [
+    "The company maintains a healthy cash position of £75,312, which represents the majority of current assets.",
+    "Net assets stand at £292,975, underpinned by significant retained earnings of over £370,000.",
+    "The current liabilities figure is heavily influenced by a large credit balance in the Director's Current Account (£149,587), suggesting the business is significantly funded by the directors rather than external debt.",
+    "Liquidity ratios appear negative due to the accounting treatment of director loans and negative balances in wages/tax controls within current liabilities.",
+    "Fixed assets are comprised mainly of software licensing (£20,291) and computer equipment, indicating a low-capital-intensity service or tech-based business model.",
+    "The balance sheet shows no long-term bank debt or hire purchase obligations, resulting in a 0% gearing ratio.",
+    "A dividend of £85,000 is recorded as payable, which has reduced the overall net asset position but remains well-covered by retained profits."
+  ],
+  "_isIM": false
+}

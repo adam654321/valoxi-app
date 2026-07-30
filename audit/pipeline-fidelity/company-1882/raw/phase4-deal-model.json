@@ -1,0 +1,951 @@
+{
+  "model": {
+    "id": 491,
+    "targetCompanyId": 1882,
+    "createdBy": 89,
+    "name": "Audit Model — TC 137",
+    "status": "draft",
+    "version": 1,
+    "transactionType": "share_sale",
+    "parentModelId": null,
+    "isLocked": false,
+    "averagingYears": 3,
+    "ebitdaMultiple": "2.75",
+    "offerDriver": "ebitda",
+    "targetOfferPrice": null,
+    "multipleLow": "2",
+    "multipleHigh": "3.5",
+    "propertyValue": "0",
+    "cashValue": "0",
+    "otherAssets": "0",
+    "calculatedEbitda": null,
+    "adjustedEbitda": "376510",
+    "enterpriseValue": "1035402.5",
+    "plusExcessCash": "460444",
+    "minusPrimaryDebt": "0",
+    "minusOtherDebt": "-159863",
+    "minusCorpTaxDue": "112405.43",
+    "minusWorkingCapitalAdj": "84639",
+    "workingCapitalMonths": 3,
+    "workingCapitalMonthlyAmount": "28213",
+    "totalPurchasePrice": null,
+    "totalFundingAvailable": null,
+    "equityRequired": null,
+    "upfrontCash": "1076400",
+    "deferredAmount": "331200",
+    "deferredTerms": null,
+    "earnoutMaximum": "248400",
+    "earnoutMetric": "Adjusted EBITDA",
+    "earnoutPeriodMonths": 12,
+    "retentionEscrow": "82800",
+    "feeLegalDdAmount": "25000",
+    "feeAccountingDdAmount": "15000",
+    "feeLoanArrangementAmount": "0",
+    "feeDealMakerAmount": "0",
+    "customFees": [],
+    "expertDataSnapshot": {
+      "qoe": {
+        "expert": "quality_of_earnings",
+        "company_name": "[AUDIT-137] MANOR BUILDING SOLUTIONS (UK) LTD",
+        "analysis_date": "2024-05-22",
+        "score": 72,
+        "confidence": "high",
+        "reported_figures": {
+          "operating_profit": 453123,
+          "depreciation": 18747,
+          "amortisation": 0,
+          "reported_ebitda": 471870,
+          "source_year": "2026"
+        },
+        "add_backs": [
+          {
+            "item": "Other Operating Income (Non-Trading)",
+            "category": "one_off_cost",
+            "amount": -5500,
+            "recurrence": "one_off",
+            "year": 2026,
+            "justification": "Other operating income of £5,500 is identified in the 2026 P&L; as this is non-core trading revenue, it is removed to normalise EBITDA.",
+            "confidence": "high",
+            "defensibility_score": 9,
+            "case_for_inclusion": "This income is not derived from the core construction activities and should be excluded to see sustainable trading performance.",
+            "case_for_exclusion": "The seller may argue this is recurring ancillary income (e.g., scrap sales or rebates) typical for the sector."
+          }
+        ],
+        "deductions": [
+          {
+            "item": "Director Salary Normalisation (MD)",
+            "category": "replacement_salary",
+            "amount": 44930,
+            "recurrence": "recurring",
+            "year": 2026,
+            "justification": "The Managing Director's current estimated salary of £12,570 is significantly below the market mid-point of £57,500 for a £1M-£5M revenue business.",
+            "confidence": "high",
+            "defensibility_score": 8,
+            "case_for_inclusion": "A commercial buyer would need to pay a market-rate salary to a replacement MD to maintain operations.",
+            "case_for_exclusion": "The seller may argue the current director's low salary is offset by their equity stake and that the business can be run more leanly."
+          },
+          {
+            "item": "Director Salary Normalisation (Ops Director)",
+            "category": "replacement_salary",
+            "amount": 29930,
+            "recurrence": "recurring",
+            "year": 2026,
+            "justification": "The Operations Director's current estimated salary of £12,570 is below the market mid-point of £42,500 for an Operations Director in this revenue bracket.",
+            "confidence": "high",
+            "defensibility_score": 8,
+            "case_for_inclusion": "Operational oversight is a critical function that requires professional management at market rates.",
+            "case_for_exclusion": "The seller might claim the role could be absorbed by the MD or a lower-cost supervisor."
+          },
+          {
+            "item": "Deferred Maintenance / Fleet Replacement Provision",
+            "category": "deferred_maintenance",
+            "amount": 15000,
+            "recurrence": "recurring",
+            "year": 2026,
+            "justification": "The vehicle fleet is 61% depreciated and IT/Office equipment is over 70% depreciated; an additional maintenance/replacement provision is required.",
+            "confidence": "medium",
+            "defensibility_score": 6,
+            "case_for_inclusion": "Current depreciation does not reflect the true cash cost of maintaining an aging fleet essential for construction delivery.",
+            "case_for_exclusion": "The seller will argue that existing depreciation charges already account for asset wear and tear."
+          }
+        ],
+        "total_add_backs": -5500,
+        "total_deductions": 89860,
+        "adjusted_ebitda": {
+          "conservative": 376510,
+          "base": 376510,
+          "optimistic": 391510
+        },
+        "adjustment_summary": {
+          "reported_ebitda": 471870,
+          "plus_add_backs": -5500,
+          "minus_deductions": 89860,
+          "equals_adjusted_ebitda_base": 376510
+        },
+        "director_salary_analysis": {
+          "directors": [
+            {
+              "name": "JAMES JOHNSON",
+              "current_salary": 12570,
+              "estimated_market_rate": 57500,
+              "benchmark_range_used": "Revenue £1M-£5M: Working MD (£45k-£70k)",
+              "adjustment": 44930,
+              "adjustment_type": "deduction"
+            },
+            {
+              "name": "IAN LAWTON",
+              "current_salary": 12570,
+              "estimated_market_rate": 42500,
+              "benchmark_range_used": "Revenue £1M-£5M: Operations Director (£35k-£50k)",
+              "adjustment": 29930,
+              "adjustment_type": "deduction"
+            }
+          ]
+        },
+        "sustainability_assessment": {
+          "sustainable_for_3_years": true,
+          "key_assumptions": [
+            "Sub-contractor availability remains stable to support the variable cost model.",
+            "The business can maintain its shift toward larger commercial/social housing contracts despite lower gross margins.",
+            "Director-level relationships are successfully transitioned to the buyer."
+          ],
+          "sensitivity_factors": [
+            "Gross margin compression: A 2% drop in GM would reduce EBITDA by approx £47k.",
+            "Sub-contractor pricing: Inflation in trade rates could squeeze margins if not passed to clients."
+          ],
+          "upside_scenarios": [
+            "Utilising the £668k cash balance to fund larger, higher-value projects.",
+            "Operational efficiencies in the administrative team (3 admins for 12 staff is high)."
+          ],
+          "downside_scenarios": [
+            "Loss of key social housing or insurance contracts.",
+            "Significant capital outlay required for fleet replacement if financing is not available."
+          ]
+        },
+        "key_findings": [
+          "Reported EBITDA is inflated by significantly under-market director salaries.",
+          "The business model is highly scalable due to the heavy use of sub-contractors (£803k in 2026).",
+          "Strong cash position (£668k in current management accounts) provides a significant buffer for working capital.",
+          "Gross margins have stabilised around 43-46% after an initial drop from 56%."
+        ],
+        "red_flags": [
+          "Director Loan Account (Asset) has grown to £176,625 in the current position, indicating value extraction via loans.",
+          "Aging vehicle fleet (61% depreciated) represents a looming 'capex cliff'.",
+          "Creditor days have dropped from 60 to 22, suggesting potential pressure on supplier terms or aggressive payment cycles."
+        ],
+        "narrative": "The quality of earnings for Manor Building Solutions (UK) Ltd is generally good, but the headline EBITDA of £471,870 requires downward normalisation to £376,510. The primary adjustment is the correction of director salaries; the current owners are drawing minimal salaries (£12.5k each), likely supplementing income via the Director Loan Account, which now stands at £176k. A buyer must account for the commercial cost of replacing this management. While revenue growth is impressive, the shift in project mix has compressed gross margins. However, the high proportion of variable sub-contractor costs provides the business with significant operational flexibility. The adjusted EBITDA represents a more realistic 'maintainable' earnings figure for valuation purposes."
+      },
+      "valuation": {
+        "expert": "valuation",
+        "company_name": "[AUDIT-137] MANOR BUILDING SOLUTIONS (UK) LTD",
+        "analysis_date": "2024-05-22",
+        "score": 78,
+        "confidence": "high",
+        "ebitda_multiple_valuation": {
+          "adjusted_ebitda_base": 376510,
+          "sector_multiple_range": {
+            "low": 2,
+            "mid": 2.75,
+            "high": 3.5
+          },
+          "selected_multiple": 2.75,
+          "multiple_justification": "A mid-range multiple of 2.75x is selected. While the company shows exceptional revenue growth (54% CAGR) and strong liquidity, these are balanced by significant SME risks including high owner dependency, a project-based revenue model lacking long-term contracts, and an aging vehicle fleet requiring imminent capital expenditure.",
+          "premium_factors_applied": [
+            "Exceptional revenue growth (54.12% CAGR)",
+            "Significant operating margin expansion (5.12% to 18.97%)",
+            "Strong cash position and interest coverage",
+            "Scalable model using variable subcontractor costs"
+          ],
+          "discount_factors_applied": [
+            "High owner dependency (Managing Director and Operations Director)",
+            "Project-based revenue lacks recurring contractual certainty",
+            "Aging vehicle fleet (61% depreciated)",
+            "Small headcount (<20) increasing operational key-man risk"
+          ],
+          "enterprise_value_range": {
+            "conservative": 753020,
+            "base": 1035402.5,
+            "optimistic": 1317785
+          }
+        },
+        "ev_to_equity_bridge": {
+          "enterprise_value_base": 1035402.5,
+          "plus_cash": 460444,
+          "minus_long_term_debt": 0,
+          "minus_director_loans": -159863,
+          "minus_bad_debt_provision": 0,
+          "minus_working_capital_adjustment": 0,
+          "equity_value": {
+            "conservative": 1373327,
+            "base": 1655709.5,
+            "optimistic": 1938092
+          }
+        },
+        "asset_based_valuation": {
+          "net_asset_value": 773863,
+          "property_adjustment": 0,
+          "bad_debt_adjustment": 0,
+          "adjusted_nav": 773863,
+          "nav_as_floor": true
+        },
+        "revenue_multiple_crosscheck": {
+          "latest_revenue": 2388764,
+          "revenue_multiple_range": {
+            "low": 0.25,
+            "high": 0.6
+          },
+          "implied_ev_range": {
+            "low": 597191,
+            "high": 1433258.4
+          }
+        },
+        "valuation_summary": {
+          "recommended_range": {
+            "equity_value_low": 1373000,
+            "equity_value_mid": 1656000,
+            "equity_value_high": 1938000
+          },
+          "primary_methodology": "ebitda_multiple",
+          "cross_check_alignment": "strong"
+        },
+        "sensitivity": {
+          "ebitda_plus_10pct": {
+            "enterprise_value": 1138942.75,
+            "equity_value": 1759249.75
+          },
+          "ebitda_minus_10pct": {
+            "enterprise_value": 931862.25,
+            "equity_value": 1552169.25
+          },
+          "multiple_plus_half": {
+            "enterprise_value": 1223657.5,
+            "equity_value": 1843964.5
+          },
+          "multiple_minus_half": {
+            "enterprise_value": 847147.5,
+            "equity_value": 1467454.5
+          },
+          "key_customer_loss_impact": "High. Due to project-based nature and lack of sales ledger detail, the loss of a single major contract could significantly impair the 18.97% operating margin.",
+          "director_replacement_impact": 89860
+        },
+        "seller_expectations": {
+          "likely_seller_expectation_range": {
+            "low": 2388764,
+            "high": 3500000
+          },
+          "seller_anchor_points": [
+            "1x Turnover (£2.39m)",
+            "Unadjusted EBITDA multiple (4.5x - 5x)",
+            "Emotional value of rapid growth trajectory"
+          ],
+          "negotiation_gap_assessment": "Significant. Sellers are likely to anchor on the unadjusted EBITDA of £471k or 1x Revenue. The gap between the buyer's base equity value (£1.65m) and a 1x revenue expectation (£2.39m) is approximately £740k. Negotiation will likely center on the validity of salary normalisation and the 'debt-like' treatment of the Director Loan Account."
+        },
+        "key_findings": [
+          "Adjusted EBITDA of £376,510 is the most reliable earnings base after correcting for under-market director salaries.",
+          "The business has a very strong cash position of £460,444 (FY2026) which significantly boosts equity value.",
+          "The Director Loan Account is an asset (Directors owe the company £159,863 in FY2026), which adds to the equity value in the bridge.",
+          "Revenue growth is exceptional, but gross margin compression from 56% to 43% suggests a shift toward more competitive, lower-margin work."
+        ],
+        "red_flags": [
+          "Director Loan Account (Asset) of £159,863 (FY2026) and £176,625 (Current) indicates significant value extraction via loans.",
+          "Aging vehicle fleet (61% depreciated) suggests a 'capex cliff' within 12-24 months.",
+          "High key-man risk with only two directors managing all strategic and operational functions."
+        ],
+        "narrative": "The valuation of Manor Building Solutions (UK) Ltd is driven by its impressive growth profile and robust cash generation, tempered by the structural risks typical of a small-scale construction firm. Using the Adjusted EBITDA of £376,510 (which accounts for market-rate replacement salaries for the two directors) and a sector-appropriate multiple of 2.75x, we derive a base Enterprise Value of £1.035m. The equity bridge is significantly impacted by the company's strong liquidity; we have used the FY2026 cash balance of £460,444 (verbatim from Reconciled Financials) and treated the £159,863 owed by directors to the company (FY2026) as an asset that increases equity value. This results in a recommended base Equity Value of approximately £1.65m. While the asset-based valuation of £773k provides a firm floor, the revenue multiple cross-check supports the EBITDA-derived range. The primary challenge in a transaction will be the 'valuation gap' created by the sellers' likely focus on unadjusted earnings and the rapid growth trajectory."
+      },
+      "deal_structure": {
+        "expert": "deal_structure",
+        "company_name": "[AUDIT-137] MANOR BUILDING SOLUTIONS (UK) LTD",
+        "analysis_date": "2024-05-22",
+        "score": 74,
+        "confidence": "high",
+        "structures": [
+          {
+            "name": "Conservative Approach",
+            "strategy": "Minimize risk by deferring 50% of the consideration and tying a significant portion to the successful transition of key relationships and EBITDA stability.",
+            "risk_to_buyer": "low",
+            "suitable_when": "The buyer is concerned about the 'capex cliff' of the aging fleet and the high dependency on the two founding directors for project delivery.",
+            "consideration": {
+              "total_headline": 1656000,
+              "upfront_cash": 828000,
+              "upfront_percent": 50,
+              "deferred": 414000,
+              "earnout_maximum": 414000,
+              "earnout_metric": "Adjusted EBITDA",
+              "earnout_period_months": 24,
+              "earnout_rationale": "Addresses Trigger 3 (Owner/key person dependency) and Trigger 4 (Uncertain add-backs). The QoE expert identified significant salary normalisation and the Risk expert flagged high dependency on the MD and Ops Director.",
+              "retention_escrow": 165600
+            },
+            "key_conditions": [
+              "Repayment of £176,625 Director Loan Account prior to or at completion",
+              "Minimum 12-month full-time handover for both directors",
+              "Non-compete clause spanning 36 months post-handover",
+              "Specific indemnity for fleet replacement costs exceeding £40k in Year 1"
+            ],
+            "notes": "Seller obligations: 12-month handover followed by 12-month consultancy. Non-compete: 3 years. Warranties: Cap at 50% of consideration, 24-month period, £10k de minimis. Completion: Completion accounts with a working capital peg of £700k. Risk: Low, as 50% of value is contingent on performance and relationship retention."
+          },
+          {
+            "name": "Balanced Approach",
+            "strategy": "A fair split that provides the sellers with significant liquidity while protecting the buyer against the immediate loss of key management and margin compression.",
+            "risk_to_buyer": "medium",
+            "suitable_when": "The buyer has moderate confidence in the subcontractor model and wants to provide a competitive offer without over-exposing to key-man risk.",
+            "consideration": {
+              "total_headline": 1656000,
+              "upfront_cash": 1076400,
+              "upfront_percent": 65,
+              "deferred": 331200,
+              "earnout_maximum": 248400,
+              "earnout_metric": "Adjusted EBITDA",
+              "earnout_period_months": 12,
+              "earnout_rationale": "Addresses Trigger 3 (Owner/key person dependency). The Risk expert noted that the loss of directors could lead to loss of client relationships; the earnout ensures they remain motivated during the first year.",
+              "retention_escrow": 82800
+            },
+            "key_conditions": [
+              "Offset of Director Loan Account against upfront cash if not repaid",
+              "6-month full-time handover followed by 6-month consultancy",
+              "Non-compete clause spanning 24 months",
+              "Standard construction sector warranties regarding project defects"
+            ],
+            "notes": "Seller obligations: 6-month handover. Non-compete: 2 years. Warranties: Cap at 75% of consideration, 18-month period. Completion: Locked box based on 2026-04-30 accounts. Risk: Medium, primarily due to the project-based nature of revenue and lack of long-term contracts."
+          },
+          {
+            "name": "Competitive Approach",
+            "strategy": "Maximise upfront cash to bridge the gap between the buyer's valuation and the seller's 1x revenue expectation, while retaining a small earnout to ensure a smooth transition.",
+            "risk_to_buyer": "high",
+            "suitable_when": "A competitive bidding environment where the buyer is confident in their ability to institutionalise the business quickly and manage the fleet replacement.",
+            "consideration": {
+              "total_headline": 1800000,
+              "upfront_cash": 1440000,
+              "upfront_percent": 80,
+              "deferred": 180000,
+              "earnout_maximum": 180000,
+              "earnout_metric": "Revenue Retention",
+              "earnout_period_months": 12,
+              "earnout_rationale": "Addresses Trigger 3 (Owner/key person dependency). Even in a competitive bid, the risk of relationship loss is too high to ignore; this small earnout ensures the directors transition the sales pipeline.",
+              "retention_escrow": 50000
+            },
+            "key_conditions": [
+              "Director Loan Account treated as a debt-like item and deducted from upfront cash",
+              "3-month intensive handover period",
+              "Non-compete clause spanning 24 months",
+              "Warranties limited to fundamental title and tax"
+            ],
+            "notes": "Seller obligations: 3-month handover. Non-compete: 2 years. Warranties: Cap at 100% for fundamental, 25% for general. Completion: Locked box. Risk: High, due to high upfront payment and minimal protection against the 'capex cliff' or margin erosion."
+          }
+        ],
+        "recommended_structure": "Balanced Approach",
+        "recommendation_rationale": "The Balanced Approach is recommended because it directly addresses the £176k Director Loan Account and the high key-man dependency without being so restrictive that it alienates the sellers. Given the exceptional growth, the sellers will likely resist a 50% deferral, but the 35% contingent/deferred component in the Balanced structure provides sufficient protection against the lack of recurring contracts and the imminent need for fleet reinvestment.",
+        "negotiation_priorities": [
+          "Treatment of the Director Loan Account (Asset) as a deduction from cash at completion",
+          "Agreement on the 'salary normalisation' figures used in the EBITDA adjustment",
+          "Securing a minimum 12-month commitment from both the MD and Ops Director",
+          "Establishing a working capital peg that accounts for the high subcontractor usage"
+        ],
+        "deal_breaker_terms": [
+          "Refusal of directors to provide a minimum 6-month handover",
+          "Failure to settle or offset the £176k Director Loan Account",
+          "Discovery of significant undisclosed customer concentration (>30%)"
+        ],
+        "key_findings": [
+          "The business is highly liquid with £668k cash, but this is offset by a 'capex cliff' in the vehicle fleet.",
+          "Valuation gap is significant; sellers likely want £2.3m+ (1x Revenue) vs. £1.65m base equity value.",
+          "The subcontractor model provides scalability but requires strong oversight from the two directors.",
+          "Director Loan Account is a critical completion mechanic item."
+        ],
+        "narrative": "Manor Building Solutions is a high-growth, profitable business with a lean operational model. However, its value is heavily concentrated in the two founding directors and a project-based revenue stream. To bridge the gap between the buyer's valuation and the sellers' likely higher expectations, a structure that uses the company's own strong cash position to fund a significant upfront payment is viable, provided it is balanced by an earnout tied to the retention of key relationships. The primary structural challenge will be the 'debt-like' treatment of the Director Loan Account and the necessary provision for fleet replacement, both of which should be used as levers to justify the 2.75x multiple."
+      },
+      "financial": {
+        "expert": "financial",
+        "company_name": "[AUDIT-137] MANOR BUILDING SOLUTIONS (UK) LTD",
+        "analysis_date": "2024-05-22",
+        "score": 82,
+        "confidence": "high",
+        "yearly_metrics": {
+          "2023": {
+            "revenue": 651586,
+            "revenue_yoy_growth_percent": null,
+            "cost_of_sales": 282005,
+            "gross_profit": 369581,
+            "gross_margin_percent": 56.72,
+            "administrative_expenses": 336718,
+            "operating_profit": 33358,
+            "operating_margin_percent": 5.12,
+            "depreciation_amortisation": 16402,
+            "ebitda": 49760,
+            "interest_payable": 2439,
+            "interest_coverage_ratio": 13.68,
+            "profit_before_tax": 30919,
+            "corporation_tax": 3594,
+            "effective_tax_rate_percent": 11.62,
+            "net_profit": 27325,
+            "net_margin_percent": 4.19
+          },
+          "2024": {
+            "revenue": 1453661,
+            "revenue_yoy_growth_percent": 123.1,
+            "cost_of_sales": 827793,
+            "gross_profit": 625868,
+            "gross_margin_percent": 43.05,
+            "administrative_expenses": 468115,
+            "operating_profit": 157753,
+            "operating_margin_percent": 10.85,
+            "depreciation_amortisation": 16994,
+            "ebitda": 174747,
+            "interest_payable": 1545,
+            "interest_coverage_ratio": 102.11,
+            "profit_before_tax": 156208,
+            "corporation_tax": 45097,
+            "effective_tax_rate_percent": 28.87,
+            "net_profit": 111111,
+            "net_margin_percent": 7.64
+          },
+          "2025": {
+            "revenue": 2084318,
+            "revenue_yoy_growth_percent": 43.38,
+            "cost_of_sales": 1107778,
+            "gross_profit": 976540,
+            "gross_margin_percent": 46.85,
+            "administrative_expenses": 511869,
+            "operating_profit": 464671,
+            "operating_margin_percent": 22.29,
+            "depreciation_amortisation": 24718,
+            "ebitda": 489389,
+            "interest_payable": 3042,
+            "interest_coverage_ratio": 152.75,
+            "profit_before_tax": 464206,
+            "corporation_tax": 118952,
+            "effective_tax_rate_percent": 25.62,
+            "net_profit": 345254,
+            "net_margin_percent": 16.56
+          },
+          "2026": {
+            "revenue": 2388764,
+            "revenue_yoy_growth_percent": 14.61,
+            "cost_of_sales": 1344794,
+            "gross_profit": 1043970,
+            "gross_margin_percent": 43.7,
+            "administrative_expenses": 596347,
+            "operating_profit": 453123,
+            "operating_margin_percent": 18.97,
+            "depreciation_amortisation": 18747,
+            "ebitda": 471870,
+            "interest_payable": 4919,
+            "interest_coverage_ratio": 92.12,
+            "profit_before_tax": 450422,
+            "corporation_tax": 117227,
+            "effective_tax_rate_percent": 26.03,
+            "net_profit": 333195,
+            "net_margin_percent": 13.95
+          }
+        },
+        "cagr": {
+          "revenue_cagr_percent": 54.12,
+          "gross_profit_cagr_percent": 41.38,
+          "operating_profit_cagr_percent": 138.6,
+          "period_years": 3
+        },
+        "cost_structure": {
+          "cost_of_sales_percent_revenue": 56.3,
+          "overheads_percent_revenue": 24.97,
+          "staff_costs_percent_revenue": 12.17,
+          "director_costs_percent_revenue": 1.05,
+          "top_5_overheads": [
+            {
+              "category": "Staff Wages & Salaries",
+              "value": 230288,
+              "percent_of_overheads": 38.62
+            },
+            {
+              "category": "Professional Fees",
+              "value": 81847,
+              "percent_of_overheads": 13.72
+            },
+            {
+              "category": "Motor Expenses",
+              "value": 64980,
+              "percent_of_overheads": 10.9
+            },
+            {
+              "category": "Staff Pension Contributions",
+              "value": 39898,
+              "percent_of_overheads": 6.69
+            },
+            {
+              "category": "Insurance",
+              "value": 30117,
+              "percent_of_overheads": 5.05
+            }
+          ],
+          "cost_base_classification": "predominantly_variable"
+        },
+        "earnings_quality": {
+          "net_profit_tracks_operating_profit": true,
+          "exceptional_items_identified": [],
+          "tax_rate_consistent": false,
+          "ebitda_latest": 471870,
+          "ebitda_trend": "growing",
+          "limitations": [
+            "Amortisation not separately disclosed from depreciation in summary fields, though leasehold property exists."
+          ]
+        },
+        "debt_service": {
+          "latest_interest_coverage": 92.12,
+          "interest_coverage_trend": "improving",
+          "additional_debt_capacity_assessment": "Excellent. The company maintains a very high interest coverage ratio and has significant headroom to service acquisition-related debt."
+        },
+        "key_findings": [
+          "Exceptional revenue growth with a 3-year CAGR of 54.12%, indicating strong market penetration.",
+          "Operating margins have expanded significantly from 5.12% in 2023 to 18.97% in 2026, showing improved operational leverage.",
+          "Subcontractor costs are the largest component of COS (approx. 60% of COS), providing a flexible, variable cost base.",
+          "Strong EBITDA generation, increasing nearly 10x over the four-year period analysed.",
+          "The company maintains a healthy net margin (13.95% in 2026) despite rising administrative overheads.",
+          "Director remuneration is remarkably low and stable at approximately £25k per annum, suggesting potential for future salary normalization.",
+          "Significant increase in staff costs and motor expenses reflects the scaling of the physical workforce and fleet."
+        ],
+        "red_flags": [
+          "Director Loan Account: Amounts owed by directors increased to £159,863 in 2026 and £176,625 in the current management accounts.",
+          "Gross margin volatility: Margins dropped from 56.7% to 43.7% as the business scaled, suggesting a shift in project mix or pricing pressure."
+        ],
+        "narrative": "Manor Building Solutions (UK) Ltd has demonstrated exceptional financial performance over the last four fiscal years, evolving from a small-scale operation into a highly profitable mid-sized contractor. Revenue has grown from £651k to £2.39m, representing a CAGR of 54.12%. Crucially, this growth has been accompanied by significant margin expansion at the operating level, which rose from 5.12% to nearly 19%. This suggests that the business has successfully managed its overheads while scaling its project volume.\n\nThe cost structure is well-balanced for the construction sector. The heavy reliance on subcontractors (£803k in 2026) provides the business with a variable cost base that can be adjusted according to demand, mitigating risk during market downturns. However, the decline in gross margin from 56.7% to 43.7% warrants investigation; it likely reflects a transition from smaller, high-margin private works to larger, more competitive commercial or social housing contracts.\n\nEarnings quality is high, with EBITDA and Net Profit tracking Operating Profit closely. There is no evidence of reliance on one-off exceptional items to bolster the bottom line. The balance sheet is liquid, with a strong cash position of £460k at year-end 2026, further increasing to £668k in the latest management accounts. The primary area for due diligence is the Directors' Current Account, which shows a growing debt owed to the company (£176k). For an acquirer, the business presents a strong financial profile with robust cash flow, high interest coverage, and a scalable model that is not yet burdened by excessive fixed costs."
+      }
+    },
+    "financialDataSnapshot": {
+      "balanceSheet": {
+        "id": 4908,
+        "financialPeriodId": 8009,
+        "targetCompanyId": 1882,
+        "intangibleAssets": null,
+        "tangibleFixedAssets": "45244.97",
+        "freeholdProperty": null,
+        "leaseholdProperty": "8584.7",
+        "plantMachinery": "7360.02",
+        "fixturesFittings": "669.5",
+        "motorVehicles": "26955.65",
+        "computerEquipment": "1675.1",
+        "stockInventory": "16326.01",
+        "tradeDebtors": "226970.73",
+        "prepayments": "3703.2",
+        "amountsOwedByDirectors": "176625.1",
+        "amountsOwedByConnectedCompanies": "0",
+        "directorsCurrentAccount": "176625.1",
+        "otherDebtors": "43896.61",
+        "cashAtBank": "668188.88",
+        "totalCurrentAssets": "1135698",
+        "tradeCreditors": "66207.33",
+        "taxationSocialSecurity": "5272.99",
+        "vatPayable": "53619.63",
+        "corporationTaxDue": "112405.43",
+        "bankLoansOverdraftCurrent": "997.81",
+        "hirePurchaseCurrent": null,
+        "accruals": "50892.31",
+        "amountsOwedToDirectors": null,
+        "otherCreditors": "98033.5",
+        "totalCurrentLiabilities": "387429",
+        "bankLoansLongTerm": null,
+        "hirePurchaseLongTerm": "37417.71",
+        "deferredTaxation": "9453.85",
+        "otherLongTermDebt": null,
+        "totalLongTermLiabilities": "46871.56",
+        "shareCapital": "100",
+        "retainedEarnings": "746542.11",
+        "totalEquity": "746642.11",
+        "debtorsList": null,
+        "creditorsList": null,
+        "fixedAssetsDetail": null,
+        "sourceDocumentId": 5891,
+        "createdAt": "2026-07-30T01:40:55.627Z",
+        "updatedAt": "2026-07-30T01:40:55.824Z",
+        "fiscalYear": "2026",
+        "periodEnd": "2026-04-30",
+        "sourceTier": "management",
+        "_label": "CURRENT POSITION"
+      },
+      "fixedAssets": {
+        "id": 28,
+        "targetCompanyId": 1882,
+        "reportDate": "2024-01-31",
+        "totalGrossBookValue": "157421.85",
+        "totalAccumulatedDepreciation": "86290.08",
+        "totalNetBookValue": "71131.77",
+        "propertyGrossValue": "20348.88",
+        "propertyNetBookValue": "12718.05",
+        "plantMachineryGrossValue": "26121.67",
+        "plantMachineryNetBookValue": "17117.52",
+        "vehiclesGrossValue": "99322.3",
+        "vehiclesNetBookValue": "38559.4",
+        "itEquipmentGrossValue": "8422.17",
+        "itEquipmentNetBookValue": "1880.8",
+        "otherAssetsGrossValue": "3206.83",
+        "otherAssetsNetBookValue": "856",
+        "refinanceableAssetsValue": "38559.4",
+        "fullyDepreciatedStillInUse": null,
+        "assetItems": [
+          {
+            "description": "Motor Vehicles",
+            "category": "Vehicles",
+            "purchase_date": null,
+            "cost": 99322.3,
+            "accumulated_depreciation": 60762.9,
+            "net_book_value": 38559.4,
+            "depreciation_rate": null,
+            "depreciation_method": null,
+            "location": null,
+            "condition": null
+          },
+          {
+            "description": "Plant and Machinery",
+            "category": "Plant & Machinery",
+            "purchase_date": null,
+            "cost": 26121.67,
+            "accumulated_depreciation": 9004.15,
+            "net_book_value": 17117.52,
+            "depreciation_rate": null,
+            "depreciation_method": null,
+            "location": null,
+            "condition": null
+          },
+          {
+            "description": "Leasehold Property",
+            "category": "Property",
+            "purchase_date": null,
+            "cost": 20348.88,
+            "accumulated_depreciation": 7630.83,
+            "net_book_value": 12718.05,
+            "depreciation_rate": null,
+            "depreciation_method": "Amortisation",
+            "location": null,
+            "condition": null
+          },
+          {
+            "description": "Office Equipment",
+            "category": "IT Equipment",
+            "purchase_date": null,
+            "cost": 8422.17,
+            "accumulated_depreciation": 6541.37,
+            "net_book_value": 1880.8,
+            "depreciation_rate": null,
+            "depreciation_method": null,
+            "location": null,
+            "condition": null
+          },
+          {
+            "description": "Furniture and Fixtures",
+            "category": "Other",
+            "purchase_date": null,
+            "cost": 3206.83,
+            "accumulated_depreciation": 2350.83,
+            "net_book_value": 856,
+            "depreciation_rate": null,
+            "depreciation_method": null,
+            "location": null,
+            "condition": null
+          }
+        ],
+        "propertyDetails": [
+          {
+            "address": null,
+            "tenure": "Leasehold",
+            "purchase_price": 20348.88,
+            "market_value": null,
+            "net_book_value": 12718.05
+          }
+        ],
+        "vehicleDetails": [
+          {
+            "make_model": "Motor Vehicles (Pool)",
+            "registration": null,
+            "purchase_date": null,
+            "cost": 99322.3,
+            "net_book_value": 38559.4,
+            "market_value": null
+          }
+        ],
+        "sourceDocumentId": 5889,
+        "createdAt": "2026-07-30T01:40:30.932Z",
+        "updatedAt": "2026-07-30T01:40:30.932Z"
+      }
+    },
+    "notes": null,
+    "createdAt": "2026-07-30T01:48:46.050Z",
+    "updatedAt": "2026-07-30T01:48:46.050Z",
+    "adjustments": [
+      {
+        "id": 2052,
+        "dealModelId": 491,
+        "sourceExpertResultId": 836,
+        "adjustmentType": "add_back",
+        "category": "one_off_cost",
+        "description": "Other Operating Income (Non-Trading)",
+        "amount": "-5500",
+        "amountsByYear": {
+          "2023": 0,
+          "2024": 0,
+          "2025": 0,
+          "2026": -5500,
+          "2027": 0
+        },
+        "sourceExpert": "qoe",
+        "reasoning": "Other operating income of £5,500 is identified in the 2026 P&L; as this is non-core trading revenue, it is removed to normalise EBITDA.",
+        "confidence": "high",
+        "defensibilityScore": 9,
+        "caseForInclusion": "This income is not derived from the core construction activities and should be excluded to see sustainable trading performance.",
+        "caseForExclusion": "The seller may argue this is recurring ancillary income (e.g., scrap sales or rebates) typical for the sector.",
+        "status": "suggested",
+        "isAccepted": false,
+        "isManual": false,
+        "sortOrder": 0,
+        "createdAt": "2026-07-30T01:48:46.079Z",
+        "updatedAt": "2026-07-30T01:48:46.079Z"
+      },
+      {
+        "id": 2053,
+        "dealModelId": 491,
+        "sourceExpertResultId": 836,
+        "adjustmentType": "deduction",
+        "category": "replacement_salary",
+        "description": "Director Salary Normalisation (MD)",
+        "amount": "44930",
+        "amountsByYear": null,
+        "sourceExpert": "qoe",
+        "reasoning": "The Managing Director's current estimated salary of £12,570 is significantly below the market mid-point of £57,500 for a £1M-£5M revenue business.",
+        "confidence": "high",
+        "defensibilityScore": 8,
+        "caseForInclusion": "A commercial buyer would need to pay a market-rate salary to a replacement MD to maintain operations.",
+        "caseForExclusion": "The seller may argue the current director's low salary is offset by their equity stake and that the business can be run more leanly.",
+        "status": "suggested",
+        "isAccepted": false,
+        "isManual": false,
+        "sortOrder": 1,
+        "createdAt": "2026-07-30T01:48:46.086Z",
+        "updatedAt": "2026-07-30T01:48:46.086Z"
+      },
+      {
+        "id": 2054,
+        "dealModelId": 491,
+        "sourceExpertResultId": 836,
+        "adjustmentType": "deduction",
+        "category": "replacement_salary",
+        "description": "Director Salary Normalisation (Ops Director)",
+        "amount": "29930",
+        "amountsByYear": null,
+        "sourceExpert": "qoe",
+        "reasoning": "The Operations Director's current estimated salary of £12,570 is below the market mid-point of £42,500 for an Operations Director in this revenue bracket.",
+        "confidence": "high",
+        "defensibilityScore": 8,
+        "caseForInclusion": "Operational oversight is a critical function that requires professional management at market rates.",
+        "caseForExclusion": "The seller might claim the role could be absorbed by the MD or a lower-cost supervisor.",
+        "status": "suggested",
+        "isAccepted": false,
+        "isManual": false,
+        "sortOrder": 2,
+        "createdAt": "2026-07-30T01:48:46.092Z",
+        "updatedAt": "2026-07-30T01:48:46.092Z"
+      },
+      {
+        "id": 2055,
+        "dealModelId": 491,
+        "sourceExpertResultId": 836,
+        "adjustmentType": "deduction",
+        "category": "deferred_maintenance",
+        "description": "Deferred Maintenance / Fleet Replacement Provision",
+        "amount": "15000",
+        "amountsByYear": null,
+        "sourceExpert": "qoe",
+        "reasoning": "The vehicle fleet is 61% depreciated and IT/Office equipment is over 70% depreciated; an additional maintenance/replacement provision is required.",
+        "confidence": "medium",
+        "defensibilityScore": 6,
+        "caseForInclusion": "Current depreciation does not reflect the true cash cost of maintaining an aging fleet essential for construction delivery.",
+        "caseForExclusion": "The seller will argue that existing depreciation charges already account for asset wear and tear.",
+        "status": "suggested",
+        "isAccepted": false,
+        "isManual": false,
+        "sortOrder": 3,
+        "createdAt": "2026-07-30T01:48:46.098Z",
+        "updatedAt": "2026-07-30T01:48:46.098Z"
+      }
+    ],
+    "fundingLines": [
+      {
+        "id": 1378,
+        "dealModelId": 491,
+        "fundingType": "receivables_finance",
+        "label": "Receivables Finance (Invoice Factoring)",
+        "assetBaseValue": "226970.73",
+        "ltvPercent": "80",
+        "availableAmount": "181577",
+        "amountUsed": "0",
+        "interestRate": "4.5",
+        "arrangementFeePercent": null,
+        "termMonths": 0,
+        "monthlyRepayment": null,
+        "isDebt": true,
+        "repaymentStructure": "amortizing",
+        "isActive": false,
+        "notes": null,
+        "sortOrder": 0,
+        "createdAt": "2026-07-30T01:48:46.103Z",
+        "updatedAt": "2026-07-30T01:48:46.103Z"
+      },
+      {
+        "id": 1379,
+        "dealModelId": 491,
+        "fundingType": "asset_finance",
+        "label": "Asset Finance (Plant, Machinery & Vehicles)",
+        "assetBaseValue": "55676.92",
+        "ltvPercent": "60",
+        "availableAmount": "33406",
+        "amountUsed": "0",
+        "interestRate": "6.0",
+        "arrangementFeePercent": null,
+        "termMonths": 60,
+        "monthlyRepayment": null,
+        "isDebt": true,
+        "repaymentStructure": "amortizing",
+        "isActive": false,
+        "notes": null,
+        "sortOrder": 1,
+        "createdAt": "2026-07-30T01:48:46.111Z",
+        "updatedAt": "2026-07-30T01:48:46.111Z"
+      },
+      {
+        "id": 1380,
+        "dealModelId": 491,
+        "fundingType": "property_finance",
+        "label": "Property Finance (Commercial Mortgage)",
+        "assetBaseValue": "12718.05",
+        "ltvPercent": "65",
+        "availableAmount": "8267",
+        "amountUsed": "0",
+        "interestRate": "5.0",
+        "arrangementFeePercent": null,
+        "termMonths": 240,
+        "monthlyRepayment": null,
+        "isDebt": true,
+        "repaymentStructure": "amortizing",
+        "isActive": false,
+        "notes": null,
+        "sortOrder": 2,
+        "createdAt": "2026-07-30T01:48:46.115Z",
+        "updatedAt": "2026-07-30T01:48:46.115Z"
+      },
+      {
+        "id": 1381,
+        "dealModelId": 491,
+        "fundingType": "cash_equity",
+        "label": "Cash Equity (Cash to Introduce)",
+        "assetBaseValue": null,
+        "ltvPercent": null,
+        "availableAmount": null,
+        "amountUsed": "0",
+        "interestRate": null,
+        "arrangementFeePercent": null,
+        "termMonths": null,
+        "monthlyRepayment": null,
+        "isDebt": false,
+        "repaymentStructure": "amortizing",
+        "isActive": true,
+        "notes": null,
+        "sortOrder": 3,
+        "createdAt": "2026-07-30T01:48:46.121Z",
+        "updatedAt": "2026-07-30T01:48:46.121Z"
+      }
+    ],
+    "sellerPayments": [],
+    "contingentConsideration": []
+  },
+  "calculations": {
+    "adjustedEbitdaByYear": {
+      "2023": 49760,
+      "2024": 174747,
+      "2025": 489389,
+      "2026": 471870
+    },
+    "averageAdjustedEbitda": 378668.6666666667,
+    "enterpriseValue": 1041338.8333333334,
+    "offerPrice": 1464601.4033333333,
+    "impliedMultiple": null,
+    "feeLegalDd": 25000,
+    "feeAccountingDd": 15000,
+    "feeLoanArrangement": 0,
+    "feeDealMaker": 0,
+    "customFeeAmounts": [],
+    "totalFees": 40000,
+    "totalFundingRequired": 1504601.4033333333,
+    "fundingLines": [
+      {
+        "availableAmount": 0,
+        "monthlyRepayment": 0,
+        "annualRepayment": 0,
+        "arrangementFee": 0
+      },
+      {
+        "availableAmount": 0,
+        "monthlyRepayment": 0,
+        "annualRepayment": 0,
+        "arrangementFee": 0
+      },
+      {
+        "availableAmount": 0,
+        "monthlyRepayment": 0,
+        "annualRepayment": 0,
+        "arrangementFee": 0
+      },
+      {
+        "availableAmount": 0,
+        "monthlyRepayment": 0,
+        "annualRepayment": 0,
+        "arrangementFee": 0
+      }
+    ],
+    "totalFunded": 0,
+    "fundingGap": 1464601.4,
+    "totalAnnualDebtService": 0,
+    "sellerAnnualDebtService": 0,
+    "earnoutAnnualDebtService": 0,
+    "revolvingInterestAnnual": 0,
+    "receivablesInterestAnnual": 0,
+    "valuationEbitda": 378668.6666666667,
+    "paymentCoverRatio": null,
+    "paymentCoverRating": "no_debt"
+  }
+}

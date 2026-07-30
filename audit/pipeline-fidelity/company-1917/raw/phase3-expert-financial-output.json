@@ -1,0 +1,156 @@
+{
+  "expert": "financial",
+  "company_name": "[AUDIT-190] Spruce Pools",
+  "analysis_date": "2024-05-22",
+  "score": 58,
+  "confidence": "high",
+  "yearly_metrics": {
+    "2022": {
+      "revenue": 2282351,
+      "revenue_yoy_growth_percent": null,
+      "cost_of_sales": 1484452,
+      "gross_profit": 797899,
+      "gross_margin_percent": 34.96,
+      "administrative_expenses": 334777,
+      "operating_profit": 463122,
+      "operating_margin_percent": 20.29,
+      "depreciation_amortisation": 57193,
+      "ebitda": 520315,
+      "interest_payable": 0,
+      "interest_coverage_ratio": null,
+      "profit_before_tax": 464052,
+      "corporation_tax": 93195,
+      "effective_tax_rate_percent": 20.08,
+      "net_profit": 370857,
+      "net_margin_percent": 16.25
+    },
+    "2023": {
+      "revenue": 1992926,
+      "revenue_yoy_growth_percent": -12.68,
+      "cost_of_sales": 1366057,
+      "gross_profit": 626869,
+      "gross_margin_percent": 31.45,
+      "administrative_expenses": 404944,
+      "operating_profit": 221925,
+      "operating_margin_percent": 11.14,
+      "depreciation_amortisation": 86473,
+      "ebitda": 308398,
+      "interest_payable": 0,
+      "interest_coverage_ratio": null,
+      "profit_before_tax": 229890,
+      "corporation_tax": 38403,
+      "effective_tax_rate_percent": 16.7,
+      "net_profit": 191487,
+      "net_margin_percent": 9.61
+    },
+    "2024": {
+      "revenue": 1982111,
+      "revenue_yoy_growth_percent": -0.54,
+      "cost_of_sales": 1467076,
+      "gross_profit": 515035,
+      "gross_margin_percent": 25.98,
+      "administrative_expenses": 396134,
+      "operating_profit": 118901,
+      "operating_margin_percent": 6,
+      "depreciation_amortisation": 64397,
+      "ebitda": 183298,
+      "interest_payable": 0,
+      "interest_coverage_ratio": null,
+      "profit_before_tax": 130562,
+      "corporation_tax": 50389,
+      "effective_tax_rate_percent": 38.6,
+      "net_profit": 80173,
+      "net_margin_percent": 4.04
+    },
+    "2025": {
+      "revenue": 2313955,
+      "revenue_yoy_growth_percent": 16.74,
+      "cost_of_sales": 1645039,
+      "gross_profit": 668916,
+      "gross_margin_percent": 28.91,
+      "administrative_expenses": 441071,
+      "operating_profit": 227845,
+      "operating_margin_percent": 9.85,
+      "depreciation_amortisation": 71116,
+      "ebitda": 298961,
+      "interest_payable": 0,
+      "interest_coverage_ratio": null,
+      "profit_before_tax": 241191,
+      "corporation_tax": 60674,
+      "effective_tax_rate_percent": 25.16,
+      "net_profit": 180517,
+      "net_margin_percent": 7.8
+    }
+  },
+  "cagr": {
+    "revenue_cagr_percent": 0.46,
+    "gross_profit_cagr_percent": -5.71,
+    "operating_profit_cagr_percent": -21.08,
+    "period_years": 3
+  },
+  "cost_structure": {
+    "cost_of_sales_percent_revenue": 71.09,
+    "overheads_percent_revenue": 19.06,
+    "staff_costs_percent_revenue": 10.2,
+    "director_costs_percent_revenue": 2.99,
+    "top_5_overheads": [
+      {
+        "category": "Staff Wages & Salaries",
+        "value": 176078,
+        "percent_of_overheads": 39.92
+      },
+      {
+        "category": "Depreciation",
+        "value": 71117,
+        "percent_of_overheads": 16.12
+      },
+      {
+        "category": "Staff Pension Contributions",
+        "value": 60000,
+        "percent_of_overheads": 13.6
+      },
+      {
+        "category": "Directors Pension",
+        "value": 60000,
+        "percent_of_overheads": 13.6
+      },
+      {
+        "category": "Rent & Rates",
+        "value": 50962,
+        "percent_of_overheads": 11.55
+      }
+    ],
+    "cost_base_classification": "predominantly_variable"
+  },
+  "earnings_quality": {
+    "net_profit_tracks_operating_profit": true,
+    "exceptional_items_identified": [],
+    "tax_rate_consistent": false,
+    "ebitda_latest": 298961,
+    "ebitda_trend": "stable",
+    "limitations": [
+      "Amortisation not separately disclosed in overheads for 2024-2025",
+      "Significant fluctuation in effective tax rate in 2024"
+    ]
+  },
+  "debt_service": {
+    "latest_interest_coverage": null,
+    "interest_coverage_trend": "stable",
+    "additional_debt_capacity_assessment": "High. The company currently carries zero interest-payable debt and maintains a strong cash position of 795,164.52 as of 31 May 2026."
+  },
+  "key_findings": [
+    "Revenue has remained relatively flat over the four-year period, with a CAGR of only 0.46%.",
+    "Gross margins have contracted significantly from 34.96% in 2022 to 28.91% in 2025, indicating rising direct costs.",
+    "Operating profit has declined at a CAGR of -21.08%, reflecting a failure to control overheads relative to gross profit.",
+    "The company maintains a very strong liquidity position with 795,164.52 in cash as of May 2026.",
+    "Staff costs and pensions represent the largest overhead burden, accounting for over 67% of total administrative expenses in 2025.",
+    "The business is debt-free with no interest payable recorded across the entire period.",
+    "Service and maintenance remains the core revenue driver, contributing over 1m in 2025."
+  ],
+  "red_flags": [
+    "Significant gross margin erosion from 35% to 29% suggests pricing pressure or unrecovered material inflation.",
+    "Operating profit in 2025 is less than half of the 2022 level despite higher revenue.",
+    "Inconsistent effective tax rates, particularly the 38.6% spike in 2024, require further investigation."
+  ],
+  "narrative": "Spruce Pools presents a mixed financial profile for a potential acquirer. On a positive note, the company is exceptionally liquid and debt-free. As of the latest balance sheet dated 31 May 2026, the business held 795,164 in cash against total current liabilities of 220,231, providing a significant safety buffer and immediate capital for post-acquisition integration. The revenue base is stable, anchored by a consistent 'Service and Maintenance' stream which provides recurring-style income, mitigating the volatility typically associated with 'Renovation and New Build' construction projects.\n\nHowever, the profitability trajectory is concerning. While 2025 saw a recovery in revenue to 2.31m, the quality of earnings has diminished since 2022. Gross margins have fallen by approximately 600 basis points over the period, and operating margins have halved from 20.3% to 9.8%. This suggests that while the company is winning work, it is doing so at higher cost or lower price points, failing to pass on inflationary pressures in materials and labour. Administrative expenses have also climbed, driven largely by a heavy pension and wage burden. \n\nFor a buyer, the value proposition lies in operational turnaround. The core business generates healthy EBITDA (298k in 2025), but the downward trend in efficiency must be reversed. The lack of existing debt provides ample headroom for acquisition financing, but the valuation should be sensitised against the declining margin profile rather than the headline revenue growth seen in the final year."
+}

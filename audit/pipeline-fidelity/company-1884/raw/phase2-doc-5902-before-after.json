@@ -1,0 +1,44 @@
+{
+  "beforePeriods": [],
+  "afterPeriods": [
+    {
+      "id": 8044,
+      "targetCompanyId": 1884,
+      "periodType": "management",
+      "periodStart": null,
+      "periodEnd": "2026-07-30",
+      "fiscalYear": 2026,
+      "periodLabel": "Staff Matrix",
+      "monthsCovered": null,
+      "isFullYear": false,
+      "sourceTier": null,
+      "sourceDocumentId": 5902,
+      "createdAt": "2026-07-30T01:51:32.794Z",
+      "updatedAt": "2026-07-30T01:51:32.794Z"
+    }
+  ],
+  "newPeriods": [
+    {
+      "id": 8044,
+      "targetCompanyId": 1884,
+      "periodType": "management",
+      "periodStart": null,
+      "periodEnd": "2026-07-30",
+      "fiscalYear": 2026,
+      "periodLabel": "Staff Matrix",
+      "monthsCovered": null,
+      "isFullYear": false,
+      "sourceTier": null,
+      "sourceDocumentId": 5902,
+      "createdAt": "2026-07-30T01:51:32.794Z",
+      "updatedAt": "2026-07-30T01:51:32.794Z"
+    }
+  ],
+  "beforeIS": [],
+  "afterIS": [],
+  "newIS": [],
+  "beforeBS": [],
+  "afterBS": [],
+  "newBS": [],
+  "changedPeriods": []
+}

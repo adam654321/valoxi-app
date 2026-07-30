@@ -1,0 +1,123 @@
+{
+  "expert": "quality_of_earnings",
+  "company_name": "[AUDIT-89] Innova Design Group Limited",
+  "analysis_date": "2025-05-22",
+  "score": 62,
+  "confidence": "high",
+  "reported_figures": {
+    "operating_profit": 169033,
+    "depreciation": 49005,
+    "amortisation": 0,
+    "reported_ebitda": 218038,
+    "source_year": "2025"
+  },
+  "add_backs": [
+    {
+      "item": "Use of Home as Office",
+      "category": "personal_expense",
+      "amount": 1800,
+      "recurrence": "recurring",
+      "year": 2025,
+      "justification": "Standard non-cash personal expense identified in overheads breakdown for all years 2021-2025.",
+      "confidence": "high",
+      "defensibility_score": 9,
+      "case_for_inclusion": "This is a discretionary personal expense that would not be incurred by a corporate buyer.",
+      "case_for_exclusion": "The seller may argue it is a legitimate business expense for administrative work performed off-site."
+    }
+  ],
+  "deductions": [
+    {
+      "item": "Director Replacement Salary Adjustment",
+      "category": "replacement_salary",
+      "amount": 32360,
+      "recurrence": "recurring",
+      "year": 2025,
+      "justification": "Current director salary of £25,140 is significantly below the market mid-point of £57,500 for a £1M-£5M revenue SME.",
+      "confidence": "high",
+      "defensibility_score": 8,
+      "case_for_inclusion": "A commercial buyer would need to hire a replacement Managing Director at market rates to maintain operations.",
+      "case_for_exclusion": "The seller might argue the current workload does not justify a full-time market-rate MD."
+    },
+    {
+      "item": "Bad Debt Provision - Aged Debtors",
+      "category": "bad_debt_provision",
+      "amount": 52988,
+      "recurrence": "one_off",
+      "year": 2025,
+      "justification": "Sales ledger shows £52,988.23 (19.7% of total) is 90+ days overdue with specific 'client not happy' and 'retention' flags.",
+      "confidence": "high",
+      "defensibility_score": 7,
+      "case_for_inclusion": "Significant aged debt with documented disputes indicates these funds are unlikely to be fully recovered.",
+      "case_for_exclusion": "The seller may claim these are timing issues or retentions that will eventually be paid upon project completion."
+    },
+    {
+      "item": "Deferred Maintenance / Capex Catch-up",
+      "category": "deferred_maintenance",
+      "amount": 25000,
+      "recurrence": "recurring",
+      "year": 2025,
+      "justification": "Operational expert identifies a 'capex cliff' with core Biesse machinery from 2012/13 requiring imminent replacement or increased maintenance.",
+      "confidence": "medium",
+      "defensibility_score": 6,
+      "case_for_inclusion": "The aging asset base requires a higher annual maintenance provision than the historical average to ensure operational continuity.",
+      "case_for_exclusion": "The seller may point to the recent 2026 £92k Beamsaw investment as evidence that the fleet is already being modernized."
+    }
+  ],
+  "total_add_backs": 1800,
+  "total_deductions": 110348,
+  "adjusted_ebitda": {
+    "conservative": 107530,
+    "base": 109490,
+    "optimistic": 134490
+  },
+  "adjustment_summary": {
+    "reported_ebitda": 218038,
+    "plus_add_backs": 1800,
+    "minus_deductions": 110348,
+    "equals_adjusted_ebitda_base": 109490
+  },
+  "director_salary_analysis": {
+    "directors": [
+      {
+        "name": "Sole Director",
+        "current_salary": 25140,
+        "estimated_market_rate": 57500,
+        "benchmark_range_used": "Revenue £1M-£5M: Working MD/Owner-Director (£45,000–£70,000)",
+        "adjustment": 32360,
+        "adjustment_type": "deduction"
+      }
+    ]
+  },
+  "sustainability_assessment": {
+    "sustainable_for_3_years": false,
+    "key_assumptions": [
+      "Gross margins remain at the elevated 33.9% level achieved in 2025.",
+      "The high customer concentration (68% of debtors) does not result in a total loss of the account.",
+      "Subcontractor availability remains stable to support the flexible labor model."
+    ],
+    "sensitivity_factors": [
+      "Revenue volatility: The business has seen double-digit swings in 2023 and 2025.",
+      "Asset failure: The 12-year-old Biesse fleet is a single point of failure for production."
+    ],
+    "upside_scenarios": [
+      "Successful diversification of the customer base reducing the 68% concentration risk.",
+      "Full integration of the 2026 Beamsaw investment leading to higher throughput."
+    ],
+    "downside_scenarios": [
+      "Loss of the primary education-sector client which dominates the sales ledger.",
+      "Major machinery breakdown requiring emergency capital expenditure beyond the maintenance provision."
+    ]
+  },
+  "key_findings": [
+    "Reported EBITDA is significantly inflated by an under-market director salary and lack of bad debt provisioning.",
+    "Gross margins have improved significantly (23.6% to 33.9%), but overheads are 'sticky' and rising.",
+    "The business relies on a single debtor for nearly 69% of its trade receivables, creating extreme credit risk.",
+    "A 'capex cliff' is imminent as core production machinery is over 10 years old and heavily depreciated."
+  ],
+  "red_flags": [
+    "Extreme customer concentration: 68.7% of trade debtors from one entity.",
+    "Aged Debt: Nearly 20% of the ledger is 90+ days overdue with documented disputes.",
+    "Revenue Volatility: Lack of a clear growth trend with significant year-on-year fluctuations."
+  ],
+  "narrative": "The Quality of Earnings for Innova Design Group Limited is moderate. While the company shows impressive gross margin expansion, the 'true' earnings are lower than reported once adjusted for market-rate management costs and the reality of the aged debtor ledger. The base case Adjusted EBITDA of £109,490 represents a 50% reduction from the reported figure. The primary concern for a buyer is not just the earnings level, but the sustainability of those earnings given the extreme customer concentration and the aging machinery fleet. Any valuation multiple should be applied to this normalized figure, and the deal structure should likely include significant earn-outs or retentions to mitigate the risk of the disputed 90-day+ debts and the potential loss of the primary customer."
+}

@@ -1,0 +1,178 @@
+{
+  "expert": "financial",
+  "company_name": "[AUDIT-138] Cooper Gibson",
+  "analysis_date": "2024-05-22",
+  "score": 62,
+  "confidence": "high",
+  "yearly_metrics": {
+    "2022": {
+      "revenue": 367925,
+      "revenue_yoy_growth_percent": null,
+      "cost_of_sales": 0,
+      "gross_profit": 367925,
+      "gross_margin_percent": 100,
+      "administrative_expenses": 365500,
+      "operating_profit": 14064,
+      "operating_margin_percent": 3.82,
+      "depreciation_amortisation": 615,
+      "ebitda": 14679,
+      "interest_payable": 1148,
+      "interest_coverage_ratio": 12.25,
+      "profit_before_tax": 12976,
+      "corporation_tax": 2499,
+      "effective_tax_rate_percent": 19.26,
+      "net_profit": 10477,
+      "net_margin_percent": 2.85
+    },
+    "2023": {
+      "revenue": 314775,
+      "revenue_yoy_growth_percent": -14.45,
+      "cost_of_sales": 0,
+      "gross_profit": 314775,
+      "gross_margin_percent": 100,
+      "administrative_expenses": 297036,
+      "operating_profit": 17739,
+      "operating_margin_percent": 5.64,
+      "depreciation_amortisation": 463,
+      "ebitda": 18202,
+      "interest_payable": 2762,
+      "interest_coverage_ratio": 6.42,
+      "profit_before_tax": 15046,
+      "corporation_tax": 2871,
+      "effective_tax_rate_percent": 19.08,
+      "net_profit": 12175,
+      "net_margin_percent": 3.87
+    },
+    "2024": {
+      "revenue": 326227,
+      "revenue_yoy_growth_percent": 3.64,
+      "cost_of_sales": 4221,
+      "gross_profit": 322006,
+      "gross_margin_percent": 98.71,
+      "administrative_expenses": 204475,
+      "operating_profit": 117531,
+      "operating_margin_percent": 36.03,
+      "depreciation_amortisation": 640,
+      "ebitda": 118171,
+      "interest_payable": 0,
+      "interest_coverage_ratio": null,
+      "profit_before_tax": 118518,
+      "corporation_tax": 27388,
+      "effective_tax_rate_percent": 23.11,
+      "net_profit": 91130,
+      "net_margin_percent": 27.93
+    },
+    "2025": {
+      "revenue": 441073,
+      "revenue_yoy_growth_percent": 35.2,
+      "cost_of_sales": 166054,
+      "gross_profit": 275019,
+      "gross_margin_percent": 62.35,
+      "administrative_expenses": 53647,
+      "operating_profit": 221372,
+      "operating_margin_percent": 50.19,
+      "depreciation_amortisation": 299,
+      "ebitda": 221671,
+      "interest_payable": 0,
+      "interest_coverage_ratio": null,
+      "profit_before_tax": 221372,
+      "corporation_tax": 52207,
+      "effective_tax_rate_percent": 23.58,
+      "net_profit": 169165,
+      "net_margin_percent": 38.35
+    },
+    "2026": {
+      "revenue": 223404,
+      "revenue_yoy_growth_percent": -49.35,
+      "cost_of_sales": 0,
+      "gross_profit": 223404,
+      "gross_margin_percent": 100,
+      "administrative_expenses": 177671,
+      "operating_profit": 49479,
+      "operating_margin_percent": 22.15,
+      "depreciation_amortisation": 7533,
+      "ebitda": 57012,
+      "interest_payable": 0,
+      "interest_coverage_ratio": null,
+      "profit_before_tax": 49479,
+      "corporation_tax": 7819,
+      "effective_tax_rate_percent": 15.8,
+      "net_profit": 41660,
+      "net_margin_percent": 18.65
+    }
+  },
+  "cagr": {
+    "revenue_cagr_percent": -11.7,
+    "gross_profit_cagr_percent": -11.7,
+    "operating_profit_cagr_percent": 36.9,
+    "period_years": 4
+  },
+  "cost_structure": {
+    "cost_of_sales_percent_revenue": 0,
+    "overheads_percent_revenue": 79.53,
+    "staff_costs_percent_revenue": 54.55,
+    "director_costs_percent_revenue": 16.87,
+    "top_5_overheads": [
+      {
+        "category": "Directors Pension",
+        "value": 24000,
+        "percent_of_overheads": 13.51
+      },
+      {
+        "category": "Directors Salaries",
+        "value": 12570,
+        "percent_of_overheads": 7.07
+      },
+      {
+        "category": "Amortisation",
+        "value": 3422,
+        "percent_of_overheads": 1.93
+      },
+      {
+        "category": "Accountancy & Bookkeeping",
+        "value": 2400,
+        "percent_of_overheads": 1.35
+      },
+      {
+        "category": "Telecommunications",
+        "value": 1657,
+        "percent_of_overheads": 0.93
+      }
+    ],
+    "cost_base_classification": "predominantly_fixed"
+  },
+  "earnings_quality": {
+    "net_profit_tracks_operating_profit": true,
+    "exceptional_items_identified": [
+      "Profit on disposal of tangible fixed assets (2025): 1,381",
+      "Loss on disposal of tangible fixed assets (2026): 2,761"
+    ],
+    "tax_rate_consistent": false,
+    "ebitda_latest": 57012,
+    "ebitda_trend": "declining",
+    "limitations": [
+      "Significant volatility in cost of sales classification between 2025 and 2026",
+      "Staff costs in 2024 and 2025 appear understated or reclassified to other overheads"
+    ]
+  },
+  "debt_service": {
+    "latest_interest_coverage": null,
+    "interest_coverage_trend": "improving",
+    "additional_debt_capacity_assessment": "High. The company has eliminated interest-bearing debt as of 2024, with zero interest payable in the last three periods and a strong cash position."
+  },
+  "key_findings": [
+    "Revenue is highly volatile, peaking at 441k in 2025 before dropping 49% in 2026.",
+    "Operating margins show extreme fluctuation, ranging from 3.8% to 50.2%, suggesting inconsistent cost allocation or project-based revenue spikes.",
+    "Significant customer concentration exists, with one client representing over 88% of the sales ledger in 2026.",
+    "The cost structure shifted dramatically in 2025 with a large subcontractor cost (163k) that disappeared in 2026.",
+    "Staff costs and directors' remuneration are the primary drivers of the fixed cost base, though reporting of these figures is inconsistent across years.",
+    "The company has successfully deleveraged, moving from 41k in bank loans in 2022 to zero long-term debt by 2024.",
+    "Cash reserves are healthy but declining, dropping from 295k in 2025 to 195k in 2026."
+  ],
+  "red_flags": [
+    "Extreme revenue volatility with a 49% year-on-year decline in the most recent full year.",
+    "Severe customer concentration risk (88%+ revenue from a single client).",
+    "Inconsistent financial reporting, particularly regarding the classification of staff costs and 'other overheads' which reached 136k in 2024."
+  ],
+  "narrative": "Cooper Gibson presents a financial profile typical of a small, project-based professional services firm, characterized by high volatility and significant concentration risk. While the company achieved a notable performance peak in FY2025 with revenues of £441k and an operating margin of 50.2%, the subsequent FY2026 results show a sharp 49% contraction in revenue and a significant compression of EBITDA. This suggests that the 2025 performance may have been an outlier driven by a specific large-scale contract rather than sustainable organic growth.\n\nThe earnings quality is clouded by inconsistent cost classifications. In FY2024 and FY2025, reported staff costs dropped to negligible levels while 'other overheads' and 'subcontractor costs' spiked, suggesting a shift in delivery model or accounting treatment that complicates year-on-year comparisons. Furthermore, the sales ledger analysis confirms a dangerous reliance on a single client, who accounts for nearly 90% of outstanding receivables. \n\nFrom a buyer's perspective, the primary value lies in the company's debt-free balance sheet and historically strong margins when active. However, the lack of revenue stability and the 'key man' or 'key client' risk must be heavily factored into the valuation. Any acquisition should be structured with a significant earn-out component to mitigate the risk of the primary revenue stream dissipating post-completion.completion."
+}

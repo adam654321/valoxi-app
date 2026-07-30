@@ -1,0 +1,783 @@
+{
+  "model": {
+    "id": 487,
+    "targetCompanyId": 1878,
+    "createdBy": 89,
+    "name": "Audit Model — TC 196",
+    "status": "draft",
+    "version": 1,
+    "transactionType": "share_sale",
+    "parentModelId": null,
+    "isLocked": false,
+    "averagingYears": 3,
+    "ebitdaMultiple": "2",
+    "offerDriver": "ebitda",
+    "targetOfferPrice": null,
+    "multipleLow": "1.5",
+    "multipleHigh": "3",
+    "propertyValue": "0",
+    "cashValue": "0",
+    "otherAssets": "0",
+    "calculatedEbitda": null,
+    "adjustedEbitda": "93976",
+    "enterpriseValue": "187952",
+    "plusExcessCash": "103302",
+    "minusPrimaryDebt": "0",
+    "minusOtherDebt": "0",
+    "minusCorpTaxDue": null,
+    "minusWorkingCapitalAdj": "171408",
+    "workingCapitalMonths": 3,
+    "workingCapitalMonthlyAmount": "57136",
+    "totalPurchasePrice": null,
+    "totalFundingAvailable": null,
+    "equityRequired": null,
+    "upfrontCash": "168600",
+    "deferredAmount": "56200",
+    "deferredTerms": null,
+    "earnoutMaximum": "56200",
+    "earnoutMetric": "Adjusted EBITDA Stability",
+    "earnoutPeriodMonths": 12,
+    "retentionEscrow": "15000",
+    "feeLegalDdAmount": "25000",
+    "feeAccountingDdAmount": "15000",
+    "feeLoanArrangementAmount": "0",
+    "feeDealMakerAmount": "0",
+    "customFees": [],
+    "expertDataSnapshot": {
+      "qoe": {
+        "expert": "quality_of_earnings",
+        "company_name": "[AUDIT-196] Compassion Home Care Limited",
+        "analysis_date": "2026-07-30",
+        "score": 68,
+        "confidence": "high",
+        "reported_figures": {
+          "operating_profit": 132427,
+          "depreciation": 2649,
+          "amortisation": 0,
+          "reported_ebitda": 135076,
+          "source_year": "2026"
+        },
+        "add_backs": [
+          {
+            "item": "Excess Director Remuneration",
+            "category": "owner_salary",
+            "amount": 16202,
+            "recurrence": "recurring",
+            "year": 2026,
+            "justification": "The sole Business Director's total compensation (Salary £62,470 + Pension £11,232 = £73,702) exceeds the market mid-point of £57,500 for a company of this revenue size.",
+            "confidence": "high",
+            "defensibility_score": 8,
+            "case_for_inclusion": "The buyer should not pay a multiple on compensation that exceeds the market rate for a replacement manager.",
+            "case_for_exclusion": "The seller may argue the director's dual role as Business Director and Registered Manager justifies a premium over standard benchmarks."
+          }
+        ],
+        "deductions": [
+          {
+            "item": "Replacement Registered Manager Cost",
+            "category": "missing_management",
+            "amount": 42500,
+            "recurrence": "recurring",
+            "year": 2026,
+            "justification": "Both the Director and Registered Manager are exiting; a new CQC Registered Manager is a statutory requirement and represents a new fixed cost if not replaced by the owner.",
+            "confidence": "high",
+            "defensibility_score": 9,
+            "case_for_inclusion": "This is a mandatory regulatory role that must be filled to continue operations post-sale.",
+            "case_for_exclusion": "The seller might argue that the replacement manager's salary is already partially covered by the 'market rate' adjustment of the outgoing director."
+          },
+          {
+            "item": "Deferred IT and Vehicle Maintenance",
+            "category": "deferred_maintenance",
+            "amount": 5000,
+            "recurrence": "recurring",
+            "year": 2026,
+            "justification": "Tangible assets have depleted from £16k to £6k in 3 years, with motor vehicles at £0 NBV, indicating a lack of sustainable reinvestment in the fleet and IT.",
+            "confidence": "medium",
+            "defensibility_score": 6,
+            "case_for_inclusion": "The current EBITDA is inflated by neglecting the necessary lifecycle replacement costs of operational assets.",
+            "case_for_exclusion": "The seller may claim the business model has shifted to be more asset-light, reducing the need for company-owned vehicles."
+          },
+          {
+            "item": "Bad Debt Provision (Debtor Spike)",
+            "category": "bad_debt_provision",
+            "amount": 9802,
+            "recurrence": "one_off",
+            "year": 2026,
+            "justification": "Trade debtors spiked from £19,102 in 2025 to £98,020 in 2026 without a corresponding revenue jump; a 10% provision is prudent given the collection delay.",
+            "confidence": "medium",
+            "defensibility_score": 7,
+            "case_for_inclusion": "The sudden increase in debtor days from 9 to 44 suggests potential recoverability issues or billing disputes.",
+            "case_for_exclusion": "The seller may argue the balance is fully recoverable from a reliable local authority and is merely a timing issue."
+          }
+        ],
+        "total_add_backs": 16202,
+        "total_deductions": 57302,
+        "adjusted_ebitda": {
+          "conservative": 81176,
+          "base": 93976,
+          "optimistic": 108776
+        },
+        "adjustment_summary": {
+          "reported_ebitda": 135076,
+          "plus_add_backs": 16202,
+          "minus_deductions": 57302,
+          "equals_adjusted_ebitda_base": 93976
+        },
+        "director_salary_analysis": {
+          "directors": [
+            {
+              "name": "Business Director",
+              "current_salary": 73702,
+              "estimated_market_rate": 57500,
+              "benchmark_range_used": "Revenue £1M-£5M: Working MD/Owner-Director (£45k-£70k) - adjusted for small scale",
+              "adjustment": 16202,
+              "adjustment_type": "add_back"
+            }
+          ]
+        },
+        "sustainability_assessment": {
+          "sustainable_for_3_years": true,
+          "key_assumptions": [
+            "Successful recruitment of a CQC Registered Manager immediately post-completion.",
+            "Stabilisation of the debtor collection cycle back to historical norms.",
+            "Retention of the 92% zero-hours workforce during the management transition."
+          ],
+          "sensitivity_factors": [
+            "CQC rating maintenance during leadership change.",
+            "Local authority fee rate increases vs. carer wage inflation.",
+            "Recruitment market competitiveness for qualified carers."
+          ],
+          "upside_scenarios": [
+            "Expansion of live-in care services which typically command higher margins.",
+            "Improved working capital management reducing the need for overdraft facilities."
+          ],
+          "downside_scenarios": [
+            "Loss of CQC registration due to failure to appoint a Registered Manager.",
+            "Significant bad debt write-off from the FY2026 debtor spike."
+          ]
+        },
+        "key_findings": [
+          "Reported EBITDA is healthy but relies on a lean management structure that is exiting the business.",
+          "The business is effectively debt-free with a strong cash position of £103,302 as of 2026-02-28.",
+          "There is a clear 'capex cliff' regarding IT and vehicles that has artificially lowered historical expenses.",
+          "The 2026 debtor spike is the primary financial red flag, locking up nearly £80k in additional cash compared to 2025."
+        ],
+        "red_flags": [
+          "Management Vacuum: Departure of both Director and Registered Manager simultaneously.",
+          "Working Capital: Debtor days increased by 400% in the latest fiscal year.",
+          "Asset Depletion: Tangible fixed assets are at a historical low, suggesting imminent replacement costs."
+        ],
+        "narrative": "Compassion Home Care Limited presents a solid underlying business with consistent margins, but the reported EBITDA of £135k requires downward normalization to £94k (Base Case). The primary adjustments stem from the need to institutionalize the management team following the exit of the owner-director and the Registered Manager. While the director's current compensation is slightly above market, the cost of a standalone Registered Manager—essential for CQC compliance—more than offsets this add-back. Furthermore, the buyer must account for a likely increase in maintenance or replacement capex, as the current asset base is heavily depreciated. The significant spike in trade debtors in FY2026 suggests an operational breakdown in billing or collections that must be resolved to ensure the sustainability of cash flows."
+      },
+      "valuation": {
+        "expert": "valuation",
+        "company_name": "[AUDIT-196] Compassion Home Care Limited",
+        "analysis_date": "2026-07-30",
+        "score": 75,
+        "confidence": "high",
+        "ebitda_multiple_valuation": {
+          "adjusted_ebitda_base": 93976,
+          "sector_multiple_range": {
+            "low": 1.5,
+            "mid": 2.25,
+            "high": 3
+          },
+          "selected_multiple": 2,
+          "multiple_justification": "A multiple of 2.0x is selected, which is slightly below the sector midpoint. While the company shows stable margins and high interest coverage, it is heavily discounted due to its micro-cap size (revenue <£1M), the critical 'Key Person' risk with both the Director and Registered Manager exiting, and the significant 413% spike in trade debtors which suggests operational or collection instability.",
+          "premium_factors_applied": [
+            "Consistent operating margin growth (12.2% to 16.2%)",
+            "High interest coverage ratio (547.22)",
+            "Debt-free balance sheet"
+          ],
+          "discount_factors_applied": [
+            "Micro-cap status (Revenue <£1M)",
+            "Simultaneous exit of Business Director and Registered Manager",
+            "Significant deterioration in debtor days (43.7 days vs 8.9 days)",
+            "Aging asset base (Motor vehicles at £0 NBV)"
+          ],
+          "enterprise_value_range": {
+            "conservative": 121764,
+            "base": 187952,
+            "optimistic": 271940
+          }
+        },
+        "ev_to_equity_bridge": {
+          "enterprise_value_base": 187952,
+          "plus_cash": 103302,
+          "minus_long_term_debt": 0,
+          "minus_director_loans": 0,
+          "minus_bad_debt_provision": 9802,
+          "minus_working_capital_adjustment": 0,
+          "equity_value": {
+            "conservative": 215264,
+            "base": 281452,
+            "optimistic": 365440
+          }
+        },
+        "asset_based_valuation": {
+          "net_asset_value": 116782,
+          "property_adjustment": 0,
+          "bad_debt_adjustment": 9802,
+          "adjusted_nav": 106980,
+          "nav_as_floor": true
+        },
+        "revenue_multiple_crosscheck": {
+          "latest_revenue": 818060,
+          "revenue_multiple_range": {
+            "low": 0.4,
+            "high": 0.6
+          },
+          "implied_ev_range": {
+            "low": 327224,
+            "high": 490836
+          }
+        },
+        "valuation_summary": {
+          "recommended_range": {
+            "equity_value_low": 215000,
+            "equity_value_mid": 281000,
+            "equity_value_high": 365000
+          },
+          "primary_methodology": "ebitda_multiple",
+          "cross_check_alignment": "moderate"
+        },
+        "sensitivity": {
+          "ebitda_plus_10pct": {
+            "enterprise_value": 206747,
+            "equity_value": 300247
+          },
+          "ebitda_minus_10pct": {
+            "enterprise_value": 169157,
+            "equity_value": 262657
+          },
+          "multiple_plus_half": {
+            "enterprise_value": 234940,
+            "equity_value": 328440
+          },
+          "multiple_minus_half": {
+            "enterprise_value": 140964,
+            "equity_value": 234464
+          },
+          "key_customer_loss_impact": "Unknown due to lack of customer concentration data, but a 10% revenue loss would likely reduce EBITDA by approx. £25k-£30k given the high variable cost structure.",
+          "director_replacement_impact": 42500
+        },
+        "seller_expectations": {
+          "likely_seller_expectation_range": {
+            "low": 400000,
+            "high": 600000
+          },
+          "seller_anchor_points": [
+            "Reported EBITDA of £135k (ignoring replacement management costs)",
+            "Revenue multiple of 0.5x-0.7x",
+            "Strong cash balance of £103k"
+          ],
+          "negotiation_gap_assessment": "Significant. The seller is likely to anchor on the reported EBITDA of £135k, whereas the buyer must normalize this to ~£94k to account for the mandatory Registered Manager replacement. The seller may also expect a full 'pound-for-pound' value for the cash, while the buyer will point to the debtor spike as a reason to hold back funds."
+        },
+        "key_findings": [
+          "The business is fundamentally profitable but highly dependent on a management team that is exiting.",
+          "Adjusted EBITDA (Base Case) of £93,976 accounts for the market-rate replacement of the Registered Manager and Director.",
+          "The company is effectively debt-free with a strong cash position of £103,302 (FY2026).",
+          "The 413% increase in trade debtors in FY2026 is a major liquidity and valuation risk.",
+          "Asset-based valuation provides a solid floor of ~£107k, well below the earnings-based value."
+        ],
+        "red_flags": [
+          "Management Vacuum: Simultaneous exit of Business Director and Registered Manager.",
+          "Working Capital: Debtor days increased from 9 to 44 in a single year.",
+          "Capex Cliff: Motor vehicles are fully depreciated and IT assets are aging."
+        ],
+        "narrative": "Compassion Home Care Limited is a stable, micro-cap domiciliary care provider. The valuation is driven by a normalized EBITDA of £93,976, which reflects the necessary costs to replace the exiting management team with a CQC-compliant Registered Manager. While the business has grown its operating margins to 16.2% and maintains a healthy cash balance of £103,302 (as of 2026-02-28), it faces significant headwinds. The primary valuation discount stems from the 'Key Person' risk and a concerning spike in trade debtors from £19k to £98k in the latest fiscal year. A multiple of 2.0x is applied to reflect these risks against the backdrop of a fragmented and labor-intensive sector. The equity value bridge includes the FY2026 cash balance and a prudent bad debt provision of £9,802 as recommended by the Risk Expert. The resulting fair value range of £215k to £365k is likely to meet resistance from a seller anchoring on unadjusted figures, but it represents a sustainable entry point for a buyer who must immediately reinvest in management and fleet replacement."
+      },
+      "deal_structure": {
+        "expert": "deal_structure",
+        "company_name": "[AUDIT-196] Compassion Home Care Limited",
+        "analysis_date": "2026-07-30",
+        "score": 55,
+        "confidence": "high",
+        "structures": [
+          {
+            "name": "Conservative Approach",
+            "strategy": "Minimize risk by tying a significant portion of the value to the successful transition of regulatory management and the recovery of the unexplained debtor spike.",
+            "risk_to_buyer": "low",
+            "suitable_when": "The buyer is highly concerned about the 'Management Vacuum' and the potential for the £98k debtor balance to be uncollectable.",
+            "consideration": {
+              "total_headline": 215000,
+              "upfront_cash": 86000,
+              "upfront_percent": 40,
+              "deferred": 64500,
+              "earnout_maximum": 64500,
+              "earnout_metric": "CQC Registered Manager Appointment & Debtor Collection",
+              "earnout_period_months": 24,
+              "earnout_rationale": "Addresses Trigger 3 (Key Person Dependency) and Trigger 4 (Unverified Add-backs/Debtor Spike). The earnout is split: 50% upon the successful CQC registration of a new RM and 50% upon the collection of at least 90% of the FY2026 trade debtor balance.",
+              "retention_escrow": 30000
+            },
+            "key_conditions": [
+              "Successful recruitment and CQC registration of a new Registered Manager prior to second payment tranche",
+              "Specific indemnity for any trade debtor write-offs exceeding £9,802",
+              "6-month handover period for the outgoing Business Director"
+            ],
+            "notes": "Seller must provide a 6-month consultancy handover. Non-compete for 3 years within a 20-mile radius. Specific indemnity required for the £98k debtor spike. Warranty cap at 50% of consideration with a 24-month period. Completion accounts mechanism with a working capital peg based on the 3-year average (excluding the FY2026 spike). Risk is low for the buyer due to high deferment and specific protections against the management vacuum."
+          },
+          {
+            "name": "Balanced Approach",
+            "strategy": "A fair split that provides the seller with a reasonable upfront sum while protecting the buyer against the immediate operational risks identified in the QoE report.",
+            "risk_to_buyer": "medium",
+            "suitable_when": "The buyer has moderate confidence that a replacement manager can be found but wants to ensure the EBITDA of £94k is sustainable.",
+            "consideration": {
+              "total_headline": 281000,
+              "upfront_cash": 168600,
+              "upfront_percent": 60,
+              "deferred": 56200,
+              "earnout_maximum": 56200,
+              "earnout_metric": "Adjusted EBITDA Stability",
+              "earnout_period_months": 12,
+              "earnout_rationale": "Addresses Trigger 4 (Uncertainty in normalized earnings). The earnout verifies that the business can maintain a £94k EBITDA floor after accounting for the new Registered Manager's salary and the required capex for fleet replacement.",
+              "retention_escrow": 15000
+            },
+            "key_conditions": [
+              "EBITDA floor of £90,000 required for full earnout payment",
+              "Retention released only after 12 months of clean CQC compliance",
+              "Seller to assist in the recruitment process of the new Registered Manager"
+            ],
+            "notes": "4-month handover period. Standard warranties with a 100% cap on upfront cash. 18-month warranty period. Locked-box mechanism could be used if the debtor spike is clarified during due diligence. Risk is medium because the buyer takes on the recruitment risk but mitigates the financial risk through the EBITDA-linked earnout."
+          },
+          {
+            "name": "Competitive Approach",
+            "strategy": "Maximizing the upfront offer to bridge the gap with seller expectations, while using a targeted earnout to manage the most critical regulatory risk.",
+            "risk_to_buyer": "high",
+            "suitable_when": "A competitive bidding environment where the buyer is confident in their ability to manage the CQC transition and views the debtor spike as a timing issue.",
+            "consideration": {
+              "total_headline": 365000,
+              "upfront_cash": 273750,
+              "upfront_percent": 75,
+              "deferred": 36500,
+              "earnout_maximum": 54750,
+              "earnout_metric": "CQC Registration & Revenue Retention",
+              "earnout_period_months": 12,
+              "earnout_rationale": "Addresses Trigger 3 (Key Person Dependency). Given the high upfront, the earnout is focused solely on the 'deal-breaker' risk: maintaining the CQC registration under a new manager.",
+              "retention_escrow": 10000
+            },
+            "key_conditions": [
+              "Earnout triggered upon successful CQC 'Good' rating maintenance during the first inspection post-sale",
+              "Minimal deferred period to appeal to the exiting seller",
+              "Full pound-for-pound credit for cash on the balance sheet"
+            ],
+            "notes": "3-month handover. Lighter warranty package with a 12-month period. Completion accounts mechanism to ensure the £103k cash is verified. Risk is high because the buyer is paying a premium (high end of valuation) and assuming significant management transition risk with less deferred protection."
+          }
+        ],
+        "recommended_structure": "Balanced Approach",
+        "recommendation_rationale": "The Balanced Approach is recommended because it directly addresses the 'Management Vacuum' and 'Debtor Spike' without being so aggressive that it alienates a seller who is already anchoring on a much higher valuation. By using an EBITDA-linked earnout, the buyer ensures they only pay the full £281k if the business proves it can sustain its margins after the mandatory replacement of the Registered Manager.",
+        "negotiation_priorities": [
+          "Clarification and audit of the £98,020 trade debtor balance",
+          "Agreement on the 'Market Rate' for the replacement Registered Manager",
+          "Securing a commitment from the seller to lead the recruitment of their successor",
+          "Establishing a clear working capital peg that excludes the abnormal FY2026 debtor growth"
+        ],
+        "deal_breaker_terms": [
+          "Failure to identify a viable Registered Manager candidate during due diligence",
+          "Discovery that the debtor spike relates to a disputed or cancelled Local Authority contract",
+          "Any 'Inadequate' CQC rating prior to completion"
+        ],
+        "key_findings": [
+          "The business is fundamentally profitable but faces a 100% management turnover at completion.",
+          "The 413% debtor spike is the primary financial risk and must be indemnified.",
+          "The 'Capex Cliff' (fully depreciated vehicles) requires a deduction from the headline price or a working capital adjustment.",
+          "The seller's expectations (£400k+) are significantly higher than the adjusted earnings support, requiring a structured bridge."
+        ],
+        "narrative": "Compassion Home Care Limited is a classic 'owner-operator' risk profile. While the financials show a debt-free, cash-rich company, the simultaneous exit of the Director and the Registered Manager creates a regulatory void that could stop the business overnight. Furthermore, the sudden lock-up of £98k in debtors suggests operational slippage. A successful deal must bridge the gap between the seller's unadjusted EBITDA expectations and the buyer's need to reinvest in management and assets. The Balanced Approach provides a path to the mid-point valuation while ensuring the buyer doesn't overpay for a business that might lose its CQC license or fail to collect its revenue."
+      },
+      "financial": {
+        "expert": "financial",
+        "company_name": "[AUDIT-196] Compassion Home Care Limited",
+        "analysis_date": "2026-07-30",
+        "score": 72,
+        "confidence": "high",
+        "yearly_metrics": {
+          "2023": {
+            "revenue": 769931,
+            "revenue_yoy_growth_percent": null,
+            "cost_of_sales": 500774,
+            "gross_profit": 269157,
+            "gross_margin_percent": 34.96,
+            "administrative_expenses": 176070,
+            "operating_profit": 94104,
+            "operating_margin_percent": 12.22,
+            "depreciation_amortisation": 5775,
+            "ebitda": 99879,
+            "interest_payable": 840,
+            "interest_coverage_ratio": 112.03,
+            "profit_before_tax": 93264,
+            "corporation_tax": 17442,
+            "effective_tax_rate_percent": 18.7,
+            "net_profit": 75822,
+            "net_margin_percent": 9.85
+          },
+          "2024": {
+            "revenue": 836440,
+            "revenue_yoy_growth_percent": 8.64,
+            "cost_of_sales": 554581,
+            "gross_profit": 281859,
+            "gross_margin_percent": 33.7,
+            "administrative_expenses": 151105,
+            "operating_profit": 130754,
+            "operating_margin_percent": 15.63,
+            "depreciation_amortisation": 4377,
+            "ebitda": 135131,
+            "interest_payable": 641,
+            "interest_coverage_ratio": 203.98,
+            "profit_before_tax": 130228,
+            "corporation_tax": 30475,
+            "effective_tax_rate_percent": 23.4,
+            "net_profit": 99753,
+            "net_margin_percent": 11.93
+          },
+          "2025": {
+            "revenue": 778150,
+            "revenue_yoy_growth_percent": -6.97,
+            "cost_of_sales": 533540,
+            "gross_profit": 244610,
+            "gross_margin_percent": 31.43,
+            "administrative_expenses": 126231,
+            "operating_profit": 118379,
+            "operating_margin_percent": 15.21,
+            "depreciation_amortisation": 3047,
+            "ebitda": 121426,
+            "interest_payable": 446,
+            "interest_coverage_ratio": 265.42,
+            "profit_before_tax": 117818,
+            "corporation_tax": 27641,
+            "effective_tax_rate_percent": 23.46,
+            "net_profit": 90177,
+            "net_margin_percent": 11.59
+          },
+          "2026": {
+            "revenue": 818060,
+            "revenue_yoy_growth_percent": 5.13,
+            "cost_of_sales": 545454,
+            "gross_profit": 272606,
+            "gross_margin_percent": 33.32,
+            "administrative_expenses": 140179,
+            "operating_profit": 132427,
+            "operating_margin_percent": 16.19,
+            "depreciation_amortisation": 2649,
+            "ebitda": 135076,
+            "interest_payable": 242,
+            "interest_coverage_ratio": 547.22,
+            "profit_before_tax": 132530,
+            "corporation_tax": 31425,
+            "effective_tax_rate_percent": 23.71,
+            "net_profit": 101105,
+            "net_margin_percent": 12.36
+          }
+        },
+        "cagr": {
+          "revenue_cagr_percent": 2.04,
+          "gross_profit_cagr_percent": 0.43,
+          "operating_profit_cagr_percent": 12.06,
+          "period_years": 3
+        },
+        "cost_structure": {
+          "cost_of_sales_percent_revenue": 66.68,
+          "overheads_percent_revenue": 17.14,
+          "staff_costs_percent_revenue": 0.8,
+          "director_costs_percent_revenue": 9.96,
+          "top_5_overheads": [
+            {
+              "category": "Directors Salaries",
+              "value": 62470,
+              "percent_of_overheads": 44.56
+            },
+            {
+              "category": "Rent & Rates",
+              "value": 11098,
+              "percent_of_overheads": 7.92
+            },
+            {
+              "category": "Directors Pension",
+              "value": 11232,
+              "percent_of_overheads": 8.01
+            },
+            {
+              "category": "Professional Fees",
+              "value": 8710,
+              "percent_of_overheads": 6.21
+            },
+            {
+              "category": "Employers NI",
+              "value": 7811,
+              "percent_of_overheads": 5.57
+            }
+          ],
+          "cost_base_classification": "predominantly_variable"
+        },
+        "earnings_quality": {
+          "net_profit_tracks_operating_profit": true,
+          "exceptional_items_identified": [],
+          "tax_rate_consistent": true,
+          "ebitda_latest": 135076,
+          "ebitda_trend": "growing",
+          "limitations": [
+            "Staff costs field in 2026 appears to only reflect administrative staff wages, with direct labour captured in Cost of Sales."
+          ]
+        },
+        "debt_service": {
+          "latest_interest_coverage": 547.22,
+          "interest_coverage_trend": "improving",
+          "additional_debt_capacity_assessment": "Excellent. The company has minimal interest-bearing debt and very high coverage ratios, suggesting significant capacity for acquisition financing."
+        },
+        "key_findings": [
+          "Revenue has remained relatively stable over the four-year period, with a modest CAGR of 2.04%, though 2025 saw a temporary dip.",
+          "Operating margins have shown consistent improvement, rising from 12.22% in 2023 to 16.19% in 2026, indicating effective overhead management.",
+          "The cost structure is heavily weighted towards direct labour (approx. 58% of revenue), which is typical for the care sector.",
+          "Directors' remuneration (salaries + pensions) represents a significant portion of overheads, totalling £73,702 in 2026.",
+          "Cash position is strong, with £103,302 held at the 2026 year-end, providing a solid liquidity buffer.",
+          "The business operates with a high degree of variable costs, allowing for flexibility during periods of fluctuating demand.",
+          "Interest coverage is exceptionally high, as the company has successfully deleveraged its bank loans over the period."
+        ],
+        "red_flags": [
+          "Revenue volatility: The 7% decline in 2025 suggests potential sensitivity to contract losses or staffing shortages.",
+          "Management transition risk: The Business Director and Registered Manager are not remaining post-sale, which may impact operational continuity."
+        ],
+        "narrative": "Compassion Home Care Limited demonstrates a resilient financial profile characterized by stable revenue and expanding profitability. Over the four-year analysis period (2023-2026), the company has maintained a consistent gross margin in the 31-35% range, while successfully driving operating margin growth from 12.2% to 16.2%. This margin expansion is primarily the result of disciplined administrative cost control; overheads as a percentage of revenue have decreased despite inflationary pressures. \n\nThe earnings quality is high, with EBITDA and Net Profit closely tracking Operating Profit. There is no evidence of reliance on one-off gains or exceptional items to bolster the bottom line. The balance sheet has strengthened significantly, with bank debt being systematically repaid and the cash balance increasing to over £100k by February 2026. The current ratio is healthy, and the company is effectively debt-free on a net basis.\n\nFrom an acquisition perspective, the financial data suggests a well-managed, 'lean' operation. The primary risk is not financial but operational, specifically the departure of key management. However, the financial headroom and strong interest coverage provide a buyer with significant capacity to restructure management or service acquisition debt. The reliance on zero-hours contracts (22 of 24 staff) provides high operational flexibility but requires careful monitoring of recruitment and retention costs in a competitive labour market. Overall, the company presents a stable, cash-generative platform with a proven ability to maintain margins."
+      }
+    },
+    "financialDataSnapshot": {
+      "balanceSheet": {
+        "id": 4873,
+        "financialPeriodId": 7960,
+        "targetCompanyId": 1878,
+        "intangibleAssets": null,
+        "tangibleFixedAssets": "6383",
+        "freeholdProperty": null,
+        "leaseholdProperty": null,
+        "plantMachinery": null,
+        "fixturesFittings": null,
+        "motorVehicles": null,
+        "computerEquipment": null,
+        "stockInventory": null,
+        "tradeDebtors": "98020",
+        "prepayments": null,
+        "amountsOwedByDirectors": null,
+        "amountsOwedByConnectedCompanies": null,
+        "directorsCurrentAccount": null,
+        "otherDebtors": null,
+        "cashAtBank": "103302",
+        "totalCurrentAssets": "201322",
+        "tradeCreditors": null,
+        "taxationSocialSecurity": null,
+        "vatPayable": null,
+        "corporationTaxDue": null,
+        "bankLoansOverdraftCurrent": null,
+        "hirePurchaseCurrent": null,
+        "accruals": null,
+        "amountsOwedToDirectors": null,
+        "otherCreditors": null,
+        "totalCurrentLiabilities": "89327",
+        "bankLoansLongTerm": null,
+        "hirePurchaseLongTerm": null,
+        "deferredTaxation": "1596",
+        "otherLongTermDebt": null,
+        "totalLongTermLiabilities": "1596",
+        "shareCapital": "100",
+        "retainedEarnings": "116682",
+        "totalEquity": "116782",
+        "debtorsList": null,
+        "creditorsList": null,
+        "fixedAssetsDetail": null,
+        "sourceDocumentId": 5841,
+        "createdAt": "2026-07-30T01:11:02.056Z",
+        "updatedAt": "2026-07-30T01:12:14.098Z",
+        "fiscalYear": "2026",
+        "periodEnd": "2026-02-28",
+        "sourceTier": "statutory",
+        "_label": "CURRENT POSITION"
+      },
+      "fixedAssets": null
+    },
+    "notes": null,
+    "createdAt": "2026-07-30T01:15:25.785Z",
+    "updatedAt": "2026-07-30T01:15:25.785Z",
+    "adjustments": [
+      {
+        "id": 2034,
+        "dealModelId": 487,
+        "sourceExpertResultId": 804,
+        "adjustmentType": "add_back",
+        "category": "owner_salary_excess",
+        "description": "Excess Director Remuneration",
+        "amount": "16202",
+        "amountsByYear": null,
+        "sourceExpert": "qoe",
+        "reasoning": "The sole Business Director's total compensation (Salary £62,470 + Pension £11,232 = £73,702) exceeds the market mid-point of £57,500 for a company of this revenue size.",
+        "confidence": "high",
+        "defensibilityScore": 8,
+        "caseForInclusion": "The buyer should not pay a multiple on compensation that exceeds the market rate for a replacement manager.",
+        "caseForExclusion": "The seller may argue the director's dual role as Business Director and Registered Manager justifies a premium over standard benchmarks.",
+        "status": "suggested",
+        "isAccepted": false,
+        "isManual": false,
+        "sortOrder": 0,
+        "createdAt": "2026-07-30T01:15:25.879Z",
+        "updatedAt": "2026-07-30T01:15:25.879Z"
+      },
+      {
+        "id": 2035,
+        "dealModelId": 487,
+        "sourceExpertResultId": 804,
+        "adjustmentType": "deduction",
+        "category": "missing_management",
+        "description": "Replacement Registered Manager Cost",
+        "amount": "42500",
+        "amountsByYear": null,
+        "sourceExpert": "qoe",
+        "reasoning": "Both the Director and Registered Manager are exiting; a new CQC Registered Manager is a statutory requirement and represents a new fixed cost if not replaced by the owner.",
+        "confidence": "high",
+        "defensibilityScore": 9,
+        "caseForInclusion": "This is a mandatory regulatory role that must be filled to continue operations post-sale.",
+        "caseForExclusion": "The seller might argue that the replacement manager's salary is already partially covered by the 'market rate' adjustment of the outgoing director.",
+        "status": "suggested",
+        "isAccepted": false,
+        "isManual": false,
+        "sortOrder": 1,
+        "createdAt": "2026-07-30T01:15:25.895Z",
+        "updatedAt": "2026-07-30T01:15:25.895Z"
+      },
+      {
+        "id": 2036,
+        "dealModelId": 487,
+        "sourceExpertResultId": 804,
+        "adjustmentType": "deduction",
+        "category": "deferred_maintenance",
+        "description": "Deferred IT and Vehicle Maintenance",
+        "amount": "5000",
+        "amountsByYear": null,
+        "sourceExpert": "qoe",
+        "reasoning": "Tangible assets have depleted from £16k to £6k in 3 years, with motor vehicles at £0 NBV, indicating a lack of sustainable reinvestment in the fleet and IT.",
+        "confidence": "medium",
+        "defensibilityScore": 6,
+        "caseForInclusion": "The current EBITDA is inflated by neglecting the necessary lifecycle replacement costs of operational assets.",
+        "caseForExclusion": "The seller may claim the business model has shifted to be more asset-light, reducing the need for company-owned vehicles.",
+        "status": "suggested",
+        "isAccepted": false,
+        "isManual": false,
+        "sortOrder": 2,
+        "createdAt": "2026-07-30T01:15:25.899Z",
+        "updatedAt": "2026-07-30T01:15:25.899Z"
+      },
+      {
+        "id": 2037,
+        "dealModelId": 487,
+        "sourceExpertResultId": 804,
+        "adjustmentType": "deduction",
+        "category": "bad_debt_provision",
+        "description": "Bad Debt Provision (Debtor Spike)",
+        "amount": "9802",
+        "amountsByYear": {
+          "2023": 0,
+          "2024": 0,
+          "2025": 0,
+          "2026": 9802
+        },
+        "sourceExpert": "qoe",
+        "reasoning": "Trade debtors spiked from £19,102 in 2025 to £98,020 in 2026 without a corresponding revenue jump; a 10% provision is prudent given the collection delay.",
+        "confidence": "medium",
+        "defensibilityScore": 7,
+        "caseForInclusion": "The sudden increase in debtor days from 9 to 44 suggests potential recoverability issues or billing disputes.",
+        "caseForExclusion": "The seller may argue the balance is fully recoverable from a reliable local authority and is merely a timing issue.",
+        "status": "suggested",
+        "isAccepted": false,
+        "isManual": false,
+        "sortOrder": 3,
+        "createdAt": "2026-07-30T01:15:25.903Z",
+        "updatedAt": "2026-07-30T01:15:25.903Z"
+      }
+    ],
+    "fundingLines": [
+      {
+        "id": 1370,
+        "dealModelId": 487,
+        "fundingType": "receivables_finance",
+        "label": "Receivables Finance (Invoice Factoring)",
+        "assetBaseValue": "98020",
+        "ltvPercent": "80",
+        "availableAmount": "78416",
+        "amountUsed": "0",
+        "interestRate": "4.5",
+        "arrangementFeePercent": null,
+        "termMonths": 0,
+        "monthlyRepayment": null,
+        "isDebt": true,
+        "repaymentStructure": "amortizing",
+        "isActive": false,
+        "notes": null,
+        "sortOrder": 0,
+        "createdAt": "2026-07-30T01:15:25.908Z",
+        "updatedAt": "2026-07-30T01:15:25.908Z"
+      },
+      {
+        "id": 1371,
+        "dealModelId": 487,
+        "fundingType": "cash_equity",
+        "label": "Cash Equity (Cash to Introduce)",
+        "assetBaseValue": null,
+        "ltvPercent": null,
+        "availableAmount": null,
+        "amountUsed": "0",
+        "interestRate": null,
+        "arrangementFeePercent": null,
+        "termMonths": null,
+        "monthlyRepayment": null,
+        "isDebt": false,
+        "repaymentStructure": "amortizing",
+        "isActive": true,
+        "notes": null,
+        "sortOrder": 1,
+        "createdAt": "2026-07-30T01:15:25.914Z",
+        "updatedAt": "2026-07-30T01:15:25.914Z"
+      }
+    ],
+    "sellerPayments": [],
+    "contingentConsideration": []
+  },
+  "calculations": {
+    "adjustedEbitdaByYear": {
+      "2023": 99879,
+      "2024": 135131,
+      "2025": 121426,
+      "2026": 135076
+    },
+    "averageAdjustedEbitda": 130544.33333333333,
+    "enterpriseValue": 261088.66666666666,
+    "offerPrice": 192982.66666666666,
+    "impliedMultiple": null,
+    "feeLegalDd": 25000,
+    "feeAccountingDd": 15000,
+    "feeLoanArrangement": 0,
+    "feeDealMaker": 0,
+    "customFeeAmounts": [],
+    "totalFees": 40000,
+    "totalFundingRequired": 232982.66666666666,
+    "fundingLines": [
+      {
+        "availableAmount": 0,
+        "monthlyRepayment": 0,
+        "annualRepayment": 0,
+        "arrangementFee": 0
+      },
+      {
+        "availableAmount": 0,
+        "monthlyRepayment": 0,
+        "annualRepayment": 0,
+        "arrangementFee": 0
+      }
+    ],
+    "totalFunded": 0,
+    "fundingGap": 192982.67,
+    "totalAnnualDebtService": 0,
+    "sellerAnnualDebtService": 0,
+    "earnoutAnnualDebtService": 0,
+    "revolvingInterestAnnual": 0,
+    "receivablesInterestAnnual": 0,
+    "valuationEbitda": 130544.33333333333,
+    "paymentCoverRatio": null,
+    "paymentCoverRating": "no_debt"
+  }
+}

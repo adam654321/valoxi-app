@@ -1,0 +1,175 @@
+{
+  "document": "company_accounts",
+  "source": "statutory_accounts",
+  "profit_and_loss": {
+    "document": "profit_and_loss",
+    "source": "management",
+    "years_covered": [
+      2025
+    ],
+    "period_ends": {
+      "2025": "2025-02-28"
+    },
+    "months_covered": {
+      "2025": 12
+    },
+    "report_date": "2025-04-08",
+    "years": {
+      "2025": {
+        "year": 2025,
+        "profit_and_loss": {
+          "revenue": 441072.5,
+          "cost_of_sales": 166074,
+          "gross_profit": 274998.5,
+          "administrative_expenses": 41676.33,
+          "depreciation_amortisation": null,
+          "other_operating_income": null,
+          "operating_profit": 233322.17,
+          "interest_receivable": 805.49,
+          "interest_payable": null,
+          "profit_before_tax": 234147.66,
+          "corporation_tax": null,
+          "net_profit": 234147.66
+        },
+        "revenue_breakdown": {
+          "by_product": {
+            "Sales": 441072.5
+          },
+          "by_segment": {}
+        },
+        "cost_of_sales_breakdown": {
+          "direct_materials": null,
+          "direct_labour": null,
+          "subcontractor_costs": 163671,
+          "other_direct_costs": 2403
+        },
+        "overheads_breakdown": {
+          "staff_wages_salaries": null,
+          "directors_salaries": null,
+          "directors_pension": 24000,
+          "employers_national_insurance": null,
+          "staff_pension_contributions": null,
+          "staff_training_recruitment": null,
+          "use_of_home_as_office": null,
+          "rent_rates": null,
+          "utilities": null,
+          "insurance": null,
+          "accountancy_bookkeeping": 1623,
+          "professional_fees": 4682.55,
+          "software_subscriptions": 1258.63,
+          "computer_costs": 2259.55,
+          "it_support_hosting": 60,
+          "telecommunications": 1223.15,
+          "printing_stationery": 5.35,
+          "postage_courier": null,
+          "subscriptions_memberships": null,
+          "bank_charges": null,
+          "advertising_marketing": 2702.5,
+          "travel_subsistence": 1001.19,
+          "motor_expenses": null,
+          "repairs_maintenance": 702.54,
+          "depreciation": null,
+          "amortisation": null,
+          "other_overheads": 2157.87
+        },
+        "total_staff_costs": 0,
+        "total_directors_remuneration": 24000,
+        "dividends_paid": 85000,
+        "exceptional_items": [],
+        "financial_ratios": {
+          "gross_margin_percent": 62.35,
+          "net_margin_percent": 53.09,
+          "interest_coverage_ratio": null
+        }
+      }
+    },
+    "summary_insights": [
+      "The company achieved a strong gross margin of 62.4%, driven by a lean cost of sales structure primarily composed of subcontractor costs.",
+      "Net profitability is exceptionally high at 53.1%, reflecting very low administrative overheads relative to total revenue.",
+      "Directors' remuneration is currently focused on pension contributions (£24,000) rather than high salaries, which may be tax-efficient for the owners.",
+      "The business maintains high liquidity with £167,600 in cash at bank, providing a significant buffer for operational needs.",
+      "A dividend of £85,000 was paid during the period, representing a 36.3% payout ratio of the net profit for the year.",
+      "Subcontractor costs represent 98.5% of the total cost of sales, indicating a highly outsourced operational model with low direct asset intensity."
+    ]
+  },
+  "balance_sheet": {
+    "document": "balance_sheet",
+    "source": "management",
+    "years_covered": [
+      2025
+    ],
+    "period_ends": {
+      "2025": "2025-02-28"
+    },
+    "months_covered": {
+      "2025": 12
+    },
+    "report_date": "2025-04-08",
+    "years": {
+      "2025": {
+        "year": 2025,
+        "balance_sheet": {
+          "fixed_assets": {
+            "intangible_assets": null,
+            "tangible_assets": 4658.06,
+            "freehold_property": null,
+            "leasehold_property": null,
+            "plant_machinery": null,
+            "fixtures_fittings": null,
+            "motor_vehicles": null,
+            "computer_equipment": 4658.06
+          },
+          "current_assets": {
+            "stock": null,
+            "trade_debtors": 11610,
+            "prepayments": 2030,
+            "amounts_owed_by_directors": null,
+            "amounts_owed_by_connected_companies": null,
+            "directors_current_account": null,
+            "other_debtors": null,
+            "cash_at_bank": 167600.6,
+            "total": 181240.6
+          },
+          "current_liabilities": {
+            "trade_creditors": 2030,
+            "taxation_social_security": -1567.67,
+            "vat_payable": 13460.64,
+            "corporation_tax": null,
+            "bank_loans_current": null,
+            "hire_purchase_current": null,
+            "accruals": null,
+            "amounts_owed_to_directors": -180194.29,
+            "other_creditors": -11949.85,
+            "total": -180251.17
+          },
+          "long_term_liabilities": {
+            "bank_loans": null,
+            "hire_purchase_long_term": null,
+            "deferred_taxation": null,
+            "other_debt": null,
+            "total": null
+          },
+          "equity": {
+            "share_capital": 2,
+            "retained_earnings": 214970.17,
+            "total": 364119.83
+          }
+        },
+        "financial_ratios": {
+          "current_ratio": -1.005489174444444,
+          "quick_ratio": -0.994227103333333,
+          "net_assets_growth_percent": null,
+          "gearing_ratio_percent": null
+        }
+      }
+    },
+    "summary_insights": [
+      "The company maintains a very strong cash position of £167,600, representing the bulk of the current asset base.",
+      "Net assets stand at £364,119, largely driven by retained earnings of £214,970 and current year profit of £234,147.",
+      "The current liability section is unusual due to a significant negative balance in the Director's Current Account (£180,194), suggesting the company owes substantial funds to the director or has reclassified balances.",
+      "Liquidity ratios are skewed by the negative liability figures; however, the absolute cash-to-trade-creditor coverage is exceptionally high.",
+      "The asset base is light on fixed assets (£4,658), indicating a service-based or asset-light business model.",
+      "A dividend of £85,000 has been recognised, which is well-covered by the period's net income of £234,147."
+    ]
+  }
+}

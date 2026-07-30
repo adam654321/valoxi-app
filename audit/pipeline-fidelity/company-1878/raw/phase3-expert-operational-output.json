@@ -1,0 +1,149 @@
+{
+  "expert": "operational",
+  "company_name": "[AUDIT-196] Compassion Home Care Limited",
+  "analysis_date": "2026-07-30",
+  "score": 58,
+  "confidence": "medium",
+  "working_capital": {
+    "yearly_metrics": {
+      "2023": {
+        "debtor_days": 3.89,
+        "creditor_days": 0,
+        "stock_days": 0,
+        "cash_conversion_cycle_days": 3.89,
+        "net_working_capital": 98959,
+        "working_capital_percent_revenue": 12.85
+      },
+      "2024": {
+        "debtor_days": 10.2,
+        "creditor_days": 0.02,
+        "stock_days": 0,
+        "cash_conversion_cycle_days": 10.18,
+        "net_working_capital": 89706,
+        "working_capital_percent_revenue": 10.72
+      },
+      "2025": {
+        "debtor_days": 8.96,
+        "creditor_days": 0.3,
+        "stock_days": 0,
+        "cash_conversion_cycle_days": 8.66,
+        "net_working_capital": 78658,
+        "working_capital_percent_revenue": 10.11
+      },
+      "2026": {
+        "debtor_days": 43.73,
+        "creditor_days": 0,
+        "stock_days": 0,
+        "cash_conversion_cycle_days": 43.73,
+        "net_working_capital": 111995,
+        "working_capital_percent_revenue": 13.69
+      }
+    },
+    "trend": "deteriorating",
+    "working_capital_intensity": "moderate",
+    "observations": [
+      "Debtor days spiked significantly in FY2026 to 43.7 days from a historical average of ~8 days, suggesting a major collection delay or change in billing terms.",
+      "Trade creditors are consistently negligible, indicating the business pays suppliers almost immediately or has very few credit-based overheads.",
+      "The business is a net generator of cash but the FY2026 debtor spike has locked up approximately £98k in liquidity."
+    ]
+  },
+  "capex": {
+    "total_gross_asset_value": null,
+    "total_nbv": 6383,
+    "asset_freshness_percent": null,
+    "recent_additions_24m_value": 0,
+    "recent_additions_percent": 0,
+    "annual_depreciation_charge": 2649,
+    "estimated_maintenance_capex": 2649,
+    "capex_cliff_risk": true,
+    "assets_requiring_replacement": [
+      "Computer Equipment",
+      "Motor Vehicles"
+    ],
+    "category_breakdown": {
+      "property": {
+        "cost": 0,
+        "nbv": 0
+      },
+      "plant_machinery": {
+        "cost": null,
+        "nbv": 0
+      },
+      "vehicles": {
+        "cost": null,
+        "nbv": 0
+      },
+      "it_equipment": {
+        "cost": null,
+        "nbv": 6383
+      },
+      "other": {
+        "cost": null,
+        "nbv": 0
+      }
+    },
+    "observations": [
+      "Tangible fixed assets have declined from £16,161 in 2023 to £6,383 in 2026, indicating a lack of recent investment.",
+      "Motor vehicles NBV reached zero in FY2025, suggesting the fleet is fully depreciated and likely requires replacement.",
+      "The business operates an asset-light model typical of home care, but the aging IT and vehicle base presents a 'capex cliff' where multiple replacements may be needed simultaneously."
+    ]
+  },
+  "workforce": {
+    "headcount": 24,
+    "total_payroll": 553507,
+    "revenue_per_employee": 34085,
+    "payroll_percent_revenue": 66.17,
+    "average_salary_all": 23062,
+    "average_salary_excl_directors": 20676,
+    "director_remuneration_total": 77949,
+    "director_percent_of_payroll": 14.08,
+    "ft_pt_split": {
+      "full_time": 2,
+      "part_time": 22
+    },
+    "longest_tenured_years": 11.8,
+    "newest_hire_months_ago": 5,
+    "observations": [
+      "High reliance on part-time/zero-hours staff (92% of workforce), providing high operational flexibility but potential retention risks.",
+      "Revenue per employee of £34k is relatively low, reflecting the high proportion of part-time carers.",
+      "Payroll as a % of revenue is high (66%), which is standard for the care sector but leaves thin margins for overhead increases."
+    ]
+  },
+  "owner_dependency": {
+    "risk_level": "high",
+    "director_count": 1,
+    "highest_individual_salary": 62470,
+    "highest_individual_percent_of_payroll": 11.2,
+    "critical_function_concentration": "The sole Business Director and the Registered Manager are both noted as not remaining post-sale.",
+    "observations": [
+      "Critical management transition risk: the departure of both the Director and Registered Manager creates a leadership vacuum.",
+      "The Registered Manager is a statutory requirement for CQC compliance; failure to replace this role immediately post-sale would halt operations."
+    ]
+  },
+  "scalability": {
+    "rating": "medium",
+    "headcount_for_25pct_growth": 6,
+    "capex_needed_for_growth": "Minimal for office, but likely requires 2-3 new vehicles if live-in/mobile care expands.",
+    "working_capital_supports_growth": false,
+    "bottlenecks": [
+      "Recruitment of qualified carers in a competitive market",
+      "CQC Registered Manager replacement",
+      "Deteriorating debtor collection cycle"
+    ],
+    "observations": [
+      "Scalability is hampered by the current 43-day debtor cycle; 25% growth would require an additional £25k-£30k in working capital buffer.",
+      "The high use of zero-hours contracts allows for rapid scaling of hours without fixed cost increases."
+    ]
+  },
+  "key_findings": [
+    "The business maintains a very lean asset base but has neglected vehicle and IT replacement.",
+    "Operational flexibility is high due to the part-time nature of the workforce.",
+    "Profitability is stable, but the cash conversion cycle has worsened significantly in the latest fiscal year."
+  ],
+  "red_flags": [
+    "Management Vacuum: Both the Director and Registered Manager are exiting, posing a threat to CQC registration.",
+    "Debtor Spike: Trade debtors increased from £19k to £98k in one year without a corresponding revenue jump.",
+    "Asset Depletion: Motor vehicles are fully depreciated (NBV £0), indicating imminent replacement costs."
+  ],
+  "narrative": "Compassion Home Care Limited operates a classic asset-light social care model with high workforce flexibility. While the business is profitable, it faces a significant operational hurdle regarding management continuity, as the key regulatory and leadership figures are not staying post-acquisition. Furthermore, the sudden deterioration in debtor days in FY2026 suggests either a breakdown in administrative processes or issues with a major local authority contract. Prospective buyers should budget for immediate capex to refresh the vehicle/IT fleet and prioritize the recruitment of a Registered Manager."
+}

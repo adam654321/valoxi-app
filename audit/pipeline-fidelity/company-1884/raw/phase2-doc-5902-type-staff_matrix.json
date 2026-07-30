@@ -1,0 +1,127 @@
+{
+  "document": "staff_matrix",
+  "report_date": "2026-07-30",
+  "summary": {
+    "total_headcount": 92,
+    "total_staff_costs": null,
+    "total_gross_salaries": 2860065,
+    "total_employer_ni": null,
+    "total_employer_pension": null,
+    "director_count": 3,
+    "director_remuneration": null,
+    "working_director_count": 3,
+    "non_working_director_count": 0,
+    "employee_count": 89,
+    "employee_costs": null
+  },
+  "staff": [
+    {
+      "name": "Anonymised",
+      "position": "Chief Executive Officer (CEO / MD, Div 1)",
+      "gross_salary": null,
+      "employer_ni": null,
+      "employer_pension": null,
+      "total_cost": null,
+      "is_director": true,
+      "is_owner": null,
+      "employment_type": "Full-Time",
+      "start_date": null
+    },
+    {
+      "name": "Anonymised",
+      "position": "Managing Director, Division 2 (Trade)",
+      "gross_salary": null,
+      "employer_ni": null,
+      "employer_pension": null,
+      "total_cost": null,
+      "is_director": true,
+      "is_owner": null,
+      "employment_type": "Full-Time",
+      "start_date": null
+    },
+    {
+      "name": "Anonymised",
+      "position": "Managing Director, Division 3 (D2C)",
+      "gross_salary": null,
+      "employer_ni": null,
+      "employer_pension": null,
+      "total_cost": null,
+      "is_director": true,
+      "is_owner": null,
+      "employment_type": "Full-Time",
+      "start_date": null
+    },
+    {
+      "name": "Anonymised",
+      "position": "Finance Controller (working toward FD)",
+      "gross_salary": null,
+      "employer_ni": null,
+      "employer_pension": null,
+      "total_cost": null,
+      "is_director": false,
+      "is_owner": null,
+      "employment_type": "Full-Time",
+      "start_date": null
+    },
+    {
+      "name": "Anonymised",
+      "position": "Head of Manufacturing",
+      "gross_salary": null,
+      "employer_ni": null,
+      "employer_pension": null,
+      "total_cost": null,
+      "is_director": false,
+      "is_owner": null,
+      "employment_type": "Full-Time",
+      "start_date": null
+    },
+    {
+      "name": "Anonymised",
+      "position": "Marketing Director",
+      "gross_salary": null,
+      "employer_ni": null,
+      "employer_pension": null,
+      "total_cost": null,
+      "is_director": false,
+      "is_owner": null,
+      "employment_type": "Full-Time",
+      "start_date": null
+    },
+    {
+      "name": "Anonymised",
+      "position": "Head of People and HR",
+      "gross_salary": null,
+      "employer_ni": null,
+      "employer_pension": null,
+      "total_cost": null,
+      "is_director": false,
+      "is_owner": null,
+      "employment_type": "Full-Time",
+      "start_date": null
+    },
+    {
+      "name": "Anonymised",
+      "position": "Head of Health and Safety",
+      "gross_salary": null,
+      "employer_ni": null,
+      "employer_pension": null,
+      "total_cost": null,
+      "is_director": false,
+      "is_owner": null,
+      "employment_type": "Full-Time",
+      "start_date": null
+    }
+  ],
+  "employment_type_breakdown": {
+    "Full-Time": 92,
+    "Part-Time": 0
+  },
+  "observations": [
+    "Total staff cost base of £2.86m equates to 15.6% of FY25 turnover.",
+    "60% of headcount (55 employees) is in production and cost-of-sales functions.",
+    "The leadership team has significant tenure, with the CEO serving 15 years.",
+    "Two overhead functions (People/HR and Marketing) were expanded during FY26 to support growth.",
+    "Average salary across the group is £31,088, with the highest average in Split/Shared Services (£36,667)."
+  ],
+  "_isIM": true
+}

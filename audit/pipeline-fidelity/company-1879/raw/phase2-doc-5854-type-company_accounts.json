@@ -1,0 +1,176 @@
+{
+  "document": "company_accounts",
+  "source": "statutory_accounts",
+  "profit_and_loss": {
+    "document": "profit_and_loss",
+    "source": "management",
+    "years_covered": [
+      2026
+    ],
+    "period_ends": {
+      "2026": "2026-04-30"
+    },
+    "months_covered": {
+      "2026": 1
+    },
+    "report_date": "2026-05-26",
+    "years": {
+      "2026": {
+        "year": 2026,
+        "profit_and_loss": {
+          "revenue": 231364.06,
+          "cost_of_sales": 56341.03,
+          "gross_profit": 175023.03,
+          "administrative_expenses": 46898.13,
+          "depreciation_amortisation": null,
+          "other_operating_income": null,
+          "operating_profit": 128124.9,
+          "interest_receivable": null,
+          "interest_payable": null,
+          "profit_before_tax": 128124.9,
+          "corporation_tax": null,
+          "net_profit": 128124.9
+        },
+        "revenue_breakdown": {
+          "by_product": {
+            "Scaffolding Sales": 231364.06
+          },
+          "by_segment": {}
+        },
+        "cost_of_sales_breakdown": {
+          "direct_materials": 6309.62,
+          "direct_labour": 49881.41,
+          "subcontractor_costs": 24052.82,
+          "other_direct_costs": 150
+        },
+        "overheads_breakdown": {
+          "staff_wages_salaries": 15560.18,
+          "directors_salaries": null,
+          "directors_pension": null,
+          "employers_national_insurance": null,
+          "staff_pension_contributions": null,
+          "staff_training_recruitment": 140,
+          "use_of_home_as_office": null,
+          "rent_rates": 2950,
+          "utilities": null,
+          "insurance": 5731.03,
+          "accountancy_bookkeeping": 1355,
+          "professional_fees": 3900,
+          "software_subscriptions": 566.75,
+          "computer_costs": 1123.23,
+          "it_support_hosting": null,
+          "telecommunications": null,
+          "printing_stationery": 17.99,
+          "postage_courier": null,
+          "subscriptions_memberships": 190.45,
+          "bank_charges": 40.35,
+          "advertising_marketing": null,
+          "travel_subsistence": 280.8,
+          "motor_expenses": 13117.27,
+          "repairs_maintenance": 836.69,
+          "depreciation": null,
+          "amortisation": null,
+          "other_overheads": 3227.62
+        },
+        "total_staff_costs": 15560.18,
+        "total_directors_remuneration": 0,
+        "dividends_paid": null,
+        "exceptional_items": [],
+        "financial_ratios": {
+          "gross_margin_percent": 75.65,
+          "net_margin_percent": 55.38,
+          "interest_coverage_ratio": null
+        }
+      }
+    },
+    "summary_insights": [
+      "The company achieved a high gross margin of 75.7% for the month of April 2026, indicating strong pricing power or efficient direct cost management.",
+      "Net profitability is exceptionally high at 55.4%, though this reflects a single month of management accounts and may not account for quarterly or annual tax and depreciation adjustments.",
+      "Direct labour and CIS subcontractors represent the largest cost component, totalling £49,881, which is 21.6% of total revenue.",
+      "Motor-related expenses (fuel, repairs, insurance, lease, trackers) are a significant overhead, totalling £13,117 or 5.7% of revenue.",
+      "The business maintains a lean administrative structure with total overheads representing only 20.3% of turnover.",
+      "Professional and consultancy fees of £5,255 suggest ongoing investment in compliance or business advisory services.",
+      "With a net profit of £128,125 in a single month, the business demonstrates very strong cash-generative potential."
+    ]
+  },
+  "balance_sheet": {
+    "document": "profit_and_loss",
+    "source": "management",
+    "years_covered": [
+      2026
+    ],
+    "period_ends": {
+      "2026": "2026-04-30"
+    },
+    "months_covered": {
+      "2026": 1
+    },
+    "report_date": "2026-05-26",
+    "years": {
+      "2026": {
+        "year": 2026,
+        "balance_sheet": {
+          "fixed_assets": {
+            "intangible_assets": null,
+            "tangible_assets": null,
+            "freehold_property": null,
+            "leasehold_property": null,
+            "plant_machinery": null,
+            "fixtures_fittings": null,
+            "motor_vehicles": null,
+            "computer_equipment": null
+          },
+          "current_assets": {
+            "stock": null,
+            "trade_debtors": null,
+            "prepayments": null,
+            "amounts_owed_by_directors": null,
+            "amounts_owed_by_connected_companies": null,
+            "directors_current_account": null,
+            "other_debtors": null,
+            "cash_at_bank": null,
+            "total": null
+          },
+          "current_liabilities": {
+            "trade_creditors": null,
+            "taxation_social_security": null,
+            "vat_payable": null,
+            "corporation_tax": null,
+            "bank_loans_current": null,
+            "hire_purchase_current": null,
+            "accruals": null,
+            "amounts_owed_to_directors": null,
+            "other_creditors": null,
+            "total": null
+          },
+          "long_term_liabilities": {
+            "bank_loans": null,
+            "hire_purchase_long_term": null,
+            "deferred_taxation": null,
+            "other_debt": null,
+            "total": null
+          },
+          "equity": {
+            "share_capital": null,
+            "retained_earnings": 128124.9,
+            "total": 128124.9
+          }
+        },
+        "financial_ratios": {
+          "current_ratio": null,
+          "quick_ratio": null,
+          "net_assets_growth_percent": null,
+          "gearing_ratio_percent": null
+        }
+      }
+    },
+    "summary_insights": [
+      "The provided document is a Profit and Loss statement for April 2026, not a full Balance Sheet; therefore, asset and liability breakdowns are unavailable.",
+      "The company generated a significant Net Profit of £128,124.90 in a single month (April 2026).",
+      "Gross Profit margin is strong at approximately 75.6%, with Scaffolding Sales reaching £231,364.06.",
+      "Direct expenses are well-controlled, with labor costs (Payroll, CIS, and Casual) totaling £49,881.41.",
+      "Overheads are diverse, with Gross Wages (£15,560.18) and Vehicle-related costs being the primary drivers of administrative spend.",
+      "The net profit for the period suggests a substantial contribution to retained earnings and shareholder value for the start of the financial year."
+    ]
+  }
+}

@@ -1,0 +1,999 @@
+{
+  "model": {
+    "id": 494,
+    "targetCompanyId": 1917,
+    "createdBy": 89,
+    "name": "Audit Model — TC 190",
+    "status": "draft",
+    "version": 1,
+    "transactionType": "share_sale",
+    "parentModelId": null,
+    "isLocked": false,
+    "averagingYears": 3,
+    "ebitdaMultiple": "2.5",
+    "offerDriver": "ebitda",
+    "targetOfferPrice": null,
+    "multipleLow": "2",
+    "multipleHigh": "3.5",
+    "propertyValue": "0",
+    "cashValue": "0",
+    "otherAssets": "0",
+    "calculatedEbitda": null,
+    "adjustedEbitda": "312262",
+    "enterpriseValue": "780655",
+    "plusExcessCash": "795164.52",
+    "minusPrimaryDebt": "0",
+    "minusOtherDebt": "0",
+    "minusCorpTaxDue": "0",
+    "minusWorkingCapitalAdj": "191658",
+    "workingCapitalMonths": 3,
+    "workingCapitalMonthlyAmount": "63886",
+    "totalPurchasePrice": null,
+    "totalFundingAvailable": null,
+    "equityRequired": null,
+    "upfrontCash": "1024282.69",
+    "deferredAmount": "315163.9",
+    "deferredTerms": null,
+    "earnoutMaximum": "236372.93",
+    "earnoutMetric": "Gross Margin Stability and EBITDA",
+    "earnoutPeriodMonths": 18,
+    "retentionEscrow": "150000",
+    "feeLegalDdAmount": "25000",
+    "feeAccountingDdAmount": "15000",
+    "feeLoanArrangementAmount": "0",
+    "feeDealMakerAmount": "0",
+    "customFees": [],
+    "expertDataSnapshot": {
+      "qoe": {
+        "expert": "quality_of_earnings",
+        "company_name": "[AUDIT-190] Spruce Pools",
+        "analysis_date": "2024-05-22",
+        "score": 62,
+        "confidence": "high",
+        "reported_figures": {
+          "operating_profit": 227845,
+          "depreciation": 71117,
+          "amortisation": 0,
+          "reported_ebitda": 298962,
+          "source_year": "2025"
+        },
+        "add_backs": [
+          {
+            "item": "Excess Directors Pension Contributions",
+            "category": "owner_salary",
+            "amount": 60000,
+            "recurrence": "recurring",
+            "year": 2025,
+            "justification": "The company pays £60,000 into directors' pensions annually (2023-2025), which is a discretionary benefit that would not be required for a replacement manager.",
+            "confidence": "high",
+            "defensibility_score": 9,
+            "case_for_inclusion": "Pension contributions for owners are a form of profit extraction and are not part of the market-rate compensation for a replacement manager.",
+            "case_for_exclusion": "The seller may argue that a high-level executive would expect a significant pension package as part of their total remuneration."
+          },
+          {
+            "item": "Personal Use of Home as Office",
+            "category": "personal_expense",
+            "amount": 1700,
+            "recurrence": "recurring",
+            "year": 2025,
+            "justification": "Identified in overheads breakdown as a recurring personal expense for the directors.",
+            "confidence": "high",
+            "defensibility_score": 10,
+            "case_for_inclusion": "This is a non-business expense that will not be incurred by a corporate buyer.",
+            "case_for_exclusion": "The amount is immaterial and the seller may argue it covers legitimate business use of residential space."
+          }
+        ],
+        "deductions": [
+          {
+            "item": "Replacement Management Salary Adjustment",
+            "category": "replacement_salary",
+            "amount": 48400,
+            "recurrence": "recurring",
+            "year": 2025,
+            "justification": "Current director salary is £9,100. For a £2.3m revenue business, a replacement MD market rate is £57,500 (mid-point of £45k-£70k range).",
+            "confidence": "high",
+            "defensibility_score": 8,
+            "case_for_inclusion": "The current salary is significantly below market rate, and a buyer must account for the true cost of hiring a manager to run the business.",
+            "case_for_exclusion": "The seller may argue that the existing staff structure handles most operations, requiring only a part-time or lower-cost manager."
+          }
+        ],
+        "total_add_backs": 61700,
+        "total_deductions": 48400,
+        "adjusted_ebitda": {
+          "conservative": 312262,
+          "base": 312262,
+          "optimistic": 312262
+        },
+        "adjustment_summary": {
+          "reported_ebitda": 298962,
+          "plus_add_backs": 61700,
+          "minus_deductions": 48400,
+          "equals_adjusted_ebitda_base": 312262
+        },
+        "director_salary_analysis": {
+          "directors": [
+            {
+              "name": "Combined Directors",
+              "current_salary": 9100,
+              "estimated_market_rate": 57500,
+              "benchmark_range_used": "Revenue £1M-£5M: Working MD/Owner-Director (£45,000–£70,000)",
+              "adjustment": 48400,
+              "adjustment_type": "deduction"
+            }
+          ]
+        },
+        "sustainability_assessment": {
+          "sustainable_for_3_years": true,
+          "key_assumptions": [
+            "Service and maintenance revenue remains stable at ~£1m per annum.",
+            "Gross margins stabilize at 29% and do not continue the downward trend seen since 2022.",
+            "The high cash balance is maintained to support working capital without debt."
+          ],
+          "sensitivity_factors": [
+            "Material cost inflation in the 'Renovation and New Build' segment.",
+            "Ability to pass on price increases to long-term maintenance contract customers."
+          ],
+          "upside_scenarios": [
+            "Operational efficiencies in labor allocation (reversing the 2024 staff cost spike).",
+            "Expansion of the higher-margin 'Chemicals and products' sales segment."
+          ],
+          "downside_scenarios": [
+            "Loss of key technical staff in the service department.",
+            "Further erosion of gross margins due to competitive pricing in the construction sector."
+          ]
+        },
+        "key_findings": [
+          "Reported EBITDA is supported by a strong recurring revenue stream from maintenance contracts.",
+          "The business is debt-free and highly liquid, with £795,164 in cash as of May 2026.",
+          "Normalised earnings are slightly higher than reported due to significant pension extractions by the directors.",
+          "Gross margin erosion (from 35% to 29%) is the primary risk to future earnings sustainability."
+        ],
+        "red_flags": [
+          "Significant volatility in staff costs between 2024 (£468k) and 2025 (£176k) suggests potential misclassification or one-off labor issues.",
+          "Asset register shows zero accumulated depreciation, contradicting the P&L charges of ~£71k.",
+          "High dividend extraction (89.7% of net profit) limits the capital available for reinvestment."
+        ],
+        "narrative": "Spruce Pools presents a solid acquisition target with a 'Base Case' Adjusted EBITDA of £312,262. The adjustment process is relatively straightforward: the directors extract significant value through pension contributions (£60k) while taking a minimal salary (£9.1k). Normalising these to market rates results in a net positive adjustment to EBITDA. The core of the business is the £1m+ service and maintenance revenue, which provides a high-quality, recurring earnings base. However, the buyer should be cautious regarding the 600-basis-point drop in gross margin over the last four years. While the business is currently healthy and debt-free, the trend of rising direct costs must be arrested to maintain the valuation multiple. The 2024 spike in staff costs requires specific due diligence to ensure no hidden liabilities or structural labor issues exist."
+      },
+      "valuation": {
+        "expert": "valuation",
+        "company_name": "[AUDIT-190] Spruce Pools",
+        "analysis_date": "2024-05-22",
+        "score": 65,
+        "confidence": "medium",
+        "ebitda_multiple_valuation": {
+          "adjusted_ebitda_base": 312262,
+          "sector_multiple_range": {
+            "low": 2,
+            "mid": 2.75,
+            "high": 3.5
+          },
+          "selected_multiple": 2.5,
+          "multiple_justification": "A multiple of 2.5x is selected, which is slightly below the sector midpoint. While the business benefits from a high proportion of recurring maintenance revenue (approx. 43% of 2025 revenue), which usually commands a premium, this is offset by significant gross margin erosion (falling from 35% to 29%) and a declining operating profit trend. The small size and owner dependency further constrain the multiple.",
+          "premium_factors_applied": [
+            "High proportion of recurring service/maintenance revenue (>40%)",
+            "Strong liquidity and debt-free status",
+            "Efficient working capital management (negative cash conversion cycle)"
+          ],
+          "discount_factors_applied": [
+            "Significant gross margin contraction (600 bps over 3 years)",
+            "Operating profit declining at a CAGR of -21.08%",
+            "High owner dependency (directors' pension and salary structure)",
+            "Accounting discrepancies in asset register and labor classification"
+          ],
+          "enterprise_value_range": {
+            "conservative": 624524,
+            "base": 780655,
+            "optimistic": 1092917
+          }
+        },
+        "ev_to_equity_bridge": {
+          "enterprise_value_base": 780655,
+          "plus_cash": 795164.52,
+          "minus_long_term_debt": 0,
+          "minus_director_loans": 0,
+          "minus_bad_debt_provision": 0,
+          "minus_working_capital_adjustment": 0,
+          "equity_value": {
+            "conservative": 1419688.52,
+            "base": 1575819.52,
+            "optimistic": 1888081.52
+          }
+        },
+        "asset_based_valuation": {
+          "net_asset_value": 1035444.36,
+          "property_adjustment": 0,
+          "bad_debt_adjustment": 0,
+          "adjusted_nav": 1035444.36,
+          "nav_as_floor": true
+        },
+        "revenue_multiple_crosscheck": {
+          "latest_revenue": 2313955,
+          "revenue_multiple_range": {
+            "low": 0.4,
+            "high": 0.8
+          },
+          "implied_ev_range": {
+            "low": 925582,
+            "high": 1851164
+          }
+        },
+        "valuation_summary": {
+          "recommended_range": {
+            "equity_value_low": 1419688.52,
+            "equity_value_mid": 1575819.52,
+            "equity_value_high": 1888081.52
+          },
+          "primary_methodology": "ebitda_multiple",
+          "cross_check_alignment": "moderate"
+        },
+        "sensitivity": {
+          "ebitda_plus_10pct": {
+            "enterprise_value": 858720.5,
+            "equity_value": 1653885.02
+          },
+          "ebitda_minus_10pct": {
+            "enterprise_value": 702589.5,
+            "equity_value": 1497754.02
+          },
+          "multiple_plus_half": {
+            "enterprise_value": 936786,
+            "equity_value": 1731950.52
+          },
+          "multiple_minus_half": {
+            "enterprise_value": 624524,
+            "equity_value": 1419688.52
+          },
+          "key_customer_loss_impact": "Moderate. While specific customer data is missing, the high proportion of maintenance contracts suggests a diversified base, but loss of a major renovation project could impact annual revenue by 10-15%.",
+          "director_replacement_impact": 48400
+        },
+        "seller_expectations": {
+          "likely_seller_expectation_range": {
+            "low": 2000000,
+            "high": 2500000
+          },
+          "seller_anchor_points": [
+            "High cash balance of £795k",
+            "Revenue recovery to £2.3m in 2025",
+            "Emotional value of the 'Spruce Pools' brand"
+          ],
+          "negotiation_gap_assessment": "A significant gap is expected. The seller will likely anchor on the high cash balance and total assets, potentially seeking a 'Cash + Multiple' deal that ignores the fact that some cash is required for working capital. The buyer will focus on the declining margin profile and the need for a replacement manager."
+        },
+        "key_findings": [
+          "The business is exceptionally liquid with £795,164.52 in cash as of 31 May 2026, which significantly inflates the equity value relative to the enterprise value.",
+          "Adjusted EBITDA of £312,262 accounts for discretionary pension contributions and a market-rate salary for a replacement manager.",
+          "The core value driver is the £1m+ recurring maintenance revenue, providing stability against the more volatile construction segment.",
+          "Gross margin erosion from 35% to 29% is a critical concern that must be addressed post-acquisition."
+        ],
+        "red_flags": [
+          "Asset register discrepancy of £286,935.20 between ledger and sub-ledger.",
+          "Inconsistent labor cost classification between 2024 and 2025.",
+          "Goodwill of £138k listed in asset register but not on the statutory balance sheet.",
+          "Negative 'Other Creditors' balance of -£39,394.62 requires investigation."
+        ],
+        "narrative": "The valuation of Spruce Pools is heavily influenced by its 'fortress' balance sheet. Using an EBITDA multiple approach, the Enterprise Value is calculated at £780,655 based on a 2.5x multiple of the £312,262 Adjusted EBITDA. The bridge to Equity Value adds the full cash balance of £795,164.52 (as of 31 May 2026), resulting in a base Equity Value of approximately £1.57m. This high cash-to-EV ratio suggests the business is over-capitalized. While the recurring revenue from maintenance contracts provides a solid floor, the downward trend in gross and operating margins prevents the application of a premium sector multiple. The asset-based valuation of £1.03m (Net Assets as of 31 May 2026) serves as a firm floor, but the EBITDA-based approach is more appropriate for a going concern. A buyer should prioritize due diligence on the asset register discrepancies and the 2024 labor cost spike before finalizing the offer."
+      },
+      "deal_structure": {
+        "expert": "deal_structure",
+        "company_name": "[AUDIT-190] Spruce Pools",
+        "analysis_date": "2024-05-22",
+        "score": 65,
+        "confidence": "high",
+        "structures": [
+          {
+            "name": "Conservative Approach",
+            "strategy": "Minimize upfront risk by addressing accounting discrepancies and owner dependency through heavy deferment and performance-linked payments.",
+            "risk_to_buyer": "low",
+            "suitable_when": "Due diligence cannot fully reconcile the £286k asset discrepancy or the 2024 labor cost spike.",
+            "consideration": {
+              "total_headline": 1575819.52,
+              "upfront_cash": 787909.76,
+              "upfront_percent": 50,
+              "deferred": 393954.88,
+              "earnout_maximum": 393954.88,
+              "earnout_metric": "EBITDA and Maintenance Contract Retention",
+              "earnout_period_months": 24,
+              "earnout_rationale": "Addresses Trigger 3 (Owner Dependency) and Trigger 4 (Unverified Add-backs). The earnout ensures the £312k Adjusted EBITDA is sustainable post-owner exit and that the 2024 labor volatility was not indicative of structural issues.",
+              "retention_escrow": 286935.2
+            },
+            "key_conditions": [
+              "Full reconciliation of the fixed asset register prior to first deferred payment",
+              "12-month mandatory handover period for directors",
+              "Specific indemnity for the £286k asset discrepancy",
+              "Non-compete agreement for 36 months covering the UK South East"
+            ],
+            "notes": "Seller obligations: 12-month handover followed by 12-month consultancy; 3-year non-compete. Key warranties: Specific indemnity for the £286k asset discrepancy and the negative 'Other Creditors' balance; warranty cap at 50% of consideration; 24-month warranty period. Completion mechanism: Completion accounts with a working capital peg excluding the excess cash. Risk to buyer: Low, as the structure offsets the high equity value (driven by cash) against the operational risks and accounting anomalies."
+          },
+          {
+            "name": "Balanced Approach",
+            "strategy": "A fair split that acknowledges the strong cash position while protecting against margin erosion and key person risk.",
+            "risk_to_buyer": "medium",
+            "suitable_when": "The buyer is satisfied with the asset register explanation but wants to ensure the recurring revenue base remains stable.",
+            "consideration": {
+              "total_headline": 1575819.52,
+              "upfront_cash": 1024282.69,
+              "upfront_percent": 65,
+              "deferred": 315163.9,
+              "earnout_maximum": 236372.93,
+              "earnout_metric": "Gross Margin Stability and EBITDA",
+              "earnout_period_months": 18,
+              "earnout_rationale": "Addresses Trigger 3 (Owner Dependency). Given the 600bps margin erosion noted by the valuation expert, the earnout is tied to maintaining a minimum 29% gross margin to ensure the business isn't being 'bought' at a peak.",
+              "retention_escrow": 150000
+            },
+            "key_conditions": [
+              "6-month handover period for directors",
+              "Working capital peg set at the 3-year average (approx. 30% of revenue)",
+              "Warranty basket of £15,000 and de minimis of £2,500",
+              "Verification of the £138k Goodwill treatment in statutory accounts"
+            ],
+            "notes": "Seller obligations: 6-month handover; 2-year non-compete. Key warranties: Standard tax and commercial warranties; specific indemnity for labor cost reclassifications; warranty cap at 75% of consideration. Completion mechanism: Locked box if completion is within 3 months of the 2026-05-31 balance sheet. Risk to buyer: Medium, primarily due to the downward trend in operating profit and high reliance on the directors' technical knowledge."
+          },
+          {
+            "name": "Competitive Approach",
+            "strategy": "Maximize upfront cash to meet seller expectations of a 'Cash + Multiple' deal, relying on warranties for protection.",
+            "risk_to_buyer": "high",
+            "suitable_when": "The acquisition is strategic, and the buyer has internal management to replace the directors immediately.",
+            "consideration": {
+              "total_headline": 1575819.52,
+              "upfront_cash": 1339446.59,
+              "upfront_percent": 85,
+              "deferred": 236372.93,
+              "earnout_maximum": 0,
+              "earnout_metric": "N/A",
+              "earnout_period_months": 0,
+              "earnout_rationale": "No earnout included to make the offer more attractive in a competitive process, despite Trigger 3 presence. Risk is mitigated via a larger upfront payment and shorter deferment.",
+              "retention_escrow": 75000
+            },
+            "key_conditions": [
+              "3-month handover period",
+              "Comprehensive W&I insurance policy (buyer-side)",
+              "Immediate reconciliation of the negative 'Other Creditors' balance",
+              "Locked box mechanism based on May 2026 accounts"
+            ],
+            "notes": "Seller obligations: 3-month handover; 2-year non-compete. Key warranties: Lighter warranty package but backed by W&I insurance; specific indemnity for the asset register discrepancy remains non-negotiable. Completion mechanism: Locked box to provide price certainty to the seller. Risk to buyer: High, as the high upfront payment leaves little recourse if the margin erosion continues or if the accounting discrepancies result in a material overstatement of assets."
+          }
+        ],
+        "recommended_structure": "Balanced Approach",
+        "recommendation_rationale": "The Balanced Approach is recommended because it bridges the gap between the seller's high expectations (driven by the £795k cash balance) and the buyer's need to manage the 600bps margin erosion and accounting anomalies. The 15% earnout specifically addresses the owner dependency and margin risk identified by the experts, while the 65% upfront payment provides the seller with immediate liquidity from their 'fortress' balance sheet.",
+        "negotiation_priorities": [
+          "Reconciliation of the £286,935.20 asset register discrepancy",
+          "Clarification of the 2024 vs 2025 labor cost volatility (£468k vs £176k)",
+          "Setting a fair Working Capital Peg that doesn't allow the seller to strip all cash",
+          "Securing a long-term non-compete to protect the recurring maintenance revenue"
+        ],
+        "deal_breaker_terms": [
+          "Failure to provide a satisfactory explanation for the negative 'Other Creditors' balance",
+          "Refusal of the directors to provide a minimum 6-month handover",
+          "Discovery that the £138k Goodwill in the asset register is impaired or non-existent"
+        ],
+        "key_findings": [
+          "The business is over-capitalized with £795k cash, which significantly inflates the equity value relative to the enterprise value.",
+          "Gross margin erosion (35% to 29%) is a major trend risk that requires contractual protection.",
+          "Accounting discrepancies in the asset register and labor classification are the primary due diligence hurdles.",
+          "The recurring maintenance revenue (£1m+) is the most valuable and stable component of the deal."
+        ],
+        "narrative": "Structuring a deal for Spruce Pools requires a delicate balance between acknowledging its exceptional liquidity and protecting against its declining margin profile. The seller will likely anchor their price on the £795k cash balance, viewing it as 'extra' value. However, the buyer must treat this as part of the equity bridge while ensuring the core business (the EBITDA) is sustainable. The recommended Balanced Approach uses a 65% upfront payment to satisfy the seller's desire for cash, while using deferred and earnout components to hedge against the risk that the business is overly dependent on the current directors and that the recent margin contraction might continue. The specific indemnity for the asset register discrepancy is a critical safeguard to ensure the buyer is not paying for 'ghost' assets."
+      },
+      "financial": {
+        "expert": "financial",
+        "company_name": "[AUDIT-190] Spruce Pools",
+        "analysis_date": "2024-05-22",
+        "score": 58,
+        "confidence": "high",
+        "yearly_metrics": {
+          "2022": {
+            "revenue": 2282351,
+            "revenue_yoy_growth_percent": null,
+            "cost_of_sales": 1484452,
+            "gross_profit": 797899,
+            "gross_margin_percent": 34.96,
+            "administrative_expenses": 334777,
+            "operating_profit": 463122,
+            "operating_margin_percent": 20.29,
+            "depreciation_amortisation": 57193,
+            "ebitda": 520315,
+            "interest_payable": 0,
+            "interest_coverage_ratio": null,
+            "profit_before_tax": 464052,
+            "corporation_tax": 93195,
+            "effective_tax_rate_percent": 20.08,
+            "net_profit": 370857,
+            "net_margin_percent": 16.25
+          },
+          "2023": {
+            "revenue": 1992926,
+            "revenue_yoy_growth_percent": -12.68,
+            "cost_of_sales": 1366057,
+            "gross_profit": 626869,
+            "gross_margin_percent": 31.45,
+            "administrative_expenses": 404944,
+            "operating_profit": 221925,
+            "operating_margin_percent": 11.14,
+            "depreciation_amortisation": 86473,
+            "ebitda": 308398,
+            "interest_payable": 0,
+            "interest_coverage_ratio": null,
+            "profit_before_tax": 229890,
+            "corporation_tax": 38403,
+            "effective_tax_rate_percent": 16.7,
+            "net_profit": 191487,
+            "net_margin_percent": 9.61
+          },
+          "2024": {
+            "revenue": 1982111,
+            "revenue_yoy_growth_percent": -0.54,
+            "cost_of_sales": 1467076,
+            "gross_profit": 515035,
+            "gross_margin_percent": 25.98,
+            "administrative_expenses": 396134,
+            "operating_profit": 118901,
+            "operating_margin_percent": 6,
+            "depreciation_amortisation": 64397,
+            "ebitda": 183298,
+            "interest_payable": 0,
+            "interest_coverage_ratio": null,
+            "profit_before_tax": 130562,
+            "corporation_tax": 50389,
+            "effective_tax_rate_percent": 38.6,
+            "net_profit": 80173,
+            "net_margin_percent": 4.04
+          },
+          "2025": {
+            "revenue": 2313955,
+            "revenue_yoy_growth_percent": 16.74,
+            "cost_of_sales": 1645039,
+            "gross_profit": 668916,
+            "gross_margin_percent": 28.91,
+            "administrative_expenses": 441071,
+            "operating_profit": 227845,
+            "operating_margin_percent": 9.85,
+            "depreciation_amortisation": 71116,
+            "ebitda": 298961,
+            "interest_payable": 0,
+            "interest_coverage_ratio": null,
+            "profit_before_tax": 241191,
+            "corporation_tax": 60674,
+            "effective_tax_rate_percent": 25.16,
+            "net_profit": 180517,
+            "net_margin_percent": 7.8
+          }
+        },
+        "cagr": {
+          "revenue_cagr_percent": 0.46,
+          "gross_profit_cagr_percent": -5.71,
+          "operating_profit_cagr_percent": -21.08,
+          "period_years": 3
+        },
+        "cost_structure": {
+          "cost_of_sales_percent_revenue": 71.09,
+          "overheads_percent_revenue": 19.06,
+          "staff_costs_percent_revenue": 10.2,
+          "director_costs_percent_revenue": 2.99,
+          "top_5_overheads": [
+            {
+              "category": "Staff Wages & Salaries",
+              "value": 176078,
+              "percent_of_overheads": 39.92
+            },
+            {
+              "category": "Depreciation",
+              "value": 71117,
+              "percent_of_overheads": 16.12
+            },
+            {
+              "category": "Staff Pension Contributions",
+              "value": 60000,
+              "percent_of_overheads": 13.6
+            },
+            {
+              "category": "Directors Pension",
+              "value": 60000,
+              "percent_of_overheads": 13.6
+            },
+            {
+              "category": "Rent & Rates",
+              "value": 50962,
+              "percent_of_overheads": 11.55
+            }
+          ],
+          "cost_base_classification": "predominantly_variable"
+        },
+        "earnings_quality": {
+          "net_profit_tracks_operating_profit": true,
+          "exceptional_items_identified": [],
+          "tax_rate_consistent": false,
+          "ebitda_latest": 298961,
+          "ebitda_trend": "stable",
+          "limitations": [
+            "Amortisation not separately disclosed in overheads for 2024-2025",
+            "Significant fluctuation in effective tax rate in 2024"
+          ]
+        },
+        "debt_service": {
+          "latest_interest_coverage": null,
+          "interest_coverage_trend": "stable",
+          "additional_debt_capacity_assessment": "High. The company currently carries zero interest-payable debt and maintains a strong cash position of 795,164.52 as of 31 May 2026."
+        },
+        "key_findings": [
+          "Revenue has remained relatively flat over the four-year period, with a CAGR of only 0.46%.",
+          "Gross margins have contracted significantly from 34.96% in 2022 to 28.91% in 2025, indicating rising direct costs.",
+          "Operating profit has declined at a CAGR of -21.08%, reflecting a failure to control overheads relative to gross profit.",
+          "The company maintains a very strong liquidity position with 795,164.52 in cash as of May 2026.",
+          "Staff costs and pensions represent the largest overhead burden, accounting for over 67% of total administrative expenses in 2025.",
+          "The business is debt-free with no interest payable recorded across the entire period.",
+          "Service and maintenance remains the core revenue driver, contributing over 1m in 2025."
+        ],
+        "red_flags": [
+          "Significant gross margin erosion from 35% to 29% suggests pricing pressure or unrecovered material inflation.",
+          "Operating profit in 2025 is less than half of the 2022 level despite higher revenue.",
+          "Inconsistent effective tax rates, particularly the 38.6% spike in 2024, require further investigation."
+        ],
+        "narrative": "Spruce Pools presents a mixed financial profile for a potential acquirer. On a positive note, the company is exceptionally liquid and debt-free. As of the latest balance sheet dated 31 May 2026, the business held 795,164 in cash against total current liabilities of 220,231, providing a significant safety buffer and immediate capital for post-acquisition integration. The revenue base is stable, anchored by a consistent 'Service and Maintenance' stream which provides recurring-style income, mitigating the volatility typically associated with 'Renovation and New Build' construction projects.\n\nHowever, the profitability trajectory is concerning. While 2025 saw a recovery in revenue to 2.31m, the quality of earnings has diminished since 2022. Gross margins have fallen by approximately 600 basis points over the period, and operating margins have halved from 20.3% to 9.8%. This suggests that while the company is winning work, it is doing so at higher cost or lower price points, failing to pass on inflationary pressures in materials and labour. Administrative expenses have also climbed, driven largely by a heavy pension and wage burden. \n\nFor a buyer, the value proposition lies in operational turnaround. The core business generates healthy EBITDA (298k in 2025), but the downward trend in efficiency must be reversed. The lack of existing debt provides ample headroom for acquisition financing, but the valuation should be sensitised against the declining margin profile rather than the headline revenue growth seen in the final year."
+      }
+    },
+    "financialDataSnapshot": {
+      "balanceSheet": {
+        "id": 4958,
+        "financialPeriodId": 8070,
+        "targetCompanyId": 1917,
+        "intangibleAssets": "0",
+        "tangibleFixedAssets": "286935.2",
+        "freeholdProperty": null,
+        "leaseholdProperty": null,
+        "plantMachinery": "14252.27",
+        "fixturesFittings": "90.62",
+        "motorVehicles": "149647.93",
+        "computerEquipment": null,
+        "stockInventory": "72169.55",
+        "tradeDebtors": "83058.26",
+        "prepayments": "16187.94",
+        "amountsOwedByDirectors": null,
+        "amountsOwedByConnectedCompanies": null,
+        "directorsCurrentAccount": null,
+        "otherDebtors": "2160",
+        "cashAtBank": "795164.52",
+        "totalCurrentAssets": "968740.27",
+        "tradeCreditors": "158033.51",
+        "taxationSocialSecurity": "2260.25",
+        "vatPayable": "95931.97",
+        "corporationTaxDue": "0",
+        "bankLoansOverdraftCurrent": null,
+        "hirePurchaseCurrent": null,
+        "accruals": "3400",
+        "amountsOwedToDirectors": null,
+        "otherCreditors": "-39394.62",
+        "totalCurrentLiabilities": "220231.11",
+        "bankLoansLongTerm": null,
+        "hirePurchaseLongTerm": null,
+        "deferredTaxation": null,
+        "otherLongTermDebt": null,
+        "totalLongTermLiabilities": "0",
+        "shareCapital": "1000",
+        "retainedEarnings": "1034444.36",
+        "totalEquity": "1035444.36",
+        "debtorsList": null,
+        "creditorsList": null,
+        "fixedAssetsDetail": null,
+        "sourceDocumentId": 5941,
+        "createdAt": "2026-07-30T02:00:28.579Z",
+        "updatedAt": "2026-07-30T02:00:28.923Z",
+        "fiscalYear": "2026",
+        "periodEnd": "2026-05-31",
+        "sourceTier": "information_memorandum",
+        "_label": "CURRENT POSITION"
+      },
+      "fixedAssets": {
+        "id": 63,
+        "targetCompanyId": 1917,
+        "reportDate": "2026-06-02",
+        "totalGrossBookValue": "286935.2",
+        "totalAccumulatedDepreciation": "0",
+        "totalNetBookValue": "286935.2",
+        "propertyGrossValue": "24747",
+        "propertyNetBookValue": "24747",
+        "plantMachineryGrossValue": "26716.9",
+        "plantMachineryNetBookValue": "26716.9",
+        "vehiclesGrossValue": "149647.93",
+        "vehiclesNetBookValue": "149647.93",
+        "itEquipmentGrossValue": "36307.67",
+        "itEquipmentNetBookValue": "36307.67",
+        "otherAssetsGrossValue": "49515.7",
+        "otherAssetsNetBookValue": "49515.7",
+        "refinanceableAssetsValue": "152782.38",
+        "fullyDepreciatedStillInUse": null,
+        "assetItems": [
+          {
+            "description": "Commercial Vehicles",
+            "category": "Vehicles",
+            "purchase_date": null,
+            "cost": 342968.78,
+            "accumulated_depreciation": 0,
+            "net_book_value": 342968.78,
+            "depreciation_rate": null,
+            "depreciation_method": null,
+            "location": null,
+            "condition": null
+          },
+          {
+            "description": "Motor vehicles",
+            "category": "Vehicles",
+            "purchase_date": null,
+            "cost": 136687.93,
+            "accumulated_depreciation": 0,
+            "net_book_value": 136687.93,
+            "depreciation_rate": null,
+            "depreciation_method": null,
+            "location": null,
+            "condition": null
+          },
+          {
+            "description": "Goodwill Cost",
+            "category": "Intangible",
+            "purchase_date": null,
+            "cost": 45000,
+            "accumulated_depreciation": 0,
+            "net_book_value": 45000,
+            "depreciation_rate": null,
+            "depreciation_method": null,
+            "location": null,
+            "condition": null
+          },
+          {
+            "description": "Goodwill (Trinity)",
+            "category": "Intangible",
+            "purchase_date": null,
+            "cost": 42292.23,
+            "accumulated_depreciation": 0,
+            "net_book_value": 42292.23,
+            "depreciation_rate": null,
+            "depreciation_method": null,
+            "location": null,
+            "condition": null
+          },
+          {
+            "description": "Office Equipment",
+            "category": "IT Equipment",
+            "purchase_date": null,
+            "cost": 36307.67,
+            "accumulated_depreciation": 0,
+            "net_book_value": 36307.67,
+            "depreciation_rate": null,
+            "depreciation_method": null,
+            "location": null,
+            "condition": null
+          },
+          {
+            "description": "Goodwill-Pool Construction",
+            "category": "Intangible",
+            "purchase_date": null,
+            "cost": 30000,
+            "accumulated_depreciation": 0,
+            "net_book_value": 30000,
+            "depreciation_rate": null,
+            "depreciation_method": null,
+            "location": null,
+            "condition": null
+          },
+          {
+            "description": "Plant & Equipment Cost",
+            "category": "Plant & Machinery",
+            "purchase_date": null,
+            "cost": 26716.9,
+            "accumulated_depreciation": 0,
+            "net_book_value": 26716.9,
+            "depreciation_rate": null,
+            "depreciation_method": null,
+            "location": null,
+            "condition": null
+          },
+          {
+            "description": "Property Improvements",
+            "category": "Property",
+            "purchase_date": null,
+            "cost": 24747,
+            "accumulated_depreciation": 0,
+            "net_book_value": 24747,
+            "depreciation_rate": null,
+            "depreciation_method": null,
+            "location": null,
+            "condition": null
+          },
+          {
+            "description": "Aquapool Goodwill",
+            "category": "Intangible",
+            "purchase_date": null,
+            "cost": 21500,
+            "accumulated_depreciation": 0,
+            "net_book_value": 21500,
+            "depreciation_rate": null,
+            "depreciation_method": null,
+            "location": null,
+            "condition": null
+          },
+          {
+            "description": "Motor veh depreciation",
+            "category": "Vehicles",
+            "purchase_date": null,
+            "cost": 12960,
+            "accumulated_depreciation": 0,
+            "net_book_value": 12960,
+            "depreciation_rate": null,
+            "depreciation_method": null,
+            "location": null,
+            "condition": null
+          },
+          {
+            "description": "Office Furniture",
+            "category": "Other",
+            "purchase_date": null,
+            "cost": 3134.45,
+            "accumulated_depreciation": 0,
+            "net_book_value": 3134.45,
+            "depreciation_rate": null,
+            "depreciation_method": null,
+            "location": null,
+            "condition": null
+          }
+        ],
+        "propertyDetails": [
+          {
+            "address": "Unit 16 Portway BusinessCentre",
+            "tenure": null,
+            "purchase_price": null,
+            "market_value": null,
+            "net_book_value": 0
+          },
+          {
+            "address": "Unit 17, Portway Business Cent",
+            "tenure": null,
+            "purchase_price": null,
+            "market_value": null,
+            "net_book_value": 0
+          },
+          {
+            "address": "Property Improvements",
+            "tenure": null,
+            "purchase_price": 24747,
+            "market_value": null,
+            "net_book_value": 24747
+          }
+        ],
+        "vehicleDetails": [
+          {
+            "make_model": "Commercial Vehicles",
+            "registration": null,
+            "purchase_date": null,
+            "cost": 342968.78,
+            "net_book_value": 342968.78,
+            "market_value": null
+          },
+          {
+            "make_model": "Motor vehicles",
+            "registration": null,
+            "purchase_date": null,
+            "cost": 136687.93,
+            "net_book_value": 136687.93,
+            "market_value": null
+          }
+        ],
+        "sourceDocumentId": 5939,
+        "createdAt": "2026-07-30T01:59:54.051Z",
+        "updatedAt": "2026-07-30T01:59:54.051Z"
+      }
+    },
+    "notes": null,
+    "createdAt": "2026-07-30T02:08:48.457Z",
+    "updatedAt": "2026-07-30T02:08:48.457Z",
+    "adjustments": [
+      {
+        "id": 2064,
+        "dealModelId": 494,
+        "sourceExpertResultId": 901,
+        "adjustmentType": "add_back",
+        "category": "owner_salary_excess",
+        "description": "Excess Directors Pension Contributions",
+        "amount": "60000",
+        "amountsByYear": null,
+        "sourceExpert": "qoe",
+        "reasoning": "The company pays £60,000 into directors' pensions annually (2023-2025), which is a discretionary benefit that would not be required for a replacement manager.",
+        "confidence": "high",
+        "defensibilityScore": 9,
+        "caseForInclusion": "Pension contributions for owners are a form of profit extraction and are not part of the market-rate compensation for a replacement manager.",
+        "caseForExclusion": "The seller may argue that a high-level executive would expect a significant pension package as part of their total remuneration.",
+        "status": "suggested",
+        "isAccepted": false,
+        "isManual": false,
+        "sortOrder": 0,
+        "createdAt": "2026-07-30T02:08:48.479Z",
+        "updatedAt": "2026-07-30T02:08:48.479Z"
+      },
+      {
+        "id": 2065,
+        "dealModelId": 494,
+        "sourceExpertResultId": 901,
+        "adjustmentType": "add_back",
+        "category": "personal_expense",
+        "description": "Personal Use of Home as Office",
+        "amount": "1700",
+        "amountsByYear": null,
+        "sourceExpert": "qoe",
+        "reasoning": "Identified in overheads breakdown as a recurring personal expense for the directors.",
+        "confidence": "high",
+        "defensibilityScore": 10,
+        "caseForInclusion": "This is a non-business expense that will not be incurred by a corporate buyer.",
+        "caseForExclusion": "The amount is immaterial and the seller may argue it covers legitimate business use of residential space.",
+        "status": "suggested",
+        "isAccepted": false,
+        "isManual": false,
+        "sortOrder": 1,
+        "createdAt": "2026-07-30T02:08:48.483Z",
+        "updatedAt": "2026-07-30T02:08:48.483Z"
+      },
+      {
+        "id": 2066,
+        "dealModelId": 494,
+        "sourceExpertResultId": 901,
+        "adjustmentType": "deduction",
+        "category": "replacement_salary",
+        "description": "Replacement Management Salary Adjustment",
+        "amount": "48400",
+        "amountsByYear": null,
+        "sourceExpert": "qoe",
+        "reasoning": "Current director salary is £9,100. For a £2.3m revenue business, a replacement MD market rate is £57,500 (mid-point of £45k-£70k range).",
+        "confidence": "high",
+        "defensibilityScore": 8,
+        "caseForInclusion": "The current salary is significantly below market rate, and a buyer must account for the true cost of hiring a manager to run the business.",
+        "caseForExclusion": "The seller may argue that the existing staff structure handles most operations, requiring only a part-time or lower-cost manager.",
+        "status": "suggested",
+        "isAccepted": false,
+        "isManual": false,
+        "sortOrder": 2,
+        "createdAt": "2026-07-30T02:08:48.487Z",
+        "updatedAt": "2026-07-30T02:08:48.487Z"
+      }
+    ],
+    "fundingLines": [
+      {
+        "id": 1388,
+        "dealModelId": 494,
+        "fundingType": "receivables_finance",
+        "label": "Receivables Finance (Invoice Factoring)",
+        "assetBaseValue": "83058.26",
+        "ltvPercent": "80",
+        "availableAmount": "66447",
+        "amountUsed": "0",
+        "interestRate": "4.5",
+        "arrangementFeePercent": null,
+        "termMonths": 0,
+        "monthlyRepayment": null,
+        "isDebt": true,
+        "repaymentStructure": "amortizing",
+        "isActive": false,
+        "notes": null,
+        "sortOrder": 0,
+        "createdAt": "2026-07-30T02:08:48.491Z",
+        "updatedAt": "2026-07-30T02:08:48.491Z"
+      },
+      {
+        "id": 1389,
+        "dealModelId": 494,
+        "fundingType": "asset_finance",
+        "label": "Asset Finance (Plant, Machinery & Vehicles)",
+        "assetBaseValue": "176364.83",
+        "ltvPercent": "60",
+        "availableAmount": "105819",
+        "amountUsed": "0",
+        "interestRate": "6.0",
+        "arrangementFeePercent": null,
+        "termMonths": 60,
+        "monthlyRepayment": null,
+        "isDebt": true,
+        "repaymentStructure": "amortizing",
+        "isActive": false,
+        "notes": null,
+        "sortOrder": 1,
+        "createdAt": "2026-07-30T02:08:48.496Z",
+        "updatedAt": "2026-07-30T02:08:48.496Z"
+      },
+      {
+        "id": 1390,
+        "dealModelId": 494,
+        "fundingType": "property_finance",
+        "label": "Property Finance (Commercial Mortgage)",
+        "assetBaseValue": "24747",
+        "ltvPercent": "65",
+        "availableAmount": "16086",
+        "amountUsed": "0",
+        "interestRate": "5.0",
+        "arrangementFeePercent": null,
+        "termMonths": 240,
+        "monthlyRepayment": null,
+        "isDebt": true,
+        "repaymentStructure": "amortizing",
+        "isActive": false,
+        "notes": null,
+        "sortOrder": 2,
+        "createdAt": "2026-07-30T02:08:48.501Z",
+        "updatedAt": "2026-07-30T02:08:48.501Z"
+      },
+      {
+        "id": 1391,
+        "dealModelId": 494,
+        "fundingType": "cash_equity",
+        "label": "Cash Equity (Cash to Introduce)",
+        "assetBaseValue": null,
+        "ltvPercent": null,
+        "availableAmount": null,
+        "amountUsed": "0",
+        "interestRate": null,
+        "arrangementFeePercent": null,
+        "termMonths": null,
+        "monthlyRepayment": null,
+        "isDebt": false,
+        "repaymentStructure": "amortizing",
+        "isActive": true,
+        "notes": null,
+        "sortOrder": 3,
+        "createdAt": "2026-07-30T02:08:48.505Z",
+        "updatedAt": "2026-07-30T02:08:48.505Z"
+      }
+    ],
+    "sellerPayments": [],
+    "contingentConsideration": []
+  },
+  "calculations": {
+    "adjustedEbitdaByYear": {
+      "2022": 520315,
+      "2023": 308398,
+      "2024": 183298,
+      "2025": 298961
+    },
+    "averageAdjustedEbitda": 263552.3333333333,
+    "enterpriseValue": 658880.8333333333,
+    "offerPrice": 1262387.3533333333,
+    "impliedMultiple": null,
+    "feeLegalDd": 25000,
+    "feeAccountingDd": 15000,
+    "feeLoanArrangement": 0,
+    "feeDealMaker": 0,
+    "customFeeAmounts": [],
+    "totalFees": 40000,
+    "totalFundingRequired": 1302387.3533333333,
+    "fundingLines": [
+      {
+        "availableAmount": 0,
+        "monthlyRepayment": 0,
+        "annualRepayment": 0,
+        "arrangementFee": 0
+      },
+      {
+        "availableAmount": 0,
+        "monthlyRepayment": 0,
+        "annualRepayment": 0,
+        "arrangementFee": 0
+      },
+      {
+        "availableAmount": 0,
+        "monthlyRepayment": 0,
+        "annualRepayment": 0,
+        "arrangementFee": 0
+      },
+      {
+        "availableAmount": 0,
+        "monthlyRepayment": 0,
+        "annualRepayment": 0,
+        "arrangementFee": 0
+      }
+    ],
+    "totalFunded": 0,
+    "fundingGap": 1262387.35,
+    "totalAnnualDebtService": 0,
+    "sellerAnnualDebtService": 0,
+    "earnoutAnnualDebtService": 0,
+    "revolvingInterestAnnual": 0,
+    "receivablesInterestAnnual": 0,
+    "valuationEbitda": 263552.3333333333,
+    "paymentCoverRatio": null,
+    "paymentCoverRating": "no_debt"
+  }
+}

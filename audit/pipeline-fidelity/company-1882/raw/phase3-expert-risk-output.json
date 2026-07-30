@@ -1,0 +1,127 @@
+{
+  "expert": "risk",
+  "company_name": "[AUDIT-137] MANOR BUILDING SOLUTIONS (UK) LTD",
+  "analysis_date": "2024-05-22",
+  "score": 72,
+  "confidence": "medium",
+  "customer_concentration": {
+    "risk_level": "unknown",
+    "top_customer_percent": null,
+    "top_3_customers_percent": null,
+    "top_5_customers_percent": null,
+    "hhi_index": null,
+    "hhi_classification": "diversified",
+    "total_customers": null,
+    "customers_over_15_percent": [],
+    "observations": [
+      "Sales ledger data was not provided; unable to calculate specific customer concentration or HHI.",
+      "Revenue has grown significantly from £651,586 (2023) to £2,388,764 (2026), which often correlates with increased concentration in construction sub-contracting."
+    ]
+  },
+  "financial_risk": {
+    "risk_level": "low",
+    "technically_insolvent": false,
+    "current_ratio_trend": "improving",
+    "creditor_growth_vs_revenue": "Revenue grew 266% (2023-2026) while Trade Creditors grew 74%, indicating healthy scaling.",
+    "director_loans_balance": 176625.1,
+    "intercompany_balances": 0,
+    "interest_coverage_adequate": true,
+    "going_concern_indicators": [],
+    "observations": [
+      "Current ratio as of 2026-04-30 is 2.93, indicating very strong liquidity.",
+      "Interest coverage is high; 2026 operating profit of £453,123 covers interest payable of £4,919 by over 90x.",
+      "Cash at bank has increased significantly to £668,188.88 as of 2026-04-30."
+    ]
+  },
+  "key_person_risk": {
+    "risk_level": "moderate",
+    "highest_individual_payroll_percent": null,
+    "single_points_of_failure": [
+      "Managing Director",
+      "Operations Director"
+    ],
+    "management_depth": "thin",
+    "average_tenure_years": null,
+    "observations": [
+      "The business is heavily reliant on two directors for both management and operations.",
+      "Staff matrix shows a flat structure with 5 direct operatives and 3 administrators reporting into the directors.",
+      "Specific salary data per person was not disclosed to calculate payroll concentration."
+    ]
+  },
+  "revenue_quality": {
+    "risk_level": "moderate",
+    "revenue_type": "project_based",
+    "customer_trend": "unknown",
+    "seasonality_detected": false,
+    "observations": [
+      "Revenue is likely project-based given the sector (Construction) and high use of subcontractors (£803,912 in 2026).",
+      "Significant revenue growth (approx. 3.6x over 4 years) suggests strong market demand or successful contract wins."
+    ]
+  },
+  "balance_sheet_risks": {
+    "director_loans": 176625.1,
+    "connected_company_balances": 0,
+    "deferred_tax": 9453.85,
+    "pension_obligations": null,
+    "contingent_liabilities": "unable_to_assess",
+    "observations": [
+      "Directors owe the company £176,625.10 as of 2026-04-30; this is an asset to the company but may require settlement or offset during a transaction.",
+      "The vehicle fleet is 61% depreciated, indicating a likely requirement for CapEx in the next 12-24 months."
+    ]
+  },
+  "bad_debt": {
+    "total_overdue_90_plus": null,
+    "recommended_provision": null,
+    "existing_provision": null,
+    "net_profit_impact": null,
+    "observations": [
+      "Aged debt profile not provided in the sales ledger; unable to calculate specific bad debt risk.",
+      "Trade debtors stand at £226,970.73 as of 2026-04-30."
+    ]
+  },
+  "risk_register": [
+    {
+      "risk": "Director Loan Account (Debit Balance)",
+      "category": "balance_sheet",
+      "severity": "medium",
+      "likelihood": "high",
+      "financial_impact": 176625.1,
+      "impact_description": "Amount owed by directors to the company must be addressed in the completion mechanics.",
+      "mitigation": "Treat as a debt-like item in the equity bridge or require repayment prior to completion."
+    },
+    {
+      "risk": "Key Person Dependency",
+      "category": "people",
+      "severity": "high",
+      "likelihood": "medium",
+      "financial_impact": null,
+      "impact_description": "Loss of the Managing or Operations Director could lead to loss of client relationships and operational oversight.",
+      "mitigation": "Implement tie-in periods, earn-outs, and a structured handover/succession plan for the two directors."
+    },
+    {
+      "risk": "Aging Vehicle Fleet",
+      "category": "operational",
+      "severity": "low",
+      "likelihood": "high",
+      "financial_impact": 38559.4,
+      "impact_description": "High accumulated depreciation (61%) suggests imminent replacement costs for the pool of motor vehicles.",
+      "mitigation": "Adjust future cash flow projections to include increased CapEx or leasing costs for fleet renewal."
+    },
+    {
+      "risk": "Subcontractor Reliance",
+      "category": "revenue",
+      "severity": "medium",
+      "likelihood": "medium",
+      "financial_impact": 803912,
+      "impact_description": "High reliance on subcontractors (£803k vs £26k direct labour) creates margin vulnerability and quality control risks.",
+      "mitigation": "Review subcontractor agreements and ensure robust quality management systems are in place."
+    }
+  ],
+  "deal_breakers": [],
+  "key_findings": [
+    "The company shows exceptional growth and profitability, with net profit increasing from £27k to over £333k in 4 years.",
+    "Liquidity is excellent with a current ratio of 2.93 and over £668k in cash.",
+    "The primary risks are structural (key person dependency) and transactional (director loan accounts) rather than fundamental financial distress."
+  ],
+  "narrative": "Manor Building Solutions (UK) Ltd presents a low-to-moderate risk profile characterized by strong financial performance and rapid scaling. The company is technically solvent with a robust balance sheet and high interest coverage. The most significant risks identified are the high dependency on the two founding directors and the presence of a substantial director loan account (£176k) where the directors owe the company. While the lack of a detailed sales ledger prevents a granular analysis of customer concentration and bad debt, the overall financial trajectory is highly positive. Future owners should focus on institutionalizing the directors' relationships and planning for fleet replacement."
+}

@@ -1,0 +1,118 @@
+{
+  "expert": "valuation",
+  "company_name": "[AUDIT-137] MANOR BUILDING SOLUTIONS (UK) LTD",
+  "analysis_date": "2024-05-22",
+  "score": 78,
+  "confidence": "high",
+  "ebitda_multiple_valuation": {
+    "adjusted_ebitda_base": 376510,
+    "sector_multiple_range": {
+      "low": 2,
+      "mid": 2.75,
+      "high": 3.5
+    },
+    "selected_multiple": 2.75,
+    "multiple_justification": "A mid-range multiple of 2.75x is selected. While the company shows exceptional revenue growth (54% CAGR) and strong liquidity, these are balanced by significant SME risks including high owner dependency, a project-based revenue model lacking long-term contracts, and an aging vehicle fleet requiring imminent capital expenditure.",
+    "premium_factors_applied": [
+      "Exceptional revenue growth (54.12% CAGR)",
+      "Significant operating margin expansion (5.12% to 18.97%)",
+      "Strong cash position and interest coverage",
+      "Scalable model using variable subcontractor costs"
+    ],
+    "discount_factors_applied": [
+      "High owner dependency (Managing Director and Operations Director)",
+      "Project-based revenue lacks recurring contractual certainty",
+      "Aging vehicle fleet (61% depreciated)",
+      "Small headcount (<20) increasing operational key-man risk"
+    ],
+    "enterprise_value_range": {
+      "conservative": 753020,
+      "base": 1035402.5,
+      "optimistic": 1317785
+    }
+  },
+  "ev_to_equity_bridge": {
+    "enterprise_value_base": 1035402.5,
+    "plus_cash": 460444,
+    "minus_long_term_debt": 0,
+    "minus_director_loans": -159863,
+    "minus_bad_debt_provision": 0,
+    "minus_working_capital_adjustment": 0,
+    "equity_value": {
+      "conservative": 1373327,
+      "base": 1655709.5,
+      "optimistic": 1938092
+    }
+  },
+  "asset_based_valuation": {
+    "net_asset_value": 773863,
+    "property_adjustment": 0,
+    "bad_debt_adjustment": 0,
+    "adjusted_nav": 773863,
+    "nav_as_floor": true
+  },
+  "revenue_multiple_crosscheck": {
+    "latest_revenue": 2388764,
+    "revenue_multiple_range": {
+      "low": 0.25,
+      "high": 0.6
+    },
+    "implied_ev_range": {
+      "low": 597191,
+      "high": 1433258.4
+    }
+  },
+  "valuation_summary": {
+    "recommended_range": {
+      "equity_value_low": 1373000,
+      "equity_value_mid": 1656000,
+      "equity_value_high": 1938000
+    },
+    "primary_methodology": "ebitda_multiple",
+    "cross_check_alignment": "strong"
+  },
+  "sensitivity": {
+    "ebitda_plus_10pct": {
+      "enterprise_value": 1138942.75,
+      "equity_value": 1759249.75
+    },
+    "ebitda_minus_10pct": {
+      "enterprise_value": 931862.25,
+      "equity_value": 1552169.25
+    },
+    "multiple_plus_half": {
+      "enterprise_value": 1223657.5,
+      "equity_value": 1843964.5
+    },
+    "multiple_minus_half": {
+      "enterprise_value": 847147.5,
+      "equity_value": 1467454.5
+    },
+    "key_customer_loss_impact": "High. Due to project-based nature and lack of sales ledger detail, the loss of a single major contract could significantly impair the 18.97% operating margin.",
+    "director_replacement_impact": 89860
+  },
+  "seller_expectations": {
+    "likely_seller_expectation_range": {
+      "low": 2388764,
+      "high": 3500000
+    },
+    "seller_anchor_points": [
+      "1x Turnover (£2.39m)",
+      "Unadjusted EBITDA multiple (4.5x - 5x)",
+      "Emotional value of rapid growth trajectory"
+    ],
+    "negotiation_gap_assessment": "Significant. Sellers are likely to anchor on the unadjusted EBITDA of £471k or 1x Revenue. The gap between the buyer's base equity value (£1.65m) and a 1x revenue expectation (£2.39m) is approximately £740k. Negotiation will likely center on the validity of salary normalisation and the 'debt-like' treatment of the Director Loan Account."
+  },
+  "key_findings": [
+    "Adjusted EBITDA of £376,510 is the most reliable earnings base after correcting for under-market director salaries.",
+    "The business has a very strong cash position of £460,444 (FY2026) which significantly boosts equity value.",
+    "The Director Loan Account is an asset (Directors owe the company £159,863 in FY2026), which adds to the equity value in the bridge.",
+    "Revenue growth is exceptional, but gross margin compression from 56% to 43% suggests a shift toward more competitive, lower-margin work."
+  ],
+  "red_flags": [
+    "Director Loan Account (Asset) of £159,863 (FY2026) and £176,625 (Current) indicates significant value extraction via loans.",
+    "Aging vehicle fleet (61% depreciated) suggests a 'capex cliff' within 12-24 months.",
+    "High key-man risk with only two directors managing all strategic and operational functions."
+  ],
+  "narrative": "The valuation of Manor Building Solutions (UK) Ltd is driven by its impressive growth profile and robust cash generation, tempered by the structural risks typical of a small-scale construction firm. Using the Adjusted EBITDA of £376,510 (which accounts for market-rate replacement salaries for the two directors) and a sector-appropriate multiple of 2.75x, we derive a base Enterprise Value of £1.035m. The equity bridge is significantly impacted by the company's strong liquidity; we have used the FY2026 cash balance of £460,444 (verbatim from Reconciled Financials) and treated the £159,863 owed by directors to the company (FY2026) as an asset that increases equity value. This results in a recommended base Equity Value of approximately £1.65m. While the asset-based valuation of £773k provides a firm floor, the revenue multiple cross-check supports the EBITDA-derived range. The primary challenge in a transaction will be the 'valuation gap' created by the sellers' likely focus on unadjusted earnings and the rapid growth trajectory."
+}

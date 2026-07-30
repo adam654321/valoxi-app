@@ -1,0 +1,1039 @@
+{
+  "model": {
+    "id": 489,
+    "targetCompanyId": 1880,
+    "createdBy": 89,
+    "name": "Audit Model — TC 89",
+    "status": "draft",
+    "version": 1,
+    "transactionType": "share_sale",
+    "parentModelId": null,
+    "isLocked": false,
+    "averagingYears": 3,
+    "ebitdaMultiple": "2.5",
+    "offerDriver": "ebitda",
+    "targetOfferPrice": null,
+    "multipleLow": "2",
+    "multipleHigh": "3.5",
+    "propertyValue": "0",
+    "cashValue": "0",
+    "otherAssets": "0",
+    "calculatedEbitda": null,
+    "adjustedEbitda": "109490",
+    "enterpriseValue": "273725",
+    "plusExcessCash": "210202",
+    "minusPrimaryDebt": "182975",
+    "minusOtherDebt": "0",
+    "minusCorpTaxDue": "39122",
+    "minusWorkingCapitalAdj": "349824",
+    "workingCapitalMonths": 3,
+    "workingCapitalMonthlyAmount": "116608",
+    "totalPurchasePrice": null,
+    "totalFundingAvailable": null,
+    "equityRequired": null,
+    "upfrontCash": "225000",
+    "deferredAmount": "75000",
+    "deferredTerms": null,
+    "earnoutMaximum": "150000",
+    "earnoutMetric": "Gross Profit margin maintenance and Top-1 customer revenue retention",
+    "earnoutPeriodMonths": 24,
+    "retentionEscrow": "30000",
+    "feeLegalDdAmount": "25000",
+    "feeAccountingDdAmount": "15000",
+    "feeLoanArrangementAmount": "0",
+    "feeDealMakerAmount": "0",
+    "customFees": [],
+    "expertDataSnapshot": {
+      "qoe": {
+        "expert": "quality_of_earnings",
+        "company_name": "[AUDIT-89] Innova Design Group Limited",
+        "analysis_date": "2025-05-22",
+        "score": 62,
+        "confidence": "high",
+        "reported_figures": {
+          "operating_profit": 169033,
+          "depreciation": 49005,
+          "amortisation": 0,
+          "reported_ebitda": 218038,
+          "source_year": "2025"
+        },
+        "add_backs": [
+          {
+            "item": "Use of Home as Office",
+            "category": "personal_expense",
+            "amount": 1800,
+            "recurrence": "recurring",
+            "year": 2025,
+            "justification": "Standard non-cash personal expense identified in overheads breakdown for all years 2021-2025.",
+            "confidence": "high",
+            "defensibility_score": 9,
+            "case_for_inclusion": "This is a discretionary personal expense that would not be incurred by a corporate buyer.",
+            "case_for_exclusion": "The seller may argue it is a legitimate business expense for administrative work performed off-site."
+          }
+        ],
+        "deductions": [
+          {
+            "item": "Director Replacement Salary Adjustment",
+            "category": "replacement_salary",
+            "amount": 32360,
+            "recurrence": "recurring",
+            "year": 2025,
+            "justification": "Current director salary of £25,140 is significantly below the market mid-point of £57,500 for a £1M-£5M revenue SME.",
+            "confidence": "high",
+            "defensibility_score": 8,
+            "case_for_inclusion": "A commercial buyer would need to hire a replacement Managing Director at market rates to maintain operations.",
+            "case_for_exclusion": "The seller might argue the current workload does not justify a full-time market-rate MD."
+          },
+          {
+            "item": "Bad Debt Provision - Aged Debtors",
+            "category": "bad_debt_provision",
+            "amount": 52988,
+            "recurrence": "one_off",
+            "year": 2025,
+            "justification": "Sales ledger shows £52,988.23 (19.7% of total) is 90+ days overdue with specific 'client not happy' and 'retention' flags.",
+            "confidence": "high",
+            "defensibility_score": 7,
+            "case_for_inclusion": "Significant aged debt with documented disputes indicates these funds are unlikely to be fully recovered.",
+            "case_for_exclusion": "The seller may claim these are timing issues or retentions that will eventually be paid upon project completion."
+          },
+          {
+            "item": "Deferred Maintenance / Capex Catch-up",
+            "category": "deferred_maintenance",
+            "amount": 25000,
+            "recurrence": "recurring",
+            "year": 2025,
+            "justification": "Operational expert identifies a 'capex cliff' with core Biesse machinery from 2012/13 requiring imminent replacement or increased maintenance.",
+            "confidence": "medium",
+            "defensibility_score": 6,
+            "case_for_inclusion": "The aging asset base requires a higher annual maintenance provision than the historical average to ensure operational continuity.",
+            "case_for_exclusion": "The seller may point to the recent 2026 £92k Beamsaw investment as evidence that the fleet is already being modernized."
+          }
+        ],
+        "total_add_backs": 1800,
+        "total_deductions": 110348,
+        "adjusted_ebitda": {
+          "conservative": 107530,
+          "base": 109490,
+          "optimistic": 134490
+        },
+        "adjustment_summary": {
+          "reported_ebitda": 218038,
+          "plus_add_backs": 1800,
+          "minus_deductions": 110348,
+          "equals_adjusted_ebitda_base": 109490
+        },
+        "director_salary_analysis": {
+          "directors": [
+            {
+              "name": "Sole Director",
+              "current_salary": 25140,
+              "estimated_market_rate": 57500,
+              "benchmark_range_used": "Revenue £1M-£5M: Working MD/Owner-Director (£45,000–£70,000)",
+              "adjustment": 32360,
+              "adjustment_type": "deduction"
+            }
+          ]
+        },
+        "sustainability_assessment": {
+          "sustainable_for_3_years": false,
+          "key_assumptions": [
+            "Gross margins remain at the elevated 33.9% level achieved in 2025.",
+            "The high customer concentration (68% of debtors) does not result in a total loss of the account.",
+            "Subcontractor availability remains stable to support the flexible labor model."
+          ],
+          "sensitivity_factors": [
+            "Revenue volatility: The business has seen double-digit swings in 2023 and 2025.",
+            "Asset failure: The 12-year-old Biesse fleet is a single point of failure for production."
+          ],
+          "upside_scenarios": [
+            "Successful diversification of the customer base reducing the 68% concentration risk.",
+            "Full integration of the 2026 Beamsaw investment leading to higher throughput."
+          ],
+          "downside_scenarios": [
+            "Loss of the primary education-sector client which dominates the sales ledger.",
+            "Major machinery breakdown requiring emergency capital expenditure beyond the maintenance provision."
+          ]
+        },
+        "key_findings": [
+          "Reported EBITDA is significantly inflated by an under-market director salary and lack of bad debt provisioning.",
+          "Gross margins have improved significantly (23.6% to 33.9%), but overheads are 'sticky' and rising.",
+          "The business relies on a single debtor for nearly 69% of its trade receivables, creating extreme credit risk.",
+          "A 'capex cliff' is imminent as core production machinery is over 10 years old and heavily depreciated."
+        ],
+        "red_flags": [
+          "Extreme customer concentration: 68.7% of trade debtors from one entity.",
+          "Aged Debt: Nearly 20% of the ledger is 90+ days overdue with documented disputes.",
+          "Revenue Volatility: Lack of a clear growth trend with significant year-on-year fluctuations."
+        ],
+        "narrative": "The Quality of Earnings for Innova Design Group Limited is moderate. While the company shows impressive gross margin expansion, the 'true' earnings are lower than reported once adjusted for market-rate management costs and the reality of the aged debtor ledger. The base case Adjusted EBITDA of £109,490 represents a 50% reduction from the reported figure. The primary concern for a buyer is not just the earnings level, but the sustainability of those earnings given the extreme customer concentration and the aging machinery fleet. Any valuation multiple should be applied to this normalized figure, and the deal structure should likely include significant earn-outs or retentions to mitigate the risk of the disputed 90-day+ debts and the potential loss of the primary customer."
+      },
+      "valuation": {
+        "expert": "valuation",
+        "company_name": "[AUDIT-89] Innova Design Group Limited",
+        "analysis_date": "2025-05-22",
+        "score": 65,
+        "confidence": "medium",
+        "ebitda_multiple_valuation": {
+          "adjusted_ebitda_base": 109490,
+          "sector_multiple_range": {
+            "low": 2,
+            "mid": 2.75,
+            "high": 3.5
+          },
+          "selected_multiple": 2.5,
+          "multiple_justification": "A multiple of 2.5x is selected, sitting slightly below the sector midpoint. While the company shows impressive gross margin expansion (33.9%) and in-house design capabilities, these are heavily offset by critical risks. The extreme customer concentration (68.7% of debtors from one client) and the 'capex cliff' regarding 12-year-old machinery necessitate a discount from the sector average for a business of this scale.",
+          "premium_factors_applied": [
+            "Significant Gross Margin expansion from 23.6% to 33.9%",
+            "In-house design capability providing higher value-add than pure fabrication",
+            "Strong interest coverage ratio (16.37x) providing debt capacity"
+          ],
+          "discount_factors_applied": [
+            "Critical customer concentration (68.7% of revenue/debtors)",
+            "Aging asset base (66.5% depreciated) requiring imminent replacement",
+            "Revenue volatility with significant year-on-year swings",
+            "Small scale (sub-£5m revenue) limiting buyer pool"
+          ],
+          "enterprise_value_range": {
+            "conservative": 214980,
+            "base": 273725,
+            "optimistic": 383215
+          }
+        },
+        "ev_to_equity_bridge": {
+          "enterprise_value_base": 273725,
+          "plus_cash": 210202,
+          "minus_long_term_debt": 182975,
+          "minus_director_loans": 0,
+          "minus_bad_debt_provision": 52988,
+          "minus_working_capital_adjustment": 0,
+          "equity_value": {
+            "conservative": 189219,
+            "base": 247964,
+            "optimistic": 357454
+          }
+        },
+        "asset_based_valuation": {
+          "net_asset_value": 648347,
+          "property_adjustment": 0,
+          "bad_debt_adjustment": 52988,
+          "adjusted_nav": 595359,
+          "nav_as_floor": true
+        },
+        "revenue_multiple_crosscheck": {
+          "latest_revenue": 4509086,
+          "revenue_multiple_range": {
+            "low": 0.4,
+            "high": 0.8
+          },
+          "implied_ev_range": {
+            "low": 1803634,
+            "high": 3607268
+          }
+        },
+        "valuation_summary": {
+          "recommended_range": {
+            "equity_value_low": 190000,
+            "equity_value_mid": 250000,
+            "equity_value_high": 360000
+          },
+          "primary_methodology": "ebitda_multiple",
+          "cross_check_alignment": "weak"
+        },
+        "sensitivity": {
+          "ebitda_plus_10pct": {
+            "enterprise_value": 301097,
+            "equity_value": 275336
+          },
+          "ebitda_minus_10pct": {
+            "enterprise_value": 246352,
+            "equity_value": 220591
+          },
+          "multiple_plus_half": {
+            "enterprise_value": 328470,
+            "equity_value": 302709
+          },
+          "multiple_minus_half": {
+            "enterprise_value": 218980,
+            "equity_value": 193219
+          },
+          "key_customer_loss_impact": 3095000,
+          "director_replacement_impact": 32360
+        },
+        "seller_expectations": {
+          "likely_seller_expectation_range": {
+            "low": 1000000,
+            "high": 2250000
+          },
+          "seller_anchor_points": [
+            "Reported EBITDA of £218,038 (ignoring market salary adjustments)",
+            "Net Asset Value of £648,347",
+            "Historical peak revenue of £5.75m in 2022",
+            "Emotional value of the 'Innova Design' brand"
+          ],
+          "negotiation_gap_assessment": "There is a significant gap between the earnings-based valuation and the Net Asset Value. The seller is likely to anchor on the NAV of ~£648k as a floor, whereas the adjusted earnings only support an equity value of ~£250k. A buyer will struggle to pay for assets that are not generating a commensurate return on investment."
+        },
+        "key_findings": [
+          "Adjusted EBITDA (£109k) is 50% lower than reported due to under-market director pay and bad debt.",
+          "The business is asset-rich but earnings-poor relative to its capital base.",
+          "Extreme customer concentration (68.7%) makes the business a 'high-risk' acquisition.",
+          "The 2026 cash position of £210,202 (from Risk Expert) provides a significant boost to equity value.",
+          "Revenue multiple cross-check is ignored as it produces values disconnected from the thin operating margins."
+        ],
+        "red_flags": [
+          "19.7% of the sales ledger is 90+ days overdue with documented disputes.",
+          "Core production machinery is over 10 years old and requires replacement.",
+          "Revenue has a negative 4-year CAGR of -0.8%, showing lack of growth."
+        ],
+        "narrative": "The valuation of Innova Design Group Limited presents a classic SME conflict between asset value and earnings power. On an earnings basis, using a normalized EBITDA of £109,490 (which accounts for a market-rate MD salary and bad debt provisions), the business supports an Enterprise Value of approximately £273k at a 2.5x multiple. After bridging for cash (£210,202 from 2026 figures) and debt (£182,975), the resulting Equity Value is £247,964. However, the Net Asset Value stands much higher at over £648k. In such cases, a seller will rarely accept a price below the liquidation value of the assets. A trade buyer may see value in the design IP and the education sector relationships, but the extreme customer concentration and the 'capex cliff' for the Biesse machinery fleet make this a high-risk proposition. The most likely deal structure would involve a base price near the adjusted NAV, but with a significant portion held in escrow or structured as an earn-out contingent on the retention of the primary education-sector client and the successful recovery of the disputed aged debt."
+      },
+      "deal_structure": {
+        "expert": "deal_structure",
+        "company_name": "[AUDIT-89] Innova Design Group Limited",
+        "analysis_date": "2025-05-22",
+        "score": 45,
+        "confidence": "high",
+        "structures": [
+          {
+            "name": "Conservative Approach",
+            "strategy": "Focus on earnings-based valuation with maximum protection against customer loss and bad debt recovery.",
+            "risk_to_buyer": "high",
+            "suitable_when": "The buyer is highly risk-averse regarding the 68.7% customer concentration and the aging machinery fleet.",
+            "consideration": {
+              "total_headline": 250000,
+              "upfront_cash": 100000,
+              "upfront_percent": 40,
+              "deferred": 50000,
+              "earnout_maximum": 100000,
+              "earnout_metric": "Retention of Commercial Services Education Ltd and EBITDA stability",
+              "earnout_period_months": 36,
+              "earnout_rationale": "Addresses Trigger 1 (Customer Concentration) and Trigger 2 (Revenue Stagnation). The Risk Expert identified a 68.7% concentration in one client; this earnout ensures the buyer only pays the full valuation if that client remains.",
+              "retention_escrow": 52988
+            },
+            "key_conditions": [
+              "Pound-for-pound indemnity for all trade debt over 90 days",
+              "Successful novation or change-of-control consent from Commercial Services Education Ltd",
+              "Seller to remain as consultant for 12 months to transition key relationships"
+            ],
+            "notes": "Seller must provide a 12-month handover and a 3-year non-compete covering the UK education furniture sector. Specific indemnity required for the £52,988 in disputed aged debt. Warranty cap at 50% of consideration with a 24-month period. Completion accounts mechanism with a working capital peg of £519,000. Risk is high due to the 'capex cliff' and extreme customer concentration."
+          },
+          {
+            "name": "Balanced Approach",
+            "strategy": "Bridges the gap between the earnings-based valuation and the Net Asset Value floor to satisfy seller expectations while maintaining risk mitigation.",
+            "risk_to_buyer": "high",
+            "suitable_when": "The seller refuses to sell below NAV and the buyer sees long-term value in the design IP and sector relationships.",
+            "consideration": {
+              "total_headline": 450000,
+              "upfront_cash": 225000,
+              "upfront_percent": 50,
+              "deferred": 75000,
+              "earnout_maximum": 150000,
+              "earnout_metric": "Gross Profit margin maintenance and Top-1 customer revenue retention",
+              "earnout_period_months": 24,
+              "earnout_rationale": "Addresses Trigger 1 (Customer Concentration) and Trigger 4 (Uncertain Add-backs). The QoE expert noted that reported EBITDA is inflated; this earnout validates the sustainability of the 33.9% gross margins.",
+              "retention_escrow": 30000
+            },
+            "key_conditions": [
+              "Key customer retention clause for the duration of the earnout",
+              "Capital expenditure reserve of £100k to be established post-completion for machinery replacement",
+              "Bad debt provision of £52,988 to be deducted from the completion balance sheet"
+            ],
+            "notes": "6-month full-time handover followed by 12 months of on-call consultancy. Standard warranties with a 100% cap on the earnout portion. Locked-box mechanism based on the 2026-05-31 balance sheet. Risk is high because the buyer is paying a premium over earnings-based value for aging assets."
+          },
+          {
+            "name": "Competitive Approach",
+            "strategy": "Aggressive upfront offer closer to the Net Asset Value to secure the deal in a competitive process, while still protecting against the most critical risk.",
+            "risk_to_buyer": "high",
+            "suitable_when": "There are multiple bidders and the buyer has a specific synergy or plan to diversify the customer base rapidly.",
+            "consideration": {
+              "total_headline": 600000,
+              "upfront_cash": 360000,
+              "upfront_percent": 60,
+              "deferred": 100000,
+              "earnout_maximum": 140000,
+              "earnout_metric": "Retention of Commercial Services Education Ltd revenue at >90% of historic levels",
+              "earnout_period_months": 12,
+              "earnout_rationale": "Addresses Trigger 1 (Customer Concentration). Even in a competitive bid, the 68.7% concentration identified by the Risk Expert is too high to pay fully upfront without a retention guarantee.",
+              "retention_escrow": 25000
+            },
+            "key_conditions": [
+              "Seller to provide personal guarantee for the recovery of the top 3 disputed debts",
+              "Immediate recruitment of a Sales Director to mitigate key person/concentration risk",
+              "Warranty package focused on asset title and customer contracts"
+            ],
+            "notes": "3-month handover period. Lighter warranty requirements with a 25% basket and 1% de minimis. Completion accounts mechanism. Risk is high as the buyer is effectively paying for the asset base (NAV) while the earnings are insufficient to service the debt if the main customer leaves."
+          }
+        ],
+        "recommended_structure": "Conservative Approach",
+        "recommendation_rationale": "The massive discrepancy between the earnings-based valuation (£250k) and the seller's likely expectation (NAV of £648k+) creates a high-risk environment. The Conservative Approach is recommended because the 68.7% customer concentration is a 'single point of failure' that could bankrupt the entity post-acquisition. Furthermore, the 'capex cliff' identified by the Operational Expert means the buyer will need to reinvest significant cash flow into new machinery almost immediately, making a high upfront payment dangerous.",
+        "negotiation_priorities": [
+          "Verification of the status of the 19.7% aged debt and securing indemnities for it",
+          "Obtaining formal 'Change of Control' comfort from Commercial Services Education Ltd",
+          "Adjusting the purchase price for the imminent replacement cost of the 12-year-old Biesse machinery",
+          "Ensuring the working capital peg accounts for the high seasonality of the education sector"
+        ],
+        "deal_breaker_terms": [
+          "Loss of Commercial Services Education Ltd prior to completion",
+          "Discovery that the 2026 Beamsaw investment is subject to onerous finance terms not disclosed",
+          "Refusal of the seller to provide a pound-for-pound indemnity on the disputed £53k debt"
+        ],
+        "key_findings": [
+          "The business is asset-rich but earnings-poor, creating a valuation gap of nearly £400k.",
+          "Customer concentration (68.7%) is the primary risk factor and must dictate the earnout structure.",
+          "Reported EBITDA is 50% higher than normalized EBITDA due to under-market management costs.",
+          "The aging machinery fleet (66.5% depreciated) represents a significant hidden liability for the buyer."
+        ],
+        "narrative": "Structuring a deal for Innova Design Group is a challenge of balancing a strong balance sheet against fragile earnings. While the company has a healthy NAV of £648k, its adjusted EBITDA of £109k only supports a valuation of £250k. A buyer paying anywhere near the NAV is taking on significant risk, particularly given that nearly 70% of the revenue comes from one client and the core production machinery is at the end of its life. The recommended structure uses a low upfront payment based on earnings, with the remainder of the value (bridging toward NAV) tied to the actual retention of that key customer and the recovery of a troubled sales ledger. This ensures the buyer only pays for the 'assets' if those assets continue to produce the expected economic return."
+      },
+      "financial": {
+        "expert": "financial",
+        "company_name": "[AUDIT-89] Innova Design Group Limited",
+        "analysis_date": "2025-05-22",
+        "score": 68,
+        "confidence": "high",
+        "yearly_metrics": {
+          "2021": {
+            "revenue": 4656312,
+            "revenue_yoy_growth_percent": null,
+            "cost_of_sales": 3558769,
+            "gross_profit": 1097543,
+            "gross_margin_percent": 23.57,
+            "administrative_expenses": 960613,
+            "operating_profit": 136930,
+            "operating_margin_percent": 2.94,
+            "depreciation_amortisation": 76175,
+            "ebitda": 213105,
+            "interest_payable": 29920,
+            "interest_coverage_ratio": 4.58,
+            "profit_before_tax": 107010,
+            "corporation_tax": -48949,
+            "effective_tax_rate_percent": -45.74,
+            "net_profit": 155959,
+            "net_margin_percent": 3.35
+          },
+          "2022": {
+            "revenue": 5754293,
+            "revenue_yoy_growth_percent": 23.58,
+            "cost_of_sales": 4437034,
+            "gross_profit": 1317259,
+            "gross_margin_percent": 22.89,
+            "administrative_expenses": 1078058,
+            "operating_profit": 239201,
+            "operating_margin_percent": 4.16,
+            "depreciation_amortisation": 61034,
+            "ebitda": 300235,
+            "interest_payable": 48926,
+            "interest_coverage_ratio": 4.89,
+            "profit_before_tax": 190275,
+            "corporation_tax": -19642,
+            "effective_tax_rate_percent": -10.32,
+            "net_profit": 209917,
+            "net_margin_percent": 3.65
+          },
+          "2023": {
+            "revenue": 4450279,
+            "revenue_yoy_growth_percent": -22.66,
+            "cost_of_sales": 3248360,
+            "gross_profit": 1201919,
+            "gross_margin_percent": 27.01,
+            "administrative_expenses": 1076406,
+            "operating_profit": 125513,
+            "operating_margin_percent": 2.82,
+            "depreciation_amortisation": 54527,
+            "ebitda": 180040,
+            "interest_payable": 15450,
+            "interest_coverage_ratio": 8.12,
+            "profit_before_tax": 110605,
+            "corporation_tax": 22101,
+            "effective_tax_rate_percent": 19.98,
+            "net_profit": 88504,
+            "net_margin_percent": 1.99
+          },
+          "2024": {
+            "revenue": 4956153,
+            "revenue_yoy_growth_percent": 11.37,
+            "cost_of_sales": 3366215,
+            "gross_profit": 1589938,
+            "gross_margin_percent": 32.08,
+            "administrative_expenses": 1198254,
+            "operating_profit": 391684,
+            "operating_margin_percent": 7.9,
+            "depreciation_amortisation": 52606,
+            "ebitda": 444290,
+            "interest_payable": 18842,
+            "interest_coverage_ratio": 20.79,
+            "profit_before_tax": 372842,
+            "corporation_tax": 99882,
+            "effective_tax_rate_percent": 26.79,
+            "net_profit": 272960,
+            "net_margin_percent": 5.51
+          },
+          "2025": {
+            "revenue": 4509086,
+            "revenue_yoy_growth_percent": -9.02,
+            "cost_of_sales": 2979013,
+            "gross_profit": 1530073,
+            "gross_margin_percent": 33.93,
+            "administrative_expenses": 1361040,
+            "operating_profit": 169033,
+            "operating_margin_percent": 3.75,
+            "depreciation_amortisation": 49005,
+            "ebitda": 218038,
+            "interest_payable": 10327,
+            "interest_coverage_ratio": 16.37,
+            "profit_before_tax": 158706,
+            "corporation_tax": 39122,
+            "effective_tax_rate_percent": 24.65,
+            "net_profit": 119584,
+            "net_margin_percent": 2.65
+          }
+        },
+        "cagr": {
+          "revenue_cagr_percent": -0.8,
+          "gross_profit_cagr_percent": 8.66,
+          "operating_profit_cagr_percent": 5.41,
+          "period_years": 4
+        },
+        "cost_structure": {
+          "cost_of_sales_percent_revenue": 66.07,
+          "overheads_percent_revenue": 30.18,
+          "staff_costs_percent_revenue": 15.88,
+          "director_costs_percent_revenue": 0.56,
+          "top_5_overheads": [
+            {
+              "category": "Staff Wages & Salaries",
+              "value": 629176,
+              "percent_of_overheads": 46.23
+            },
+            {
+              "category": "Rent & Rates",
+              "value": 235186,
+              "percent_of_overheads": 17.28
+            },
+            {
+              "category": "Employers National Insurance",
+              "value": 71084,
+              "percent_of_overheads": 5.22
+            },
+            {
+              "category": "Depreciation",
+              "value": 49005,
+              "percent_of_overheads": 3.6
+            },
+            {
+              "category": "Utilities",
+              "value": 43142,
+              "percent_of_overheads": 3.17
+            }
+          ],
+          "cost_base_classification": "mixed"
+        },
+        "earnings_quality": {
+          "net_profit_tracks_operating_profit": true,
+          "exceptional_items_identified": [],
+          "tax_rate_consistent": false,
+          "ebitda_latest": 218038,
+          "ebitda_trend": "stable",
+          "limitations": [
+            "Negative effective tax rates in 2021-2022 suggest prior year adjustments or R&D tax credits not explicitly detailed."
+          ]
+        },
+        "debt_service": {
+          "latest_interest_coverage": 16.37,
+          "interest_coverage_trend": "improving",
+          "additional_debt_capacity_assessment": "Strong. Interest coverage has improved significantly from 4.58x in 2021 to 16.37x in 2025, indicating substantial headroom for acquisition debt."
+        },
+        "key_findings": [
+          "Revenue is volatile, peaking at £5.75m in 2022 before settling at £4.51m in 2025, resulting in a flat 4-year CAGR of -0.80%.",
+          "Gross margins have shown impressive expansion, rising from 23.6% in 2021 to 33.9% in 2025, suggesting better pricing power or procurement efficiency.",
+          "Operating margins remain thin and sensitive to volume, fluctuating between 2.8% and 7.9% over the period.",
+          "Subcontractor costs are a major component of Cost of Sales, though they have reduced from £2.16m (2021) to £1.32m (2025).",
+          "Staff costs as a percentage of revenue increased significantly in 2025 (15.9%) compared to 2024 (11.5%), indicating recent hiring or wage pressure.",
+          "The company maintains a healthy interest coverage ratio, providing comfort regarding debt serviceability.",
+          "Rent and rates have increased by 55% since 2021, suggesting expansion of physical footprint or significant lease escalations."
+        ],
+        "red_flags": [
+          "Revenue volatility: Two years of significant double-digit declines (2023 and 2025) suggest a project-based or cyclical revenue stream.",
+          "High overhead growth: Administrative expenses have grown by 41.7% since 2021 despite revenue being lower in 2025 than in 2021.",
+          "Customer concentration: Sales ledger data indicates a single debtor represents nearly 69% of total trade receivables."
+        ],
+        "narrative": "Innova Design Group Limited presents a financial profile typical of a mature manufacturing entity navigating volatile demand. While the top-line revenue has failed to establish a clear growth trend—ending 2025 slightly below 2021 levels—the underlying profitability metrics tell a more nuanced story. The most significant positive trend is the expansion of the Gross Margin, which has improved by over 1,000 basis points since 2021. This suggests that the management has successfully shifted the mix towards higher-margin work or achieved significant efficiencies in direct material and subcontractor procurement.\n\nHowever, these gains at the gross level are being partially eroded by a rising fixed cost base. Administrative expenses have climbed steadily every year, even when revenue contracted. In 2025, the company saw a notable spike in staff costs and rent, which compressed the operating margin back down to 3.75% from a high of 7.90% in the previous year. This 'sticky' overhead structure makes the bottom line highly sensitive to even minor revenue fluctuations.\n\nFrom an M&A perspective, the earnings quality is generally high, with EBITDA tracking operating cash flow potential and no obvious reliance on exceptional items. The balance sheet appears stable, and the interest coverage ratio of 16.37x provides significant comfort for a leveraged buy-out. The primary risk for a buyer is the lack of organic revenue growth and the high customer concentration noted in the sales ledger. Future valuation should focus on the sustainability of the improved gross margins and the ability to scale revenue without further significant increases in the administrative cost base."
+      }
+    },
+    "financialDataSnapshot": {
+      "balanceSheet": {
+        "id": 4887,
+        "financialPeriodId": 7979,
+        "targetCompanyId": 1880,
+        "intangibleAssets": null,
+        "tangibleFixedAssets": "269921",
+        "freeholdProperty": null,
+        "leaseholdProperty": null,
+        "plantMachinery": "249529",
+        "fixturesFittings": null,
+        "motorVehicles": null,
+        "computerEquipment": "20392",
+        "stockInventory": "386462",
+        "tradeDebtors": "480236",
+        "prepayments": "80360",
+        "amountsOwedByDirectors": null,
+        "amountsOwedByConnectedCompanies": null,
+        "directorsCurrentAccount": null,
+        "otherDebtors": "12211",
+        "cashAtBank": "210202",
+        "totalCurrentAssets": "1145049",
+        "tradeCreditors": "248574",
+        "taxationSocialSecurity": "39357",
+        "vatPayable": "163976",
+        "corporationTaxDue": "39122",
+        "bankLoansOverdraftCurrent": null,
+        "hirePurchaseCurrent": null,
+        "accruals": "116331",
+        "amountsOwedToDirectors": null,
+        "otherCreditors": "34350",
+        "totalCurrentLiabilities": "583648",
+        "bankLoansLongTerm": null,
+        "hirePurchaseLongTerm": null,
+        "deferredTaxation": null,
+        "otherLongTermDebt": "182975",
+        "totalLongTermLiabilities": "182975",
+        "shareCapital": "100",
+        "retainedEarnings": "648247",
+        "totalEquity": "648347",
+        "debtorsList": null,
+        "creditorsList": null,
+        "fixedAssetsDetail": null,
+        "sourceDocumentId": 5866,
+        "createdAt": "2026-07-30T01:27:00.203Z",
+        "updatedAt": "2026-07-30T01:28:10.543Z",
+        "fiscalYear": "2026",
+        "periodEnd": "2026-05-31",
+        "sourceTier": "management",
+        "_label": "CURRENT POSITION"
+      },
+      "fixedAssets": {
+        "id": 27,
+        "targetCompanyId": 1880,
+        "reportDate": "2026-03-31",
+        "totalGrossBookValue": "849608.84",
+        "totalAccumulatedDepreciation": "564943.26",
+        "totalNetBookValue": "284665.58",
+        "propertyGrossValue": null,
+        "propertyNetBookValue": null,
+        "plantMachineryGrossValue": "803748.05",
+        "plantMachineryNetBookValue": "262792.56",
+        "vehiclesGrossValue": null,
+        "vehiclesNetBookValue": null,
+        "itEquipmentGrossValue": "45860.79",
+        "itEquipmentNetBookValue": "21873.02",
+        "otherAssetsGrossValue": null,
+        "otherAssetsNetBookValue": null,
+        "refinanceableAssetsValue": "262792.56",
+        "fullyDepreciatedStillInUse": "18406.01",
+        "assetItems": [
+          {
+            "description": "Ney Ltd - M.KDT K5-543H Front Load Twin Pusher Beamsaw",
+            "category": "Plant & Machinery",
+            "purchase_date": "2026-02-28",
+            "cost": 92185.04,
+            "accumulated_depreciation": 3072.83,
+            "net_book_value": 89112.21,
+            "depreciation_rate": 20,
+            "depreciation_method": "Reducing Balance",
+            "location": "Shop Floor",
+            "condition": null
+          },
+          {
+            "description": "M. Fravol Fast F625-23 Edgebander",
+            "category": "Plant & Machinery",
+            "purchase_date": "2023-06-26",
+            "cost": 60882.72,
+            "accumulated_depreciation": 27546.05,
+            "net_book_value": 33336.67,
+            "depreciation_rate": 20,
+            "depreciation_method": "Reducing Balance",
+            "location": "Shop Floor",
+            "condition": null
+          },
+          {
+            "description": "Panotec 1.40 Midi Packaging Machine",
+            "category": "Plant & Machinery",
+            "purchase_date": "2025-09-15",
+            "cost": 25000,
+            "accumulated_depreciation": 2847.22,
+            "net_book_value": 22152.78,
+            "depreciation_rate": 20,
+            "depreciation_method": "Reducing Balance",
+            "location": "Shop Floor",
+            "condition": null
+          },
+          {
+            "description": "Biesse Rover B - Praetura 102364",
+            "category": "Plant & Machinery",
+            "purchase_date": null,
+            "cost": 126000,
+            "accumulated_depreciation": 106622.32,
+            "net_book_value": 19377.68,
+            "depreciation_rate": 20,
+            "depreciation_method": "Reducing Balance",
+            "location": "Shop Floor",
+            "condition": null
+          },
+          {
+            "description": "Fortes (2019 Addition)",
+            "category": "Plant & Machinery",
+            "purchase_date": "2019-01-01",
+            "cost": 73370,
+            "accumulated_depreciation": 55098.17,
+            "net_book_value": 18271.83,
+            "depreciation_rate": 20,
+            "depreciation_method": "Reducing Balance",
+            "location": "Shop Floor",
+            "condition": null
+          },
+          {
+            "description": "fortis assetts purchase buy back",
+            "category": "Plant & Machinery",
+            "purchase_date": null,
+            "cost": 86764.6,
+            "accumulated_depreciation": 73178.36,
+            "net_book_value": 13586.24,
+            "depreciation_rate": 20,
+            "depreciation_method": "Reducing Balance",
+            "location": "Shop Floor",
+            "condition": null
+          },
+          {
+            "description": "Ney Ltd - Lohmeyer NCB2806 CNC drilling machine",
+            "category": "Plant & Machinery",
+            "purchase_date": "2024-08-02",
+            "cost": 14350,
+            "accumulated_depreciation": 4177.44,
+            "net_book_value": 10172.56,
+            "depreciation_rate": 20,
+            "depreciation_method": "Reducing Balance",
+            "location": "Shop Floor",
+            "condition": null
+          },
+          {
+            "description": "Payment to Fortis (Asset 12)",
+            "category": "Plant & Machinery",
+            "purchase_date": null,
+            "cost": 44800,
+            "accumulated_depreciation": 36031.11,
+            "net_book_value": 8768.89,
+            "depreciation_rate": 20,
+            "depreciation_method": "Reducing Balance",
+            "location": "Shop Floor",
+            "condition": null
+          },
+          {
+            "description": "Fortes (2020 Addition)",
+            "category": "Plant & Machinery",
+            "purchase_date": "2020-01-01",
+            "cost": 34000,
+            "accumulated_depreciation": 25681.3,
+            "net_book_value": 8318.7,
+            "depreciation_rate": 20,
+            "depreciation_method": "Reducing Balance",
+            "location": "Shop Floor",
+            "condition": null
+          },
+          {
+            "description": "HPE ProLiant ML350 Gen11 Server system",
+            "category": "Office Equipment",
+            "purchase_date": "2025-02-01",
+            "cost": 12145,
+            "accumulated_depreciation": 4385.69,
+            "net_book_value": 7759.31,
+            "depreciation_rate": 33.33,
+            "depreciation_method": "Straight-line",
+            "location": "Server Room",
+            "condition": null
+          },
+          {
+            "description": "Biesse Rover A (Nestor) Serial no. 67667",
+            "category": "Plant & Machinery",
+            "purchase_date": null,
+            "cost": 40936.04,
+            "accumulated_depreciation": 34640.44,
+            "net_book_value": 6295.6,
+            "depreciation_rate": 20,
+            "depreciation_method": "Reducing Balance",
+            "location": "Shop Floor",
+            "condition": null
+          },
+          {
+            "description": "2013 Biesse Skipper 130 Serial no. 43256",
+            "category": "Plant & Machinery",
+            "purchase_date": null,
+            "cost": 40936.04,
+            "accumulated_depreciation": 34640.44,
+            "net_book_value": 6295.6,
+            "depreciation_rate": 20,
+            "depreciation_method": "Reducing Balance",
+            "location": "Shop Floor",
+            "condition": null
+          },
+          {
+            "description": "Strapack SQ-800 Strapping Machine",
+            "category": "Plant & Machinery",
+            "purchase_date": "2025-11-01",
+            "cost": 6020,
+            "accumulated_depreciation": 501.67,
+            "net_book_value": 5518.33,
+            "depreciation_rate": 20,
+            "depreciation_method": "Reducing Balance",
+            "location": "Shop Floor",
+            "condition": null
+          },
+          {
+            "description": "2013 Biesse/Selco Sektor 470 Beamsaw",
+            "category": "Plant & Machinery",
+            "purchase_date": null,
+            "cost": 26056.09,
+            "accumulated_depreciation": 22048.89,
+            "net_book_value": 4007.2,
+            "depreciation_rate": 20,
+            "depreciation_method": "Reducing Balance",
+            "location": "Shop Floor",
+            "condition": null
+          },
+          {
+            "description": "2012 SCM Stefani Solution Ltd Edgebander",
+            "category": "Plant & Machinery",
+            "purchase_date": null,
+            "cost": 24190.32,
+            "accumulated_depreciation": 20470.06,
+            "net_book_value": 3720.26,
+            "depreciation_rate": 20,
+            "depreciation_method": "Reducing Balance",
+            "location": "Shop Floor",
+            "condition": null
+          }
+        ],
+        "propertyDetails": [],
+        "vehicleDetails": [],
+        "sourceDocumentId": 5871,
+        "createdAt": "2026-07-30T01:25:09.950Z",
+        "updatedAt": "2026-07-30T01:28:27.392Z"
+      }
+    },
+    "notes": null,
+    "createdAt": "2026-07-30T01:31:48.343Z",
+    "updatedAt": "2026-07-30T01:31:48.343Z",
+    "adjustments": [
+      {
+        "id": 2043,
+        "dealModelId": 489,
+        "sourceExpertResultId": 820,
+        "adjustmentType": "add_back",
+        "category": "personal_expense",
+        "description": "Use of Home as Office",
+        "amount": "1800",
+        "amountsByYear": null,
+        "sourceExpert": "qoe",
+        "reasoning": "Standard non-cash personal expense identified in overheads breakdown for all years 2021-2025.",
+        "confidence": "high",
+        "defensibilityScore": 9,
+        "caseForInclusion": "This is a discretionary personal expense that would not be incurred by a corporate buyer.",
+        "caseForExclusion": "The seller may argue it is a legitimate business expense for administrative work performed off-site.",
+        "status": "suggested",
+        "isAccepted": false,
+        "isManual": false,
+        "sortOrder": 0,
+        "createdAt": "2026-07-30T01:31:48.355Z",
+        "updatedAt": "2026-07-30T01:31:48.355Z"
+      },
+      {
+        "id": 2044,
+        "dealModelId": 489,
+        "sourceExpertResultId": 820,
+        "adjustmentType": "deduction",
+        "category": "replacement_salary",
+        "description": "Director Replacement Salary Adjustment",
+        "amount": "32360",
+        "amountsByYear": null,
+        "sourceExpert": "qoe",
+        "reasoning": "Current director salary of £25,140 is significantly below the market mid-point of £57,500 for a £1M-£5M revenue SME.",
+        "confidence": "high",
+        "defensibilityScore": 8,
+        "caseForInclusion": "A commercial buyer would need to hire a replacement Managing Director at market rates to maintain operations.",
+        "caseForExclusion": "The seller might argue the current workload does not justify a full-time market-rate MD.",
+        "status": "suggested",
+        "isAccepted": false,
+        "isManual": false,
+        "sortOrder": 1,
+        "createdAt": "2026-07-30T01:31:48.359Z",
+        "updatedAt": "2026-07-30T01:31:48.359Z"
+      },
+      {
+        "id": 2045,
+        "dealModelId": 489,
+        "sourceExpertResultId": 820,
+        "adjustmentType": "deduction",
+        "category": "bad_debt_provision",
+        "description": "Bad Debt Provision - Aged Debtors",
+        "amount": "52988",
+        "amountsByYear": {
+          "2021": 0,
+          "2022": 0,
+          "2023": 0,
+          "2024": 0,
+          "2025": 52988,
+          "2026": 0
+        },
+        "sourceExpert": "qoe",
+        "reasoning": "Sales ledger shows £52,988.23 (19.7% of total) is 90+ days overdue with specific 'client not happy' and 'retention' flags.",
+        "confidence": "high",
+        "defensibilityScore": 7,
+        "caseForInclusion": "Significant aged debt with documented disputes indicates these funds are unlikely to be fully recovered.",
+        "caseForExclusion": "The seller may claim these are timing issues or retentions that will eventually be paid upon project completion.",
+        "status": "suggested",
+        "isAccepted": false,
+        "isManual": false,
+        "sortOrder": 2,
+        "createdAt": "2026-07-30T01:31:48.365Z",
+        "updatedAt": "2026-07-30T01:31:48.365Z"
+      },
+      {
+        "id": 2046,
+        "dealModelId": 489,
+        "sourceExpertResultId": 820,
+        "adjustmentType": "deduction",
+        "category": "deferred_maintenance",
+        "description": "Deferred Maintenance / Capex Catch-up",
+        "amount": "25000",
+        "amountsByYear": null,
+        "sourceExpert": "qoe",
+        "reasoning": "Operational expert identifies a 'capex cliff' with core Biesse machinery from 2012/13 requiring imminent replacement or increased maintenance.",
+        "confidence": "medium",
+        "defensibilityScore": 6,
+        "caseForInclusion": "The aging asset base requires a higher annual maintenance provision than the historical average to ensure operational continuity.",
+        "caseForExclusion": "The seller may point to the recent 2026 £92k Beamsaw investment as evidence that the fleet is already being modernized.",
+        "status": "suggested",
+        "isAccepted": false,
+        "isManual": false,
+        "sortOrder": 3,
+        "createdAt": "2026-07-30T01:31:48.370Z",
+        "updatedAt": "2026-07-30T01:31:48.370Z"
+      }
+    ],
+    "fundingLines": [
+      {
+        "id": 1374,
+        "dealModelId": 489,
+        "fundingType": "receivables_finance",
+        "label": "Receivables Finance (Invoice Factoring)",
+        "assetBaseValue": "480236",
+        "ltvPercent": "80",
+        "availableAmount": "384189",
+        "amountUsed": "0",
+        "interestRate": "4.5",
+        "arrangementFeePercent": null,
+        "termMonths": 0,
+        "monthlyRepayment": null,
+        "isDebt": true,
+        "repaymentStructure": "amortizing",
+        "isActive": false,
+        "notes": null,
+        "sortOrder": 0,
+        "createdAt": "2026-07-30T01:31:48.375Z",
+        "updatedAt": "2026-07-30T01:31:48.375Z"
+      },
+      {
+        "id": 1375,
+        "dealModelId": 489,
+        "fundingType": "asset_finance",
+        "label": "Asset Finance (Plant, Machinery & Vehicles)",
+        "assetBaseValue": "262792.56",
+        "ltvPercent": "60",
+        "availableAmount": "157676",
+        "amountUsed": "0",
+        "interestRate": "6.0",
+        "arrangementFeePercent": null,
+        "termMonths": 60,
+        "monthlyRepayment": null,
+        "isDebt": true,
+        "repaymentStructure": "amortizing",
+        "isActive": false,
+        "notes": null,
+        "sortOrder": 1,
+        "createdAt": "2026-07-30T01:31:48.379Z",
+        "updatedAt": "2026-07-30T01:31:48.379Z"
+      },
+      {
+        "id": 1376,
+        "dealModelId": 489,
+        "fundingType": "cash_equity",
+        "label": "Cash Equity (Cash to Introduce)",
+        "assetBaseValue": null,
+        "ltvPercent": null,
+        "availableAmount": null,
+        "amountUsed": "0",
+        "interestRate": null,
+        "arrangementFeePercent": null,
+        "termMonths": null,
+        "monthlyRepayment": null,
+        "isDebt": false,
+        "repaymentStructure": "amortizing",
+        "isActive": true,
+        "notes": null,
+        "sortOrder": 2,
+        "createdAt": "2026-07-30T01:31:48.384Z",
+        "updatedAt": "2026-07-30T01:31:48.384Z"
+      }
+    ],
+    "sellerPayments": [],
+    "contingentConsideration": []
+  },
+  "calculations": {
+    "adjustedEbitdaByYear": {
+      "2021": 213105,
+      "2022": 300235,
+      "2023": 180040,
+      "2024": 444290,
+      "2025": 218038
+    },
+    "averageAdjustedEbitda": 280789.3333333333,
+    "enterpriseValue": 701973.3333333333,
+    "offerPrice": 340254.33333333326,
+    "impliedMultiple": null,
+    "feeLegalDd": 25000,
+    "feeAccountingDd": 15000,
+    "feeLoanArrangement": 0,
+    "feeDealMaker": 0,
+    "customFeeAmounts": [],
+    "totalFees": 40000,
+    "totalFundingRequired": 380254.33333333326,
+    "fundingLines": [
+      {
+        "availableAmount": 0,
+        "monthlyRepayment": 0,
+        "annualRepayment": 0,
+        "arrangementFee": 0
+      },
+      {
+        "availableAmount": 0,
+        "monthlyRepayment": 0,
+        "annualRepayment": 0,
+        "arrangementFee": 0
+      },
+      {
+        "availableAmount": 0,
+        "monthlyRepayment": 0,
+        "annualRepayment": 0,
+        "arrangementFee": 0
+      }
+    ],
+    "totalFunded": 0,
+    "fundingGap": 340254.33,
+    "totalAnnualDebtService": 0,
+    "sellerAnnualDebtService": 0,
+    "earnoutAnnualDebtService": 0,
+    "revolvingInterestAnnual": 0,
+    "receivablesInterestAnnual": 0,
+    "valuationEbitda": 280789.3333333333,
+    "paymentCoverRatio": null,
+    "paymentCoverRating": "no_debt"
+  }
+}

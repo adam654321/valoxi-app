@@ -1,0 +1,98 @@
+{
+  "expert": "deal_structure",
+  "company_name": "[AUDIT-228] Thor-CON",
+  "analysis_date": "2025-09-08",
+  "score": 65,
+  "confidence": "high",
+  "structures": [
+    {
+      "name": "Conservative Approach",
+      "strategy": "Minimize cash at risk by deferring 60% of the consideration and tying a significant portion to the verification of the 2025 earnings jump and key staff retention.",
+      "risk_to_buyer": "low",
+      "suitable_when": "Due diligence cannot fully verify the recoverability of the £122k intercompany loan or the sudden margin improvement in 2025 management accounts.",
+      "consideration": {
+        "total_headline": 222971.59,
+        "upfront_cash": 89188.64,
+        "upfront_percent": 40,
+        "deferred": 66891.48,
+        "earnout_maximum": 66891.48,
+        "earnout_metric": "Adjusted EBITDA and Key Staff Retention",
+        "earnout_period_months": 24,
+        "earnout_rationale": "Triggered by 'Unverified or uncertain add-backs' (QoE expert flagged 2025 accounting anomalies and intercompany balances) and 'Owner/key person dependency' (Risk expert flagged General Manager as a single point of failure).",
+        "retention_escrow": 33445.74
+      },
+      "key_conditions": [
+        "Full settlement or write-off of the £122k intercompany loan prior to completion",
+        "General Manager enters into a new 24-month service agreement",
+        "Verification of Hire Purchase balances to resolve the negative £167k accounting entry"
+      ],
+      "notes": "Seller must provide a 6-month handover and 36-month non-compete. Warranties capped at 100% of consideration for title/tax and 40% for general commercial. Specific indemnity required for the £122k intercompany balance and any HP under-accruals. Completion accounts mechanism required with a working capital peg of £152,719 (excluding intercompany balances). Risk is low due to high deferment and earnout protection against earnings volatility."
+    },
+    {
+      "name": "Balanced Approach",
+      "strategy": "A standard 60/20/20 split that provides the seller with majority liquidity while protecting the buyer against the immediate risk of the General Manager departing.",
+      "risk_to_buyer": "medium",
+      "suitable_when": "The buyer is reasonably confident in the operational scalability but requires protection against the 'key-man' risk identified in the risk assessment.",
+      "consideration": {
+        "total_headline": 222971.59,
+        "upfront_cash": 133782.95,
+        "upfront_percent": 60,
+        "deferred": 44594.32,
+        "earnout_maximum": 44594.32,
+        "earnout_metric": "EBITDA Stability",
+        "earnout_period_months": 12,
+        "earnout_rationale": "Triggered by 'Owner/key person dependency' (Risk expert identified the General Manager and Director as critical strategic pillars).",
+        "retention_escrow": 22297.16
+      },
+      "key_conditions": [
+        "Successful transfer of all vehicle Hire Purchase agreements",
+        "Evidence of settlement of the £16k Director Loan Account",
+        "Retention of the top 5 engineering staff through the first 6 months"
+      ],
+      "notes": "Seller provides a 3-month handover followed by a 3-month consultancy period. 24-month non-compete. General warranties capped at 50% of consideration. Completion accounts mechanism used to adjust for the high debt levels (£319k). Risk is medium as the upfront payment is higher, but the earnout still provides a buffer for the transition period."
+    },
+    {
+      "name": "Competitive Approach",
+      "strategy": "Maximize upfront cash to appeal to a seller likely anchored on higher valuation expectations, relying on robust warranties rather than an earnout.",
+      "risk_to_buyer": "high",
+      "suitable_when": "The acquisition is viewed as a strategic platform play where the asset freshness (81%) and growth (21% CAGR) outweigh the immediate accounting complexities.",
+      "consideration": {
+        "total_headline": 250000,
+        "upfront_cash": 200000,
+        "upfront_percent": 80,
+        "deferred": 50000,
+        "earnout_maximum": 0,
+        "earnout_metric": "N/A",
+        "earnout_period_months": null,
+        "earnout_rationale": "No earnout included to maximize offer competitiveness; risk managed via a higher retention/escrow and price adjustment for debt.",
+        "retention_escrow": 50000
+      },
+      "key_conditions": [
+        "Locked-box mechanism based on verified 2025 management accounts",
+        "Immediate appointment of a Finance Director to replace the current accounting function",
+        "Clean title on all 81% 'fresh' fleet assets"
+      ],
+      "notes": "Minimal 2-month handover. 24-month non-compete. Warranty package is lighter but includes a specific indemnity for the disputed £2.2k debt and the £122k intercompany loan. Locked-box date set at 2025-09-08. Risk is high due to 80% upfront payment and lack of performance-contingent pay, making the buyer vulnerable to any post-completion earnings dip."
+    }
+  ],
+  "recommended_structure": "Balanced Approach",
+  "recommendation_rationale": "The Balanced Approach is recommended because it directly addresses the 'key-man' risk of the General Manager (identified by both Risk and Operational experts) while acknowledging the strong growth and asset quality. The 20% earnout provides a necessary safety net for the unverified 2025 earnings jump without being so aggressive that it alienates a seller who is likely anchored on the £1.94M revenue and £278k reported EBITDA.",
+  "negotiation_priorities": [
+    "Treatment of the £122k intercompany loan (Buyer should insist on exclusion from Equity Value)",
+    "Verification of the £319k HP debt and the negative £167k balance-sheet entry",
+    "Securing a long-term contract for the General Manager",
+    "Establishing a clear Working Capital peg that excludes non-operational intercompany balances"
+  ],
+  "deal_breaker_terms": [
+    "Non-recoverability of the £122k intercompany loan if included in the purchase price",
+    "Refusal of the General Manager to sign a post-acquisition retention agreement",
+    "Discovery of significant undisclosed maintenance requirements on the 'fresh' fleet"
+  ],
+  "key_findings": [
+    "The deal is highly sensitive to the EV-to-Equity bridge due to £319k in debt.",
+    "The 2025 management accounts show a profitability spike that is not yet reflected in audited figures.",
+    "The asset base is a major strength, providing a valuation floor via the £330k Adjusted NAV.",
+    "Intercompany and Director loan accounts complicate the balance sheet and require pre-completion cleanup."
+  ],
+  "narrative": "Thor-CON is an attractive, high-growth target, but the deal structure must bridge a significant gap between the seller's likely expectations (anchored on £278k EBITDA) and the buyer's reality (£181k Adjusted EBITDA). The high debt load and the 'key-man' dependency on the General Manager necessitate a structure that includes deferred payments. While the business is operationally strong, the accounting anomalies (negative HP balances and intercompany loans) make a 100% upfront deal too risky. A balanced 60/20/20 split allows the buyer to secure the assets and growth while ensuring the seller remains incentivized to transition the business and verify the underlying earnings."
+}

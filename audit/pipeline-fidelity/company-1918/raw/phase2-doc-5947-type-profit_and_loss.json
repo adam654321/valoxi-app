@@ -1,0 +1,100 @@
+{
+  "document": "profit_and_loss",
+  "source": "management_accounts",
+  "years_covered": [
+    2025
+  ],
+  "period_ends": {
+    "2025": "2025-08-31"
+  },
+  "months_covered": {
+    "2025": 9
+  },
+  "report_date": null,
+  "years": {
+    "2025": {
+      "year": 2025,
+      "profit_and_loss": {
+        "revenue": 320650.63,
+        "cost_of_sales": 95689.45,
+        "gross_profit": 224961.18,
+        "administrative_expenses": 149115.07,
+        "depreciation_amortisation": 0,
+        "other_operating_income": null,
+        "operating_profit": 75846.11,
+        "interest_receivable": null,
+        "interest_payable": 675,
+        "profit_before_tax": 75846.11,
+        "corporation_tax": 34203.11,
+        "net_profit": 41643
+      },
+      "revenue_breakdown": {
+        "by_product": {
+          "Sales": 319997.31,
+          "Rechargeable Expenses - Income": 653.32
+        },
+        "by_segment": {}
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": null,
+        "direct_labour": 63307.51,
+        "subcontractor_costs": 29698.94,
+        "other_direct_costs": 2683
+      },
+      "overheads_breakdown": {
+        "staff_wages_salaries": null,
+        "directors_salaries": 16450,
+        "directors_pension": null,
+        "employers_national_insurance": null,
+        "staff_pension_contributions": 1086.26,
+        "staff_training_recruitment": 7239,
+        "use_of_home_as_office": null,
+        "rent_rates": 1941,
+        "utilities": null,
+        "insurance": 2088.01,
+        "accountancy_bookkeeping": 6477.17,
+        "professional_fees": 21584,
+        "software_subscriptions": 4452.49,
+        "computer_costs": 16068.49,
+        "it_support_hosting": null,
+        "telecommunications": 557.61,
+        "printing_stationery": 1236.17,
+        "postage_courier": null,
+        "subscriptions_memberships": null,
+        "bank_charges": 297.4,
+        "advertising_marketing": 3906.65,
+        "travel_subsistence": 18574.45,
+        "motor_expenses": null,
+        "repairs_maintenance": null,
+        "depreciation": 0,
+        "amortisation": null,
+        "other_overheads": 44605.37
+      },
+      "total_staff_costs": 1048.48,
+      "total_directors_remuneration": 16450,
+      "dividends_paid": 97200,
+      "exceptional_items": [
+        {
+          "description": "Bad Debt",
+          "amount": 34500
+        }
+      ],
+      "financial_ratios": {
+        "gross_margin_percent": 70.16,
+        "net_margin_percent": 12.99,
+        "interest_coverage_ratio": 112.36
+      }
+    }
+  },
+  "summary_insights": [
+    "The company maintains a strong gross margin of 70.2%, indicating a highly profitable core service offering.",
+    "Operating profit for the 9-month period stands at £75,846, representing a 23.7% operating margin.",
+    "A significant bad debt provision of £34,500 in February 2025 materially impacted year-to-date administrative expenses.",
+    "Dividends paid (£97,200) significantly exceed the net profit for the period (£41,643), suggesting a reliance on retained earnings.",
+    "The business demonstrates high financial resilience with an interest coverage ratio of 112.4x.",
+    "Monthly revenue shows volatility, peaking at £53,675 in April 2025 before softening to £35,784 in August.",
+    "Staff-related costs are primarily driven by direct labour and subcontractors within Cost of Sales rather than fixed overheads.",
+    "Net profit after tax and dividends is negative (£55,557) for the period, primarily due to the high level of dividend distributions."
+  ],
+  "_isIM": false
+}

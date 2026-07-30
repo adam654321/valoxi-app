@@ -1,0 +1,98 @@
+{
+  "expert": "deal_structure",
+  "company_name": "[AUDIT-130] Keen As Mustard",
+  "analysis_date": "2025-05-22",
+  "score": 65,
+  "confidence": "high",
+  "structures": [
+    {
+      "name": "Conservative Approach",
+      "strategy": "Minimize upfront exposure and link a significant portion of the value to the verification of 2025 earnings and owner transition.",
+      "risk_to_buyer": "low",
+      "suitable_when": "The buyer is highly concerned about the 2025 debtor anomaly and the lack of management depth.",
+      "consideration": {
+        "total_headline": 310000,
+        "upfront_cash": 124000,
+        "upfront_percent": 40,
+        "deferred": 62000,
+        "earnout_maximum": 124000,
+        "earnout_metric": "EBITDA and Debtor Recovery",
+        "earnout_period_months": 24,
+        "earnout_rationale": "Trigger 3 (Owner Dependency) and Trigger 4 (Unverified Earnings). The earnout is split: 50% tied to the successful collection of the 2025 debtor balance and 50% tied to maintaining adjusted EBITDA during a 24-month handover.",
+        "retention_escrow": 31000
+      },
+      "key_conditions": [
+        "Full audit of 2025 sales ledger prior to completion",
+        "24-month active handover period for the sole director",
+        "Working capital peg based on 2024 average (approx. £115k)"
+      ],
+      "notes": "Seller obligations: 24-month handover (6 months full-time, 18 months consultancy), 3-year non-compete. Key warranties: Specific indemnity for 2025 debtor recoverability; warranty cap at 100% of consideration; 24-month warranty period. Completion mechanism: Completion accounts with a pound-for-pound adjustment for debtor shortfalls. Risk to buyer: Low, as the structure heavily protects against the identified data integrity and key-man risks."
+    },
+    {
+      "name": "Balanced Approach",
+      "strategy": "A fair split that provides the seller with immediate liquidity while protecting the buyer against the immediate risk of client churn post-acquisition.",
+      "risk_to_buyer": "medium",
+      "suitable_when": "Due diligence provides reasonable comfort that the 2025 debtor issue is an accounting error rather than a bad debt crisis.",
+      "consideration": {
+        "total_headline": 385000,
+        "upfront_cash": 211750,
+        "upfront_percent": 55,
+        "deferred": 57750,
+        "earnout_maximum": 115500,
+        "earnout_metric": "Revenue Retention (USA & UK)",
+        "earnout_period_months": 18,
+        "earnout_rationale": "Trigger 3 (Owner Dependency). Given the high geographic concentration in the USA (55%) and sole director relationships, the earnout ensures the buyer is not paying for a 'melting ice cube' if clients leave with the owner.",
+        "retention_escrow": 38500
+      },
+      "key_conditions": [
+        "12-month fixed deferred payment schedule",
+        "Retention of top 3 US clients for at least 12 months",
+        "Director to remain as a consultant for 18 months"
+      ],
+      "notes": "Seller obligations: 12-month handover, 2-year non-compete. Key warranties: Standard suite with specific focus on US tax compliance and client contracts; warranty cap at 50% of consideration. Completion mechanism: Locked box based on verified 2024 accounts if 2025 data remains opaque. Risk to buyer: Medium, primarily centered on the successful transition of US-based creative relationships."
+    },
+    {
+      "name": "Competitive Approach",
+      "strategy": "Maximize upfront cash to bridge the gap with seller expectations, while using a shorter, aggressive earnout to validate the high margins.",
+      "risk_to_buyer": "high",
+      "suitable_when": "The buyer is a strategic acquirer who can quickly absorb the client base and has their own management team to mitigate key-man risk.",
+      "consideration": {
+        "total_headline": 450000,
+        "upfront_cash": 315000,
+        "upfront_percent": 70,
+        "deferred": 45000,
+        "earnout_maximum": 90000,
+        "earnout_metric": "Adjusted EBITDA",
+        "earnout_period_months": 12,
+        "earnout_rationale": "Trigger 4 (Unverified Earnings). Even in a competitive bid, the 2025 data integrity red flag necessitates an earnout to confirm that the 45% margins are sustainable and not a result of aggressive revenue recognition.",
+        "retention_escrow": 22500
+      },
+      "key_conditions": [
+        "6-month intensive handover",
+        "Clean title to all IP and client contracts",
+        "Minimal working capital adjustment"
+      ],
+      "notes": "Seller obligations: 6-month handover, 2-year non-compete. Key warranties: Fundamental warranties only; warranty cap at 25% of consideration; 12-month warranty period. Completion mechanism: Locked box. Risk to buyer: High, due to the high upfront payment and shorter protection period against the significant owner dependency and unverified 2025 performance."
+    }
+  ],
+  "recommended_structure": "Balanced Approach",
+  "recommendation_rationale": "The Balanced Approach is recommended because it addresses the significant valuation gap (Seller £1M vs Buyer £385k) by offering a fair midpoint valuation while using an earnout to mitigate the two most pressing risks: the 2025 data integrity issues and the extreme owner dependency. The 55% upfront payment is attractive enough to keep the seller engaged, while the 30% earnout provides a necessary safety net for the buyer regarding client retention in the US market.",
+  "negotiation_priorities": [
+    "Verification of the 2025 Trade Debtor balance (£358k) and its recoverability.",
+    "Securing a long-term non-compete and a structured handover from the sole director.",
+    "Establishing a clear working capital peg to prevent further cash extraction via dividends prior to close.",
+    "Confirming the contractual stability of the US-based revenue stream."
+  ],
+  "deal_breaker_terms": [
+    "Refusal of a specific indemnity for the 2025 debtor balance.",
+    "Inability of the director to commit to at least a 12-month transition period.",
+    "Discovery that the 2025 revenue is significantly overstated or uncollectible."
+  ],
+  "key_findings": [
+    "The business is highly profitable (45% margin) but lacks any structural depth beyond the owner.",
+    "There is a massive discrepancy in 2025 management accounts (Debtors = Revenue) that must be resolved.",
+    "The shift to the US market (55% of revenue) increases the risk of client churn if the owner exits abruptly.",
+    "The seller's price expectations are likely double the market value, requiring a structure that bridges the gap through performance-based pay."
+  ],
+  "narrative": "Keen As Mustard is a 'lifestyle' business performing at an elite level, which creates a difficult friction point for M&A. The high margins and US growth are attractive, but the 2025 accounting anomalies and total owner dependency are significant hurdles. A successful deal must pivot away from the seller's likely £1M anchor point by focusing on 'Adjusted EBITDA' (accounting for a replacement salary) and the risk of the 2025 debtor spike. The recommended Balanced Approach uses a mix of upfront cash and a revenue-retention earnout to align the seller's exit with the long-term stability of the agency's client base, particularly in the US."
+}

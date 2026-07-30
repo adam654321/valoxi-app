@@ -1,0 +1,138 @@
+{
+  "expert": "risk",
+  "company_name": "[AUDIT-89] Innova Design Group Limited",
+  "analysis_date": "2024-05-22",
+  "score": 58,
+  "confidence": "high",
+  "customer_concentration": {
+    "risk_level": "critical",
+    "top_customer_percent": 68.7,
+    "top_3_customers_percent": 82.7,
+    "top_5_customers_percent": 88.5,
+    "hhi_index": 4832,
+    "hhi_classification": "concentrated",
+    "total_customers": 10,
+    "customers_over_15_percent": [
+      "COMMERCIAL SERVICES EDUCATION LTD (WF)"
+    ],
+    "observations": [
+      "Extreme concentration in Commercial Services Education Ltd (WF) representing 68.7% of the ledger.",
+      "The top 3 debtors account for over 80% of the total trade debt, creating significant vulnerability to a single customer loss.",
+      "HHI of 4832 indicates a highly concentrated market position."
+    ]
+  },
+  "financial_risk": {
+    "risk_level": "moderate",
+    "technically_insolvent": false,
+    "current_ratio_trend": "improving",
+    "creditor_growth_vs_revenue": "Creditors decreased by 28% (2025-2026) while revenue remained relatively stable, indicating improved working capital management.",
+    "director_loans_balance": 0,
+    "intercompany_balances": 0,
+    "interest_coverage_adequate": true,
+    "going_concern_indicators": [
+      "Positive net assets of £648,347 as at 2026-05-31",
+      "Strong cash position of £210,202 as at 2026-05-31"
+    ],
+    "observations": [
+      "Current ratio as at 2026-05-31 is 1.96, up from 1.85 in 2025, showing healthy liquidity.",
+      "Interest coverage is strong; 2025 operating profit of £169,033 covers interest of £10,327 by over 16x.",
+      "Long-term debt increased significantly in 2026 to £182,975, likely related to the £92k beamsaw acquisition."
+    ]
+  },
+  "key_person_risk": {
+    "risk_level": "high",
+    "highest_individual_payroll_percent": null,
+    "single_points_of_failure": [
+      "Sales/Account Management (due to customer concentration)",
+      "Technical Operations (specialized woodworking machinery)"
+    ],
+    "management_depth": "thin",
+    "average_tenure_years": null,
+    "observations": [
+      "Staff matrix was empty; however, directors' remuneration is low (£25,140), suggesting value may be extracted via dividends (£60k in 2024).",
+      "The high concentration of education-sector clients suggests a specific relationship-driven sales model likely held by a key individual."
+    ]
+  },
+  "revenue_quality": {
+    "risk_level": "high",
+    "revenue_type": "project_based",
+    "customer_trend": "stable_base",
+    "seasonality_detected": true,
+    "observations": [
+      "Revenue is heavily tied to the education sector (Schools/Colleges), implying high seasonality around academic holidays.",
+      "Revenue volatility is noted: £5.75m (2022) dropped to £4.45m (2023) before recovering to £4.95m (2024).",
+      "High reliance on subcontractors (£1.32m in 2025) suggests a flexible but margin-sensitive delivery model."
+    ]
+  },
+  "balance_sheet_risks": {
+    "director_loans": 0,
+    "connected_company_balances": 0,
+    "deferred_tax": null,
+    "pension_obligations": null,
+    "contingent_liabilities": "unable_to_assess",
+    "observations": [
+      "Director loans were not disclosed in the 2026-05-31 current position.",
+      "Other Long Term Debt of £182,975 as at 2026-05-31 requires verification of terms and security.",
+      "Significant VAT payable of £163,976 as at 2026-05-31 suggests a large recent invoicing cycle or payment stretching."
+    ]
+  },
+  "bad_debt": {
+    "total_overdue_90_plus": 52988.23,
+    "recommended_provision": 52988.23,
+    "existing_provision": 0,
+    "net_profit_impact": -52988.23,
+    "observations": [
+      "19.7% of the ledger is 90+ days overdue.",
+      "Specific risks identified with Coventry College (£21.5k) and Silverglide Ltd (£9.5k).",
+      "Applying a 100% provision to 90+ day debt would reduce 2025 net profit by approximately 44%."
+    ]
+  },
+  "risk_register": [
+    {
+      "risk": "Extreme Customer Concentration",
+      "category": "customer",
+      "severity": "critical",
+      "likelihood": "medium",
+      "financial_impact": 3095000,
+      "impact_description": "Loss of Commercial Services Education Ltd would remove ~68% of revenue base.",
+      "mitigation": "Include a material customer retention clause and earn-out linked to this specific account."
+    },
+    {
+      "risk": "Aged Debt Recoverability",
+      "category": "bad_debt",
+      "severity": "medium",
+      "likelihood": "high",
+      "financial_impact": 52988,
+      "impact_description": "Potential write-off of nearly 20% of trade debtors.",
+      "mitigation": "Debt to be excluded from the completion balance sheet or pound-for-pound indemnity provided by sellers."
+    },
+    {
+      "risk": "Asset Obsolescence",
+      "category": "operational",
+      "severity": "low",
+      "likelihood": "medium",
+      "financial_impact": null,
+      "impact_description": "Several key machines are 10+ years old, increasing maintenance costs and downtime risk.",
+      "mitigation": "Capital expenditure reserve to be factored into the post-acquisition business plan."
+    },
+    {
+      "risk": "Revenue Volatility",
+      "category": "revenue",
+      "severity": "high",
+      "likelihood": "medium",
+      "financial_impact": 1300000,
+      "impact_description": "Historical revenue swings of >£1m year-on-year.",
+      "mitigation": "Structure deal with a significant deferred element based on future EBITDA performance."
+    }
+  ],
+  "deal_breakers": [
+    "Change of control clauses in the contract with Commercial Services Education Ltd (WF) could be fatal given the 68.7% concentration."
+  ],
+  "key_findings": [
+    "The company is financially stable with good liquidity and a strong asset base (£269k NBV).",
+    "Profitability is inconsistent, with Net Profit margins fluctuating between 2% and 5.5%.",
+    "The business is effectively a 'captive' supplier to the education sector, creating high sector-specific risk.",
+    "Recent capital investment of £92k in 2026 shows commitment to modernization but increases debt leverage."
+  ],
+  "narrative": "Innova Design Group Limited presents an elevated risk profile primarily due to extreme customer concentration and aged debt issues. While the balance sheet is solvent and the current ratio is healthy (1.96), the business's reliance on a single customer for nearly 70% of its ledger makes it highly vulnerable. The 19.7% of debt over 90 days suggests poor credit control or disputes. However, the strong tangible asset base and lack of significant director debt provide some security. The deal should be structured with heavy protections around customer retention and debt recoverability."
+}

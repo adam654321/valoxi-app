@@ -1,0 +1,101 @@
+{
+  "expert": "deal_structure",
+  "company_name": "[AUDIT-190] Spruce Pools",
+  "analysis_date": "2024-05-22",
+  "score": 65,
+  "confidence": "high",
+  "structures": [
+    {
+      "name": "Conservative Approach",
+      "strategy": "Minimize upfront risk by addressing accounting discrepancies and owner dependency through heavy deferment and performance-linked payments.",
+      "risk_to_buyer": "low",
+      "suitable_when": "Due diligence cannot fully reconcile the £286k asset discrepancy or the 2024 labor cost spike.",
+      "consideration": {
+        "total_headline": 1575819.52,
+        "upfront_cash": 787909.76,
+        "upfront_percent": 50,
+        "deferred": 393954.88,
+        "earnout_maximum": 393954.88,
+        "earnout_metric": "EBITDA and Maintenance Contract Retention",
+        "earnout_period_months": 24,
+        "earnout_rationale": "Addresses Trigger 3 (Owner Dependency) and Trigger 4 (Unverified Add-backs). The earnout ensures the £312k Adjusted EBITDA is sustainable post-owner exit and that the 2024 labor volatility was not indicative of structural issues.",
+        "retention_escrow": 286935.2
+      },
+      "key_conditions": [
+        "Full reconciliation of the fixed asset register prior to first deferred payment",
+        "12-month mandatory handover period for directors",
+        "Specific indemnity for the £286k asset discrepancy",
+        "Non-compete agreement for 36 months covering the UK South East"
+      ],
+      "notes": "Seller obligations: 12-month handover followed by 12-month consultancy; 3-year non-compete. Key warranties: Specific indemnity for the £286k asset discrepancy and the negative 'Other Creditors' balance; warranty cap at 50% of consideration; 24-month warranty period. Completion mechanism: Completion accounts with a working capital peg excluding the excess cash. Risk to buyer: Low, as the structure offsets the high equity value (driven by cash) against the operational risks and accounting anomalies."
+    },
+    {
+      "name": "Balanced Approach",
+      "strategy": "A fair split that acknowledges the strong cash position while protecting against margin erosion and key person risk.",
+      "risk_to_buyer": "medium",
+      "suitable_when": "The buyer is satisfied with the asset register explanation but wants to ensure the recurring revenue base remains stable.",
+      "consideration": {
+        "total_headline": 1575819.52,
+        "upfront_cash": 1024282.69,
+        "upfront_percent": 65,
+        "deferred": 315163.9,
+        "earnout_maximum": 236372.93,
+        "earnout_metric": "Gross Margin Stability and EBITDA",
+        "earnout_period_months": 18,
+        "earnout_rationale": "Addresses Trigger 3 (Owner Dependency). Given the 600bps margin erosion noted by the valuation expert, the earnout is tied to maintaining a minimum 29% gross margin to ensure the business isn't being 'bought' at a peak.",
+        "retention_escrow": 150000
+      },
+      "key_conditions": [
+        "6-month handover period for directors",
+        "Working capital peg set at the 3-year average (approx. 30% of revenue)",
+        "Warranty basket of £15,000 and de minimis of £2,500",
+        "Verification of the £138k Goodwill treatment in statutory accounts"
+      ],
+      "notes": "Seller obligations: 6-month handover; 2-year non-compete. Key warranties: Standard tax and commercial warranties; specific indemnity for labor cost reclassifications; warranty cap at 75% of consideration. Completion mechanism: Locked box if completion is within 3 months of the 2026-05-31 balance sheet. Risk to buyer: Medium, primarily due to the downward trend in operating profit and high reliance on the directors' technical knowledge."
+    },
+    {
+      "name": "Competitive Approach",
+      "strategy": "Maximize upfront cash to meet seller expectations of a 'Cash + Multiple' deal, relying on warranties for protection.",
+      "risk_to_buyer": "high",
+      "suitable_when": "The acquisition is strategic, and the buyer has internal management to replace the directors immediately.",
+      "consideration": {
+        "total_headline": 1575819.52,
+        "upfront_cash": 1339446.59,
+        "upfront_percent": 85,
+        "deferred": 236372.93,
+        "earnout_maximum": 0,
+        "earnout_metric": "N/A",
+        "earnout_period_months": 0,
+        "earnout_rationale": "No earnout included to make the offer more attractive in a competitive process, despite Trigger 3 presence. Risk is mitigated via a larger upfront payment and shorter deferment.",
+        "retention_escrow": 75000
+      },
+      "key_conditions": [
+        "3-month handover period",
+        "Comprehensive W&I insurance policy (buyer-side)",
+        "Immediate reconciliation of the negative 'Other Creditors' balance",
+        "Locked box mechanism based on May 2026 accounts"
+      ],
+      "notes": "Seller obligations: 3-month handover; 2-year non-compete. Key warranties: Lighter warranty package but backed by W&I insurance; specific indemnity for the asset register discrepancy remains non-negotiable. Completion mechanism: Locked box to provide price certainty to the seller. Risk to buyer: High, as the high upfront payment leaves little recourse if the margin erosion continues or if the accounting discrepancies result in a material overstatement of assets."
+    }
+  ],
+  "recommended_structure": "Balanced Approach",
+  "recommendation_rationale": "The Balanced Approach is recommended because it bridges the gap between the seller's high expectations (driven by the £795k cash balance) and the buyer's need to manage the 600bps margin erosion and accounting anomalies. The 15% earnout specifically addresses the owner dependency and margin risk identified by the experts, while the 65% upfront payment provides the seller with immediate liquidity from their 'fortress' balance sheet.",
+  "negotiation_priorities": [
+    "Reconciliation of the £286,935.20 asset register discrepancy",
+    "Clarification of the 2024 vs 2025 labor cost volatility (£468k vs £176k)",
+    "Setting a fair Working Capital Peg that doesn't allow the seller to strip all cash",
+    "Securing a long-term non-compete to protect the recurring maintenance revenue"
+  ],
+  "deal_breaker_terms": [
+    "Failure to provide a satisfactory explanation for the negative 'Other Creditors' balance",
+    "Refusal of the directors to provide a minimum 6-month handover",
+    "Discovery that the £138k Goodwill in the asset register is impaired or non-existent"
+  ],
+  "key_findings": [
+    "The business is over-capitalized with £795k cash, which significantly inflates the equity value relative to the enterprise value.",
+    "Gross margin erosion (35% to 29%) is a major trend risk that requires contractual protection.",
+    "Accounting discrepancies in the asset register and labor classification are the primary due diligence hurdles.",
+    "The recurring maintenance revenue (£1m+) is the most valuable and stable component of the deal."
+  ],
+  "narrative": "Structuring a deal for Spruce Pools requires a delicate balance between acknowledging its exceptional liquidity and protecting against its declining margin profile. The seller will likely anchor their price on the £795k cash balance, viewing it as 'extra' value. However, the buyer must treat this as part of the equity bridge while ensuring the core business (the EBITDA) is sustainable. The recommended Balanced Approach uses a 65% upfront payment to satisfy the seller's desire for cash, while using deferred and earnout components to hedge against the risk that the business is overly dependent on the current directors and that the recent margin contraction might continue. The specific indemnity for the asset register discrepancy is a critical safeguard to ensure the buyer is not paying for 'ghost' assets."
+}

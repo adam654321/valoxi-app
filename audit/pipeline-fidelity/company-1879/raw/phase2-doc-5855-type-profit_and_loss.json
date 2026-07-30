@@ -1,0 +1,251 @@
+{
+  "document": "profit_and_loss",
+  "source": "management",
+  "years_covered": [
+    2022,
+    2023,
+    2024
+  ],
+  "period_ends": {
+    "2022": "2022-03-31",
+    "2023": "2023-03-31",
+    "2024": "2024-03-31"
+  },
+  "months_covered": {
+    "2022": 12,
+    "2023": 12,
+    "2024": 12
+  },
+  "report_date": null,
+  "years": {
+    "2022": {
+      "year": 2022,
+      "profit_and_loss": {
+        "revenue": 2142601,
+        "cost_of_sales": 951259,
+        "gross_profit": 1191342,
+        "administrative_expenses": 486118,
+        "depreciation_amortisation": 117453,
+        "other_operating_income": null,
+        "operating_profit": 705224,
+        "interest_receivable": null,
+        "interest_payable": 1801,
+        "profit_before_tax": null,
+        "corporation_tax": null,
+        "net_profit": null
+      },
+      "revenue_breakdown": {
+        "by_product": {},
+        "by_segment": {}
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": null,
+        "direct_labour": null,
+        "subcontractor_costs": null,
+        "other_direct_costs": null
+      },
+      "overheads_breakdown": {
+        "staff_wages_salaries": null,
+        "directors_salaries": 25000,
+        "directors_pension": null,
+        "employers_national_insurance": null,
+        "staff_pension_contributions": null,
+        "staff_training_recruitment": null,
+        "use_of_home_as_office": null,
+        "rent_rates": null,
+        "utilities": null,
+        "insurance": null,
+        "accountancy_bookkeeping": null,
+        "professional_fees": null,
+        "software_subscriptions": null,
+        "computer_costs": null,
+        "it_support_hosting": null,
+        "telecommunications": null,
+        "printing_stationery": null,
+        "postage_courier": null,
+        "subscriptions_memberships": null,
+        "bank_charges": 1801,
+        "advertising_marketing": null,
+        "travel_subsistence": null,
+        "motor_expenses": null,
+        "repairs_maintenance": null,
+        "depreciation": 117453,
+        "amortisation": null,
+        "other_overheads": 14602
+      },
+      "total_staff_costs": null,
+      "total_directors_remuneration": 25000,
+      "dividends_paid": null,
+      "exceptional_items": [
+        {
+          "item": "Bad Debts",
+          "value": -673
+        }
+      ],
+      "financial_ratios": {
+        "gross_margin_percent": 55.6,
+        "net_margin_percent": null,
+        "interest_coverage_ratio": 391.57
+      }
+    },
+    "2023": {
+      "year": 2023,
+      "profit_and_loss": {
+        "revenue": 2039552,
+        "cost_of_sales": 1007456,
+        "gross_profit": 1032096,
+        "administrative_expenses": 588142,
+        "depreciation_amortisation": 148547,
+        "other_operating_income": null,
+        "operating_profit": 443954,
+        "interest_receivable": null,
+        "interest_payable": 3004,
+        "profit_before_tax": null,
+        "corporation_tax": null,
+        "net_profit": null
+      },
+      "revenue_breakdown": {
+        "by_product": {},
+        "by_segment": {}
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": null,
+        "direct_labour": null,
+        "subcontractor_costs": null,
+        "other_direct_costs": null
+      },
+      "overheads_breakdown": {
+        "staff_wages_salaries": null,
+        "directors_salaries": 25000,
+        "directors_pension": null,
+        "employers_national_insurance": null,
+        "staff_pension_contributions": null,
+        "staff_training_recruitment": null,
+        "use_of_home_as_office": null,
+        "rent_rates": null,
+        "utilities": null,
+        "insurance": null,
+        "accountancy_bookkeeping": null,
+        "professional_fees": null,
+        "software_subscriptions": null,
+        "computer_costs": null,
+        "it_support_hosting": null,
+        "telecommunications": null,
+        "printing_stationery": null,
+        "postage_courier": null,
+        "subscriptions_memberships": null,
+        "bank_charges": 3004,
+        "advertising_marketing": null,
+        "travel_subsistence": null,
+        "motor_expenses": null,
+        "repairs_maintenance": null,
+        "depreciation": 148547,
+        "amortisation": null,
+        "other_overheads": 20623
+      },
+      "total_staff_costs": null,
+      "total_directors_remuneration": 25000,
+      "dividends_paid": null,
+      "exceptional_items": [
+        {
+          "item": "Bad Debts",
+          "value": 1568
+        }
+      ],
+      "financial_ratios": {
+        "gross_margin_percent": 50.6,
+        "net_margin_percent": null,
+        "interest_coverage_ratio": 147.79
+      }
+    },
+    "2024": {
+      "year": 2024,
+      "profit_and_loss": {
+        "revenue": 1636215,
+        "cost_of_sales": 861049,
+        "gross_profit": 775166,
+        "administrative_expenses": 656413,
+        "depreciation_amortisation": 145685,
+        "other_operating_income": null,
+        "operating_profit": 118753,
+        "interest_receivable": null,
+        "interest_payable": 1836,
+        "profit_before_tax": null,
+        "corporation_tax": null,
+        "net_profit": null
+      },
+      "revenue_breakdown": {
+        "by_product": {},
+        "by_segment": {
+          "Client 1": 250000,
+          "Client 2": 160000,
+          "Client 3": 130500,
+          "Client 4": 125000,
+          "Client 5": 110000,
+          "Client 6": 100000,
+          "Client 7": 96000
+        }
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": null,
+        "direct_labour": null,
+        "subcontractor_costs": null,
+        "other_direct_costs": null
+      },
+      "overheads_breakdown": {
+        "staff_wages_salaries": null,
+        "directors_salaries": 25000,
+        "directors_pension": null,
+        "employers_national_insurance": null,
+        "staff_pension_contributions": null,
+        "staff_training_recruitment": null,
+        "use_of_home_as_office": null,
+        "rent_rates": null,
+        "utilities": null,
+        "insurance": null,
+        "accountancy_bookkeeping": null,
+        "professional_fees": null,
+        "software_subscriptions": null,
+        "computer_costs": null,
+        "it_support_hosting": null,
+        "telecommunications": null,
+        "printing_stationery": null,
+        "postage_courier": null,
+        "subscriptions_memberships": null,
+        "bank_charges": 1836,
+        "advertising_marketing": null,
+        "travel_subsistence": null,
+        "motor_expenses": null,
+        "repairs_maintenance": null,
+        "depreciation": 145685,
+        "amortisation": null,
+        "other_overheads": 5927
+      },
+      "total_staff_costs": null,
+      "total_directors_remuneration": 25000,
+      "dividends_paid": null,
+      "exceptional_items": [
+        {
+          "item": "Bad Debts",
+          "value": 3721
+        }
+      ],
+      "financial_ratios": {
+        "gross_margin_percent": 47.4,
+        "net_margin_percent": null,
+        "interest_coverage_ratio": 64.68
+      }
+    }
+  },
+  "summary_insights": [
+    "Revenue has experienced a significant decline of 23.6% between 2022 and 2024, falling from £2.14m to ��1.64m.",
+    "Gross profit margins have compressed steadily from 55.6% in 2022 to 47.4% in 2024, indicating rising direct costs or pricing pressure.",
+    "Operating profit has seen a sharp contraction of 83.2% over the three-year period, primarily driven by the combination of lower turnover and rising administrative expenses.",
+    "Administrative expenses increased by 35% between 2022 and 2024, despite the falling revenue, which has severely impacted the bottom line.",
+    "The company maintains a high concentration of revenue, with the top three clients accounting for 56% of total turnover in the 2024/25 period.",
+    "Interest coverage remains healthy at 64.7x in 2024, though it has dropped significantly from 391.6x in 2022 due to the decline in operating profit.",
+    "Adjusted EBITDA has followed the downward trend of operating profit, decreasing from £863k in 2022 to £301k in 2024.",
+    "Management forecasts suggest a recovery in 2025 and 2026, targeting a return to £2m revenue and improved margins of 52.5%."
+  ],
+  "_isIM": true
+}

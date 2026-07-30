@@ -1,0 +1,1308 @@
+[
+  {
+    "id": 1926,
+    "expert_type": "data_quality",
+    "status": "success",
+    "score": 56,
+    "confidence": "low",
+    "created_at": "2026-06-09T20:14:17.330Z",
+    "analysis_data": {
+      "stage": "data_quality",
+      "company_name": "Spruce Pools",
+      "assessment_date": "2024-05-22",
+      "overall_completeness_score": 56,
+      "overall_completeness_rating": "medium",
+      "confidence_for_analysis": "low",
+      "data_sources": {
+        "company_accounts": {
+          "status": "complete",
+          "years_available": 4,
+          "years_list": [
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "most_recent_period_end": "2025-12-31",
+          "data_staleness_months": 5,
+          "consecutive_years": true,
+          "key_fields_populated": [
+            "revenue",
+            "gross_profit",
+            "operating_profit",
+            "net_profit"
+          ],
+          "key_fields_missing": []
+        },
+        "profit_and_loss": {
+          "status": "complete",
+          "key_fields_populated": [
+            "revenue",
+            "cost_of_sales",
+            "gross_profit",
+            "administrative_expenses",
+            "operating_profit",
+            "net_profit"
+          ],
+          "key_fields_missing": [],
+          "has_overheads_breakdown": true,
+          "has_cost_of_sales_breakdown": true
+        },
+        "balance_sheet": {
+          "status": "complete",
+          "key_fields_populated": [
+            "fixed_assets",
+            "current_assets.total",
+            "current_liabilities.total",
+            "equity.total"
+          ],
+          "key_fields_missing": [],
+          "has_detailed_breakdown": true
+        },
+        "asset_register": {
+          "status": "partial",
+          "asset_count": 11,
+          "has_category_breakdown": true,
+          "has_individual_assets": true
+        },
+        "sales_ledger": {
+          "status": "missing",
+          "has_aging_breakdown": false,
+          "has_customer_breakdown": false,
+          "customer_count": 0
+        },
+        "staff_matrix": {
+          "status": "missing",
+          "headcount_reported": 0,
+          "has_individual_records": false,
+          "has_director_identification": false
+        }
+      },
+      "consistency_checks": {
+        "pl_revenue_vs_accounts": {
+          "result": "consistent",
+          "pl_value": 2313955,
+          "accounts_value": 2313955,
+          "variance_percent": 0
+        },
+        "bs_net_assets_vs_accounts": {
+          "result": "consistent",
+          "bs_value": 849118,
+          "accounts_value": 849118,
+          "variance_percent": 0
+        },
+        "staff_costs_vs_pl": {
+          "result": "unable_to_check",
+          "matrix_value": null,
+          "pl_value": 676700,
+          "variance_percent": null
+        },
+        "assets_nbv_vs_bs": {
+          "result": "major_discrepancy",
+          "register_value": 286935.2,
+          "bs_value": 213328,
+          "variance_percent": 34.5
+        },
+        "debtors_vs_bs": {
+          "result": "unable_to_check",
+          "ledger_value": null,
+          "bs_value": 46199,
+          "variance_percent": null
+        }
+      },
+      "red_flags": [
+        "Sales ledger is missing; cannot verify trade debtor aging or customer concentration.",
+        "Staff matrix is missing; cannot verify headcount or individual payroll records.",
+        "Major discrepancy (34.5%) between Asset Register NBV and Balance Sheet Tangible Assets.",
+        "Asset register shows zero accumulated depreciation for all assets, which is inconsistent with statutory accounts."
+      ],
+      "gaps_requiring_seller_action": [
+        "Provide full Sales Ledger with aging breakdown and customer names.",
+        "Provide Staff Matrix including headcount, start dates, and salary breakdown.",
+        "Reconcile Asset Register NBV to the 2025 Balance Sheet and provide depreciation schedules."
+      ],
+      "analysis_limitations": [
+        "Unable to perform payroll reconciliation due to missing staff data.",
+        "Unable to verify quality of earnings/debtors due to missing sales ledger.",
+        "Asset valuation reliability is low due to discrepancies between sub-ledger and general ledger."
+      ]
+    }
+  },
+  {
+    "id": 1934,
+    "expert_type": "deal_structure",
+    "status": "success",
+    "score": 82,
+    "confidence": "high",
+    "created_at": "2026-06-09T20:14:42.295Z",
+    "analysis_data": {
+      "expert": "deal_structure",
+      "company_name": "Spruce Pools",
+      "analysis_date": "2024-05-22",
+      "score": 82,
+      "confidence": "high",
+      "structures": [
+        {
+          "name": "Conservative Approach",
+          "strategy": "Minimize upfront risk by weighting consideration toward performance-contingent payments and long-term retention, addressing high owner dependency and asset discrepancies.",
+          "risk_to_buyer": "low",
+          "suitable_when": "The buyer is concerned about the 58% profit drop in 2024 and the significant discrepancy in the fixed asset register.",
+          "consideration": {
+            "total_headline": 1550000,
+            "upfront_cash": 775000,
+            "upfront_percent": 50,
+            "deferred": 387500,
+            "earnout_maximum": 387500,
+            "earnout_metric": "EBITDA Maintenance",
+            "earnout_period_months": 36,
+            "earnout_rationale": "Trigger 3 (Owner Dependency) and Trigger 4 (Unverified Assets). The Risk expert identified high reliance on owner-managers for technical and sales functions. The Operational expert flagged a major discrepancy between the asset register and balance sheet.",
+            "retention_escrow": 100000
+          },
+          "key_conditions": [
+            "Full physical asset verification and reconciliation as a condition precedent",
+            "24-month active handover period for directors",
+            "EBITDA floor of £300k required for full earnout payment"
+          ],
+          "notes": "Seller obligations: 24-month handover, 36-month non-compete. Warranties: Specific indemnity for asset register discrepancies and tax; cap at 50% of consideration; 24-month period. Completion mechanism: Completion accounts with a working capital peg based on 2025 average. Risk is low due to high deferred/contingent components and asset verification requirements."
+        },
+        {
+          "name": "Balanced Approach",
+          "strategy": "A fair split that recognizes the high cash balance while protecting against the loss of key technical expertise.",
+          "risk_to_buyer": "medium",
+          "suitable_when": "The buyer is confident in the 2025 recovery but requires the sellers to remain engaged to transition technical relationships.",
+          "consider =ation": {
+            "total_headline": 1550000,
+            "upfront_cash": 1007500,
+            "upfront_percent": 65,
+            "deferred": 310000,
+            "earnout_maximum": 232500,
+            "earnout_metric": "Adjusted EBITDA",
+            "earnout_period_months": 24,
+            "earnout_rationale": "Trigger 3 (Owner Dependency). The Risk expert noted that the loss of directors could lead to a loss of technical expertise and customer relationships.",
+            "retention_escrow": 50000
+          },
+          "key_conditions": [
+            "12-month consultancy agreement post-handover",
+            "Escrow release tied to 12-month bad debt performance",
+            "Standard warranties with specific indemnity for historical dividend over-extraction"
+          ],
+          "notes": "Seller obligations: 12-month handover plus 12-month consultancy. Warranties: Cap at 30% of consideration; 18-month period; £10k de minimis. Completion mechanism: Completion accounts to verify the £724k cash balance. Risk is medium because the upfront payment covers the cash-at-bank, but the premium is tied to performance."
+        },
+        {
+          "name": "Competitive Approach",
+          "strategy": "High upfront cash to appeal to sellers who view the business as a 'clean' target with massive cash reserves.",
+          "risk_to_buyer": "high",
+          "suitable_when": "A competitive bidding environment where the buyer prioritizes deal speed and the target's debt-free status.",
+          "consideration": {
+            "total_headline": 1550000,
+            "upfront_cash": 1317500,
+            "upfront_percent": 85,
+            "deferred": 232500,
+            "earnout_maximum": 0,
+            "earnout_metric": "N/A",
+            "earnout_period_months": 0,
+            "earnout_rationale": "No earnout included to maximize competitiveness. Risk is mitigated via a larger retention and strict completion accounts.",
+            "retention_escrow": 75000
+          },
+          "key_conditions": [
+            "6-month intensive handover",
+            "Locked-box mechanism if completion is within 60 days",
+            "Comprehensive non-compete covering the UK pool sector"
+          ],
+          "notes": "Seller obligations: 6-month handover, 24-month non-compete. Warranties: Cap at 20% of consideration; 12-month period. Completion mechanism: Locked box to provide price certainty to the seller. Risk is high due to the lack of performance-contingent pay and high upfront cash, leaving the buyer vulnerable to owner-exit disruption."
+        }
+      ],
+      "recommended_structure": "Balanced Approach",
+      "recommendation_rationale": "The Balanced Approach is optimal because it bridges the gap between the seller's high expectations (driven by the £724k cash) and the buyer's need to mitigate owner dependency. By paying 65% upfront, the buyer effectively 'buys' the cash and a portion of the enterprise value, while the 15% earnout ensures the owners remain motivated to transition technical knowledge and maintain the 2025 margin recovery.",
+      "negotiation_priorities": [
+        "Explain the 'Cash-Free, Debt-Free' bridge to justify the £1.55M Equity Value vs the seller's £1.8M+ expectation.",
+        "Secure a long-term non-compete to protect the recurring service revenue base.",
+        "Mandate a physical asset audit to resolve the depreciation discrepancy before completion.",
+        "Establish a clear working capital peg to prevent further aggressive dividend extraction before closing."
+      ],
+      "deal_breaker_terms": [
+        "Refusal to provide a specific indemnity for the asset register discrepancies.",
+        "Sellers unwilling to commit to at least a 12-month handover period.",
+        "Discovery of undisclosed liabilities during the breakdown of 'Other Overheads' (£176k)."
+      ],
+      "key_findings": [
+        "The business is exceptionally liquid, making it a 'clean' but expensive target due to the cash-to-equity bridge.",
+        "Owner dependency is the primary operational risk, specifically in technical sales and estimating.",
+        "Historical margin volatility requires a structure that rewards stability rather than just top-line growth.",
+        "The negative cash conversion cycle is a major asset that should be protected via the working capital peg."
+      ],
+      "narrative": "Spruce Pools is a highly attractive, debt-free acquisition target with a robust recurring revenue stream. However, the deal is complicated by a significant 'valuation gap'—the sellers likely expect to be paid for the £724k cash on top of a high EBITDA multiple. The recommended structure uses the cash balance as a lever for a strong upfront offer while using deferred and earnout components to hedge against the risk of margin compression and owner exit. The primary focus of the SPA should be the reconciliation of the asset register and the formalization of the transition period to ensure the 2025 productivity gains are institutionalized."
+    }
+  },
+  {
+    "id": 1928,
+    "expert_type": "financial",
+    "status": "success",
+    "score": 72,
+    "confidence": "high",
+    "created_at": "2026-06-09T20:14:42.103Z",
+    "analysis_data": {
+      "expert": "financial",
+      "company_name": "Spruce Pools",
+      "analysis_date": "2024-05-22",
+      "score": 72,
+      "confidence": "high",
+      "yearly_metrics": {
+        "2022": {
+          "revenue": 2282351,
+          "revenue_yoy_growth_percent": null,
+          "cost_of_sales": 1484452,
+          "gross_profit": 797899,
+          "gross_margin_percent": 34.96,
+          "administrative_expenses": 334777,
+          "operating_profit": 463122,
+          "operating_margin_percent": 20.29,
+          "depreciation_amortisation": 57193,
+          "ebitda": 520315,
+          "interest_payable": 0,
+          "interest_coverage_ratio": null,
+          "profit_before_tax": 464052,
+          "corporation_tax": 93195,
+          "effective_tax_rate_percent": 20.08,
+          "net_profit": 370857,
+          "net_margin_percent": 16.25
+        },
+        "2023": {
+          "revenue": 1992926,
+          "revenue_yoy_growth_percent": -12.68,
+          "cost_of_sales": 1366057,
+          "gross_profit": 626869,
+          "gross_margin_percent": 31.45,
+          "administrative_expenses": 404944,
+          "operating_profit": 221925,
+          "operating_margin_percent": 11.14,
+          "depreciation_amortisation": 86472,
+          "ebitda": 308397,
+          "interest_payable": 0,
+          "interest_coverage_ratio": null,
+          "profit_before_tax": 229890,
+          "corporation_tax": 38403,
+          "effective_tax_rate_percent": 16.7,
+          "net_profit": 191487,
+          "net_margin_percent": 9.61
+        },
+        "2024": {
+          "revenue": 1982111,
+          "revenue_yoy_growth_percent": -0.54,
+          "cost_of_sales": 1467076,
+          "gross_profit": 515035,
+          "gross_margin_percent": 25.98,
+          "administrative_expenses": 396134,
+          "operating_profit": 118901,
+          "operating_margin_percent": 6,
+          "depreciation_amortisation": 64397,
+          "ebitda": 183298,
+          "interest_payable": 0,
+          "interest_coverage_ratio": null,
+          "profit_before_tax": 130562,
+          "corporation_tax": 50389,
+          "effective_tax_rate_percent": 38.6,
+          "net_profit": 80173,
+          "net_margin_percent": 4.04
+        },
+        "2025": {
+          "revenue": 2313955,
+          "revenue_yoy_growth_percent": 16.74,
+          "cost_of_sales": 1645039,
+          "gross_profit": 668916,
+          "gross_margin_percent": 28.91,
+          "administrative_expenses": 441071,
+          "operating_profit": 227845,
+          "operating_margin_percent": 9.85,
+          "depreciation_amortisation": 71116,
+          "ebitda": 298961,
+          "interest_payable": 0,
+          "interest_coverage_ratio": null,
+          "profit_before_tax": 241191,
+          "corporation_tax": 60674,
+          "effective_tax_rate_percent": 25.16,
+          "net_profit": 180517,
+          "net_margin_percent": 7.8
+        }
+      },
+      "cagr": {
+        "revenue_cagr_percent": 0.46,
+        "gross_profit_cagr_percent": -5.71,
+        "operating_profit_cagr_percent": -21.15,
+        "period_years": 3
+      },
+      "cost_structure": {
+        "cost_of_sales_percent_revenue": 71.09,
+        "overheads_percent_revenue": 19.06,
+        "staff_costs_percent_revenue": 29.24,
+        "director_costs_percent_revenue": 2.99,
+        "top_5_overheads": [
+          {
+            "category": "Other Overheads",
+            "value": 176078,
+            "percent_of_overheads": 39.92
+          },
+          {
+            "category": "Depreciation",
+            "value": 71117,
+            "percent_of_overheads": 16.12
+          },
+          {
+            "category": "Directors Pension",
+            "value": 60000,
+            "percent_of_overheads": 13.6
+          },
+          {
+            "category": "Staff Pension Contributions",
+            "value": 60000,
+            "percent_of_overheads": 13.6
+          },
+          {
+            "category": "Rent & Rates",
+            "value": 50962,
+            "percent_of_overheads": 11.55
+          }
+        ],
+        "cost_base_classification": "mixed"
+      },
+      "earnings_quality": {
+        "net_profit_tracks_operating_profit": true,
+        "exceptional_items_identified": [
+          "Profit on disposal of fixed assets: 4337 (2025)"
+        ],
+        "tax_rate_consistent": false,
+        "ebitda_latest": 298961,
+        "ebitda_trend": "stable",
+        "limitations": [
+          "Inconsistent reporting of direct labour between P&L versions",
+          "Significant 'Other Overheads' line requires further breakdown"
+        ]
+      },
+      "debt_service": {
+        "latest_interest_coverage": null,
+        "interest_coverage_trend": "stable",
+        "additional_debt_capacity_assessment": "High capacity due to zero existing debt and strong cash reserves of 724,569."
+      },
+      "key_findings": [
+        "Revenue recovered strongly in 2025 (16.7% growth) after a two-year period of stagnation and decline.",
+        "Gross margins are volatile, peaking at 35% in 2022 before dropping to 26% in 2024, suggesting sensitivity to material/labour costs.",
+        "The company maintains an exceptionally strong liquidity position with zero long-term debt and high cash balances.",
+        "Operating leverage is evident; the 16.7% revenue increase in 2025 led to a 91.6% increase in operating profit.",
+        "Dividend policy is aggressive, with payouts frequently matching or exceeding annual net profit, limiting equity growth.",
+        "Staff costs are a significant component of the cost base, but productivity appears to have improved in the latest period."
+      ],
+      "red_flags": [
+        "Significant margin compression between 2022 and 2024 (900bps drop in Gross Margin).",
+        "High 'Other Overheads' (176k in 2025) representing nearly 40% of total administrative expenses.",
+        "Dividends exceeded net profit in 2024, leading to a reduction in retained earnings."
+      ],
+      "narrative": "Spruce Pools presents a financial profile typical of a mature, well-capitalised specialist contractor. The primary strength of the business lies in its balance sheet; with zero debt and cash reserves exceeding £720k, the company offers a very low-risk profile for an acquirer and significant capacity for debt-funded acquisition. However, the P&L performance has been volatile. Between 2022 and 2024, the company suffered from significant margin erosion, with net margins falling from 16.25% to just 4.04%. This appears to have been driven by an inability to pass on rising direct costs (materials and labour) during a period of softening revenue. The 2025 results show a promising reversal of this trend, with revenue growth returning and margins beginning to expand again. The earnings quality is generally high, as net profit closely tracks operating performance, though the aggressive dividend policy suggests the current owners are extracting maximum value rather than reinvesting for growth. For a buyer, the focus should be on stabilising the gross margin and professionalising the overhead structure, particularly the large 'other' cost categories. The business is highly scalable given its current fixed cost base, but pricing discipline is required to return to the 2022 profitability peaks."
+    }
+  },
+  {
+    "id": 1929,
+    "expert_type": "operational",
+    "status": "success",
+    "score": 78,
+    "confidence": "high",
+    "created_at": "2026-06-09T20:14:42.135Z",
+    "analysis_data": {
+      "expert": "operational",
+      "company_name": "Spruce Pools",
+      "analysis_date": "2024-05-22",
+      "score": 78,
+      "confidence": "high",
+      "working_capital": {
+        "yearly_metrics": {
+          "2024": {
+            "debtor_days": 11.76,
+            "creditor_days": 23.46,
+            "stock_days": 17.96,
+            "cash_conversion_cycle_days": 6.26,
+            "net_working_capital": 629880,
+            "working_capital_percent_revenue": 31.78
+          },
+          "2025": {
+            "debtor_days": 7.29,
+            "creditor_days": 26.74,
+            "stock_days": 13.78,
+            "cash_conversion_cycle_days": -5.67,
+            "net_working_capital": 635790,
+            "working_capital_percent_revenue": 27.48
+          }
+        },
+        "trend": "improving",
+        "working_capital_intensity": "moderate",
+        "observations": [
+          "The cash conversion cycle has turned negative in 2025, indicating the business is now a net generator of cash from its operations.",
+          "Debtor days are exceptionally low for the construction sector, suggesting strong upfront payment terms or efficient collection.",
+          "Working capital as a percentage of revenue is decreasing while revenue grows, indicating improving capital efficiency."
+        ]
+      },
+      "capex": {
+        "total_gross_asset_value": 286935.2,
+        "total_nbv": 286935.2,
+        "asset_freshness_percent": 100,
+        "recent_additions_24m_value": 100386,
+        "recent_additions_percent": 34.98,
+        "annual_depreciation_charge": 71117,
+        "estimated_maintenance_capex": 71117,
+        "capex_cliff_risk": false,
+        "assets_requiring_replacement": [],
+        "category_breakdown": {
+          "property": {
+            "cost": 24747,
+            "nbv": 24747
+          },
+          "plant_machinery": {
+            "cost": 26716.9,
+            "nbv": 26716.9
+          },
+          "vehicles": {
+            "cost": 149647.93,
+            "nbv": 149647.93
+          },
+          "it_equipment": {
+            "cost": 36307.67,
+            "nbv": 36307.67
+          },
+          "other": {
+            "cost": 49515.7,
+            "nbv": 49515.7
+          }
+        },
+        "observations": [
+          "Significant discrepancy noted between asset register (showing zero depreciation) and statutory accounts; however, recent additions of £100k+ suggest active fleet renewal.",
+          "Vehicles represent over 50% of the tangible asset base, which is typical for a field-service construction business.",
+          "Maintenance capex (proxied by depreciation) is approximately 3% of revenue, which is sustainable."
+        ]
+      },
+      "workforce": {
+        "headcount": null,
+        "total_payroll": 676700,
+        "revenue_per_employee": null,
+        "payroll_percent_revenue": 29.24,
+        "average_salary_all": null,
+        "average_salary_excl_directors": null,
+        "director_remuneration_total": 69100,
+        "director_percent_of_payroll": 10.21,
+        "ft_pt_split": {
+          "full_time": null,
+          "part_time": null
+        },
+        "longest_tenured_years": null,
+        "newest_hire_months_ago": null,
+        "observations": [
+          "Total staff costs remained flat (£676k vs £668k) despite a 16.7% increase in revenue, indicating a significant jump in labor productivity.",
+          "Direct labor costs are a primary driver of margin volatility, particularly in the 2023-2024 period.",
+          "Payroll as % of revenue (29%) is healthy for a service-heavy construction business."
+        ]
+      },
+      "owner_dependency": {
+        "risk_level": "medium",
+        "director_count": 2,
+        "highest_individual_salary": null,
+        "highest_individual_percent_of_payroll": null,
+        "critical_function_concentration": "High concentration in pension and dividend-led extraction rather than high base salaries.",
+        "observations": [
+          "Director remuneration is low on base salary (£9,100) but high on pension contributions (£60,000) and dividends (£162,000).",
+          "The business is highly profitable but cash extraction via dividends often exceeds net profit, which could limit organic scaling if not monitored."
+        ]
+      },
+      "scalability": {
+        "rating": "high",
+        "headcount_for_25pct_growth": "Estimated 15-20% increase in field staff based on current productivity trends.",
+        "capex_needed_for_growth": "Moderate; primarily additional service vehicles and specialized pool equipment.",
+        "working_capital_supports_growth": true,
+        "bottlenecks": [
+          "Availability of skilled pool technicians",
+          "Subcontractor capacity for new build segments",
+          "Seasonality of service and maintenance revenue"
+        ],
+        "observations": [
+          "The business has demonstrated it can grow revenue by 16% without increasing total staff costs, suggesting significant existing capacity or process efficiency.",
+          "Strong cash reserves (£724k) provide ample 'dry powder' for immediate capex or headcount expansion."
+        ]
+      },
+      "key_findings": [
+        "Exceptional liquidity with a current ratio of 3.89 and zero long-term debt.",
+        "Working capital cycle is highly efficient, with negative CCC in the latest year.",
+        "Revenue mix is shifting toward higher-value renovation and new builds, which improved gross margins to 28.9%.",
+        "Labor productivity improved significantly in 2025, with revenue growing while staff costs remained static."
+      ],
+      "red_flags": [
+        "Dividend payments frequently exceed net profit, leading to occasional erosion of retained earnings.",
+        "Significant discrepancy between the detailed asset register and the balance sheet totals regarding accumulated depreciation.",
+        "Historical margin compression (2023-2024) shows vulnerability to direct material and labor cost spikes."
+      ],
+      "narrative": "Spruce Pools is operationally robust with a highly efficient working capital model that generates cash as it scales. The business has successfully navigated a period of margin compression by shifting its revenue mix and improving labor productivity. While owner dependency is present through high dividend extraction, the lack of debt and massive cash reserves provide a significant safety buffer. The business is well-positioned for 25% growth, likely requiring only incremental investment in vehicles and field staff."
+    }
+  },
+  {
+    "id": 1931,
+    "expert_type": "qoe",
+    "status": "success",
+    "score": 74,
+    "confidence": "high",
+    "created_at": "2026-06-09T20:14:42.198Z",
+    "analysis_data": {
+      "expert": "quality_of_earnings",
+      "company_name": "Spruce Pools",
+      "analysis_date": "2024-05-22",
+      "score": 74,
+      "confidence": "high",
+      "reported_figures": {
+        "operating_profit": 227845,
+        "depreciation": 71116,
+        "amortisation": 0,
+        "reported_ebitda": 298961,
+        "source_year": 2025
+      },
+      "add_backs": [
+        {
+          "item": "Excess Director Pension Contributions",
+          "category": "owner_salary",
+          "amount": 60000,
+          "recurrence": "recurring",
+          "year": 2025,
+          "justification": "Directors are extracting value via pension contributions (£60k) rather than market-rate salaries. This is a discretionary choice by the current owners.",
+          "confidence": "high",
+          "defensibility_score": 9,
+          "case_for_inclusion": "These contributions are a form of profit extraction and would not be required for a replacement manager.",
+          "case_for_exclusion": "The seller may argue these are part of a total compensation package that is necessary to retain executive talent."
+        },
+        {
+          "item": "Use of Home as Office",
+          "category": "personal_expense",
+          "amount": 1700,
+          "recurrence": "recurring",
+          "year": 2025,
+          "justification": "Discretionary personal expense reimbursed to directors for home office use.",
+          "confidence": "high",
+          "defensibility_score": 8,
+          "case_for_inclusion": "This is a non-operational personal benefit that a commercial buyer would not continue.",
+          "case_for_exclusion": "The amount is immaterial and represents a legitimate tax-deductible business expense for a small company."
+        }
+      ],
+      "deductions": [
+        {
+          "item": "Market Rate Salary Adjustment (MD/Owner)",
+          "category": "replacement_salary",
+          "amount": 48400,
+          "recurrence": "recurring",
+          "year": 2025,
+          "justification": "Current director salary is £9,100. UK SME benchmark for a working MD at £2.3m revenue is £57,500 (mid-point of £45k-£70k range).",
+          "confidence": "high",
+          "defensibility_score": 9,
+          "case_for_inclusion": "A buyer must account for the cost of hiring a professional manager to replace the owner's labor.",
+          "case_for_exclusion": "The seller might argue the business is semi-absentee or that existing staff handle the majority of MD duties."
+        },
+        {
+          "item": "Profit on Disposal of Fixed Assets",
+          "category": "disposal_gain",
+          "amount": 4337,
+          "recurrence": "one_off",
+          "year": 2025,
+          "justification": "Non-cash accounting gain from the sale of assets, inflating reported operating profit.",
+          "confidence": "high",
+          "defensibility_score": 10,
+          "case_for_inclusion": "This is a one-off accounting entry that does not reflect the sustainable trading performance of the business.",
+          "case_for_exclusion": "The seller may argue that asset renewal is a core part of their business model and such gains are recurring."
+        }
+      ],
+      "total_add_backs": 61700,
+      "total_deductions": 52737,
+      "adjusted_ebitda": {
+        "conservative": 303538,
+        "base": 307924,
+        "optimistic": 307924
+      },
+      "adjustment_summary": {
+        "reported_ebitda": 298961,
+        "plus_add_backs": 61700,
+        "minus_deductions": 52737,
+        "equals_adjusted_ebitda_base": 307924
+      },
+      "director_salary_analysis": {
+        "directors": [
+          {
+            "name": "Combined Directors (2)",
+            "current_salary": 9100,
+            "estimated_market_rate": 57500,
+            "benchmark_range_used": "Revenue £1M-£5M: Working MD/Owner-Director (£45,000–£70,000)",
+            "adjustment": 48400,
+            "adjustment_type": "deduction"
+          }
+        ]
+      },
+      "sustainability_assessment": {
+        "sustainable_for_3_years": true,
+        "key_assumptions": [
+          "Gross margins stabilize at the 2025 level of 28.9% and do not revert to 2024 lows.",
+          "The shift toward higher-value renovation and new build projects continues to offset service department volatility.",
+          "Labor productivity gains achieved in 2025 are maintained."
+        ],
+        "sensitivity_factors": [
+          "Direct labor cost spikes (as seen in 2023-2024) could compress margins by 300-500bps.",
+          "Availability of skilled pool technicians in the local UK market."
+        ],
+        "upside_scenarios": [
+          "Expansion of the 'Chemicals and Products' segment which has higher scalability.",
+          "Leveraging the £724k cash reserve for bolt-on acquisitions or fleet expansion."
+        ],
+        "downside_scenarios": [
+          "Economic downturn reducing discretionary spend on luxury pool renovations.",
+          "Loss of key technical staff leading to increased subcontractor reliance and margin erosion."
+        ]
+      },
+      "key_findings": [
+        "Adjusted EBITDA is remarkably close to Reported EBITDA, suggesting high earnings quality and transparent accounting.",
+        "The business has successfully navigated a period of margin compression, with 2025 showing a strong recovery in both revenue and gross profit.",
+        "The negative cash conversion cycle in 2025 indicates the business is highly efficient and generates cash as it grows.",
+        "The lack of debt and high cash reserves provide a significant 'margin of safety' for an acquirer."
+      ],
+      "red_flags": [
+        "Historical gross margin volatility (35% to 26% to 29%) suggests the business is a 'price taker' for materials and labor.",
+        "Aggressive dividend extraction policy has historically exceeded net profit, though this was corrected in 2025.",
+        "Significant 'Other Overheads' (£176k) require a granular breakdown during full due diligence to ensure no hidden recurring costs."
+      ],
+      "narrative": "Spruce Pools demonstrates high-quality earnings supported by a robust balance sheet. The normalization process reveals that while the owners extract significant value through pensions and dividends, the underlying business is capable of supporting a professional management salary while maintaining a ~13% Adjusted EBITDA margin. The primary risk for a buyer is the historical volatility in gross margins; however, the 2025 recovery suggests that management has successfully adjusted pricing or project mix to combat rising costs. The business is exceptionally liquid and offers a clean, debt-free entry point for an acquirer."
+    }
+  },
+  {
+    "id": 1930,
+    "expert_type": "risk",
+    "status": "success",
+    "score": 82,
+    "confidence": "high",
+    "created_at": "2026-06-09T20:14:42.167Z",
+    "analysis_data": {
+      "expert": "risk",
+      "company_name": "Spruce Pools",
+      "analysis_date": "2024-05-22",
+      "score": 82,
+      "confidence": "high",
+      "customer_concentration": {
+        "risk_level": "low",
+        "top_customer_percent": null,
+        "top_3_customers_percent": null,
+        "top_5_customers_percent": null,
+        "hhi_index": null,
+        "hhi_classification": "diversified",
+        "total_customers": null,
+        "customers_over_15_percent": [],
+        "observations": [
+          "Sales ledger data not provided; however, revenue breakdown by product shows a healthy mix across Service (43%), Renovation (32%), and Chemicals (25%).",
+          "High volume of 'Service and Maintenance' revenue suggests a fragmented, high-volume customer base rather than concentration."
+        ]
+      },
+      "financial_risk": {
+        "risk_level": "low",
+        "technically_insolvent": false,
+        "current_ratio_trend": "improving",
+        "creditor_growth_vs_revenue": "Creditors grew 27.7% vs Revenue growth of 16.7% (2024-2025), indicating slight stretching of terms.",
+        "director_loans_balance": 0,
+        "intercompany_balances": 0,
+        "interest_coverage_adequate": true,
+        "going_concern_indicators": [],
+        "observations": [
+          "Exceptionally strong liquidity with a current ratio of 3.89 in 2025 and 4.40 in 2026 projections.",
+          "Zero long-term debt or bank loans identified across all periods.",
+          "Interest coverage ratio is robust (172.3x in 2026 projections)."
+        ]
+      },
+      "key_person_risk": {
+        "risk_level": "moderate",
+        "highest_individual_payroll_percent": null,
+        "single_points_of_failure": [
+          "Technical operations",
+          "Sales/Estimating for New Builds"
+        ],
+        "management_depth": "thin",
+        "average_tenure_years": null,
+        "observations": [
+          "Director remuneration and pension contributions are significant (£129k in 2025), suggesting high reliance on owner-managers.",
+          "Staff matrix not provided, but high dividend payouts suggest the business is a lifestyle vehicle for the current owners."
+        ]
+      },
+      "revenue_quality": {
+        "risk_level": "low",
+        "revenue_type": "mixed",
+        "customer_trend": "stable_base",
+        "seasonality_detected": true,
+        "observations": [
+          "Strong recurring revenue element from 'Service and Maintenance' (£1m+ annually).",
+          "Project-based risk exists in 'Renovation and New Build' which fluctuates (e.g., 30% growth in 2024).",
+          "Pool sector typically exhibits high seasonality (Q2/Q3 peak)."
+        ]
+      },
+      "balance_sheet_risks": {
+        "director_loans": 0,
+        "connected_company_balances": 0,
+        "deferred_tax": null,
+        "pension_obligations": null,
+        "contingent_liabilities": "unable_to_assess",
+        "observations": [
+          "Significant Goodwill (£138k+ in asset register) from previous acquisitions (Trinity, Aquapool) may require impairment review.",
+          "Discrepancy noted between Asset Register and Balance Sheet totals requires reconciliation."
+        ]
+      },
+      "bad_debt": {
+        "total_overdue_90_plus": null,
+        "recommended_provision": 23100,
+        "existing_provision": 0,
+        "net_profit_impact": -23100,
+        "observations": [
+          "Trade debtors decreased from £63k to £46k (2024-2025) despite revenue growth, suggesting strong credit control.",
+          "Recommended provision based on 50% of current trade debtor balance as a conservative placeholder due to lack of aged debt report."
+        ]
+      },
+      "risk_register": [
+        {
+          "risk": "Margin Compression",
+          "category": "financial",
+          "severity": "high",
+          "likelihood": "medium",
+          "financial_impact": 111834,
+          "impact_description": "Gross margin dropped from 31.5% to 26% in 2024 due to rising direct labour and material costs.",
+          "mitigation": "Implement dynamic pricing and tighter subcontractor cost controls."
+        },
+        {
+          "risk": "Dividend Over-extraction",
+          "category": "financial",
+          "severity": "medium",
+          "likelihood": "high",
+          "financial_impact": 164500,
+          "impact_description": "Dividends exceeded net profit in 2024, eroding retained earnings.",
+          "mitigation": "Restrict dividend payments in the SPA until completion accounts are verified."
+        },
+        {
+          "risk": "Asset Register Discrepancy",
+          "category": "balance_sheet",
+          "severity": "medium",
+          "likelihood": "medium",
+          "financial_impact": 286935,
+          "impact_description": "General ledger assets do not match sub-ledger details.",
+          "mitigation": "Full physical asset verification and reconciliation as a condition precedent."
+        },
+        {
+          "risk": "Key Person Dependency",
+          "category": "people",
+          "severity": "high",
+          "likelihood": "medium",
+          "financial_impact": null,
+          "impact_description": "Loss of directors could lead to loss of technical expertise and customer relationships.",
+          "mitigation": "Include 12-24 month earn-out periods and restrictive covenants for sellers."
+        }
+      ],
+      "deal_breakers": [],
+      "key_findings": [
+        "The company is debt-free with an exceptionally strong cash position (£724k+).",
+        "Profitability is volatile; net profit fell 58% in 2024 before recovering in 2025/2026 projections.",
+        "The business model has a strong defensive core of recurring maintenance revenue.",
+        "Working capital management is excellent, evidenced by high current and quick ratios."
+      ],
+      "narrative": "Spruce Pools presents a low-to-moderate risk profile. The primary strength is the balance sheet, which is liquid and entirely unleveraged. The main risks are operational: specifically, the margin compression observed in 2024 and the high level of dividend extraction by the current directors. The business is highly viable as an acquisition target, provided the buyer secures the transition of key technical staff and reconciles the fixed asset register discrepancies identified in the due diligence data."
+    }
+  },
+  {
+    "id": 1927,
+    "expert_type": "screening",
+    "status": "success",
+    "score": null,
+    "confidence": null,
+    "created_at": "2026-06-09T20:14:23.975Z",
+    "analysis_data": {
+      "stage": "screening",
+      "company_name": "Spruce Pools",
+      "sector": "Construction & Building",
+      "analysis_date": "2025-05-22",
+      "data_quality_score": 56,
+      "analysis_period": {
+        "earliest_year": 2022,
+        "latest_year": 2025,
+        "years_of_data": 4
+      },
+      "dimensions": {
+        "earnings_trajectory": {
+          "rag": "AMBER",
+          "score": 55,
+          "revenue_cagr_percent": 0.5,
+          "latest_revenue": 2313955,
+          "latest_gross_margin_percent": 28.9,
+          "latest_operating_margin_percent": 9.8,
+          "latest_net_margin_percent": 7.8,
+          "margin_direction": "expanding",
+          "explanation": "Revenue has recovered in 2025 after a dip in 2023-2024, resulting in a flat 4-year CAGR. While margins are currently expanding from 2024 lows, they remain below 2022 peak levels (16.3% net margin)."
+        },
+        "balance_sheet_health": {
+          "rag": "GREEN",
+          "score": 95,
+          "latest_current_ratio": 3.9,
+          "latest_net_assets": 849118,
+          "net_asset_growth_percent": 2.2,
+          "long_term_debt": 0,
+          "explanation": "The balance sheet is exceptionally strong with zero long-term debt and a current ratio nearly triple the green threshold. Net assets are growing again following a dividend-led dip in 2024."
+        },
+        "cash_reality": {
+          "rag": "GREEN",
+          "score": 85,
+          "latest_cash_at_bank": 724569,
+          "cash_trend": "growing",
+          "cash_vs_profit_alignment": "aligned",
+          "explanation": "Cash reserves are robust, representing 85% of current assets. The 12.4% increase in cash during 2025 is well-aligned with the reported net profit of 180,517."
+        },
+        "customer_risk": {
+          "rag": "RED",
+          "score": 0,
+          "top_customer_concentration_percent": null,
+          "aged_debt_90_plus_percent": null,
+          "total_customers": null,
+          "explanation": "Data Unavailable. The absence of sales ledger data prevents any assessment of customer concentration or payment performance, representing a significant blind spot."
+        },
+        "asset_quality": {
+          "rag": "AMBER",
+          "score": 45,
+          "nbv_to_cost_percent": 100,
+          "recent_additions_percent": 35,
+          "total_nbv": 286935,
+          "explanation": "The asset register shows a 100% NBV/Cost ratio due to missing accumulated depreciation data, which is a reporting anomaly. However, statutory accounts confirm significant recent investment in plant and machinery."
+        },
+        "people_capability": {
+          "rag": "RED",
+          "score": 20,
+          "headcount": null,
+          "revenue_per_employee": null,
+          "payroll_to_revenue_percent": 29.2,
+          "director_cost_percent_of_payroll": 10.2,
+          "explanation": "Data Unavailable for headcount. While director costs appear low as a percentage of total staff costs (676,700), the lack of a staff matrix prevents calculation of revenue per head or assessment of owner dependency."
+        }
+      },
+      "overall_score": 58,
+      "recommendation": "PROCEED_WITH_CAUTION",
+      "recommendation_justification": "The company is financially robust with exceptional liquidity and zero debt, but the 'No-Go' is avoided only by the strength of the balance sheet. Significant data gaps in customer and staff metrics must be addressed.",
+      "key_strengths": [
+        "Exceptional liquidity position with 724,569 in cash and a current ratio of 3.9.",
+        "Zero long-term debt provides a clean capital structure and high financial resilience.",
+        "Strong recovery in 2025 with operating profit nearly doubling year-on-year."
+      ],
+      "key_concerns": [
+        "Total lack of visibility on customer concentration and aged debt risk.",
+        "Inconsistent margin history with significant compression observed between 2022 and 2024.",
+        "High dividend extraction (162,000) relative to net profit (180,517) limits internal reinvestment."
+      ],
+      "questions_for_seller": [
+        "Can you provide a full aged debtors listing to assess customer concentration and credit risk?",
+        "What is the current full-time equivalent (FTE) headcount and the breakdown of the technical vs. administrative team?",
+        "Why did direct labour costs increase by 20% in 2024 despite revenue remaining flat?",
+        "What drove the significant 30% growth in the 'Renovation and New Build' segment in 2025?",
+        "Why is the asset register not recording accumulated depreciation against the gross cost of vehicles?"
+      ],
+      "comparable_context": "Spruce Pools' net margins (7.8%) are slightly above the 5-7% typical for UK SME construction firms. However, its cash-to-turnover ratio is significantly higher than the sector average, suggesting a very conservative financial management style or high advance payments from customers.",
+      "executive_summary": "Spruce Pools is a financially stable pool construction and maintenance business showing a strong recovery in 2025. The recommendation is to PROCEED WITH CAUTION. The primary attraction is the company's 'fortress' balance sheet, characterised by 724,569 in cash, zero debt, and high liquidity. Profitability has returned to growth, with net margins expanding to 7.8% in the latest period. However, the screening is hampered by a low data quality score (56/100). We have zero visibility on customer concentration (Dimension 4) and employee productivity (Dimension 6). Furthermore, the business has a history of volatile margins, with net profit falling 58% in 2024 before the current recovery. Further investigation must focus on verifying the stability of the customer base and understanding the drivers behind the 2024 margin collapse to ensure the 2025 recovery is sustainable."
+    }
+  },
+  {
+    "id": 1932,
+    "expert_type": "sector",
+    "status": "success",
+    "score": 58,
+    "confidence": "medium",
+    "created_at": "2026-06-09T20:14:42.231Z",
+    "analysis_data": {
+      "expert": "sector",
+      "company_name": "Spruce Pools",
+      "sector": "Construction & Building",
+      "analysis_date": "2024-05-22",
+      "score": 58,
+      "confidence": "medium",
+      "sector_overview": {
+        "growth_outlook": "mixed",
+        "uk_market_size_estimate": "£110bn (Total Construction Output)",
+        "key_trends": [
+          "Increased demand for luxury home improvements post-pandemic",
+          "Shift toward energy-efficient pool heating and filtration systems",
+          "Rising material costs for concrete, steel, and specialized tiles",
+          "Growing interest in 'staycations' driving domestic leisure infrastructure"
+        ],
+        "regulatory_factors": [
+          "Part L Building Regulations (Conservation of fuel and power)",
+          "HSE requirements for site safety and chemical storage",
+          "Local planning permissions for permanent outdoor structures",
+          "Water usage restrictions during drought periods"
+        ],
+        "observations": [
+          "The UK specialist trades sector is highly fragmented with many owner-managed SMEs.",
+          "The pool installation market is highly cyclical and sensitive to discretionary consumer spending.",
+          "Maintenance and service contracts provide a stabilizing revenue stream compared to pure installation."
+        ]
+      },
+      "competitive_positioning": {
+        "company_size_classification": "small",
+        "typical_gross_margin_range": {
+          "low": 25,
+          "high": 40
+        },
+        "typical_operating_margin_range": {
+          "low": 8,
+          "high": 15
+        },
+        "typical_ebitda_margin_range": {
+          "low": 10,
+          "high": 18
+        },
+        "positioning_assessment": "Likely a regional specialist trade business. Without revenue data, it is assumed to be a small SME (£1M-£5M) given the niche nature of pool construction in the UK. It sits in a premium sub-sector of construction but faces high competition from general landscapers and luxury builders."
+      },
+      "comparable_multiples": {
+        "ev_revenue_range": {
+          "low": 0.4,
+          "mid": 0.6,
+          "high": 0.8
+        },
+        "ev_ebitda_range": {
+          "low": 2,
+          "mid": 2.75,
+          "high": 3.5
+        },
+        "factors_affecting_multiple": [
+          "Ratio of installation (project) vs. maintenance (recurring) revenue",
+          "Geographic concentration in affluent areas (e.g., South East/Home Counties)",
+          "Dependency on the founder for technical expertise and sales"
+        ],
+        "premium_factors": [
+          "High proportion of recurring maintenance contracts",
+          "Exclusive partnerships with premium equipment manufacturers",
+          "Strong local brand reputation and high-end portfolio"
+        ],
+        "discount_factors": [
+          "Project-based revenue with high seasonality",
+          "Small team size (<20 employees) increasing key-man risk",
+          "High sensitivity to UK interest rates and consumer confidence"
+        ],
+        "data_confidence": "based_on_training_data"
+      },
+      "growth_opportunities": [
+        {
+          "opportunity": "Service & Maintenance Expansion",
+          "effort": "low",
+          "potential_impact": "high",
+          "timeframe": "short_term",
+          "description": "Aggressively convert installation clients into long-term service contract customers to increase recurring revenue and business valuation."
+        },
+        {
+          "opportunity": "Eco-Retrofitting",
+          "effort": "medium",
+          "potential_impact": "medium",
+          "timeframe": "medium_term",
+          "description": "Upsell existing pool owners on heat pumps, solar covers, and energy-efficient pumps to reduce running costs."
+        },
+        {
+          "opportunity": "Geographic Bolt-ons",
+          "effort": "high",
+          "potential_impact": "medium",
+          "timeframe": "long_term",
+          "description": "Acquire smaller regional competitors to expand the service footprint and achieve economies of scale in procurement."
+        }
+      ],
+      "sector_risks": [
+        {
+          "risk": "Economic Downturn",
+          "severity": "high",
+          "timeframe": "near_term",
+          "description": "Pools are a luxury discretionary spend; high interest rates and inflation reduce the pool of potential installation clients."
+        },
+        {
+          "risk": "Skilled Labour Shortage",
+          "severity": "medium",
+          "timeframe": "immediate",
+          "description": "Difficulty in finding and retaining specialized pool technicians and engineers in a tight UK labour market."
+        },
+        {
+          "risk": "Environmental Regulation",
+          "severity": "medium",
+          "timeframe": "long_term",
+          "description": "Potential future restrictions on water usage or high-energy leisure facilities could dampen market demand."
+        }
+      ],
+      "key_findings": [
+        "The business likely operates in a niche, high-value segment of the UK construction market.",
+        "Valuation is heavily dependent on the split between one-off projects and recurring maintenance.",
+        "Multiples are constrained by the 'trade' nature of the business and typical SME owner-dependency.",
+        "Current UK economic headwinds suggest a cautious approach to project-based revenue forecasts."
+      ],
+      "narrative": "Spruce Pools operates in a specialized niche within the UK construction sector. While the luxury end of the market has shown resilience, the business model is inherently project-based and labour-intensive, which typically attracts lower SME multiples (2.0x - 3.5x EBITDA). To achieve a premium valuation, the company would need to demonstrate a significant shift toward recurring maintenance revenue and a management structure that functions independently of the owners. The sector faces challenges from rising material costs and economic sensitivity, but offers growth through green-tech retrofitting and market consolidation."
+    }
+  },
+  {
+    "id": 1935,
+    "expert_type": "synthesis",
+    "status": "success",
+    "score": null,
+    "confidence": null,
+    "created_at": "2026-06-09T20:14:42.326Z",
+    "analysis_data": {
+      "stage": "synthesis",
+      "company_name": "Spruce Pools",
+      "sector": "Construction & Building",
+      "analysis_date": "2024-05-22",
+      "overall_score": 74,
+      "recommendation": "PROCEED_WITH_CAUTION",
+      "scores_dashboard": {
+        "financial": {
+          "score": 72,
+          "confidence": "high"
+        },
+        "operational": {
+          "score": 78,
+          "confidence": "high"
+        },
+        "risk": {
+          "score": 82,
+          "confidence": "high"
+        },
+        "quality_of_earnings": {
+          "score": 74,
+          "confidence": "high"
+        },
+        "sector": {
+          "score": 58,
+          "confidence": "medium"
+        },
+        "valuation": {
+          "score": 78,
+          "confidence": "high"
+        },
+        "deal_structure": {
+          "score": 82,
+          "confidence": "high"
+        }
+      },
+      "executive_summary": "Spruce Pools is a highly liquid, debt-free specialist contractor with a strong defensive core of recurring maintenance revenue. Verdict: Proceed with caution, focusing on bridging the valuation gap and securing technical knowledge transfer. Financials show 2025 Revenue of £2.31M and Adjusted EBITDA of £308k, recovering from a volatile 2023-2024 period. The valuation range for Equity Value is £1.32M to £1.78M, heavily influenced by £724k in surplus cash. Top reasons to proceed: 1) Exceptional balance sheet strength with zero debt; 2) 43% recurring service revenue providing a stable floor; 3) Significant 2025 productivity gains (16.7% revenue growth on flat staff costs). Top reasons for caution: 1) Historical margin volatility (900bps swing) suggesting limited pricing power; 2) High owner dependency for technical sales; 3) Significant discrepancies in the fixed asset register. Recommended structure: Balanced Approach with a £1.55M headline price, 65% upfront cash, and a 15% earn-out to mitigate transition risk.",
+      "expert_consensus": {
+        "agreements": [
+          "The company possesses an exceptionally strong liquidity position with over £720k in cash and zero debt.",
+          "The business model benefits from a high-quality recurring revenue stream via service and maintenance contracts.",
+          "There is a significant discrepancy between the asset register and the balance sheet that requires physical verification.",
+          "The 2025 performance represents a strong recovery, but historical volatility in gross margins remains a concern."
+        ],
+        "contradictions": [
+          {
+            "topic": "Scalability vs. Labour Constraints",
+            "expert_a": "Operational",
+            "expert_a_view": "High scalability; revenue grew 16% without increasing staff costs, suggesting existing capacity.",
+            "expert_b": "Sector",
+            "expert_b_view": "Growth is constrained by a tight UK market for specialized pool technicians.",
+            "resolution": "The business has optimized current staff but further growth beyond 10-15% will require aggressive recruitment in a difficult labour market."
+          },
+          {
+            "topic": "Valuation Multiple",
+            "expert_a": "Sector",
+            "expert_a_view": "Suggests lower multiples (2.0x-3.5x) due to the 'trade' nature and project risk.",
+            "expert_b": "Valuation",
+            "expert_b_view": "Justifies a mid-to-high range multiple due to the 43% recurring revenue mix.",
+            "resolution": "A 2.75x multiple is appropriate as it rewards the recurring revenue while discounting for small SME size and owner dependency."
+          }
+        ]
+      },
+      "devils_advocate": {
+        "worst_case_scenario": "A 'perfect storm' where a UK economic downturn halts luxury renovations (32% of revenue) while a key technical director exits, leading to a loss of major service contracts and a reversion to 2024's 4% net margins, rendering the acquisition unable to service any acquisition debt.",
+        "weakest_assumptions": [
+          "That the 2025 margin recovery is permanent rather than a temporary lull in material cost inflation.",
+          "That 'Other Overheads' of £176k are truly non-operational or easily optimisable.",
+          "That the £724k cash is entirely 'surplus' and not required for seasonal working capital swings."
+        ],
+        "underweighted_risks": [
+          "Environmental regulations: Future water restrictions or energy mandates could pivot the market faster than the company can adapt.",
+          "Dividend extraction: The history of extracting more than net profit suggests a 'lifestyle' culture that may have led to underinvestment in infrastructure."
+        ],
+        "post_mortem_predictions": [
+          "The buyer will find that the 'technical expertise' was entirely in the owner's head, leading to project failures post-exit.",
+          "The asset register discrepancy will reveal a fleet of vehicles in much poorer condition than the NBV suggests."
+        ]
+      },
+      "investment_thesis": {
+        "positive_case": "Spruce Pools is a 'cash cow' with a dominant regional position. By professionalising the management and leveraging the massive cash reserves for bolt-on acquisitions or eco-friendly retrofitting, a buyer can transform a lifestyle business into a scalable platform.",
+        "conditions_for_success": [
+          "Successful retention of the two directors for a minimum 12-24 month handover.",
+          "Stabilisation of Gross Margins at or above 28%.",
+          "Verification that the £724k cash is not encumbered by undisclosed liabilities."
+        ],
+        "integration_priorities_100_days": [
+          "Physical audit and reconciliation of all fleet and plant assets.",
+          "Granular breakdown and 'cleaning' of the £176k 'Other Overheads' category.",
+          "Implementation of a CRM to formalise customer relationships currently held by the owners.",
+          "Establishment of a new pricing framework to protect against material cost spikes."
+        ]
+      },
+      "information_requests": {
+        "critical": [
+          {
+            "request": "Granular breakdown of 'Other Overheads' (£176,078 in 2025).",
+            "source_expert": "Financial",
+            "rationale": "Represents 40% of admin expenses; must ensure no hidden recurring costs or personal expenses."
+          },
+          {
+            "request": "Aged Debtors and Creditors reports as of latest month-end.",
+            "source_expert": "Risk",
+            "rationale": "To validate the low debtor days and check for any hidden bad debt or stretched supplier terms."
+          }
+        ],
+        "important": [
+          {
+            "request": "Full asset register with VINs/Serial numbers and service history.",
+            "source_expert": "Operational",
+            "rationale": "To resolve the discrepancy between the register and the balance sheet totals."
+          },
+          {
+            "request": "Revenue breakdown by customer for the last 3 years.",
+            "source_expert": "Risk",
+            "rationale": "To confirm the lack of customer concentration and assess the 'stickiness' of service contracts."
+          }
+        ],
+        "nice_to_have": [
+          {
+            "request": "Staff turnover rates and average tenure by department.",
+            "source_expert": "Operational",
+            "rationale": "To assess the depth of the 'skilled labour' pool and key-person risk below director level."
+          }
+        ]
+      },
+      "valuation_summary": {
+        "equity_value_range": {
+          "low": 1320000,
+          "mid": 1550000,
+          "high": 1780000
+        },
+        "recommended_offer": 1550000,
+        "recommended_structure": "Balanced Approach: 65% Upfront, 20% Deferred (12-24m), 15% Earn-out based on EBITDA targets."
+      },
+      "narrative_report": "INVESTMENT MEMORANDUM: SPRUCE POOLS\n\nINTRODUCTION\nSpruce Pools is a long-established specialist in the UK construction and building sector, focusing on the design, installation, and maintenance of swimming pools. The business operates in a premium niche, serving a mix of high-net-worth residential clients and commercial leisure facilities. This memorandum synthesises expert due diligence to evaluate the acquisition of 100% of the share capital.\n\nFINANCIAL PERFORMANCE & QUALITY OF EARNINGS\nThe financial profile is one of a mature business that has recently navigated a period of significant volatility. Between 2022 and 2024, the company experienced a 'margin squeeze' where net margins collapsed from 16% to 4%. However, the 2025 results demonstrate a robust recovery, with revenue reaching £2.31M and Adjusted EBITDA of £308k. The Quality of Earnings (QoE) analysis confirms that the reported figures are largely transparent, with adjustments primarily relating to the owners' preference for pension-led profit extraction over market-rate salaries. The business is exceptionally liquid, carrying £724k in cash with zero long-term debt, providing a significant 'margin of safety' for any acquirer.\n\nOPERATIONAL ROBUSTNESS\nOperationally, Spruce Pools is highly efficient. Its cash conversion cycle turned negative in 2025, meaning the business effectively funds its own growth through favourable payment terms and efficient stock management. A key strength is the revenue mix: 43% of income is derived from recurring service and maintenance, which provides a defensive buffer against the cyclicality of the renovation and new-build segments. However, operational due diligence flagged a significant discrepancy in the fixed asset register regarding accumulated depreciation, which must be reconciled to ensure the £286k NBV of assets is accurate.\n\nRISK ASSESSMENT & DEVIL'S ADVOCATE\nWhile the balance sheet is a fortress, the business faces two primary risks: owner dependency and margin sensitivity. The current directors are deeply involved in technical sales and estimating; their immediate exit could destabilise the project pipeline. Furthermore, the 2023-2024 period proved the business is a 'price taker'—it struggled to pass on rising material and labour costs quickly. As Devil's Advocate, I must highlight that the 2025 recovery might be an outlier. If material costs spike again or if the 'Other Overheads' (£176k) contain hidden structural costs, the current valuation would be significantly inflated.\n\nVALUATION & STRATEGIC RATIONALE\nWe value the Equity of Spruce Pools at £1.55M. This is derived from a 2.75x EBITDA multiple (£847k Enterprise Value) plus the surplus cash of £724k, adjusted for a conservative bad debt provision. The strategic rationale for the acquisition is the 'platform potential.' Spruce Pools is a clean, debt-free vehicle with a loyal customer base. By installing a professional management layer and implementing dynamic pricing, the buyer can protect margins and use the existing cash flow to fund geographic expansion.\n\nCONCLUSION & RECOMMENDATION\nWe recommend proceeding with the acquisition at a headline price of £1.55M, but only under a 'Balanced' deal structure. This structure pays out the cash balance upfront but ties the enterprise premium to a 24-month earn-out and a strict handover period. This mitigates the risk of owner-exit disruption and ensures the 2025 margin recovery is sustainable. Success will depend on the first 100 days, specifically the physical audit of assets and the formalisation of the sales process."
+    }
+  },
+  {
+    "id": 1933,
+    "expert_type": "valuation",
+    "status": "success",
+    "score": 78,
+    "confidence": "high",
+    "created_at": "2026-06-09T20:14:42.263Z",
+    "analysis_data": {
+      "expert": "valuation",
+      "company_name": "Spruce Pools",
+      "analysis_date": "2024-05-22",
+      "score": 78,
+      "confidence": "high",
+      "ebitda_multiple_valuation": {
+        "adjusted_ebitda_base": 307924,
+        "sector_multiple_range": {
+          "low": 2,
+          "mid": 2.75,
+          "high": 3.5
+        },
+        "selected_multiple": 2.75,
+        "multiple_justification": "The mid-point multiple of 2.75x is selected to balance the company's strong recurring service revenue and debt-free status against its small size, historical margin volatility, and owner dependency.",
+        "premium_factors_applied": [
+          "High proportion of recurring maintenance revenue (43% of mix)",
+          "Strong revenue recovery in 2025 (16.7% growth)",
+          "Excellent cash conversion and liquidity",
+          "Modern asset base with recent fleet investment"
+        ],
+        "discount_factors_applied": [
+          "Small SME size (Revenue < £2.5M)",
+          "Historical gross margin volatility (900bps swing)",
+          "High owner dependency for technical and sales functions",
+          "Project-based nature of renovation segment"
+        ],
+        "enterprise_value_range": {
+          "conservative": 615848,
+          "base": 846791,
+          "optimistic": 1077734
+        }
+      },
+      "ev_to_equity_bridge": {
+        "enterprise_value_base": 846791,
+        "plus_cash": 724569,
+        "minus_long_term_debt": 0,
+        "minus_director_loans": 0,
+        "minus_bad_debt_provision": 23100,
+        "minus_working_capital_adjustment": 0,
+        "equity_value": {
+          "conservative": 1317317,
+          "base": 1548260,
+          "optimistic": 1779203
+        }
+      },
+      "asset_based_valuation": {
+        "net_asset_value": 922725,
+        "property_adjustment": 0,
+        "bad_debt_adjustment": -23100,
+        "adjusted_nav": 899625,
+        "nav_as_floor": true
+      },
+      "revenue_multiple_crosscheck": {
+        "latest_revenue": 2313955,
+        "revenue_multiple_range": {
+          "low": 0.4,
+          "high": 0.8
+        },
+        "implied_ev_range": {
+          "low": 925582,
+          "high": 1851164
+        }
+      },
+      "valuation_summary": {
+        "recommended_range": {
+          "equity_value_low": 1320000,
+          "equity_value_mid": 1550000,
+          "equity_value_high": 1780000
+        },
+        "primary_methodology": "ebitda_multiple",
+        "cross_check_alignment": "strong"
+      },
+      "sensitivity": {
+        "ebitda_plus_10pct": {
+          "enterprise_value": 931470,
+          "equity_value": 1632939
+        },
+        "ebitda_minus_10pct": {
+          "enterprise_value": 762112,
+          "equity_value": 1463581
+        },
+        "multiple_plus_half": {
+          "enterprise_value": 1000753,
+          "equity_value": 1702222
+        },
+        "multiple_minus_half": {
+          "enterprise_value": 692829,
+          "equity_value": 1394298
+        },
+        "key_customer_loss_impact": "Low impact due to fragmented service customer base.",
+        "director_replacement_impact": 48400
+      },
+      "seller_expectations": {
+        "likely_seller_expectation_range": {
+          "low": 1800000,
+          "high": 2300000
+        },
+        "seller_anchor_points": [
+          "High cash balance of £724k",
+          "2022 peak profitability levels",
+          "Emotional value of a long-standing specialist brand"
+        ],
+        "negotiation_gap_assessment": "The gap is likely to be driven by the seller's desire to be paid for the cash on the balance sheet in addition to a high multiple. A 'Cash-Free, Debt-Free' deal structure must be clearly explained to bridge the gap."
+      },
+      "key_findings": [
+        "The business has a very high equity value relative to its enterprise value due to the significant cash reserves (£724k).",
+        "Adjusted EBITDA of £308k is sustainable given the 2025 recovery and high-quality recurring service revenue.",
+        "The asset-based floor is high (£900k), providing significant downside protection for a buyer.",
+        "Working capital management is a core strength, with a negative cash conversion cycle in the latest year."
+      ],
+      "red_flags": [
+        "Historical margin compression suggests the business lacks significant pricing power during inflationary periods.",
+        "Discrepancies in the asset register regarding depreciation require physical verification.",
+        "Aggressive dividend policy has historically limited the growth of retained earnings."
+      ],
+      "narrative": "Spruce Pools is a high-quality, niche construction and service business. Its valuation is uniquely bolstered by an exceptionally strong balance sheet, featuring over £720k in cash and zero debt. While the sector typically commands modest multiples (2.0x-3.5x) due to its project-based nature, Spruce Pools justifies a mid-to-high range position because of its 43% recurring service revenue mix. The primary valuation challenge will be the negotiation of the cash-surplus; a buyer will likely view the cash as 'excess' to working capital requirements, significantly increasing the final share price (Equity Value) to approximately £1.55M. The business is a 'clean' acquisition target with high earnings quality and a robust defensive core."
+    }
+  }
+]

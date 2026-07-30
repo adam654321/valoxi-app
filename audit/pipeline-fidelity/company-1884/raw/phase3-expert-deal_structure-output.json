@@ -1,0 +1,98 @@
+{
+  "expert": "deal_structure",
+  "company_name": "[AUDIT-218] Canoports UK Limited",
+  "analysis_date": "2025-05-22",
+  "score": 62,
+  "confidence": "medium",
+  "structures": [
+    {
+      "name": "Conservative Approach",
+      "strategy": "Minimize upfront risk by shifting 50% of the consideration to performance-based and time-based milestones, specifically to address the lack of P&L transparency.",
+      "risk_to_buyer": "low",
+      "suitable_when": "Due diligence cannot fully verify the inferred 10% EBITDA margin or if the aging asset base requires immediate heavy CapEx.",
+      "consideration": {
+        "total_headline": 10622000,
+        "upfront_cash": 5311000,
+        "upfront_percent": 50,
+        "deferred": 2124400,
+        "earnout_maximum": 3186600,
+        "earnout_metric": "Adjusted EBITDA",
+        "earnout_period_months": 36,
+        "earnout_rationale": "Trigger 4 (Unverified add-backs/earnings): The valuation is based on an inferred EBITDA due to missing P&L data. The earnout ensures the buyer only pays for verified, sustainable earnings.",
+        "retention_escrow": 1062200
+      },
+      "key_conditions": [
+        "Full P&L audit for the last 3 fiscal years prior to completion",
+        "CEO and Divisional MDs must remain in post for the full 36-month earnout period",
+        "Working capital peg set at £7.07M (Current Position)"
+      ],
+      "notes": "Seller obligations: 12-month full-time handover followed by 24-month consultancy; 3-year non-compete. Warranties: 25% cap on general warranties, 100% on fundamental; 24-month claim period. Completion: Completion accounts mechanism required to verify the high cash and inventory balances. Risk: Low, as the structure protects against the 'missing' P&L data and aging assets."
+    },
+    {
+      "name": "Balanced Approach",
+      "strategy": "A standard 70/30 split that provides the seller with significant liquidity while retaining enough leverage to ensure a smooth management transition.",
+      "risk_to_buyer": "medium",
+      "suitable_when": "Preliminary due diligence confirms the revenue scale and provides reasonable comfort on the gross margin profile.",
+      "consideration": {
+        "total_headline": 10622000,
+        "upfront_cash": 7435400,
+        "upfront_percent": 70,
+        "deferred": 1593300,
+        "earnout_maximum": 1593300,
+        "earnout_metric": "EBITDA Stability",
+        "earnout_period_months": 24,
+        "earnout_rationale": "Trigger 3 (Key person dependency): The CEO's 15-year tenure creates significant institutional knowledge risk. The earnout is tied to a successful 2-year transition and relationship handover.",
+        "retention_escrow": 531100
+      },
+      "key_conditions": [
+        "Appointment of a Group Finance Director within 6 months of completion",
+        "Maintenance of QualiCoat accreditation for the powder coating line",
+        "Inventory valuation audit to ensure £3.3M stock is current and saleable"
+      ],
+      "notes": "Seller obligations: 6-month handover; 2-year non-compete. Warranties: 35% cap; 18-month claim period; £50k basket. Completion: Locked box mechanism could be used if the date is recent, given the strong cash position. Risk: Medium, primarily centered on the transition of the long-tenured CEO and the high working capital intensity."
+    },
+    {
+      "name": "Competitive Approach",
+      "strategy": "Maximize upfront cash to bridge the gap with seller expectations (£12M-£18M), utilizing the company's own cash reserves to fund the deal.",
+      "risk_to_buyer": "high",
+      "suitable_when": "The buyer is a strategic player who can absorb the manufacturing capacity and has their own finance team to professionalize the target.",
+      "consideration": {
+        "total_headline": 11500000,
+        "upfront_cash": 9775000,
+        "upfront_percent": 85,
+        "deferred": 1725000,
+        "earnout_maximum": 0,
+        "earnout_metric": "N/A",
+        "earnout_period_months": 0,
+        "earnout_rationale": "No earnout is included to make the offer more attractive in a competitive process, relying instead on a higher upfront payment and fixed deferred amounts.",
+        "retention_escrow": 500000
+      },
+      "key_conditions": [
+        "Minimum cash at completion of £2.5M",
+        "Specific indemnity for IT and office infrastructure replacement costs",
+        "Key man insurance for the CEO during the 12-month handover"
+      ],
+      "notes": "Seller obligations: 6-month handover; 2-year non-compete. Warranties: 50% cap; 12-month claim period; higher de minimis. Completion: Completion accounts with a focus on 'Net Debt' and 'Working Capital' definitions. Risk: High, due to the lack of performance-contingent pay and the high upfront multiple on unverified earnings."
+    }
+  ],
+  "recommended_structure": "Conservative Approach",
+  "recommendation_rationale": "The 'Conservative Approach' is recommended primarily because of the 'low' confidence in the valuation caused by missing P&L data. In manufacturing, revenue does not always equal profit, and the high working capital absorption (£7M+) suggests potential inefficiencies. A structure that heavily weights the final price on verified EBITDA performance post-acquisition is the only way to safely bridge the gap between the inferred valuation and the seller's high expectations.",
+  "negotiation_priorities": [
+    "Verification of the 10% EBITDA margin assumption",
+    "Agreement on a Working Capital Peg that accounts for the recent £2.6M increase in NWC",
+    "Securing a long-term commitment from the divisional MDs",
+    "Defining 'Maintenance CapEx' to ensure the aging asset base is managed"
+  ],
+  "deal_breaker_terms": [
+    "Discovery of significant bad debt within the £2.2M trade debtors",
+    "Refusal to provide a full 3-year P&L audit",
+    "Departure of more than one divisional MD prior to completion"
+  ],
+  "key_findings": [
+    "The business is exceptionally liquid but cash-consumptive in its current growth phase.",
+    "The 2022 powder coating line is the 'crown jewel' asset, but the rest of the infrastructure is aging.",
+    "There is a significant gap between the buyer's EBITDA-based valuation and the seller's likely revenue-based expectations.",
+    "The lack of a qualified FD is a major operational risk for a business of this scale."
+  ],
+  "narrative": "Canoports UK Limited is a high-quality manufacturing target with a strong balance sheet, but it suffers from a 'transparency tax' due to missing income statement data. The deal structure must act as a bridge between the impressive balance sheet (nearly £3M cash, £7.8M NAV) and the unverified P&L. By using a Conservative Approach with a 3-year earnout, the buyer can validate the inferred £1.7M EBITDA while ensuring the long-tenured CEO remains incentivized to transition the business. The high working capital peg will be a point of contention, as the seller will likely want to extract the 'excess' cash, while the buyer will need it to fund the heavy stock requirements and aging asset replacement."
+}

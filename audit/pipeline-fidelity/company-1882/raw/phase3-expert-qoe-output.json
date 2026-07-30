@@ -1,0 +1,131 @@
+{
+  "expert": "quality_of_earnings",
+  "company_name": "[AUDIT-137] MANOR BUILDING SOLUTIONS (UK) LTD",
+  "analysis_date": "2024-05-22",
+  "score": 72,
+  "confidence": "high",
+  "reported_figures": {
+    "operating_profit": 453123,
+    "depreciation": 18747,
+    "amortisation": 0,
+    "reported_ebitda": 471870,
+    "source_year": "2026"
+  },
+  "add_backs": [
+    {
+      "item": "Other Operating Income (Non-Trading)",
+      "category": "one_off_cost",
+      "amount": -5500,
+      "recurrence": "one_off",
+      "year": 2026,
+      "justification": "Other operating income of £5,500 is identified in the 2026 P&L; as this is non-core trading revenue, it is removed to normalise EBITDA.",
+      "confidence": "high",
+      "defensibility_score": 9,
+      "case_for_inclusion": "This income is not derived from the core construction activities and should be excluded to see sustainable trading performance.",
+      "case_for_exclusion": "The seller may argue this is recurring ancillary income (e.g., scrap sales or rebates) typical for the sector."
+    }
+  ],
+  "deductions": [
+    {
+      "item": "Director Salary Normalisation (MD)",
+      "category": "replacement_salary",
+      "amount": 44930,
+      "recurrence": "recurring",
+      "year": 2026,
+      "justification": "The Managing Director's current estimated salary of £12,570 is significantly below the market mid-point of £57,500 for a £1M-£5M revenue business.",
+      "confidence": "high",
+      "defensibility_score": 8,
+      "case_for_inclusion": "A commercial buyer would need to pay a market-rate salary to a replacement MD to maintain operations.",
+      "case_for_exclusion": "The seller may argue the current director's low salary is offset by their equity stake and that the business can be run more leanly."
+    },
+    {
+      "item": "Director Salary Normalisation (Ops Director)",
+      "category": "replacement_salary",
+      "amount": 29930,
+      "recurrence": "recurring",
+      "year": 2026,
+      "justification": "The Operations Director's current estimated salary of £12,570 is below the market mid-point of £42,500 for an Operations Director in this revenue bracket.",
+      "confidence": "high",
+      "defensibility_score": 8,
+      "case_for_inclusion": "Operational oversight is a critical function that requires professional management at market rates.",
+      "case_for_exclusion": "The seller might claim the role could be absorbed by the MD or a lower-cost supervisor."
+    },
+    {
+      "item": "Deferred Maintenance / Fleet Replacement Provision",
+      "category": "deferred_maintenance",
+      "amount": 15000,
+      "recurrence": "recurring",
+      "year": 2026,
+      "justification": "The vehicle fleet is 61% depreciated and IT/Office equipment is over 70% depreciated; an additional maintenance/replacement provision is required.",
+      "confidence": "medium",
+      "defensibility_score": 6,
+      "case_for_inclusion": "Current depreciation does not reflect the true cash cost of maintaining an aging fleet essential for construction delivery.",
+      "case_for_exclusion": "The seller will argue that existing depreciation charges already account for asset wear and tear."
+    }
+  ],
+  "total_add_backs": -5500,
+  "total_deductions": 89860,
+  "adjusted_ebitda": {
+    "conservative": 376510,
+    "base": 376510,
+    "optimistic": 391510
+  },
+  "adjustment_summary": {
+    "reported_ebitda": 471870,
+    "plus_add_backs": -5500,
+    "minus_deductions": 89860,
+    "equals_adjusted_ebitda_base": 376510
+  },
+  "director_salary_analysis": {
+    "directors": [
+      {
+        "name": "JAMES JOHNSON",
+        "current_salary": 12570,
+        "estimated_market_rate": 57500,
+        "benchmark_range_used": "Revenue £1M-£5M: Working MD (£45k-£70k)",
+        "adjustment": 44930,
+        "adjustment_type": "deduction"
+      },
+      {
+        "name": "IAN LAWTON",
+        "current_salary": 12570,
+        "estimated_market_rate": 42500,
+        "benchmark_range_used": "Revenue £1M-£5M: Operations Director (£35k-£50k)",
+        "adjustment": 29930,
+        "adjustment_type": "deduction"
+      }
+    ]
+  },
+  "sustainability_assessment": {
+    "sustainable_for_3_years": true,
+    "key_assumptions": [
+      "Sub-contractor availability remains stable to support the variable cost model.",
+      "The business can maintain its shift toward larger commercial/social housing contracts despite lower gross margins.",
+      "Director-level relationships are successfully transitioned to the buyer."
+    ],
+    "sensitivity_factors": [
+      "Gross margin compression: A 2% drop in GM would reduce EBITDA by approx £47k.",
+      "Sub-contractor pricing: Inflation in trade rates could squeeze margins if not passed to clients."
+    ],
+    "upside_scenarios": [
+      "Utilising the £668k cash balance to fund larger, higher-value projects.",
+      "Operational efficiencies in the administrative team (3 admins for 12 staff is high)."
+    ],
+    "downside_scenarios": [
+      "Loss of key social housing or insurance contracts.",
+      "Significant capital outlay required for fleet replacement if financing is not available."
+    ]
+  },
+  "key_findings": [
+    "Reported EBITDA is inflated by significantly under-market director salaries.",
+    "The business model is highly scalable due to the heavy use of sub-contractors (£803k in 2026).",
+    "Strong cash position (£668k in current management accounts) provides a significant buffer for working capital.",
+    "Gross margins have stabilised around 43-46% after an initial drop from 56%."
+  ],
+  "red_flags": [
+    "Director Loan Account (Asset) has grown to £176,625 in the current position, indicating value extraction via loans.",
+    "Aging vehicle fleet (61% depreciated) represents a looming 'capex cliff'.",
+    "Creditor days have dropped from 60 to 22, suggesting potential pressure on supplier terms or aggressive payment cycles."
+  ],
+  "narrative": "The quality of earnings for Manor Building Solutions (UK) Ltd is generally good, but the headline EBITDA of £471,870 requires downward normalisation to £376,510. The primary adjustment is the correction of director salaries; the current owners are drawing minimal salaries (£12.5k each), likely supplementing income via the Director Loan Account, which now stands at £176k. A buyer must account for the commercial cost of replacing this management. While revenue growth is impressive, the shift in project mix has compressed gross margins. However, the high proportion of variable sub-contractor costs provides the business with significant operational flexibility. The adjusted EBITDA represents a more realistic 'maintainable' earnings figure for valuation purposes."
+}

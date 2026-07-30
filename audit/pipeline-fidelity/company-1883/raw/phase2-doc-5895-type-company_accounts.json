@@ -1,0 +1,181 @@
+{
+  "document": "company_accounts",
+  "source": "statutory_accounts",
+  "profit_and_loss": {
+    "document": "profit_and_loss",
+    "source": "statutory",
+    "years_covered": [
+      2023
+    ],
+    "period_ends": {
+      "2023": "2023-05-31"
+    },
+    "months_covered": {
+      "2023": 12
+    },
+    "report_date": "2024-02-19",
+    "years": {
+      "2023": {
+        "year": 2023,
+        "profit_and_loss": {
+          "revenue": 15388788,
+          "cost_of_sales": 11164982,
+          "gross_profit": 4223806,
+          "administrative_expenses": 3403587,
+          "depreciation_amortisation": 372563,
+          "other_operating_income": null,
+          "operating_profit": 447656,
+          "interest_receivable": null,
+          "interest_payable": 118463,
+          "profit_before_tax": 329193,
+          "corporation_tax": 99241,
+          "net_profit": 229952
+        },
+        "revenue_breakdown": {
+          "by_product": {},
+          "by_segment": {}
+        },
+        "cost_of_sales_breakdown": {
+          "direct_materials": null,
+          "direct_labour": null,
+          "subcontractor_costs": null,
+          "other_direct_costs": null
+        },
+        "overheads_breakdown": {
+          "staff_wages_salaries": null,
+          "directors_salaries": null,
+          "directors_pension": null,
+          "employers_national_insurance": null,
+          "staff_pension_contributions": null,
+          "staff_training_recruitment": null,
+          "use_of_home_as_office": null,
+          "rent_rates": null,
+          "utilities": null,
+          "insurance": null,
+          "accountancy_bookkeeping": null,
+          "professional_fees": null,
+          "software_subscriptions": null,
+          "computer_costs": null,
+          "it_support_hosting": null,
+          "telecommunications": null,
+          "printing_stationery": null,
+          "postage_courier": null,
+          "subscriptions_memberships": null,
+          "bank_charges": null,
+          "advertising_marketing": null,
+          "travel_subsistence": null,
+          "motor_expenses": null,
+          "repairs_maintenance": null,
+          "depreciation": 372563,
+          "amortisation": null,
+          "other_overheads": null
+        },
+        "total_staff_costs": null,
+        "total_directors_remuneration": null,
+        "dividends_paid": null,
+        "exceptional_items": [
+          {
+            "description": "Non-recurring items",
+            "amount": 53232
+          }
+        ],
+        "financial_ratios": {
+          "gross_margin_percent": 27.45,
+          "net_margin_percent": 1.49,
+          "interest_coverage_ratio": 3.78
+        }
+      }
+    },
+    "summary_insights": [
+      "The company achieved a turnover of £15.4m for FY23, maintaining a gross margin of 27.4%.",
+      "Profitability was impacted by significant raw material price volatility and commissioning costs for a new powder coating line.",
+      "The EBITDA margin of 5.3% (statutory) is noted as the lowest in the historical series, indicating recent margin compression.",
+      "Net profit margin is thin at 1.5%, reflecting high operating expenses and interest costs relative to revenue.",
+      "Interest coverage is moderate at 3.78x, suggesting the company can meet its debt obligations but has limited headroom.",
+      "There is a material working capital tie-up in inventory, which stands at £3.16m or 20.5% of annual turnover.",
+      "The balance sheet shows elevated financial debt of £1.34m, split between short-term and long-term liabilities.",
+      "A new fixed charge was created in April 2022, indicating ongoing reliance on external financing for operations or capital expenditure."
+    ]
+  },
+  "balance_sheet": {
+    "document": "balance_sheet",
+    "source": "statutory",
+    "years_covered": [
+      2023
+    ],
+    "period_ends": {
+      "2023": "2023-05-31"
+    },
+    "months_covered": {
+      "2023": 12
+    },
+    "report_date": "2024-02-19",
+    "years": {
+      "2023": {
+        "year": 2023,
+        "balance_sheet": {
+          "fixed_assets": {
+            "intangible_assets": null,
+            "tangible_assets": 1229830,
+            "freehold_property": null,
+            "leasehold_property": null,
+            "plant_machinery": null,
+            "fixtures_fittings": null,
+            "motor_vehicles": null,
+            "computer_equipment": null
+          },
+          "current_assets": {
+            "stock": 3157380,
+            "trade_debtors": 2398191,
+            "prepayments": null,
+            "amounts_owed_by_directors": null,
+            "amounts_owed_by_connected_companies": null,
+            "directors_current_account": null,
+            "other_debtors": 274641,
+            "cash_at_bank": 1333140,
+            "total": 7163352
+          },
+          "current_liabilities": {
+            "trade_creditors": 1860875,
+            "taxation_social_security": null,
+            "vat_payable": null,
+            "corporation_tax": null,
+            "bank_loans_current": 405324,
+            "hire_purchase_current": null,
+            "accruals": null,
+            "amounts_owed_to_directors": null,
+            "other_creditors": 436143,
+            "total": 2702342
+          },
+          "long_term_liabilities": {
+            "bank_loans": 934926,
+            "hire_purchase_long_term": null,
+            "deferred_taxation": null,
+            "other_debt": null,
+            "total": 934926
+          },
+          "equity": {
+            "share_capital": null,
+            "retained_earnings": null,
+            "total": 4755914
+          }
+        },
+        "financial_ratios": {
+          "current_ratio": 2.650793985365133,
+          "quick_ratio": 1.380776740323023,
+          "net_assets_growth_percent": null,
+          "gearing_ratio_percent": 19.65817716636545
+        }
+      }
+    },
+    "summary_insights": [
+      "The company maintains a strong liquidity position with a current ratio of 2.65, well above the standard 1.5 benchmark.",
+      "The quick ratio of 1.38 indicates that the business can meet its short-term obligations using only liquid assets, without relying on stock sales.",
+      "There is a significant working capital tie-up in inventory, which at £3.16m represents 20.5% of annual turnover, potentially impacting cash flow efficiency.",
+      "The capital structure is conservative, with a gearing ratio of 19.7%, suggesting low reliance on long-term debt relative to equity.",
+      "Total financial debt (combined short and long-term) stands at £1.34m, which is well-covered by the cash balance of £1.33m.",
+      "Net current assets (working capital) are robust at £4.46m, providing a substantial buffer for operational requirements.",
+      "The asset base is dominated by current assets (85% of total assets), primarily driven by high stock levels and trade receivables."
+    ]
+  }
+}

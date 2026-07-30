@@ -1,0 +1,94 @@
+{
+  "document": "profit_and_loss",
+  "source": "management",
+  "years_covered": [
+    2026
+  ],
+  "period_ends": {
+    "2026": "2026-03-12"
+  },
+  "months_covered": {
+    "2026": 12
+  },
+  "report_date": "2026-05-21",
+  "years": {
+    "2026": {
+      "year": 2026,
+      "profit_and_loss": {
+        "revenue": 1869199.89,
+        "cost_of_sales": 971147.23,
+        "gross_profit": 898052.66,
+        "administrative_expenses": 714144.14,
+        "depreciation_amortisation": null,
+        "other_operating_income": null,
+        "operating_profit": 183908.52,
+        "interest_receivable": 1787.29,
+        "interest_payable": 3183.95,
+        "profit_before_tax": 183908.52,
+        "corporation_tax": null,
+        "net_profit": 183908.52
+      },
+      "revenue_breakdown": {
+        "by_product": {
+          "Scaffolding Sales": 1867412.6,
+          "Interest": 1787.29
+        },
+        "by_segment": {}
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": 93592.89,
+        "direct_labour": 873770.98,
+        "subcontractor_costs": 485324.26,
+        "other_direct_costs": 3783.36
+      },
+      "overheads_breakdown": {
+        "staff_wages_salaries": 208119.82,
+        "directors_salaries": null,
+        "directors_pension": null,
+        "employers_national_insurance": null,
+        "staff_pension_contributions": null,
+        "staff_training_recruitment": 25853.53,
+        "use_of_home_as_office": null,
+        "rent_rates": 46758.59,
+        "utilities": null,
+        "insurance": 53657.68,
+        "accountancy_bookkeeping": 18832,
+        "professional_fees": 93574.08,
+        "software_subscriptions": 6597,
+        "computer_costs": 16983.74,
+        "it_support_hosting": null,
+        "telecommunications": null,
+        "printing_stationery": 1251.88,
+        "postage_courier": null,
+        "subscriptions_memberships": 14065.64,
+        "bank_charges": 3183.95,
+        "advertising_marketing": 6561.91,
+        "travel_subsistence": 5259.64,
+        "motor_expenses": 191698.32,
+        "repairs_maintenance": 6032,
+        "depreciation": null,
+        "amortisation": null,
+        "other_overheads": 33283.36
+      },
+      "total_staff_costs": 208119.82,
+      "total_directors_remuneration": 0,
+      "dividends_paid": null,
+      "exceptional_items": [],
+      "financial_ratios": {
+        "gross_margin_percent": 48.04,
+        "net_margin_percent": 9.84,
+        "interest_coverage_ratio": 57.76
+      }
+    }
+  },
+  "summary_insights": [
+    "The company achieved a healthy gross margin of 48.0%, driven by strong scaffolding sales of £1.87m.",
+    "Direct labour and subcontractor costs represent the largest expenditure, totalling £873,771 (46.7% of revenue).",
+    "Net profit margin stands at 9.8%, indicating a solid bottom-line performance for the period ending March 2026.",
+    "Motor-related expenses (fuel, repairs, insurance, etc.) are a significant overhead, exceeding £191,000.",
+    "The interest coverage ratio is exceptionally high at 57.8x, suggesting very low financial risk and strong debt serviceability.",
+    "Professional and consultancy fees are relatively high at over £93,000, which may warrant further review for cost-saving opportunities.",
+    "The business maintains a lean administrative structure with staff wages accounting for only 11.1% of total revenue."
+  ],
+  "_isIM": false
+}

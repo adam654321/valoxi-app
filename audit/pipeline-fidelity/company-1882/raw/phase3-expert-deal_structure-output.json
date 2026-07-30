@@ -1,0 +1,101 @@
+{
+  "expert": "deal_structure",
+  "company_name": "[AUDIT-137] MANOR BUILDING SOLUTIONS (UK) LTD",
+  "analysis_date": "2024-05-22",
+  "score": 74,
+  "confidence": "high",
+  "structures": [
+    {
+      "name": "Conservative Approach",
+      "strategy": "Minimize risk by deferring 50% of the consideration and tying a significant portion to the successful transition of key relationships and EBITDA stability.",
+      "risk_to_buyer": "low",
+      "suitable_when": "The buyer is concerned about the 'capex cliff' of the aging fleet and the high dependency on the two founding directors for project delivery.",
+      "consideration": {
+        "total_headline": 1656000,
+        "upfront_cash": 828000,
+        "upfront_percent": 50,
+        "deferred": 414000,
+        "earnout_maximum": 414000,
+        "earnout_metric": "Adjusted EBITDA",
+        "earnout_period_months": 24,
+        "earnout_rationale": "Addresses Trigger 3 (Owner/key person dependency) and Trigger 4 (Uncertain add-backs). The QoE expert identified significant salary normalisation and the Risk expert flagged high dependency on the MD and Ops Director.",
+        "retention_escrow": 165600
+      },
+      "key_conditions": [
+        "Repayment of £176,625 Director Loan Account prior to or at completion",
+        "Minimum 12-month full-time handover for both directors",
+        "Non-compete clause spanning 36 months post-handover",
+        "Specific indemnity for fleet replacement costs exceeding £40k in Year 1"
+      ],
+      "notes": "Seller obligations: 12-month handover followed by 12-month consultancy. Non-compete: 3 years. Warranties: Cap at 50% of consideration, 24-month period, £10k de minimis. Completion: Completion accounts with a working capital peg of £700k. Risk: Low, as 50% of value is contingent on performance and relationship retention."
+    },
+    {
+      "name": "Balanced Approach",
+      "strategy": "A fair split that provides the sellers with significant liquidity while protecting the buyer against the immediate loss of key management and margin compression.",
+      "risk_to_buyer": "medium",
+      "suitable_when": "The buyer has moderate confidence in the subcontractor model and wants to provide a competitive offer without over-exposing to key-man risk.",
+      "consideration": {
+        "total_headline": 1656000,
+        "upfront_cash": 1076400,
+        "upfront_percent": 65,
+        "deferred": 331200,
+        "earnout_maximum": 248400,
+        "earnout_metric": "Adjusted EBITDA",
+        "earnout_period_months": 12,
+        "earnout_rationale": "Addresses Trigger 3 (Owner/key person dependency). The Risk expert noted that the loss of directors could lead to loss of client relationships; the earnout ensures they remain motivated during the first year.",
+        "retention_escrow": 82800
+      },
+      "key_conditions": [
+        "Offset of Director Loan Account against upfront cash if not repaid",
+        "6-month full-time handover followed by 6-month consultancy",
+        "Non-compete clause spanning 24 months",
+        "Standard construction sector warranties regarding project defects"
+      ],
+      "notes": "Seller obligations: 6-month handover. Non-compete: 2 years. Warranties: Cap at 75% of consideration, 18-month period. Completion: Locked box based on 2026-04-30 accounts. Risk: Medium, primarily due to the project-based nature of revenue and lack of long-term contracts."
+    },
+    {
+      "name": "Competitive Approach",
+      "strategy": "Maximise upfront cash to bridge the gap between the buyer's valuation and the seller's 1x revenue expectation, while retaining a small earnout to ensure a smooth transition.",
+      "risk_to_buyer": "high",
+      "suitable_when": "A competitive bidding environment where the buyer is confident in their ability to institutionalise the business quickly and manage the fleet replacement.",
+      "consideration": {
+        "total_headline": 1800000,
+        "upfront_cash": 1440000,
+        "upfront_percent": 80,
+        "deferred": 180000,
+        "earnout_maximum": 180000,
+        "earnout_metric": "Revenue Retention",
+        "earnout_period_months": 12,
+        "earnout_rationale": "Addresses Trigger 3 (Owner/key person dependency). Even in a competitive bid, the risk of relationship loss is too high to ignore; this small earnout ensures the directors transition the sales pipeline.",
+        "retention_escrow": 50000
+      },
+      "key_conditions": [
+        "Director Loan Account treated as a debt-like item and deducted from upfront cash",
+        "3-month intensive handover period",
+        "Non-compete clause spanning 24 months",
+        "Warranties limited to fundamental title and tax"
+      ],
+      "notes": "Seller obligations: 3-month handover. Non-compete: 2 years. Warranties: Cap at 100% for fundamental, 25% for general. Completion: Locked box. Risk: High, due to high upfront payment and minimal protection against the 'capex cliff' or margin erosion."
+    }
+  ],
+  "recommended_structure": "Balanced Approach",
+  "recommendation_rationale": "The Balanced Approach is recommended because it directly addresses the £176k Director Loan Account and the high key-man dependency without being so restrictive that it alienates the sellers. Given the exceptional growth, the sellers will likely resist a 50% deferral, but the 35% contingent/deferred component in the Balanced structure provides sufficient protection against the lack of recurring contracts and the imminent need for fleet reinvestment.",
+  "negotiation_priorities": [
+    "Treatment of the Director Loan Account (Asset) as a deduction from cash at completion",
+    "Agreement on the 'salary normalisation' figures used in the EBITDA adjustment",
+    "Securing a minimum 12-month commitment from both the MD and Ops Director",
+    "Establishing a working capital peg that accounts for the high subcontractor usage"
+  ],
+  "deal_breaker_terms": [
+    "Refusal of directors to provide a minimum 6-month handover",
+    "Failure to settle or offset the £176k Director Loan Account",
+    "Discovery of significant undisclosed customer concentration (>30%)"
+  ],
+  "key_findings": [
+    "The business is highly liquid with £668k cash, but this is offset by a 'capex cliff' in the vehicle fleet.",
+    "Valuation gap is significant; sellers likely want £2.3m+ (1x Revenue) vs. £1.65m base equity value.",
+    "The subcontractor model provides scalability but requires strong oversight from the two directors.",
+    "Director Loan Account is a critical completion mechanic item."
+  ],
+  "narrative": "Manor Building Solutions is a high-growth, profitable business with a lean operational model. However, its value is heavily concentrated in the two founding directors and a project-based revenue stream. To bridge the gap between the buyer's valuation and the sellers' likely higher expectations, a structure that uses the company's own strong cash position to fund a significant upfront payment is viable, provided it is balanced by an earnout tied to the retention of key relationships. The primary structural challenge will be the 'debt-like' treatment of the Director Loan Account and the necessary provision for fleet replacement, both of which should be used as levers to justify the 2.75x multiple."
+}

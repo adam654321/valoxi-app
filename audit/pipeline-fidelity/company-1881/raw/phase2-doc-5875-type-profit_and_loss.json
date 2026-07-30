@@ -1,0 +1,98 @@
+{
+  "document": "profit_and_loss",
+  "source": "management",
+  "years_covered": [
+    2024
+  ],
+  "period_ends": {
+    "2024": "2024-02-29"
+  },
+  "months_covered": {
+    "2024": 12
+  },
+  "report_date": "2024-03-05",
+  "years": {
+    "2024": {
+      "year": 2024,
+      "profit_and_loss": {
+        "revenue": 326227.25,
+        "cost_of_sales": 139313.4,
+        "gross_profit": 186913.85,
+        "administrative_expenses": 65374.84,
+        "depreciation_amortisation": null,
+        "other_operating_income": 739.67,
+        "operating_profit": 121539.01,
+        "interest_receivable": 739.67,
+        "interest_payable": null,
+        "profit_before_tax": 122278.68,
+        "corporation_tax": 11735.16,
+        "net_profit": 85008.6
+      },
+      "revenue_breakdown": {
+        "by_product": {
+          "Sales": 325577,
+          "Services": 650.25
+        },
+        "by_segment": {}
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": 4221,
+        "direct_labour": null,
+        "subcontractor_costs": 135092.4,
+        "other_direct_costs": null
+      },
+      "overheads_breakdown": {
+        "staff_wages_salaries": null,
+        "directors_salaries": null,
+        "directors_pension": 41000,
+        "employers_national_insurance": 388.67,
+        "staff_pension_contributions": null,
+        "staff_training_recruitment": null,
+        "use_of_home_as_office": null,
+        "rent_rates": null,
+        "utilities": null,
+        "insurance": null,
+        "accountancy_bookkeeping": null,
+        "professional_fees": 4405.97,
+        "software_subscriptions": null,
+        "computer_costs": 2406.77,
+        "it_support_hosting": null,
+        "telecommunications": 2062.27,
+        "printing_stationery": 4.71,
+        "postage_courier": null,
+        "subscriptions_memberships": null,
+        "bank_charges": null,
+        "advertising_marketing": null,
+        "travel_subsistence": 696.39,
+        "motor_expenses": null,
+        "repairs_maintenance": 1549.19,
+        "depreciation": null,
+        "amortisation": null,
+        "other_overheads": 12860.87
+      },
+      "total_staff_costs": 0,
+      "total_directors_remuneration": 41388.67,
+      "dividends_paid": null,
+      "exceptional_items": [
+        {
+          "description": "VAT Expense",
+          "amount": 37270.08
+        }
+      ],
+      "financial_ratios": {
+        "gross_margin_percent": 57.29,
+        "net_margin_percent": 26.06,
+        "interest_coverage_ratio": null
+      }
+    }
+  },
+  "summary_insights": [
+    "The company achieved a healthy gross margin of 57.3%, driven by a revenue of £326,227 against direct costs primarily composed of subcontractors.",
+    "Net profitability is robust at 26.1%, though it is significantly impacted by a large 'VAT' expense of £37,270 recorded under Other Expenses.",
+    "Directors' remuneration is a major overhead component, with £41,000 allocated to pensions, representing 62.7% of total administrative expenses.",
+    "The business model appears lean with minimal fixed overheads in rent or utilities, suggesting a remote or highly efficient operational structure.",
+    "Subcontractor costs represent 97% of the total Cost of Sales, indicating a high reliance on external labour rather than direct employees.",
+    "The net profit of £85,009 reflects strong bottom-line performance for the 12-month period ending February 2024."
+  ],
+  "_isIM": false
+}

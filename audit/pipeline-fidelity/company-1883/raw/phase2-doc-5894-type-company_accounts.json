@@ -1,0 +1,184 @@
+{
+  "document": "company_accounts",
+  "source": "statutory_accounts",
+  "profit_and_loss": {
+    "document": "profit_and_loss",
+    "source": "statutory",
+    "years_covered": [
+      2024
+    ],
+    "period_ends": {
+      "2024": "2024-05-31"
+    },
+    "months_covered": {
+      "2024": 12
+    },
+    "report_date": "2024-11-27",
+    "years": {
+      "2024": {
+        "year": 2024,
+        "profit_and_loss": {
+          "revenue": 14010534,
+          "cost_of_sales": 8831654,
+          "gross_profit": 5178880,
+          "administrative_expenses": 3552710,
+          "depreciation_amortisation": 303929,
+          "other_operating_income": null,
+          "operating_profit": 1322241,
+          "interest_receivable": null,
+          "interest_payable": 102433,
+          "profit_before_tax": 1237523,
+          "corporation_tax": 618517,
+          "net_profit": 619006
+        },
+        "revenue_breakdown": {
+          "by_product": {},
+          "by_segment": {}
+        },
+        "cost_of_sales_breakdown": {
+          "direct_materials": null,
+          "direct_labour": null,
+          "subcontractor_costs": null,
+          "other_direct_costs": null
+        },
+        "overheads_breakdown": {
+          "staff_wages_salaries": null,
+          "directors_salaries": null,
+          "directors_pension": null,
+          "employers_national_insurance": null,
+          "staff_pension_contributions": null,
+          "staff_training_recruitment": null,
+          "use_of_home_as_office": null,
+          "rent_rates": null,
+          "utilities": null,
+          "insurance": null,
+          "accountancy_bookkeeping": null,
+          "professional_fees": null,
+          "software_subscriptions": null,
+          "computer_costs": null,
+          "it_support_hosting": null,
+          "telecommunications": null,
+          "printing_stationery": null,
+          "postage_courier": null,
+          "subscriptions_memberships": null,
+          "bank_charges": null,
+          "advertising_marketing": null,
+          "travel_subsistence": null,
+          "motor_expenses": null,
+          "repairs_maintenance": null,
+          "depreciation": 303929,
+          "amortisation": null,
+          "other_overheads": null
+        },
+        "total_staff_costs": null,
+        "total_directors_remuneration": null,
+        "dividends_paid": null,
+        "exceptional_items": [
+          {
+            "description": "Non-recurring items",
+            "amount": 284357
+          },
+          {
+            "description": "Extraordinary Items",
+            "amount": 17715
+          }
+        ],
+        "financial_ratios": {
+          "gross_margin_percent": 37,
+          "net_margin_percent": 4.4,
+          "interest_coverage_ratio": 12.9
+        }
+      }
+    },
+    "summary_insights": [
+      "The company achieved a healthy gross margin of 37.0% for FY24, indicating a strong core trading position.",
+      "Adjusted EBITDA of £1.91m (13.6% margin) reflects a meaningful recovery in operational performance compared to the prior year.",
+      "Net profit margin is relatively thin at 4.4%, primarily due to a high effective tax rate and significant administrative overheads.",
+      "The interest coverage ratio of 12.9x is robust, suggesting the business comfortably services its debt obligations from operating cash flow.",
+      "A red flag is noted regarding the effective tax rate of 50.0%, which is anomalously high compared to the UK standard rate and requires further investigation.",
+      "Non-recurring add-backs of £284k are materially higher than the previous year, which may mask underlying operational costs if not fully justified.",
+      "The balance sheet shows a current ratio of 2.54, indicating strong short-term liquidity and the ability to cover current liabilities."
+    ]
+  },
+  "balance_sheet": {
+    "document": "balance_sheet",
+    "source": "statutory",
+    "years_covered": [
+      2024
+    ],
+    "period_ends": {
+      "2024": "2024-05-31"
+    },
+    "months_covered": {
+      "2024": 12
+    },
+    "report_date": "2024-11-27",
+    "years": {
+      "2024": {
+        "year": 2024,
+        "balance_sheet": {
+          "fixed_assets": {
+            "intangible_assets": null,
+            "tangible_assets": 1078975,
+            "freehold_property": null,
+            "leasehold_property": null,
+            "plant_machinery": null,
+            "fixtures_fittings": null,
+            "motor_vehicles": null,
+            "computer_equipment": null
+          },
+          "current_assets": {
+            "stock": 2604930,
+            "trade_debtors": 2015706,
+            "prepayments": null,
+            "amounts_owed_by_directors": null,
+            "amounts_owed_by_connected_companies": null,
+            "directors_current_account": null,
+            "other_debtors": 526653,
+            "cash_at_bank": 2290456,
+            "total": 7437745
+          },
+          "current_liabilities": {
+            "trade_creditors": 1670650,
+            "taxation_social_security": null,
+            "vat_payable": null,
+            "corporation_tax": 618517,
+            "bank_loans_current": 243503,
+            "hire_purchase_current": null,
+            "accruals": null,
+            "amounts_owed_to_directors": null,
+            "other_creditors": 1008546,
+            "total": 2922699
+          },
+          "long_term_liabilities": {
+            "bank_loans": 571715,
+            "hire_purchase_long_term": null,
+            "deferred_taxation": null,
+            "other_debt": null,
+            "total": 571715
+          },
+          "equity": {
+            "share_capital": null,
+            "retained_earnings": null,
+            "total": 5022306
+          }
+        },
+        "financial_ratios": {
+          "current_ratio": 2.5448207290589964,
+          "quick_ratio": 1.4733511729740216,
+          "net_assets_growth_percent": null,
+          "gearing_ratio_percent": 11.38351590109824
+        }
+      }
+    },
+    "summary_insights": [
+      "The company maintains a robust liquidity position with a current ratio of 2.54, well above the standard 1.5 benchmark.",
+      "The quick ratio of 1.47 indicates that the business can meet its short-term obligations using only liquid assets, without relying on inventory sales.",
+      "Net current assets (working capital) are strong at £4.51m, providing significant operational headroom.",
+      "The capital structure is conservative, with a low gearing ratio of 11.4%, suggesting minimal reliance on long-term debt relative to equity.",
+      "Inventory represents the largest component of current assets at £2.6m (35% of total current assets), which warrants monitoring for turnover efficiency.",
+      "The balance sheet is underpinned by a healthy cash reserve of £2.29m, representing 27% of the total asset base.",
+      "Shareholder equity is substantial at over £5m, though a breakdown of retained earnings versus share capital was not explicitly detailed in the summary table."
+    ]
+  }
+}

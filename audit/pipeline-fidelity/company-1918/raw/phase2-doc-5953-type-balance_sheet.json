@@ -1,0 +1,141 @@
+{
+  "document": "balance_sheet",
+  "source": "statutory",
+  "years_covered": [
+    2020,
+    2021
+  ],
+  "period_ends": {
+    "2020": "2020-11-30",
+    "2021": "2021-11-30"
+  },
+  "months_covered": {
+    "2020": 12,
+    "2021": 12
+  },
+  "report_date": "2022-02-25",
+  "years": {
+    "2020": {
+      "year": 2020,
+      "balance_sheet": {
+        "fixed_assets": {
+          "intangible_assets": null,
+          "tangible_assets": 1053,
+          "freehold_property": null,
+          "leasehold_property": null,
+          "plant_machinery": 1053,
+          "fixtures_fittings": null,
+          "motor_vehicles": null,
+          "computer_equipment": null
+        },
+        "current_assets": {
+          "stock": null,
+          "trade_debtors": 28801,
+          "prepayments": null,
+          "amounts_owed_by_directors": null,
+          "amounts_owed_by_connected_companies": null,
+          "directors_current_account": null,
+          "other_debtors": null,
+          "cash_at_bank": 42502,
+          "total": 71303
+        },
+        "current_liabilities": {
+          "trade_creditors": 0,
+          "taxation_social_security": 26511,
+          "vat_payable": null,
+          "corporation_tax": null,
+          "bank_loans_current": null,
+          "hire_purchase_current": null,
+          "accruals": null,
+          "amounts_owed_to_directors": null,
+          "other_creditors": 3160,
+          "total": 29671
+        },
+        "long_term_liabilities": {
+          "bank_loans": null,
+          "hire_purchase_long_term": null,
+          "deferred_taxation": null,
+          "other_debt": null,
+          "total": 0
+        },
+        "equity": {
+          "share_capital": 1150,
+          "retained_earnings": 41535,
+          "total": 42685
+        }
+      },
+      "financial_ratios": {
+        "current_ratio": 2.403120892453911,
+        "quick_ratio": 2.403120892453911,
+        "net_assets_growth_percent": null,
+        "gearing_ratio_percent": 0
+      }
+    },
+    "2021": {
+      "year": 2021,
+      "balance_sheet": {
+        "fixed_assets": {
+          "intangible_assets": null,
+          "tangible_assets": 789,
+          "freehold_property": null,
+          "leasehold_property": null,
+          "plant_machinery": 789,
+          "fixtures_fittings": null,
+          "motor_vehicles": null,
+          "computer_equipment": null
+        },
+        "current_assets": {
+          "stock": null,
+          "trade_debtors": 86249,
+          "prepayments": null,
+          "amounts_owed_by_directors": null,
+          "amounts_owed_by_connected_companies": null,
+          "directors_current_account": null,
+          "other_debtors": null,
+          "cash_at_bank": 115407,
+          "total": 201656
+        },
+        "current_liabilities": {
+          "trade_creditors": 1184,
+          "taxation_social_security": 57278,
+          "vat_payable": null,
+          "corporation_tax": null,
+          "bank_loans_current": null,
+          "hire_purchase_current": null,
+          "accruals": null,
+          "amounts_owed_to_directors": null,
+          "other_creditors": 5725,
+          "total": 64187
+        },
+        "long_term_liabilities": {
+          "bank_loans": null,
+          "hire_purchase_long_term": null,
+          "deferred_taxation": null,
+          "other_debt": null,
+          "total": 0
+        },
+        "equity": {
+          "share_capital": 1150,
+          "retained_earnings": 137108,
+          "total": 138258
+        }
+      },
+      "financial_ratios": {
+        "current_ratio": 3.141695669060713,
+        "quick_ratio": 3.141695669060713,
+        "net_assets_growth_percent": 223.8912967084456,
+        "gearing_ratio_percent": 0
+      }
+    }
+  },
+  "summary_insights": [
+    "Net assets grew significantly by 223.9%, rising from £42,685 to £138,258, driven by strong retained profits.",
+    "Liquidity has strengthened considerably, with the current ratio improving from 2.40 to 3.14, indicating a very robust short-term financial position.",
+    "Cash at bank increased by 171.5% to £115,407, providing the company with substantial immediate liquidity.",
+    "Net current assets expanded from £41,632 to £137,469, reflecting a significant improvement in working capital management.",
+    "The company remains debt-free with zero long-term liabilities and no bank loans or overdrafts reported.",
+    "Trade debtors increased by nearly 200% to £86,249, which may suggest a significant increase in trading volume or a slowdown in collections.",
+    "The capital structure is highly stable, with growth entirely funded through retained earnings rather than external debt."
+  ],
+  "_isIM": false
+}

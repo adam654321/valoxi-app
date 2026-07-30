@@ -1,0 +1,58 @@
+[
+  {
+    "prodDocId": 1615,
+    "devDocId": 5841,
+    "eventId": 613,
+    "filename": "2026-D~1.PDF",
+    "category": "Company Accounts",
+    "fileType": "application/pdf",
+    "fileSize": 1279714,
+    "r2Key": "companies/196/doc-1784054591431-728881096.pdf",
+    "headOk": true,
+    "headSize": 1279714,
+    "headContentType": "application/pdf",
+    "uploadDate": "2026-07-14T18:43:12.423Z"
+  },
+  {
+    "prodDocId": 1616,
+    "devDocId": 5842,
+    "eventId": 614,
+    "filename": "51973A~1.PDF",
+    "category": "Company Accounts",
+    "fileType": "application/pdf",
+    "fileSize": 308777,
+    "r2Key": "companies/196/doc-1784054631356-508928467.pdf",
+    "headOk": true,
+    "headSize": 308777,
+    "headContentType": "application/pdf",
+    "uploadDate": "2026-07-14T18:43:52.320Z"
+  },
+  {
+    "prodDocId": 1617,
+    "devDocId": 5843,
+    "eventId": 615,
+    "filename": "51973A~1.PDF",
+    "category": "Company Accounts",
+    "fileType": "application/pdf",
+    "fileSize": 6883271,
+    "r2Key": "companies/196/doc-1784054658646-772722481.pdf",
+    "headOk": true,
+    "headSize": 6883271,
+    "headContentType": "application/pdf",
+    "uploadDate": "2026-07-14T18:44:20.263Z"
+  },
+  {
+    "prodDocId": 1618,
+    "devDocId": 5844,
+    "eventId": 616,
+    "filename": "519763~1.XLS",
+    "category": "Staff Matrix",
+    "fileType": "application/vnd.ms-excel",
+    "fileSize": 81184,
+    "r2Key": "companies/196/doc-1784054704563-861027790.xls",
+    "headOk": true,
+    "headSize": 81184,
+    "headContentType": "application/vnd.ms-excel",
+    "uploadDate": "2026-07-14T18:45:05.421Z"
+  }
+]

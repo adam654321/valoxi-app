@@ -1,0 +1,92 @@
+{
+  "document": "profit_and_loss",
+  "source": "management",
+  "years_covered": [
+    2026
+  ],
+  "period_ends": {
+    "2026": "2026-06-25"
+  },
+  "months_covered": {
+    "2026": 4
+  },
+  "report_date": "2026-06-25",
+  "years": {
+    "2026": {
+      "year": 2026,
+      "profit_and_loss": {
+        "revenue": 48127,
+        "cost_of_sales": 26882,
+        "gross_profit": 21245,
+        "administrative_expenses": 13550.42,
+        "depreciation_amortisation": null,
+        "other_operating_income": null,
+        "operating_profit": 7694.58,
+        "interest_receivable": 118.87,
+        "interest_payable": null,
+        "profit_before_tax": 7813.45,
+        "corporation_tax": null,
+        "net_profit": 7813.45
+      },
+      "revenue_breakdown": {
+        "by_product": {
+          "Sales": 48127
+        },
+        "by_segment": {}
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": null,
+        "direct_labour": null,
+        "subcontractor_costs": 26882,
+        "other_direct_costs": null
+      },
+      "overheads_breakdown": {
+        "staff_wages_salaries": null,
+        "directors_salaries": null,
+        "directors_pension": 8000,
+        "employers_national_insurance": null,
+        "staff_pension_contributions": null,
+        "staff_training_recruitment": null,
+        "use_of_home_as_office": null,
+        "rent_rates": null,
+        "utilities": null,
+        "insurance": 1059.9,
+        "accountancy_bookkeeping": null,
+        "professional_fees": 1038.62,
+        "software_subscriptions": null,
+        "computer_costs": 2291,
+        "it_support_hosting": null,
+        "telecommunications": 586.07,
+        "printing_stationery": null,
+        "postage_courier": null,
+        "subscriptions_memberships": 47,
+        "bank_charges": 40.66,
+        "advertising_marketing": null,
+        "travel_subsistence": 6.6,
+        "motor_expenses": 2.6,
+        "repairs_maintenance": 275.18,
+        "depreciation": null,
+        "amortisation": null,
+        "other_overheads": 202.79
+      },
+      "total_staff_costs": 0,
+      "total_directors_remuneration": 8000,
+      "dividends_paid": null,
+      "exceptional_items": [],
+      "financial_ratios": {
+        "gross_margin_percent": 44.14,
+        "net_margin_percent": 16.23,
+        "interest_coverage_ratio": null
+      }
+    }
+  },
+  "summary_insights": [
+    "The company generated £48,127 in revenue over a roughly four-month period, resulting in a net profit of £7,813.",
+    "Gross margin is healthy at 44.1%, though heavily reliant on subcontractor costs which represent 100% of the cost of sales.",
+    "Directors' pension costs of £8,000 represent the largest single overhead, accounting for 59% of total administrative expenses.",
+    "Operating profit margin stands at 16.0%, indicating a solid conversion of top-line revenue to earnings before interest and tax.",
+    "Computer running costs (£2,291) and professional fees (£1,038) are the primary operational overheads after pension contributions.",
+    "The business maintains a lean structure with minimal travel, motor, and miscellaneous expenses reported for the period."
+  ],
+  "_isIM": false
+}

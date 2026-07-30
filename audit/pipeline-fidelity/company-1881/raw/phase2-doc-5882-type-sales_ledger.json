@@ -1,0 +1,54 @@
+{
+  "document": "sales_ledger",
+  "report_date": "2026-02-28",
+  "summary": {
+    "total_trade_debtors": 224384.17,
+    "debtor_days": null,
+    "recent_revenue": 224384.17,
+    "bad_debt_provision": null,
+    "doubtful_debts": null
+  },
+  "aging": {
+    "current_0_to_30": null,
+    "days_31_to_60": null,
+    "days_61_to_90": null,
+    "days_90_plus": null
+  },
+  "top_debtors": [
+    {
+      "name": "Client 1",
+      "amount": 198157.5,
+      "days_bucket": null
+    },
+    {
+      "name": "Client 3",
+      "amount": 13631.25,
+      "days_bucket": null
+    },
+    {
+      "name": "Client 2",
+      "amount": 11615,
+      "days_bucket": null
+    }
+  ],
+  "invoice_status_summary": {
+    "Paid": {
+      "count": null,
+      "value": null
+    },
+    "Part Paid": {
+      "count": null,
+      "value": null
+    },
+    "Unpaid": {
+      "count": null,
+      "value": null
+    }
+  },
+  "observations": [
+    "Significant customer concentration risk: Client 1 represents 88.31% of total sales/receivables.",
+    "The report provides a sales summary by project but lacks specific aging buckets (0-30, 31-60, etc.) to assess collection health.",
+    "Client 1's balance is spread across 6 different projects, with Project 4 being the largest single component at 66,890.00."
+  ],
+  "_isIM": false
+}

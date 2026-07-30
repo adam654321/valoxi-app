@@ -1,0 +1,89 @@
+{
+  "expert": "financial",
+  "company_name": "[AUDIT-220] Canoports UK Limited",
+  "analysis_date": "2025-07-24",
+  "score": 72,
+  "confidence": "medium",
+  "yearly_metrics": {
+    "2024": {
+      "revenue": 14010534,
+      "revenue_yoy_growth_percent": null,
+      "cost_of_sales": 8831654,
+      "gross_profit": 5178880,
+      "gross_margin_percent": 36.96,
+      "administrative_expenses": 3552710,
+      "operating_profit": 1322241,
+      "operating_margin_percent": 9.44,
+      "depreciation_amortisation": 303929,
+      "ebitda": 1626170,
+      "interest_payable": 102433,
+      "interest_coverage_ratio": 12.91,
+      "profit_before_tax": 1237523,
+      "corporation_tax": 618517,
+      "effective_tax_rate_percent": 49.98,
+      "net_profit": 619006,
+      "net_margin_percent": 4.42
+    }
+  },
+  "cagr": {
+    "revenue_cagr_percent": null,
+    "gross_profit_cagr_percent": null,
+    "operating_profit_cagr_percent": null,
+    "period_years": 1
+  },
+  "cost_structure": {
+    "cost_of_sales_percent_revenue": 63.04,
+    "overheads_percent_revenue": 25.36,
+    "staff_costs_percent_revenue": 21.1,
+    "director_costs_percent_revenue": 0.75,
+    "top_5_overheads": [
+      {
+        "category": "Depreciation",
+        "value": 303929,
+        "percent_of_overheads": 8.55
+      }
+    ],
+    "cost_base_classification": "mixed"
+  },
+  "earnings_quality": {
+    "net_profit_tracks_operating_profit": false,
+    "exceptional_items_identified": [
+      {
+        "amount": 284357,
+        "description": "Non-recurring items"
+      },
+      {
+        "amount": 17715,
+        "description": "Extraordinary Items"
+      }
+    ],
+    "tax_rate_consistent": null,
+    "ebitda_latest": 1626170,
+    "ebitda_trend": "stable",
+    "limitations": [
+      "Only one full year of P&L data provided in RECONCILED_FINANCIALS",
+      "Staff cost breakdown not available in P&L but cited in staff matrix",
+      "Effective tax rate appears unusually high (49.98%) suggesting potential prior year adjustments or non-deductible items"
+    ]
+  },
+  "debt_service": {
+    "latest_interest_coverage": 12.91,
+    "interest_coverage_trend": "stable",
+    "additional_debt_capacity_assessment": "Strong. An interest coverage ratio of 12.9x suggests significant headroom to service additional acquisition debt, particularly as bank loans are being rapidly amortised."
+  },
+  "key_findings": [
+    "The company maintains a healthy gross margin of 36.96%, indicating a solid value proposition in the manufacturing sector.",
+    "EBITDA of £1.63m (11.6% margin) provides a strong foundation for valuation, though net profit is impacted by high tax charges.",
+    "The business is transitioning to an asset-light model, with tangible fixed assets representing a decreasing portion of the balance sheet.",
+    "Significant liquidity is evident, with cash at bank increasing from £1.33m in 2023 to £2.95m in the 2026 current position.",
+    "Debt levels are low and declining; total long-term bank loans have reduced from £934k in 2023 to just £3.8k in the latest snapshot.",
+    "Director remuneration is noted as being below market rates, suggesting a potential requirement for upward adjustment post-acquisition.",
+    "The presence of £302k in non-recurring/extraordinary items in 2024 suggests underlying earnings may be higher than the statutory net profit."
+  ],
+  "red_flags": [
+    "Effective tax rate of nearly 50% in FY24 requires urgent investigation to understand the variance from the UK statutory rate.",
+    "Lack of multi-year P&L data in the reconciled set prevents definitive trend analysis of margins and cost growth.",
+    "High stock levels (£3.3m in 2026) relative to revenue suggest potential capital tie-up or obsolescence risk."
+  ],
+  "narrative": "Canoports UK Limited (trading as AliDeck and Milwood) demonstrates the financial profile of a mature, cash-generative manufacturing entity. Based on the FY24 reconciled data, the company achieved a revenue of £14.01m with a robust gross profit of £5.18m. The operating margin of 9.44% is respectable for the sector, and the EBITDA margin of 11.6% suggests healthy underlying cash profitability. \n\nA key strength of the acquisition target is its balance sheet evolution. Between May 2023 and May 2026, the company has effectively deleveraged, reducing long-term bank debt to negligible levels while simultaneously more than doubling its cash reserves to £2.95m. This provides a clean structure for an incoming buyer and suggests the business can self-fund its working capital requirements. The current ratio is exceptionally strong at 4.4x, driven by high stock levels and a growing cash pile.\n\nHowever, from an earnings quality perspective, there are nuances that require further due diligence. The FY24 net profit was significantly suppressed by a corporation tax charge of £618k, resulting in an effective tax rate of 49.98%. This is likely due to non-deductible expenses or the reversal of prior-year deferred tax assets, and it masks the true distributable earnings of the business. Furthermore, the identification of £302k in non-recurring items suggests that 'Adjusted EBITDA' is likely the more relevant metric for valuation. \n\nThe cost structure is relatively well-managed, with staff costs at 21.1% of turnover. While the business is described as asset-light, the recent £1.3m investment in a powder coating line provides a competitive moat and explains the £303k depreciation charge. For a buyer, the primary attraction lies in the strong interest coverage (12.9x) and the clear evidence of organic cash accumulation, though the lack of historical P&L granularity in the current data set makes it difficult to confirm if the 37% gross margin is stable or under pressure from rising material costs."
+}

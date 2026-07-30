@@ -1,0 +1,1303 @@
+[
+  {
+    "id": 2336,
+    "expert_type": "data_quality",
+    "status": "success",
+    "score": 62,
+    "confidence": "medium",
+    "created_at": "2026-06-29T15:27:29.453Z",
+    "analysis_data": {
+      "stage": "data_quality",
+      "company_name": "Ideal scaffolding",
+      "assessment_date": "2024-05-22",
+      "overall_completeness_score": 62,
+      "overall_completeness_rating": "medium",
+      "confidence_for_analysis": "medium",
+      "data_sources": {
+        "company_accounts": {
+          "status": "complete",
+          "years_available": 4,
+          "years_list": [
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "most_recent_period_end": "2025-03-31",
+          "data_staleness_months": 14,
+          "consecutive_years": true,
+          "key_fields_populated": [
+            "revenue",
+            "gross_profit",
+            "operating_profit",
+            "net_profit"
+          ],
+          "key_fields_missing": []
+        },
+        "profit_and_loss": {
+          "status": "complete",
+          "key_fields_populated": [
+            "revenue",
+            "cost_of_sales",
+            "gross_profit",
+            "administrative_expenses",
+            "operating_profit",
+            "net_profit"
+          ],
+          "key_fields_missing": [],
+          "has_overheads_breakdown": true,
+          "has_cost_of_sales_breakdown": true
+        },
+        "balance_sheet": {
+          "status": "complete",
+          "key_fields_populated": [
+            "fixed_assets",
+            "current_assets.total",
+            "current_liabilities.total",
+            "equity.total"
+          ],
+          "key_fields_missing": [],
+          "has_detailed_breakdown": true
+        },
+        "asset_register": {
+          "status": "missing",
+          "asset_count": 0,
+          "has_category_breakdown": false,
+          "has_individual_assets": false
+        },
+        "sales_ledger": {
+          "status": "complete",
+          "has_aging_breakdown": true,
+          "has_customer_breakdown": true,
+          "customer_count": 20
+        },
+        "staff_matrix": {
+          "status": "partial",
+          "headcount_reported": 11,
+          "has_individual_records": true,
+          "has_director_identification": true
+        }
+      },
+      "consistency_checks": {
+        "pl_revenue_vs_accounts": {
+          "result": "consistent",
+          "pl_value": 1777001,
+          "accounts_value": 1777001,
+          "variance_percent": 0
+        },
+        "bs_net_assets_vs_accounts": {
+          "result": "consistent",
+          "bs_value": 556156,
+          "accounts_value": 556156,
+          "variance_percent": 0
+        },
+        "staff_costs_vs_pl": {
+          "result": "unable_to_check",
+          "matrix_value": null,
+          "pl_value": 52350,
+          "variance_percent": null
+        },
+        "assets_nbv_vs_bs": {
+          "result": "unable_to_check",
+          "register_value": null,
+          "bs_value": 170749,
+          "variance_percent": null
+        },
+        "debtors_vs_bs": {
+          "result": "major_discrepancy",
+          "ledger_value": 79406.28,
+          "bs_value": 228042,
+          "variance_percent": -65.18
+        }
+      },
+      "red_flags": [
+        "Asset register is missing entirely",
+        "Staff matrix contains no financial data (salaries/costs)",
+        "Major discrepancy between Sales Ledger total and Balance Sheet trade debtors",
+        "Management accounts for 2026 (April) provided as P&L only without a corresponding Balance Sheet"
+      ],
+      "gaps_requiring_seller_action": [
+        "Provide a detailed Fixed Asset Register to support the £170k tangible asset balance",
+        "Provide salary and total cost data for the staff matrix",
+        "Reconcile the Sales Ledger (£79k) to the latest Balance Sheet Debtors (£228k)",
+        "Provide a full Balance Sheet for the 2026 management period"
+      ],
+      "analysis_limitations": [
+        "Valuation of fixed assets (primarily motor vehicles) cannot be verified without the asset register",
+        "True staff cost run-rate cannot be verified from the staff matrix alone",
+        "Working capital trends are difficult to verify due to the significant variance in debtor reporting"
+      ]
+    }
+  },
+  {
+    "id": 1868,
+    "expert_type": "deal_structure",
+    "status": "success",
+    "score": 58,
+    "confidence": "high",
+    "created_at": "2026-06-07T10:32:52.186Z",
+    "analysis_data": {
+      "expert": "deal_structure",
+      "company_name": "Ideal scaffolding",
+      "analysis_date": "2024-05-22",
+      "score": 58,
+      "confidence": "high",
+      "structures": [
+        {
+          "name": "Conservative Approach",
+          "strategy": "Heavy emphasis on risk mitigation through contingent payments and a low upfront cash commitment to protect against customer churn and margin erosion.",
+          "risk_to_buyer": "low",
+          "suitable_when": "The buyer is highly concerned about the 63% customer concentration and the 11% drop in gross margins over the last 4 years.",
+          "consideration": {
+            "total_headline": 500000,
+            "upfront_cash": 200000,
+            "upfront_percent": 40,
+            "deferred": 100000,
+            "earnout_maximum": 200000,
+            "earnout_metric": "Retention of Top 3 Customers and EBITDA Floor",
+            "earnout_period_months": 24,
+            "earnout_rationale": "Triggered by 'Customer concentration' (Risk Expert) and 'Owner dependency' (Operational Expert). Loss of the top customer alone would reduce revenue by 30%, making the business potentially loss-making.",
+            "retention_escrow": 50000
+          },
+          "key_conditions": [
+            "Full settlement or netting of £212,457 intercompany receivables prior to completion",
+            "12-month mandatory handover period for directors",
+            "Specific indemnity for any bad debt arising from the top 3 customers within 6 months"
+          ],
+          "notes": "Seller obligations: 12-month handover with a 36-month non-compete covering a 50-mile radius. Key warranties: Specific indemnity for intercompany debt recoverability and a warranty cap at 100% of consideration. Completion mechanism: Completion accounts with a working capital peg of £212,000 (excluding intercompany balances). Risk to buyer is low due to the high earnout component which offsets the risk of losing Charter Property Repairs Ltd."
+        },
+        {
+          "name": "Balanced Approach",
+          "strategy": "A fair split that provides the seller with immediate liquidity while retaining enough contingent value to ensure a smooth transition of key accounts.",
+          "risk_to_buyer": "medium",
+          "suitable_when": "The buyer has moderate confidence in the current management's ability to transition relationships and the stability of the subcontractor model.",
+          "consideration": {
+            "total_headline": 550000,
+            "upfront_cash": 330000,
+            "upfront_percent": 60,
+            "deferred": 110000,
+            "earnout_maximum": 110000,
+            "earnout_metric": "Revenue retention from Top 3 Customers",
+            "earnout_period_months": 12,
+            "earnout_rationale": "Triggered by 'Customer concentration' (Risk Expert). Ensures the seller is incentivized to facilitate introductions and contract renewals for the 63% of revenue held by three clients.",
+            "retention_escrow": 27500
+          },
+          "key_conditions": [
+            "Netting of intercompany debt against the purchase price",
+            "6-month consultancy agreement for outgoing directors",
+            "Minimum working capital target to be maintained at completion"
+          ],
+          "notes": "Seller obligations: 6-month active handover followed by 6 months on-call consultancy. Key warranties: Standard suite with a 50% liability cap and a 12-month claim period. Completion mechanism: Locked box based on the 2025 management accounts. Risk to buyer is medium; the upfront payment is higher, but the earnout still covers the potential impact of losing the second or third largest client."
+        },
+        {
+          "name": "Competitive Approach",
+          "strategy": "Maximizes upfront cash to appeal to a seller who is already de-risking (as evidenced by 2024 dividends) and may be anchored to higher historical valuations.",
+          "risk_to_buyer": "high",
+          "suitable_when": "A competitive bidding environment where the buyer prioritizes deal speed and has a plan to diversify the customer base rapidly post-acquisition.",
+          "consideration": {
+            "total_headline": 600000,
+            "upfront_cash": 450000,
+            "upfront_percent": 75,
+            "deferred": 90000,
+            "earnout_maximum": 60000,
+            "earnout_metric": "EBITDA Performance",
+            "earnout_period_months": 12,
+            "earnout_rationale": "Triggered by 'Unverified add-backs' (QoE Expert). Validates the £255k normalized EBITDA figure after accounting for market-rate management costs.",
+            "retention_escrow": 15000
+          },
+          "key_conditions": [
+            "Immediate repayment of £27,852 director loans at completion",
+            "3-month intensive handover period",
+            "Evidence of contract extension for Charter Property Repairs Ltd"
+          ],
+          "notes": "Seller obligations: 3-month intensive handover. Key warranties: Fundamental warranties only (Title and Capacity) with a 25% cap on general warranties. Completion mechanism: Completion accounts. Risk to buyer is high because 75% of the capital is deployed upfront despite the critical customer concentration and declining margin trends."
+        }
+      ],
+      "recommended_structure": "Balanced Approach",
+      "recommendation_rationale": "The Balanced Approach is recommended because it directly addresses the £500k-£750k valuation gap identified by the valuation expert while providing a mechanism (earnout) to protect against the 63% customer concentration. It offers enough upfront cash to be credible to a seller who has already begun extracting value, while the 12-month earnout period aligns with the project-based nature of scaffolding sales.",
+      "negotiation_priorities": [
+        "Resolution of the £212k intercompany receivable which currently clutters the balance sheet",
+        "Securing a long-term non-compete to prevent directors from leveraging existing relationships elsewhere",
+        "Establishing a clear working capital peg that excludes the non-operating intercompany balances",
+        "Validating the current status of the Charter Property Repairs Ltd contract"
+      ],
+      "deal_breaker_terms": [
+        "Refusal to net off or clear intercompany receivables prior to completion",
+        "Loss of any of the top 3 customers during the due diligence period",
+        "Discovery of further gross margin erosion below 40% in current trading"
+      ],
+      "key_findings": [
+        "The business has a strong asset base (modern fleet) but high structural risk due to customer concentration.",
+        "Normalized EBITDA (£255k) is significantly lower than reported figures due to suppressed director salaries.",
+        "The £212k intercompany loan is a major hurdle that must be cleared to simplify the equity bridge.",
+        "Excellent liquidity and low bad debt provide a solid foundation if the customer base can be diversified."
+      ],
+      "narrative": "Ideal Scaffolding is a classic 'owner-managed' risk profile. While the operational side is efficient and the fleet is modern, the financial value is precarious due to the extreme reliance on three customers. The seller's expectations are likely inflated by 2022's peak performance, making a structured deal essential to bridge the valuation gap. The recommended Balanced Approach uses a 20% earnout to hedge against the 'cliff-edge' risk of customer loss, while ensuring the buyer does not overpay for 'masked' earnings that rely on below-market management costs. Success hinges on the clean extraction of intercompany balances and a disciplined transition of the top three client relationships."
+    }
+  },
+  {
+    "id": 1862,
+    "expert_type": "financial",
+    "status": "success",
+    "score": 68,
+    "confidence": "high",
+    "created_at": "2026-06-07T10:32:51.979Z",
+    "analysis_data": {
+      "expert": "financial",
+      "company_name": "Ideal scaffolding",
+      "analysis_date": "2024-05-22",
+      "score": 68,
+      "confidence": "high",
+      "yearly_metrics": {
+        "2022": {
+          "revenue": 2141738,
+          "revenue_yoy_growth_percent": null,
+          "cost_of_sales": 951259,
+          "gross_profit": 1190479,
+          "gross_margin_percent": 55.58,
+          "administrative_expenses": 484317,
+          "operating_profit": 706162,
+          "operating_margin_percent": 32.97,
+          "depreciation_amortisation": 117453,
+          "ebitda": 823615,
+          "interest_payable": 1801,
+          "interest_coverage_ratio": 392.09,
+          "profit_before_tax": 705224,
+          "corporation_tax": 105125,
+          "effective_tax_rate_percent": 14.91,
+          "net_profit": 600099,
+          "net_margin_percent": 28.02
+        },
+        "2023": {
+          "revenue": 2038844,
+          "revenue_yoy_growth_percent": -4.8,
+          "cost_of_sales": 1007456,
+          "gross_profit": 1031388,
+          "gross_margin_percent": 50.59,
+          "administrative_expenses": 585138,
+          "operating_profit": 446250,
+          "operating_margin_percent": 21.89,
+          "depreciation_amortisation": 148547,
+          "ebitda": 594797,
+          "interest_payable": 3004,
+          "interest_coverage_ratio": 148.55,
+          "profit_before_tax": 443954,
+          "corporation_tax": 83194,
+          "effective_tax_rate_percent": 18.74,
+          "net_profit": 360760,
+          "net_margin_percent": 17.69
+        },
+        "2024": {
+          "revenue": 1636215,
+          "revenue_yoy_growth_percent": -19.75,
+          "cost_of_sales": 861049,
+          "gross_profit": 775166,
+          "gross_margin_percent": 47.38,
+          "administrative_expenses": 662120,
+          "operating_profit": 113046,
+          "operating_margin_percent": 6.91,
+          "depreciation_amortisation": 145695,
+          "ebitda": 258741,
+          "interest_payable": 1836,
+          "interest_coverage_ratio": 61.57,
+          "profit_before_tax": 118786,
+          "corporation_tax": 30830,
+          "effective_tax_rate_percent": 25.95,
+          "net_profit": 87956,
+          "net_margin_percent": 5.38
+        },
+        "2025": {
+          "revenue": 1777001,
+          "revenue_yoy_growth_percent": 8.6,
+          "cost_of_sales": 995977,
+          "gross_profit": 781024,
+          "gross_margin_percent": 43.95,
+          "administrative_expenses": 527166,
+          "operating_profit": 253858,
+          "operating_margin_percent": 14.29,
+          "depreciation_amortisation": 92854,
+          "ebitda": 346712,
+          "interest_payable": 0,
+          "interest_coverage_ratio": null,
+          "profit_before_tax": 258124,
+          "corporation_tax": 64813,
+          "effective_tax_rate_percent": 25.11,
+          "net_profit": 193311,
+          "net_margin_percent": 10.88
+        }
+      },
+      "cagr": {
+        "revenue_cagr_percent": -4.56,
+        "gross_profit_cagr_percent": -9.98,
+        "operating_profit_cagr_percent": -22.54,
+        "period_years": 3
+      },
+      "cost_structure": {
+        "cost_of_sales_percent_revenue": 56.05,
+        "overheads_percent_revenue": 29.67,
+        "staff_costs_percent_revenue": 2.95,
+        "director_costs_percent_revenue": 0.54,
+        "top_5_overheads": [
+          {
+            "category": "Motor Expenses",
+            "value": 153877,
+            "percent_of_overheads": 29.19
+          },
+          {
+            "category": "Depreciation",
+            "value": 92854,
+            "percent_of_overheads": 17.61
+          },
+          {
+            "category": "Insurance",
+            "value": 65980,
+            "percent_of_overheads": 12.52
+          },
+          {
+            "category": "Staff Wages & Salaries",
+            "value": 42472,
+            "percent_of_overheads": 8.06
+          },
+          {
+            "category": "Rent & Rates",
+            "value": 45900,
+            "percent_of_overheads": 8.71
+          }
+        ],
+        "cost_base_classification": "mixed"
+      },
+      "earnings_quality": {
+        "net_profit_tracks_operating_profit": true,
+        "exceptional_items_identified": [],
+        "tax_rate_consistent": false,
+        "ebitda_latest": 346712,
+        "ebitda_trend": "declining",
+        "limitations": [
+          "2026 data is partial management accounts/aged creditors and not comparable to full year statutory data",
+          "Depreciation for 2026 management accounts is not provided"
+        ]
+      },
+      "debt_service": {
+        "latest_interest_coverage": null,
+        "interest_coverage_trend": "improving",
+        "additional_debt_capacity_assessment": "High. The company has eliminated interest-bearing debt in 2025 and maintains a strong cash position of £240k-£520k across recent years."
+      },
+      "key_findings": [
+        "Revenue has been volatile with a 3-year CAGR of -4.56%, though 2025 showed a recovery of 8.6% from the 2024 low.",
+        "Gross margins have consistently contracted from 55.6% in 2022 to 44.0% in 2025, indicating significant direct cost pressure.",
+        "Operating profit is highly sensitive to directors' remuneration, which fluctuated from £130k in 2024 to just £9.5k in 2025.",
+        "Motor expenses and insurance represent a disproportionately high percentage of overheads, typical for the scaffolding sector but requiring tight control.",
+        "The balance sheet is exceptionally strong with a current ratio of 2.94 in 2025 and minimal long-term gearing.",
+        "Intercompany lending increased significantly in 2025, with £212k owed by group undertakings, which may impact immediate liquidity for an acquirer.",
+        "Dividend policy is aggressive, with £584k paid out in 2024, exceeding that year's net profit significantly."
+      ],
+      "red_flags": [
+        "Consistent gross margin erosion over a 4-year period suggests an inability to pass on inflationary direct costs to customers.",
+        "High customer concentration risk identified in the sales ledger, with the top 3 debtors representing 63% of receivables.",
+        "Significant intercompany receivables (£212k) suggest the company is being used to finance other group entities."
+      ],
+      "narrative": "Ideal Scaffolding presents a mixed financial profile that requires careful valuation. On a positive note, the company maintains an exceptionally robust balance sheet with high liquidity and low debt. The 2025 recovery in revenue (+8.6%) and the successful reduction of administrative overheads (largely through adjusted director remuneration) have restored net margins to double digits (10.9%). However, the long-term trend in profitability is concerning. Operating profit has fallen from a peak of £706k in 2022 to £254k in 2025, representing a 64% decline in three years. This is driven by a combination of declining revenue and persistent gross margin compression, which has dropped by nearly 12 percentage points since 2022. The cost structure is heavily weighted towards direct labour and motor-related overheads, making the business vulnerable to fuel price volatility and wage inflation. For an acquirer, the primary value lies in the company's strong asset base and clean debt profile, but the deal must be structured to account for the declining earnings trend and the high customer concentration. The 2026 management data suggests a scale-up in activity, but until full-year audited figures confirm margin stabilization, the earnings quality remains 'medium' at best."
+    }
+  },
+  {
+    "id": 1863,
+    "expert_type": "operational",
+    "status": "success",
+    "score": 72,
+    "confidence": "high",
+    "created_at": "2026-06-07T10:32:52.025Z",
+    "analysis_data": {
+      "expert": "operational",
+      "company_name": "Ideal scaffolding",
+      "analysis_date": "2024-05-22",
+      "score": 72,
+      "confidence": "high",
+      "working_capital": {
+        "yearly_metrics": {
+          "2022": {
+            "debtor_days": 62.3,
+            "creditor_days": 40.1,
+            "stock_days": 0,
+            "cash_conversion_cycle_days": 22.2,
+            "net_working_capital": 364213,
+            "working_capital_percent_revenue": 17
+          },
+          "2023": {
+            "debtor_days": 43.1,
+            "creditor_days": 18.4,
+            "stock_days": 0,
+            "cash_conversion_cycle_days": 24.7,
+            "net_working_capital": 717651,
+            "working_capital_percent_revenue": 35.2
+          },
+          "2024": {
+            "debtor_days": 37.9,
+            "creditor_days": 25.2,
+            "stock_days": 0,
+            "cash_conversion_cycle_days": 12.7,
+            "net_working_capital": 281428,
+            "working_capital_percent_revenue": 17.2
+          },
+          "2025": {
+            "debtor_days": 46.9,
+            "creditor_days": 36.2,
+            "stock_days": 0,
+            "cash_conversion_cycle_days": 10.7,
+            "net_working_capital": 483088,
+            "working_capital_percent_revenue": 27.2
+          }
+        },
+        "trend": "improving",
+        "working_capital_intensity": "moderate",
+        "observations": [
+          "Debtor days have significantly improved from 62.3 in 2022 to 32.1 in the latest sales ledger snapshot.",
+          "The business is a net generator of working capital, with cash balances often exceeding total liabilities.",
+          "Significant intercompany lending (£212k in 2025) suggests excess liquidity is being diverted away from core operations."
+        ]
+      },
+      "capex": {
+        "total_gross_asset_value": 225179,
+        "total_nbv": 225179,
+        "asset_freshness_percent": 100,
+        "recent_additions_24m_value": 170181,
+        "recent_additions_percent": 75.6,
+        "annual_depreciation_charge": 92854,
+        "estimated_maintenance_capex": 92854,
+        "capex_cliff_risk": false,
+        "assets_requiring_replacement": [],
+        "category_breakdown": {
+          "property": {
+            "cost": 0,
+            "nbv": 0
+          },
+          "plant_machinery": {
+            "cost": 48267,
+            "nbv": 48267
+          },
+          "vehicles": {
+            "cost": 163396,
+            "nbv": 163396
+          },
+          "it_equipment": {
+            "cost": 13516,
+            "nbv": 13516
+          },
+          "other": {
+            "cost": 0,
+            "nbv": 0
+          }
+        },
+        "observations": [
+          "Heavy investment in motor vehicles in 2025/2026 has modernized the fleet, reducing immediate capex risk.",
+          "Depreciation charges are high relative to net profit, indicating a capital-intensive operational model.",
+          "The asset base grew by 309% in the latest management period, suggesting preparation for a significant scale-up."
+        ]
+      },
+      "workforce": {
+        "headcount": 11,
+        "total_payroll": 1081890,
+        "revenue_per_employee": 169927,
+        "payroll_percent_revenue": 57.9,
+        "average_salary_all": 98353,
+        "average_salary_excl_directors": 42472,
+        "director_remuneration_total": 130128,
+        "director_percent_of_payroll": 12,
+        "ft_pt_split": {
+          "full_time": 11,
+          "part_time": 0
+        },
+        "longest_tenured_years": null,
+        "newest_hire_months_ago": null,
+        "observations": [
+          "Direct labour and subcontractors represent the largest cost component, exceeding 45% of revenue.",
+          "Revenue per employee is healthy for the scaffolding sector, but high reliance on subcontractors (£485k in 2026) suggests a flexible but expensive workforce model.",
+          "Staff training and recruitment costs increased significantly in 2026, indicating active workforce expansion."
+        ]
+      },
+      "owner_dependency": {
+        "risk_level": "medium",
+        "director_count": 2,
+        "highest_individual_salary": 116328,
+        "highest_individual_percent_of_payroll": 10.7,
+        "critical_function_concentration": "High concentration in management; directors' salaries fluctuate significantly year-on-year, suggesting profit-linked remuneration.",
+        "observations": [
+          "Directors' salaries dropped from £116k to £9.5k in 2025, likely replaced by dividends, which can mask true operational overheads.",
+          "No single person's salary exceeds 25% of total payroll, but the business remains owner-managed with high dependency on key directors for sales and operations."
+        ]
+      },
+      "scalability": {
+        "rating": "medium",
+        "headcount_for_25pct_growth": 3,
+        "capex_needed_for_growth": "Low immediate need due to recent fleet modernization.",
+        "working_capital_supports_growth": true,
+        "bottlenecks": [
+          "Subcontractor availability and cost",
+          "Motor expense volatility (fuel and insurance)",
+          "High customer concentration (Top 3 = 63% of ledger)"
+        ],
+        "observations": [
+          "The business has demonstrated the ability to scale revenue with a flexible subcontractor model.",
+          "Current liquidity (Current Ratio 3.22) is more than sufficient to fund a 25% growth spurt.",
+          "Operational efficiency is sensitive to motor expenses, which represent nearly 10% of total revenue."
+        ]
+      },
+      "key_findings": [
+        "Strong liquidity position with a current ratio of 3.22 and £101k cash in the latest management accounts.",
+        "Recent aggressive investment in motor vehicles has de-risked the asset base for the next 24-36 months.",
+        "Working capital cycle is efficient, with debtor days trending downwards and a positive cash conversion cycle.",
+        "High customer concentration risk in the sales ledger (63% of debt held by 3 clients)."
+      ],
+      "red_flags": [
+        "Significant intercompany receivables (£212k) could represent a risk if the group undertakings are not liquid.",
+        "Extreme volatility in directors' remuneration makes historical margin analysis difficult without adjustments.",
+        "High reliance on subcontractors (£485k) makes the gross margin vulnerable to labour market inflation."
+      ],
+      "narrative": "Ideal Scaffolding is operationally robust with a modernized asset base and excellent liquidity. The business has successfully transitioned from a cash deficit to a strong surplus while scaling its fleet. While the reliance on subcontractors and high customer concentration present risks, the efficient working capital management and recent capex provide a solid foundation for further growth. The primary operational challenge will be maintaining margins against rising fuel, insurance, and labour costs."
+    }
+  },
+  {
+    "id": 1865,
+    "expert_type": "qoe",
+    "status": "success",
+    "score": 62,
+    "confidence": "high",
+    "created_at": "2026-06-07T10:32:52.090Z",
+    "analysis_data": {
+      "expert": "quality_of_earnings",
+      "company_name": "Ideal scaffolding",
+      "analysis_date": "2024-05-22",
+      "score": 62,
+      "confidence": "high",
+      "reported_figures": {
+        "operating_profit": 253858,
+        "depreciation": 92854,
+        "amortisation": 0,
+        "reported_ebitda": 346712,
+        "source_year": 2025
+      },
+      "add_backs": [
+        {
+          "item": "Insurance Claim Income",
+          "category": "one_off_cost",
+          "amount": 4168,
+          "recurrence": "one_off",
+          "year": 2025,
+          "justification": "Insurance claims received are non-operational, non-recurring income items that inflate EBITDA.",
+          "confidence": "high",
+          "defensibility_score": 9,
+          "case_for_inclusion": "This is non-trading income that does not represent the core earning capacity of the scaffolding business.",
+          "case_for_exclusion": "The seller may argue that claims are a recurring part of operating a high-risk scaffolding fleet."
+        }
+      ],
+      "deductions": [
+        {
+          "item": "Director Salary Normalisation",
+          "category": "replacement_salary",
+          "amount": 47976,
+          "recurrence": "recurring",
+          "year": 2025,
+          "justification": "Current director salary of £9,524 is significantly below the market rate of £57,500 for a £1.7M revenue business.",
+          "confidence": "high",
+          "defensibility_score": 8,
+          "case_for_inclusion": "A commercial buyer would need to pay a market-rate salary to a replacement manager to run operations.",
+          "case_for_exclusion": "The seller might argue the current directors are semi-retired or that the business requires less management oversight."
+        },
+        {
+          "item": "Missing Financial Management Cost",
+          "category": "missing_management",
+          "amount": 47500,
+          "recurrence": "recurring",
+          "year": 2025,
+          "justification": "The business lacks a formal Finance Director/Controller; at this scale, a part-time or mid-level controller is required.",
+          "confidence": "medium",
+          "defensibility_score": 6,
+          "case_for_inclusion": "The complexity of the subcontractor model and fleet management requires dedicated financial oversight not currently in the cost base.",
+          "case_for_exclusion": "The seller will argue that existing accountancy fees (£19.6k) already cover these requirements."
+        }
+      ],
+      "total_add_backs": 4168,
+      "total_deductions": 95476,
+      "adjusted_ebitda": {
+        "conservative": 251236,
+        "base": 255404,
+        "optimistic": 346712
+      },
+      "adjustment_summary": {
+        "reported_ebitda": 346712,
+        "plus_add_backs": 4168,
+        "minus_deductions": 95476,
+        "equals_adjusted_ebitda_base": 255404
+      },
+      "director_salary_analysis": {
+        "directors": [
+          {
+            "name": "Combined Directors",
+            "current_salary": 9524,
+            "estimated_market_rate": 57500,
+            "benchmark_range_used": "Revenue £1M-£5M: Working MD (£45k-£70k)",
+            "adjustment": 47976,
+            "adjustment_type": "deduction"
+          }
+        ]
+      },
+      "sustainability_assessment": {
+        "sustainable_for_3_years": false,
+        "key_assumptions": [
+          "Gross margins stabilize at 44% and do not continue the 4-year downward trend.",
+          "Subcontractor availability remains constant without further significant rate inflation.",
+          "The top 3 customers (63% of revenue) are retained post-acquisition."
+        ],
+        "sensitivity_factors": [
+          "Fuel and insurance price volatility",
+          "Labour market wage pressure for qualified scaffolders",
+          "Concentration risk of the top 3 debtors"
+        ],
+        "upside_scenarios": [
+          "Passing on inflationary costs to customers to reverse margin erosion.",
+          "Utilizing the modernized fleet to increase capacity without further capex."
+        ],
+        "downside_scenarios": [
+          "Loss of one major contract (e.g., Charter Property Repairs) could reduce EBITDA by 20-30%.",
+          "Further gross margin compression towards 40% would eliminate most operating profit."
+        ]
+      },
+      "key_findings": [
+        "Reported EBITDA is artificially inflated by sub-market director salaries in 2025.",
+        "Gross margins have eroded from 55.6% to 44.0% in 3 years, a major concern for earnings quality.",
+        "The business is highly liquid but is currently acting as a bank for other group entities (£212k intercompany loan).",
+        "Recent heavy investment in motor vehicles (£148k NBV) de-risks the immediate maintenance capex profile."
+      ],
+      "red_flags": [
+        "Severe customer concentration: 3 clients represent 63% of the sales ledger.",
+        "Consistent 4-year decline in gross margin percentage.",
+        "Aggressive dividend policy in 2024 (£584k) suggests owners are extracting maximum value before exit."
+      ],
+      "narrative": "The Quality of Earnings for Ideal Scaffolding is 'Medium'. While the balance sheet is exceptionally strong and the fleet is modern, the 'true' earnings are lower than the 2025 statutory accounts suggest. The primary adjustment is the normalization of director salaries, which were slashed in 2025 (likely replaced by dividends). Furthermore, the persistent erosion of gross margins suggests the company lacks pricing power in a competitive market. A buyer should value the business on a normalized EBITDA of approximately £255k, while applying a discount or earn-out structure to mitigate the significant customer concentration risk."
+    }
+  },
+  {
+    "id": 1864,
+    "expert_type": "risk",
+    "status": "success",
+    "score": 68,
+    "confidence": "high",
+    "created_at": "2026-06-07T10:32:52.056Z",
+    "analysis_data": {
+      "expert": "risk",
+      "company_name": "Ideal scaffolding",
+      "analysis_date": "2024-05-22",
+      "score": 68,
+      "confidence": "high",
+      "customer_concentration": {
+        "risk_level": "critical",
+        "top_customer_percent": 30.64,
+        "top_3_customers_percent": 63.14,
+        "top_5_customers_percent": 74.08,
+        "hhi_index": 1624,
+        "hhi_classification": "moderate",
+        "total_customers": 16,
+        "customers_over_15_percent": [
+          "Charter Property Repairs Ltd (30.64%)",
+          "Dodd Group (Eastern) Ltd (17.08%)",
+          "DMD Installations Ltd (15.42%)"
+        ],
+        "observations": [
+          "The top 3 customers represent over 63% of the total sales ledger, creating a high dependency on a few key accounts.",
+          "Charter Property Repairs Ltd exceeds the 25% critical threshold for a single customer.",
+          "Despite concentration, the collection profile is excellent with 90.36% of debt being current."
+        ]
+      },
+      "financial_risk": {
+        "risk_level": "low",
+        "technically_insolvent": false,
+        "current_ratio_trend": "improving",
+        "creditor_growth_vs_revenue": "Creditors are decreasing while revenue remains relatively stable, indicating strong cash management.",
+        "director_loans_balance": 27852,
+        "intercompany_balances": 212457,
+        "interest_coverage_ratio": 148.55,
+        "interest_coverage_adequate": true,
+        "going_concern_indicators": [],
+        "observations": [
+          "Current ratio has improved from 1.65 (2022) to 3.22 (2026), showing exceptional liquidity.",
+          "The company transitioned from a £111k overdraft in 2025 to a £101k positive cash balance in 2026.",
+          "Interest coverage is extremely high, and the company eliminated interest-bearing debt payments in 2025."
+        ]
+      },
+      "key_person_risk": {
+        "risk_level": "moderate",
+        "highest_individual_payroll_percent": null,
+        "single_points_of_failure": [
+          "Directors",
+          "Operations Management"
+        ],
+        "management_depth": "thin",
+        "average_tenure_years": null,
+        "observations": [
+          "A sharp decrease in directors' salaries from £116k to £9.5k in 2025 suggests a shift in how owners extract value (likely dividends), but also highlights their central role in financial control.",
+          "High reliance on external professional fees (£93k in 2026) suggests a lack of internal depth in specialized functions."
+        ]
+      },
+      "revenue_quality": {
+        "risk_level": "moderate",
+        "revenue_type": "project_based",
+        "customer_trend": "stable_base",
+        "seasonality_detected": false,
+        "observations": [
+          "Revenue is primarily driven by 'Scaffolding Sales' which in this sector is typically project-linked rather than recurring contract-based.",
+          "Revenue has fluctuated between £1.6m and £2.1m over the last 4 years, showing some volatility but generally maintaining scale."
+        ]
+      },
+      "balance_sheet_risks": {
+        "director_loans": 27852,
+        "connected_company_balances": 212457,
+        "deferred_tax": 40481,
+        "pension_obligations": null,
+        "contingent_liabilities": "unable_to_assess",
+        "observations": [
+          "Significant intercompany receivable of £212,457 (owed by group undertakings) represents a major asset that may not be liquid or recoverable upon change of control.",
+          "Director loan of £27,852 owed TO directors will likely require settlement at completion."
+        ]
+      },
+      "bad_debt": {
+        "total_overdue_90_plus": 80,
+        "recommended_provision": 40,
+        "existing_provision": 0,
+        "net_profit_impact": -40,
+        "observations": [
+          "Bad debt risk is negligible based on the current sales ledger, with only £80 overdue beyond 90 days.",
+          "Debtor days of 32.07 is excellent for the construction sector."
+        ]
+      },
+      "risk_register": [
+        {
+          "risk": "High Customer Concentration",
+          "category": "customer",
+          "severity": "high",
+          "likelihood": "medium",
+          "financial_impact": 544000,
+          "impact_description": "Loss of Charter Property Repairs Ltd would result in a ~30% revenue drop.",
+          "mitigation": "Include customer retention clauses in the SPA and ensure key account handovers are part of the transition plan."
+        },
+        {
+          "risk": "Intercompany Debt Recoverability",
+          "category": "balance_sheet",
+          "severity": "medium",
+          "likelihood": "medium",
+          "financial_impact": 212457,
+          "impact_description": "Large balance owed by connected companies may be uncollectible if those entities are not part of the deal.",
+          "mitigation": "Require intercompany balances to be cleared or netted off against the purchase price at completion."
+        },
+        {
+          "risk": "Margin Compression",
+          "category": "financial",
+          "severity": "medium",
+          "likelihood": "high",
+          "financial_impact": null,
+          "impact_description": "Gross margins fell from 55% to 44% due to rising labor and material costs.",
+          "mitigation": "Review pricing strategy and subcontractor contracts to pass through inflationary costs."
+        }
+      ],
+      "deal_breakers": [],
+      "key_findings": [
+        "The company is in a very strong liquidity position with a current ratio of 3.22 and no significant bank debt.",
+        "Customer concentration is the primary risk, with three clients providing nearly two-thirds of the ledger value.",
+        "The balance sheet is 'cluttered' with intercompany balances and director loans that need tidying pre-completion.",
+        "Operational efficiency is high, evidenced by very low bad debt and efficient collection cycles."
+      ],
+      "narrative": "Ideal Scaffolding presents as a financially robust target with high liquidity and strong profitability. The primary risks are structural rather than financial: specifically, the high concentration of revenue within three main customers and the significant intercompany receivables. The business has successfully navigated a period of margin compression by reducing overheads (notably directors' remuneration). From a risk perspective, the deal is viable but requires specific protections around customer retention and the settlement of connected-party balances."
+    }
+  },
+  {
+    "id": 2337,
+    "expert_type": "screening",
+    "status": "success",
+    "score": null,
+    "confidence": null,
+    "created_at": "2026-06-29T15:27:36.599Z",
+    "analysis_data": {
+      "stage": "screening",
+      "company_name": "Ideal scaffolding",
+      "sector": "Construction & Building",
+      "analysis_date": "2024-05-22",
+      "data_quality_score": 62,
+      "analysis_period": {
+        "earliest_year": 2022,
+        "latest_year": 2026,
+        "years_of_data": 5
+      },
+      "dimensions": {
+        "earnings_trajectory": {
+          "rag": "AMBER",
+          "score": 55,
+          "revenue_cagr_percent": -3.4,
+          "latest_revenue": 1869200,
+          "latest_gross_margin_percent": 48,
+          "latest_operating_margin_percent": 9.8,
+          "latest_net_margin_percent": 9.8,
+          "margin_direction": "contracting",
+          "explanation": "Revenue has been volatile, declining from 2.14m in 2022 to 1.64m in 2024 before a partial recovery in 2025/26. Gross margins have compressed from 55.6% to 48.0%, though net profitability remains stable due to overhead management."
+        },
+        "balance_sheet_health": {
+          "rag": "GREEN",
+          "score": 85,
+          "latest_current_ratio": 3.2,
+          "latest_net_assets": 474785,
+          "net_asset_growth_percent": 477.5,
+          "long_term_debt": 7348,
+          "explanation": "The balance sheet is exceptionally strong with a current ratio of 3.2 and negligible gearing of 1.5%. Net assets grew significantly in the latest period, and the company has successfully cleared most long-term bank debt."
+        },
+        "cash_reality": {
+          "rag": "GREEN",
+          "score": 80,
+          "latest_cash_at_bank": 101056,
+          "cash_trend": "growing",
+          "cash_vs_profit_alignment": "aligned",
+          "explanation": "Cash position has recovered from a significant overdraft in 2025 to a positive balance of 101,056 in 2026. The movement is well-aligned with reported net profits and improved working capital management."
+        },
+        "customer_risk": {
+          "rag": "RED",
+          "score": 35,
+          "top_customer_concentration_percent": 38.7,
+          "aged_debt_90_plus_percent": 0.1,
+          "total_customers": 10,
+          "explanation": "High concentration risk is evident with the top debtor representing 38.7% of the ledger and the top three representing 63.1%. While aged debt is very low, the loss of a single major client would be catastrophic."
+        },
+        "asset_quality": {
+          "rag": "GREEN",
+          "score": 75,
+          "nbv_to_cost_percent": 58,
+          "recent_additions_percent": 309,
+          "total_nbv": 225179,
+          "explanation": "Significant recent investment in the motor fleet (increasing from 22k to 163k) indicates a fresh asset base. The tangible asset growth suggests the company is well-equipped for current operational scale without immediate capex requirements."
+        },
+        "people_capability": {
+          "rag": "AMBER",
+          "score": 50,
+          "headcount": 11,
+          "revenue_per_employee": 169927,
+          "payroll_to_revenue_percent": 11.1,
+          "director_cost_percent_of_payroll": 0,
+          "explanation": "Revenue per head is healthy for the sector, but director remuneration fluctuates wildly (from 130k to 0k), suggesting profit extraction via dividends. The reliance on subcontractors (485k) indicates a flexible but potentially volatile cost base."
+        }
+      },
+      "overall_score": 67,
+      "recommendation": "PROCEED_WITH_CAUTION",
+      "recommendation_justification": "The company is financially robust with a clean balance sheet and strong liquidity, but the significant revenue decline since 2022 and extreme customer concentration require deep due diligence.",
+      "key_strengths": [
+        "Excellent liquidity position with a current ratio of 3.2 and minimal long-term debt.",
+        "Significant recent investment in the motor fleet ensures operational readiness and low near-term capex.",
+        "Strong recovery in cash position from a prior overdraft to a healthy six-figure balance."
+      ],
+      "key_concerns": [
+        "High customer concentration with three clients representing over 60% of the sales ledger.",
+        "Historical revenue trend shows a 23% decline from 2022 peaks, indicating potential loss of market share.",
+        "Inconsistent director remuneration and high intercompany lending (212k in 2025) suggest complex owner-manager financial arrangements."
+      ],
+      "questions_for_seller": [
+        "What caused the 23% revenue decline between 2022 and 2024, and is the 2026 recovery sustainable?",
+        "Can you provide a breakdown of the 212,457 intercompany receivable and confirm if this will be cleared prior to sale?",
+        "Why did director salaries drop from 116k to zero in the management accounts, and how are the owners currently being compensated?",
+        "What is the status of the relationship with the top three customers who dominate the sales ledger?"
+      ],
+      "comparable_context": "The company's net margins (approx 10%) are slightly above the 5-7% typical for UK scaffolding firms. However, the revenue volatility is higher than sector averages, which usually benefit from more stable recurring maintenance contracts.",
+      "executive_summary": "Ideal Scaffolding presents as a 'Proceed with Caution' opportunity. The business is currently in a very strong liquidity position, boasting a current ratio of 3.2 and a nearly debt-free balance sheet following a period of deleveraging. Recent heavy investment in its motor fleet (163k) suggests the equipment is modern and capable. However, the screening highlights two primary risks: a significant historical decline in turnover from 2.1m (2022) to 1.6m (2024), and a dangerous level of customer concentration where three clients account for the majority of trade receivables. Furthermore, financial transparency is clouded by erratic director remuneration and substantial intercompany lending. While the 2026 management accounts suggest a return to growth and high profitability, the buyer must verify if this is a genuine recovery or a short-term spike. Further investigation should focus on the stability of the top-tier client contracts and the 'true' owner-managed earnings (SDE) once intercompany movements are normalised."
+    }
+  },
+  {
+    "id": 1866,
+    "expert_type": "sector",
+    "status": "success",
+    "score": 52,
+    "confidence": "medium",
+    "created_at": "2026-06-07T10:32:52.122Z",
+    "analysis_data": {
+      "expert": "sector",
+      "company_name": "Ideal scaffolding",
+      "sector": "Construction & Building",
+      "analysis_date": "2023-10-27",
+      "score": 52,
+      "confidence": "medium",
+      "sector_overview": {
+        "growth_outlook": "mixed",
+        "uk_market_size_estimate": "£2.5bn - £3.0bn (Scaffolding & Access Sub-sector)",
+        "key_trends": [
+          "Increased focus on health and safety compliance and digital site inspections",
+          "Shift towards system scaffolding over traditional tube and fitting for speed",
+          "Rising demand for infrastructure maintenance vs. new build volatility",
+          "Sustainability requirements for carbon-neutral construction sites"
+        ],
+        "regulatory_factors": [
+          "Work at Height Regulations 2005 (WAHR) updates",
+          "NASC (National Access & Scaffolding Confederation) safety standards",
+          "CISRS (Construction Industry Scaffolders Record Scheme) training requirements"
+        ],
+        "observations": [
+          "The UK scaffolding market is highly fragmented with low barriers to entry at the micro-level.",
+          "Current high interest rates are cooling residential new-build demand, though infrastructure remains resilient.",
+          "Labour shortages for qualified Part 2 and Advanced scaffolders are driving up wage costs."
+        ]
+      },
+      "competitive_positioning": {
+        "company_size_classification": "small",
+        "typical_gross_margin_range": {
+          "low": 30,
+          "high": 45
+        },
+        "typical_operating_margin_range": {
+          "low": 8,
+          "high": 15
+        },
+        "typical_ebitda_margin_range": {
+          "low": 10,
+          "high": 18
+        },
+        "positioning_assessment": "Likely a regional SME operator. Without revenue data, we assume a 'Small' classification (under £5M revenue) typical of local scaffolding firms. These businesses are highly dependent on local contractor relationships and regional construction cycles."
+      },
+      "comparable_multiples": {
+        "ev_revenue_range": {
+          "low": 0.3,
+          "mid": 0.5,
+          "high": 0.8
+        },
+        "ev_ebitda_range": {
+          "low": 2,
+          "mid": 2.75,
+          "high": 3.5
+        },
+        "factors_affecting_multiple": [
+          "Asset base (ownership of scaffolding stock vs. hire)",
+          "Contract mix (framework agreements vs. one-off projects)",
+          "Safety record and insurance premium history",
+          "Geographic concentration"
+        ],
+        "premium_factors": [
+          "Blue-chip client base with multi-year framework agreements",
+          "Specialist capabilities (e.g., rail, nuclear, or heritage access)",
+          "High proportion of owned, modern system scaffolding stock",
+          "Strong middle-management layer reducing owner dependency"
+        ],
+        "discount_factors": [
+          "High labour dependency and rising subcontractor costs",
+          "Project-based revenue with low visibility beyond 6 months",
+          "High customer concentration (e.g., one main housebuilder)",
+          "Significant health and safety liability risks"
+        ],
+        "data_confidence": "based_on_training_data"
+      },
+      "growth_opportunities": [
+        {
+          "opportunity": "Geographic Expansion",
+          "effort": "high",
+          "potential_impact": "medium",
+          "timeframe": "medium_term",
+          "description": "Opening a new depot in a high-growth region (e.g., South East or North West infrastructure hubs)."
+        },
+        {
+          "opportunity": "Sector Diversification",
+          "effort": "medium",
+          "potential_impact": "high",
+          "timeframe": "medium_term",
+          "description": "Moving from residential new-build into industrial maintenance or infrastructure (rail/utilities) which offer higher margins and longer contracts."
+        },
+        {
+          "opportunity": "Digital Fleet Management",
+          "effort": "low",
+          "potential_impact": "medium",
+          "timeframe": "short_term",
+          "description": "Implementing asset tracking and digital site audits to improve utilization rates and reduce loss of stock."
+        }
+      ],
+      "sector_risks": [
+        {
+          "risk": "Economic Cyclicality",
+          "severity": "high",
+          "timeframe": "immediate",
+          "description": "High sensitivity to UK interest rates and the resulting impact on the housing market and construction starts."
+        },
+        {
+          "risk": "Labour Inflation",
+          "severity": "medium",
+          "timeframe": "near_term",
+          "description": "Shortage of CISRS qualified staff leading to wage wars and margin erosion."
+        },
+        {
+          "risk": "Health & Safety Liability",
+          "severity": "high",
+          "timeframe": "immediate",
+          "description": "A single major onsite incident can lead to loss of license, massive fines, and uninsurable status."
+        }
+      ],
+      "key_findings": [
+        "The scaffolding sector is a 'pure-play' trade service with high operational risks and moderate multiples.",
+        "Valuation is heavily anchored to EBITDA; multiples above 3.5x are rare for businesses under £5M revenue unless they have unique infrastructure niches.",
+        "Asset ownership is a key value driver; a business that owns its stock is valued higher than one that relies on cross-hiring."
+      ],
+      "narrative": "Ideal Scaffolding operates in a mature, highly competitive UK market. While the sector faces headwinds from a slowing residential market, firms with strong safety records and diversified client bases remain attractive for regional consolidation. A buyer should focus on verifying the 'stickiness' of the revenue—specifically looking for framework agreements rather than spot-market pricing. Valuation should strictly follow UK SME benchmarks of 2.0x-3.5x EBITDA unless exceptional growth or proprietary access methods are proven."
+    }
+  },
+  {
+    "id": 1869,
+    "expert_type": "synthesis",
+    "status": "success",
+    "score": null,
+    "confidence": null,
+    "created_at": "2026-06-07T10:32:52.218Z",
+    "analysis_data": {
+      "stage": "synthesis",
+      "company_name": "Ideal scaffolding",
+      "sector": "Construction & Building",
+      "analysis_date": "2024-05-22",
+      "overall_score": 64,
+      "recommendation": "PROCEED_WITH_CAUTION",
+      "scores_dashboard": {
+        "financial": {
+          "score": 68,
+          "confidence": "high"
+        },
+        "operational": {
+          "score": 72,
+          "confidence": "high"
+        },
+        "risk": {
+          "score": 68,
+          "confidence": "high"
+        },
+        "quality_of_earnings": {
+          "score": 62,
+          "confidence": "high"
+        },
+        "sector": {
+          "score": 52,
+          "confidence": "medium"
+        },
+        "valuation": {
+          "score": 72,
+          "confidence": "high"
+        },
+        "deal_structure": {
+          "score": 58,
+          "confidence": "high"
+        }
+      },
+      "executive_summary": "Ideal Scaffolding is a well-capitalised regional operator with a modernised fleet and exceptional liquidity, but it faces significant structural risks. Verdict: Proceed only with a heavily structured deal to mitigate extreme customer concentration and margin erosion. Financials show 2025 Revenue of £1.78M and reported EBITDA of £347k; however, Quality of Earnings (QoE) analysis adjusts this to a 'true' EBITDA of £255k after normalising for suppressed director salaries. The valuation range for equity is £483k to £750k, with a recommended mid-point of £550k. Top reasons to proceed: 1) Modernised asset base with 75% of the fleet replaced in the last 24 months, de-risking immediate CAPEX; 2) Exceptional balance sheet strength with a 3.22 current ratio and zero interest-bearing debt; 3) Efficient working capital cycle with debtor days trending downwards. Top reasons for caution: 1) Critical customer concentration, with the top 3 clients representing 63% of the sales ledger; 2) Persistent gross margin erosion from 55.6% in 2022 to 44.0% in 2025, indicating a lack of pricing power; 3) High dependency on subcontractors and volatile motor expenses. Recommended structure: A 'Balanced' deal at a £550k headline price, with 60% upfront cash and 40% contingent on the retention of the top 3 customers and EBITDA performance, alongside the netting of £212k in intercompany receivables.",
+      "expert_consensus": {
+        "agreements": [
+          "The company possesses a very strong liquidity position and a modernised fleet.",
+          "Reported EBITDA is inflated due to below-market director remuneration in 2025.",
+          "Customer concentration is the primary existential risk to the business.",
+          "Gross margins are under significant pressure from inflationary costs."
+        ],
+        "contradictions": [
+          {
+            "topic": "Operational Scalability",
+            "expert_a": "Operational",
+            "expert_a_view": "The business is scalable due to a flexible subcontractor model and modern fleet.",
+            "expert_b": "Financial/QoE",
+            "expert_b_view": "Scalability is hampered by consistent margin compression and high reliance on a few key debtors.",
+            "resolution": "While the infrastructure exists to scale, the economic model is currently 'leaking' value. Growth without addressing pricing power will likely result in diminishing returns."
+          }
+        ]
+      },
+      "devils_advocate": {
+        "worst_case_scenario": "The loss of Charter Property Repairs Ltd (30.6% of revenue) occurs shortly after completion. Simultaneously, subcontractor rates rise by 10%. The business, already suffering from a 4-year margin decline, becomes loss-making. The £212k intercompany loan proves unrecoverable as the seller's other entities fail, leaving the buyer with a modern fleet but no profitable contracts to service.",
+        "weakest_assumptions": [
+          "That the 2025 revenue recovery (+8.6%) is sustainable rather than a temporary project-based spike.",
+          "That the £212k intercompany receivable is a 'clean' asset that can be easily settled or netted.",
+          "That the current directors' relationships with the top 3 clients can be successfully transferred to a new owner."
+        ],
+        "underweighted_risks": [
+          "The 'Dividend Drain': The £584k dividend in 2024 suggests the owners are aggressively stripping cash, which may indicate they foresee a downturn.",
+          "Health & Safety: In scaffolding, a single safety incident could lead to the loss of the NASC accreditation required by the top 3 clients.",
+          "Subcontractor Loyalty: The 'flexible' workforce may leave for higher-paying competitors instantly if margins are squeezed further."
+        ],
+        "post_mortem_predictions": [
+          "The buyer will regret not verifying the 'stickiness' of the Charter Property contract via direct client interviews.",
+          "The buyer will find that 'Administrative Expenses' were artificially low because the directors were performing multiple roles that now require three separate hires."
+        ]
+      },
+      "investment_thesis": {
+        "positive_case": "Ideal Scaffolding is an 'asset-rich' entry point into the regional construction market. By acquiring a modernised fleet and a debt-free balance sheet, a buyer can focus entirely on operational professionalisation and customer diversification. The current margin compression is an opportunity for a more sophisticated operator to implement better pricing controls and digital asset tracking to recover the 55% historical gross margins.",
+        "conditions_for_success": [
+          "Retention of the top 3 customers for at least 18 months post-acquisition.",
+          "Stabilisation of gross margins at or above 44%.",
+          "Successful recovery or netting of the £212k intercompany balance.",
+          "Transition of management duties to a market-rate salaried manager without loss of operational quality."
+        ],
+        "integration_priorities_100_days": [
+          "Formalise contracts with the top 3 customers to move away from project-based 'spot' work.",
+          "Implement a digital fleet and stock management system to reduce loss and improve utilisation.",
+          "Hire or promote a dedicated Operations Manager to reduce dependency on the outgoing directors.",
+          "Conduct a full audit of subcontractor rates and renegotiate terms where possible."
+        ]
+      },
+      "information_requests": {
+        "critical": [
+          {
+            "request": "Confirmation of contract terms for Charter Property Repairs Ltd, Dodd Group, and DMD Installations.",
+            "source_expert": "Risk",
+            "rationale": "63% of revenue is at risk; we must know if these are framework agreements or one-off projects."
+          },
+          {
+            "request": "Balance sheets for the 'group undertakings' owing £212,457.",
+            "source_expert": "Financial",
+            "rationale": "To assess the recoverability of this major asset."
+          }
+        ],
+        "important": [
+          {
+            "request": "Detailed breakdown of 'Subcontractor' vs 'Direct Labour' costs for the last 3 years.",
+            "source_expert": "Operational",
+            "rationale": "To understand the exact drivers of the 11% gross margin erosion."
+          },
+          {
+            "request": "Full 2026 Management Accounts including Depreciation and Balance Sheet.",
+            "source_expert": "Financial",
+            "rationale": "To verify if the 2025 recovery has continued or if margins have fallen further."
+          }
+        ],
+        "nice_to_have": [
+          {
+            "request": "Safety record and NASC audit reports for the last 3 years.",
+            "source_expert": "Sector",
+            "rationale": "To ensure no pending liabilities or risks to accreditation."
+          }
+        ]
+      },
+      "valuation_summary": {
+        "equity_value_range": {
+          "low": 483048,
+          "mid": 550000,
+          "high": 750000
+        },
+        "recommended_offer": 550000,
+        "recommended_structure": "Balanced Approach: £330k Upfront, £110k Deferred (12m), £110k Earn-out based on customer retention."
+      },
+      "narrative_report": "INVESTMENT MEMORANDUM: IDEAL SCAFFOLDING\n\nINTRODUCTION\nIdeal Scaffolding is a regional scaffolding and access provider serving the construction and building sector. The company has demonstrated a capacity for high historical profitability, though recent years have seen a contraction in margins and revenue volatility. This memorandum synthesises expert analyses to provide a recommendation on the potential acquisition.\n\nFINANCIAL PERFORMANCE & QUALITY OF EARNINGS\nOn the surface, Ideal Scaffolding appears robust, with 2025 revenue of £1.78M and a reported EBITDA of £347k. However, a deeper dive into the Quality of Earnings reveals that the 2025 figures were bolstered by a significant reduction in director remuneration (£9.5k vs £116k in 2024). When normalised to a market rate for management, the adjusted EBITDA sits at approximately £255k. \n\nThe most concerning financial trend is the consistent erosion of gross margins, which have fallen from 55.6% in 2022 to 44.0% in 2025. This suggests that the company is struggling to pass on inflationary pressures in labour, fuel, and insurance to its customers. Any acquisition must be predicated on the ability to stabilise and eventually reverse this trend.\n\nOPERATIONAL ASSETS & LIQUIDITY\nOperationally, the business is in excellent health. A significant CAPEX programme in 2024/25 has modernised the fleet, with 75% of assets being less than 24 months old. This de-risks the immediate future for the buyer, as no major vehicle replacement is required. Furthermore, the company’s liquidity is exceptional, boasting a current ratio of 3.22 and a transition from an overdraft to a positive cash balance of £101k in the latest management accounts. The working capital cycle is efficient, with debtor days (32) being well below industry averages.\n\nRISK PROFILE: THE CONCENTRATION CLIFF\nThe primary risk is the 'critical' level of customer concentration. Three customers account for 63% of the sales ledger. The loss of the largest client, Charter Property Repairs Ltd (30.6%), would likely render the business loss-making on an adjusted basis. Additionally, the balance sheet is 'cluttered' by £212k in intercompany receivables. These represent cash extracted to fund other group entities and must be treated as a deduction from equity value unless their recoverability is guaranteed by the seller.\n\nVALUATION & DEAL STRUCTURE\nThe business is valued at an equity range of £483k to £750k. The lower end is anchored by the adjusted Net Asset Value (NAV), which provides a strong floor due to the modern fleet. The recommended offer is £550k, representing a 2.5x multiple of adjusted EBITDA. \n\nGiven the risks, a 'Balanced' deal structure is proposed: £330k (60%) upfront, with the remainder split between deferred consideration and an earn-out tied specifically to the retention of the top three customers. This protects the buyer against a 'post-sale exodus' of key accounts while providing the seller with a fair exit value.\n\nCONCLUSION\nIdeal Scaffolding is a viable acquisition for a buyer looking for a 'clean' operational platform with modern assets. However, the deal must be strictly managed to address the valuation gap and the customer concentration risk. Proceed with caution, ensuring all intercompany balances are settled at completion."
+    }
+  },
+  {
+    "id": 1867,
+    "expert_type": "valuation",
+    "status": "success",
+    "score": 72,
+    "confidence": "high",
+    "created_at": "2026-06-07T10:32:52.154Z",
+    "analysis_data": {
+      "expert": "valuation",
+      "company_name": "Ideal scaffolding",
+      "analysis_date": "2024-05-22",
+      "score": 72,
+      "confidence": "high",
+      "ebitda_multiple_valuation": {
+        "adjusted_ebitda_base": 255404,
+        "sector_multiple_range": {
+          "low": 2,
+          "mid": 2.75,
+          "high": 3.5
+        },
+        "selected_multiple": 2.5,
+        "multiple_justification": "A multiple of 2.5x is selected, which is slightly below the sector midpoint. While the company has a modern fleet and strong liquidity, the significant customer concentration (63% in top 3) and consistent 4-year gross margin erosion (55% to 44%) necessitate a discount from the sector average.",
+        "premium_factors_applied": [
+          "Modernized fleet (75% of assets added in last 24 months)",
+          "Strong liquidity position (Current Ratio 3.22)",
+          "Zero interest-bearing debt"
+        ],
+        "discount_factors_applied": [
+          "Critical customer concentration (Top customer >30%)",
+          "Consistent gross margin compression over 4 years",
+          "Owner-managed with high dependency on directors for operations",
+          "Declining operating profit trend since 2022"
+        ],
+        "enterprise_value_range": {
+          "conservative": 502472,
+          "base": 638510,
+          "optimistic": 893914
+        }
+      },
+      "ev_to_equity_bridge": {
+        "enterprise_value_base": 638510,
+        "plus_cash": 101000,
+        "minus_long_term_debt": 0,
+        "minus_director_loans": 27852,
+        "minus_bad_debt_provision": 40,
+        "minus_working_capital_adjustment": 212457,
+        "equity_value": {
+          "conservative": 363123,
+          "base": 499161,
+          "optimistic": 754565
+        }
+      },
+      "asset_based_valuation": {
+        "net_asset_value": 483088,
+        "property_adjustment": 0,
+        "bad_debt_adjustment": -40,
+        "adjusted_nav": 483048,
+        "nav_as_floor": true
+      },
+      "revenue_multiple_crosscheck": {
+        "latest_revenue": 1777001,
+        "revenue_multiple_range": {
+          "low": 0.3,
+          "high": 0.5
+        },
+        "implied_ev_range": {
+          "low": 533100,
+          "high": 888500
+        }
+      },
+      "valuation_summary": {
+        "recommended_range": {
+          "equity_value_low": 483048,
+          "equity_value_mid": 550000,
+          "equity_value_high": 750000
+        },
+        "primary_methodology": "ebitda_multiple",
+        "cross_check_alignment": "strong"
+      },
+      "sensitivity": {
+        "ebitda_plus_10pct": {
+          "enterprise_value": 702361,
+          "equity_value": 563012
+        },
+        "ebitda_minus_10pct": {
+          "enterprise_value": 574659,
+          "equity_value": 435310
+        },
+        "multiple_plus_half": {
+          "enterprise_value": 766212,
+          "equity_value": 626863
+        },
+        "multiple_minus_half": {
+          "enterprise_value": 510808,
+          "equity_value": 371459
+        },
+        "key_customer_loss_impact": 195000,
+        "director_replacement_impact": 47976
+      },
+      "seller_expectations": {
+        "likely_seller_expectation_range": {
+          "low": 1000000,
+          "high": 1500000
+        },
+        "seller_anchor_points": [
+          "Historical peak profits in 2022 (£706k operating profit)",
+          "Recent heavy investment in fleet (£170k+)",
+          "Strong cash position and lack of debt"
+        ],
+        "negotiation_gap_assessment": "Significant. The seller is likely to anchor on 2022 performance or a multiple of revenue (e.g., 0.7x-0.8x), whereas the current earnings trend and margin erosion justify a much lower valuation. The gap is approximately £500k-£750k."
+      },
+      "key_findings": [
+        "The business is valued primarily on a normalized EBITDA of £255k, accounting for market-rate director salaries.",
+        "The asset-based valuation of ~£483k provides a very strong floor, as the fleet is modern and the company is highly liquid.",
+        "Intercompany receivables of £212k are treated as a deduction from Equity Value as they represent cash extracted from the business that may not be recoverable by a third-party buyer.",
+        "The 2.5x multiple reflects the high-risk nature of the customer concentration (63% top 3) and the downward trend in gross margins."
+      ],
+      "red_flags": [
+        "Gross margin has dropped from 55.6% to 44.0% in 4 years, suggesting a loss of pricing power.",
+        "Top customer represents 30.6% of revenue; loss of this contract would likely make the business loss-making after normalized costs.",
+        "Aggressive dividend extraction in 2024 suggests the owners are already de-risking their own position."
+      ],
+      "narrative": "Ideal Scaffolding is a well-capitalized business with a modern asset base, but it faces significant headwinds. While the balance sheet is clean and debt-free, the 'true' operational earnings have been masked by fluctuating director remuneration. After normalizing for market-rate management costs, the EBITDA is approximately £255k. The valuation is heavily constrained by the extreme customer concentration and the persistent erosion of gross margins. A buyer is likely to offer a deal structured with a significant earn-out or retention element to mitigate the risk of losing the top three clients. The equity value is estimated at approximately £500k-£550k, which is closely aligned with the adjusted Net Asset Value, suggesting the business is currently trading near its asset floor due to declining profitability."
+    }
+  }
+]

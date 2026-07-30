@@ -1,0 +1,81 @@
+{
+  "document": "balance_sheet",
+  "source": "management",
+  "years_covered": [
+    2022
+  ],
+  "period_ends": {
+    "2022": "2022-05-31"
+  },
+  "months_covered": {
+    "2022": 12
+  },
+  "report_date": null,
+  "years": {
+    "2022": {
+      "year": 2022,
+      "balance_sheet": {
+        "fixed_assets": {
+          "intangible_assets": null,
+          "tangible_assets": null,
+          "freehold_property": null,
+          "leasehold_property": null,
+          "plant_machinery": null,
+          "fixtures_fittings": null,
+          "motor_vehicles": null,
+          "computer_equipment": null
+        },
+        "current_assets": {
+          "stock": null,
+          "trade_debtors": null,
+          "prepayments": null,
+          "amounts_owed_by_directors": null,
+          "amounts_owed_by_connected_companies": null,
+          "directors_current_account": null,
+          "other_debtors": null,
+          "cash_at_bank": null,
+          "total": null
+        },
+        "current_liabilities": {
+          "trade_creditors": null,
+          "taxation_social_security": null,
+          "vat_payable": null,
+          "corporation_tax": null,
+          "bank_loans_current": null,
+          "hire_purchase_current": null,
+          "accruals": null,
+          "amounts_owed_to_directors": null,
+          "other_creditors": null,
+          "total": null
+        },
+        "long_term_liabilities": {
+          "bank_loans": null,
+          "hire_purchase_long_term": null,
+          "deferred_taxation": null,
+          "other_debt": null,
+          "total": null
+        },
+        "equity": {
+          "share_capital": null,
+          "retained_earnings": null,
+          "total": null
+        }
+      },
+      "financial_ratios": {
+        "current_ratio": null,
+        "quick_ratio": null,
+        "net_assets_growth_percent": null,
+        "gearing_ratio_percent": null
+      }
+    }
+  },
+  "summary_insights": [
+    "The provided document does not disclose balance sheet line items for FY22, as noted in the IM group summary.",
+    "A full assessment of the liquidity position (current and quick ratios) is not possible without further seller confirmation.",
+    "The group aggregate turnover of £14.9m includes AliDeck, The Milwood Group, and Lurano, which will differ from individual statutory filings.",
+    "Profitability is strong with an Adjusted EBITDA of £2.8m, suggesting a healthy capacity for future asset growth.",
+    "The Adjusted EBITDA margin of 18.9% is the highest in the historical series, indicating strong operational efficiency.",
+    "Due to the lack of balance sheet data, the capital structure and long-term debt obligations remain unverified at this stage."
+  ],
+  "_isIM": true
+}

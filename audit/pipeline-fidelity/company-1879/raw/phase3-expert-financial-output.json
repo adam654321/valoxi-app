@@ -1,0 +1,177 @@
+{
+  "expert": "financial",
+  "company_name": "[AUDIT-172] Ideal scaffolding",
+  "analysis_date": "2026-07-30",
+  "score": 52,
+  "confidence": "high",
+  "yearly_metrics": {
+    "2022": {
+      "revenue": 2141738,
+      "revenue_yoy_growth_percent": null,
+      "cost_of_sales": 951259,
+      "gross_profit": 1190479,
+      "gross_margin_percent": 55.58,
+      "administrative_expenses": 484317,
+      "operating_profit": 706162,
+      "operating_margin_percent": 32.97,
+      "depreciation_amortisation": 117453,
+      "ebitda": 823615,
+      "interest_payable": 1801,
+      "interest_coverage_ratio": 392.09,
+      "profit_before_tax": 705224,
+      "corporation_tax": 105125,
+      "effective_tax_rate_percent": 14.91,
+      "net_profit": 600099,
+      "net_margin_percent": 28.02
+    },
+    "2023": {
+      "revenue": 2038844,
+      "revenue_yoy_growth_percent": -4.8,
+      "cost_of_sales": 1007456,
+      "gross_profit": 1031388,
+      "gross_margin_percent": 50.59,
+      "administrative_expenses": 585138,
+      "operating_profit": 446250,
+      "operating_margin_percent": 21.89,
+      "depreciation_amortisation": 148547,
+      "ebitda": 594797,
+      "interest_payable": 3004,
+      "interest_coverage_ratio": 148.55,
+      "profit_before_tax": 443954,
+      "corporation_tax": 83194,
+      "effective_tax_rate_percent": 18.74,
+      "net_profit": 360760,
+      "net_margin_percent": 17.69
+    },
+    "2024": {
+      "revenue": 1636215,
+      "revenue_yoy_growth_percent": -19.75,
+      "cost_of_sales": 861049,
+      "gross_profit": 775166,
+      "gross_margin_percent": 47.38,
+      "administrative_expenses": 662120,
+      "operating_profit": 113046,
+      "operating_margin_percent": 6.91,
+      "depreciation_amortisation": 145685,
+      "ebitda": 258731,
+      "interest_payable": 1836,
+      "interest_coverage_ratio": 61.57,
+      "profit_before_tax": 118786,
+      "corporation_tax": 30830,
+      "effective_tax_rate_percent": 25.95,
+      "net_profit": 87956,
+      "net_margin_percent": 5.38
+    },
+    "2025": {
+      "revenue": 1777001,
+      "revenue_yoy_growth_percent": 8.6,
+      "cost_of_sales": 995977,
+      "gross_profit": 781024,
+      "gross_margin_percent": 43.95,
+      "administrative_expenses": 527166,
+      "operating_profit": 253858,
+      "operating_margin_percent": 14.29,
+      "depreciation_amortisation": 92854,
+      "ebitda": 346712,
+      "interest_payable": 0,
+      "interest_coverage_ratio": null,
+      "profit_before_tax": 258124,
+      "corporation_tax": 64813,
+      "effective_tax_rate_percent": 25.11,
+      "net_profit": 193311,
+      "net_margin_percent": 10.88
+    },
+    "2026": {
+      "revenue": 1869199.89,
+      "revenue_yoy_growth_percent": 5.19,
+      "cost_of_sales": 971147.23,
+      "gross_profit": 898052.66,
+      "gross_margin_percent": 48.04,
+      "administrative_expenses": 714144.14,
+      "operating_profit": 183908.52,
+      "operating_margin_percent": 9.84,
+      "depreciation_amortisation": null,
+      "ebitda": 183908.52,
+      "interest_payable": 3183.95,
+      "interest_coverage_ratio": 57.76,
+      "profit_before_tax": 183908.52,
+      "corporation_tax": null,
+      "effective_tax_rate_percent": null,
+      "net_profit": 183908.52,
+      "net_margin_percent": 9.84
+    }
+  },
+  "cagr": {
+    "revenue_cagr_percent": -3.35,
+    "gross_profit_cagr_percent": -6.81,
+    "operating_profit_cagr_percent": -28.58,
+    "period_years": 4
+  },
+  "cost_structure": {
+    "cost_of_sales_percent_revenue": 51.96,
+    "overheads_percent_revenue": 38.21,
+    "staff_costs_percent_revenue": 11.13,
+    "director_costs_percent_revenue": 0,
+    "top_5_overheads": [
+      {
+        "category": "Staff Wages & Salaries",
+        "value": 208119.82,
+        "percent_of_overheads": 29.14
+      },
+      {
+        "category": "Motor Expenses",
+        "value": 191698.32,
+        "percent_of_overheads": 26.84
+      },
+      {
+        "category": "Professional Fees",
+        "value": 93574.08,
+        "percent_of_overheads": 13.1
+      },
+      {
+        "category": "Rent & Rates",
+        "value": 46758.59,
+        "percent_of_overheads": 6.55
+      },
+      {
+        "category": "Other Overheads",
+        "value": 33283.36,
+        "percent_of_overheads": 4.66
+      }
+    ],
+    "cost_base_classification": "mixed"
+  },
+  "earnings_quality": {
+    "net_profit_tracks_operating_profit": true,
+    "exceptional_items_identified": [],
+    "tax_rate_consistent": false,
+    "ebitda_latest": 183908.52,
+    "ebitda_trend": "declining",
+    "limitations": [
+      "Depreciation not disclosed for 2026 management accounts",
+      "Director remuneration not disclosed for 2026",
+      "Corporation tax not calculated for 2026"
+    ]
+  },
+  "debt_service": {
+    "latest_interest_coverage": 57.76,
+    "interest_coverage_trend": "deteriorating",
+    "additional_debt_capacity_assessment": "Moderate. While interest coverage remains healthy, the significant decline in EBITDA from 823k to 184k limits the quantum of senior debt the business can comfortably service."
+  },
+  "key_findings": [
+    "Revenue has experienced a negative CAGR of 3.35% over the 4-year period, indicating a contracting market presence or loss of key contracts.",
+    "Operating margins have collapsed from 32.97% in 2022 to 9.84% in 2026, driven by rising overheads and fluctuating cost of sales.",
+    "Staff costs and subcontractor usage have shifted significantly; 2026 shows a heavy reliance on subcontractors (485k) compared to previous years.",
+    "Motor expenses represent a massive 26.8% of total overheads, reflecting the logistical intensity of scaffolding operations.",
+    "The business maintains a strong cash position historically, though the 2026 management accounts lack a full balance sheet snapshot to confirm current liquidity.",
+    "Director remuneration was exceptionally high in 2024 (130k) compared to other years, suggesting potential discretionary drawings.",
+    "Customer concentration is a major risk, with one debtor (Equans Regeneration) representing nearly 30% of the top 10 turnover."
+  ],
+  "red_flags": [
+    "Significant collapse in EBITDA from 823,615 in 2022 to 183,908 in 2026.",
+    "Negative Revenue CAGR over the analysis period.",
+    "High customer concentration risk with top 3 debtors representing over 60% of the ledger.",
+    "Potential collection risk on a 91k balance from Worldwide Scaffold with no activity since late 2025."
+  ],
+  "narrative": "Ideal Scaffolding presents a financial profile of a business that was highly profitable in 2022 but has since struggled with significant margin compression and declining earnings. Revenue peaked in 2022 at £2.14m and has failed to return to those levels, with 2026 figures suggesting a stagnant trajectory. The most concerning trend is the erosion of the operating margin, which has fallen from nearly 33% to under 10%. This appears to be driven by a combination of rising administrative expenses—specifically professional fees and motor expenses—and a shift in the delivery model towards more expensive subcontractor labour in the most recent period. \n\nFrom an earnings quality perspective, the 2026 EBITDA of £183.9k (noting the absence of depreciation data) is a fraction of the £823.6k generated four years prior. This suggests the business is currently operating at a much lower level of efficiency. While the company remains profitable and has historically maintained a clean balance sheet with low long-term debt, the downward trend in cash generation capacity is a significant risk for an acquirer. The high customer concentration, particularly with Equans Regeneration, further increases the vulnerability of the current revenue stream. A buyer would need to investigate whether the 2022 performance was an anomaly or if the subsequent decline is due to specific operational failures that can be reversed. Without a clear plan to restore margins to the 20% range, the current valuation should be heavily scrutinised against the declining EBITDA trend."
+}

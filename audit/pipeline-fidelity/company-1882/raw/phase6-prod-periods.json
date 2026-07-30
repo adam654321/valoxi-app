@@ -1,0 +1,62 @@
+[
+  {
+    "id": 736,
+    "period_type": "management",
+    "fiscal_year": 2023,
+    "period_end": "2023-03-31T00:00:00.000Z",
+    "period_label": "FY 2023",
+    "months_covered": null,
+    "is_full_year": true,
+    "source_tier": "information_memorandum",
+    "source_document_id": 846,
+    "created_at": "2026-05-14T12:47:39.797Z",
+    "updated_at": "2026-07-26T22:19:30.435Z",
+    "_isCount": 1,
+    "_bsCount": 1
+  },
+  {
+    "id": 737,
+    "period_type": "management",
+    "fiscal_year": 2024,
+    "period_end": "2024-03-31T00:00:00.000Z",
+    "period_label": "FY 2024",
+    "months_covered": null,
+    "is_full_year": true,
+    "source_tier": "information_memorandum",
+    "source_document_id": 846,
+    "created_at": "2026-05-14T12:47:39.987Z",
+    "updated_at": "2026-07-26T22:19:31.756Z",
+    "_isCount": 1,
+    "_bsCount": 1
+  },
+  {
+    "id": 738,
+    "period_type": "statutory",
+    "fiscal_year": 2025,
+    "period_end": "2025-03-31T00:00:00.000Z",
+    "period_label": "FY 2025",
+    "months_covered": null,
+    "is_full_year": true,
+    "source_tier": "statutory",
+    "source_document_id": 1299,
+    "created_at": "2026-05-14T12:48:15.538Z",
+    "updated_at": "2026-07-26T22:19:32.349Z",
+    "_isCount": 1,
+    "_bsCount": 1
+  },
+  {
+    "id": 742,
+    "period_type": "statutory",
+    "fiscal_year": 2026,
+    "period_end": "2026-03-31T00:00:00.000Z",
+    "period_label": "FY 2026",
+    "months_covered": null,
+    "is_full_year": true,
+    "source_tier": "statutory",
+    "source_document_id": 1299,
+    "created_at": "2026-05-14T12:49:14.157Z",
+    "updated_at": "2026-07-26T22:19:31.099Z",
+    "_isCount": 1,
+    "_bsCount": 1
+  }
+]

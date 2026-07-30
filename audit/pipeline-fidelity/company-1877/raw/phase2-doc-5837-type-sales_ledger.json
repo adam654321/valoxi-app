@@ -1,0 +1,89 @@
+{
+  "document": "sales_ledger",
+  "report_date": "2025-09-08",
+  "summary": {
+    "total_trade_debtors": 234443.47,
+    "debtor_days": 41.25,
+    "recent_revenue": 1037845.21,
+    "bad_debt_provision": null,
+    "doubtful_debts": 2269.82
+  },
+  "aging": {
+    "current_0_to_30": 154617.61,
+    "days_31_to_60": 75000.04,
+    "days_61_to_90": 0,
+    "days_90_plus": 4825.82
+  },
+  "top_debtors": [
+    {
+      "name": "Customer 278",
+      "amount": 22708.8,
+      "days_bucket": "0-30"
+    },
+    {
+      "name": "Customer 290",
+      "amount": 20865.48,
+      "days_bucket": "0-30"
+    },
+    {
+      "name": "Customer 292",
+      "amount": 20614.8,
+      "days_bucket": "0-30"
+    },
+    {
+      "name": "Customer 283",
+      "amount": 8239.2,
+      "days_bucket": "0-30"
+    },
+    {
+      "name": "Customer 294",
+      "amount": 8136,
+      "days_bucket": "0-30"
+    },
+    {
+      "name": "Customer 295",
+      "amount": 7876.8,
+      "days_bucket": "0-30"
+    },
+    {
+      "name": "Customer 273",
+      "amount": 7456.8,
+      "days_bucket": "31-60"
+    },
+    {
+      "name": "Customer 271",
+      "amount": 7443.6,
+      "days_bucket": "31-60"
+    },
+    {
+      "name": "Customer 276",
+      "amount": 7368,
+      "days_bucket": "31-60"
+    },
+    {
+      "name": "Customer 279",
+      "amount": 7022.4,
+      "days_bucket": "0-30"
+    }
+  ],
+  "invoice_status_summary": {
+    "Paid": {
+      "count": 251,
+      "value": 803401.74
+    },
+    "Part Paid": {
+      "count": 1,
+      "value": 6.61
+    },
+    "Unpaid": {
+      "count": 63,
+      "value": 234436.86
+    }
+  },
+  "observations": [
+    "65.95% of receivables are current (0-30 days), but a significant 31.99% falls into the 31-60 day bracket, suggesting a slowdown in recent collections.",
+    "High customer concentration in the current bucket with the top 3 retail/commercial debtors representing 27.38% of the total outstanding balance.",
+    "Invoice INV-8412 (£2,269.82) is over 180 days overdue and explicitly marked 'IN DISPUTE', requiring a 100% specific bad debt provision."
+  ],
+  "_isIM": false
+}

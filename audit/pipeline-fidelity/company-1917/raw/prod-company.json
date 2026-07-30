@@ -1,0 +1,20 @@
+{
+  "id": 190,
+  "company_name": "Spruce Pools",
+  "industry": "Construction & Building",
+  "sub_sector": "Specialist Trades (Roofing, Cladding, etc.)",
+  "website": "https://sprucepools.co.uk",
+  "phone": "01722 323895",
+  "email": "info@sprucepools.co.uk",
+  "address": "Unit 17, Portway Business Centre, Castlegate Park, Old Sarum, Salisbury, Wiltshire, SP4 6QX ",
+  "annual_revenue": null,
+  "employee_count": null,
+  "year_established": null,
+  "description": "Build, service, renovate and maintain pools across Wiltshire, Hampshire, Dorset and Somerset.",
+  "created_by": 40,
+  "created_at": "2026-06-08T20:23:34.427Z",
+  "stage": "Initial Contact",
+  "stage_updated_at": "2026-06-08T20:37:35.738Z",
+  "is_archived": true,
+  "user_company_id": 37
+}

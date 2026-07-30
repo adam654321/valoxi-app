@@ -1,0 +1,154 @@
+{
+  "expert": "financial",
+  "company_name": "[AUDIT-137] MANOR BUILDING SOLUTIONS (UK) LTD",
+  "analysis_date": "2024-05-22",
+  "score": 82,
+  "confidence": "high",
+  "yearly_metrics": {
+    "2023": {
+      "revenue": 651586,
+      "revenue_yoy_growth_percent": null,
+      "cost_of_sales": 282005,
+      "gross_profit": 369581,
+      "gross_margin_percent": 56.72,
+      "administrative_expenses": 336718,
+      "operating_profit": 33358,
+      "operating_margin_percent": 5.12,
+      "depreciation_amortisation": 16402,
+      "ebitda": 49760,
+      "interest_payable": 2439,
+      "interest_coverage_ratio": 13.68,
+      "profit_before_tax": 30919,
+      "corporation_tax": 3594,
+      "effective_tax_rate_percent": 11.62,
+      "net_profit": 27325,
+      "net_margin_percent": 4.19
+    },
+    "2024": {
+      "revenue": 1453661,
+      "revenue_yoy_growth_percent": 123.1,
+      "cost_of_sales": 827793,
+      "gross_profit": 625868,
+      "gross_margin_percent": 43.05,
+      "administrative_expenses": 468115,
+      "operating_profit": 157753,
+      "operating_margin_percent": 10.85,
+      "depreciation_amortisation": 16994,
+      "ebitda": 174747,
+      "interest_payable": 1545,
+      "interest_coverage_ratio": 102.11,
+      "profit_before_tax": 156208,
+      "corporation_tax": 45097,
+      "effective_tax_rate_percent": 28.87,
+      "net_profit": 111111,
+      "net_margin_percent": 7.64
+    },
+    "2025": {
+      "revenue": 2084318,
+      "revenue_yoy_growth_percent": 43.38,
+      "cost_of_sales": 1107778,
+      "gross_profit": 976540,
+      "gross_margin_percent": 46.85,
+      "administrative_expenses": 511869,
+      "operating_profit": 464671,
+      "operating_margin_percent": 22.29,
+      "depreciation_amortisation": 24718,
+      "ebitda": 489389,
+      "interest_payable": 3042,
+      "interest_coverage_ratio": 152.75,
+      "profit_before_tax": 464206,
+      "corporation_tax": 118952,
+      "effective_tax_rate_percent": 25.62,
+      "net_profit": 345254,
+      "net_margin_percent": 16.56
+    },
+    "2026": {
+      "revenue": 2388764,
+      "revenue_yoy_growth_percent": 14.61,
+      "cost_of_sales": 1344794,
+      "gross_profit": 1043970,
+      "gross_margin_percent": 43.7,
+      "administrative_expenses": 596347,
+      "operating_profit": 453123,
+      "operating_margin_percent": 18.97,
+      "depreciation_amortisation": 18747,
+      "ebitda": 471870,
+      "interest_payable": 4919,
+      "interest_coverage_ratio": 92.12,
+      "profit_before_tax": 450422,
+      "corporation_tax": 117227,
+      "effective_tax_rate_percent": 26.03,
+      "net_profit": 333195,
+      "net_margin_percent": 13.95
+    }
+  },
+  "cagr": {
+    "revenue_cagr_percent": 54.12,
+    "gross_profit_cagr_percent": 41.38,
+    "operating_profit_cagr_percent": 138.6,
+    "period_years": 3
+  },
+  "cost_structure": {
+    "cost_of_sales_percent_revenue": 56.3,
+    "overheads_percent_revenue": 24.97,
+    "staff_costs_percent_revenue": 12.17,
+    "director_costs_percent_revenue": 1.05,
+    "top_5_overheads": [
+      {
+        "category": "Staff Wages & Salaries",
+        "value": 230288,
+        "percent_of_overheads": 38.62
+      },
+      {
+        "category": "Professional Fees",
+        "value": 81847,
+        "percent_of_overheads": 13.72
+      },
+      {
+        "category": "Motor Expenses",
+        "value": 64980,
+        "percent_of_overheads": 10.9
+      },
+      {
+        "category": "Staff Pension Contributions",
+        "value": 39898,
+        "percent_of_overheads": 6.69
+      },
+      {
+        "category": "Insurance",
+        "value": 30117,
+        "percent_of_overheads": 5.05
+      }
+    ],
+    "cost_base_classification": "predominantly_variable"
+  },
+  "earnings_quality": {
+    "net_profit_tracks_operating_profit": true,
+    "exceptional_items_identified": [],
+    "tax_rate_consistent": false,
+    "ebitda_latest": 471870,
+    "ebitda_trend": "growing",
+    "limitations": [
+      "Amortisation not separately disclosed from depreciation in summary fields, though leasehold property exists."
+    ]
+  },
+  "debt_service": {
+    "latest_interest_coverage": 92.12,
+    "interest_coverage_trend": "improving",
+    "additional_debt_capacity_assessment": "Excellent. The company maintains a very high interest coverage ratio and has significant headroom to service acquisition-related debt."
+  },
+  "key_findings": [
+    "Exceptional revenue growth with a 3-year CAGR of 54.12%, indicating strong market penetration.",
+    "Operating margins have expanded significantly from 5.12% in 2023 to 18.97% in 2026, showing improved operational leverage.",
+    "Subcontractor costs are the largest component of COS (approx. 60% of COS), providing a flexible, variable cost base.",
+    "Strong EBITDA generation, increasing nearly 10x over the four-year period analysed.",
+    "The company maintains a healthy net margin (13.95% in 2026) despite rising administrative overheads.",
+    "Director remuneration is remarkably low and stable at approximately £25k per annum, suggesting potential for future salary normalization.",
+    "Significant increase in staff costs and motor expenses reflects the scaling of the physical workforce and fleet."
+  ],
+  "red_flags": [
+    "Director Loan Account: Amounts owed by directors increased to £159,863 in 2026 and £176,625 in the current management accounts.",
+    "Gross margin volatility: Margins dropped from 56.7% to 43.7% as the business scaled, suggesting a shift in project mix or pricing pressure."
+  ],
+  "narrative": "Manor Building Solutions (UK) Ltd has demonstrated exceptional financial performance over the last four fiscal years, evolving from a small-scale operation into a highly profitable mid-sized contractor. Revenue has grown from £651k to £2.39m, representing a CAGR of 54.12%. Crucially, this growth has been accompanied by significant margin expansion at the operating level, which rose from 5.12% to nearly 19%. This suggests that the business has successfully managed its overheads while scaling its project volume.\n\nThe cost structure is well-balanced for the construction sector. The heavy reliance on subcontractors (£803k in 2026) provides the business with a variable cost base that can be adjusted according to demand, mitigating risk during market downturns. However, the decline in gross margin from 56.7% to 43.7% warrants investigation; it likely reflects a transition from smaller, high-margin private works to larger, more competitive commercial or social housing contracts.\n\nEarnings quality is high, with EBITDA and Net Profit tracking Operating Profit closely. There is no evidence of reliance on one-off exceptional items to bolster the bottom line. The balance sheet is liquid, with a strong cash position of £460k at year-end 2026, further increasing to £668k in the latest management accounts. The primary area for due diligence is the Directors' Current Account, which shows a growing debt owed to the company (£176k). For an acquirer, the business presents a strong financial profile with robust cash flow, high interest coverage, and a scalable model that is not yet burdened by excessive fixed costs."
+}

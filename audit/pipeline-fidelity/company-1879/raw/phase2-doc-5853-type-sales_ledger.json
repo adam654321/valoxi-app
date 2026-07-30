@@ -1,0 +1,89 @@
+{
+  "document": "sales_ledger",
+  "report_date": "2026-05-21",
+  "summary": {
+    "total_trade_debtors": 1467148.55,
+    "debtor_days": null,
+    "recent_revenue": 1467148.55,
+    "bad_debt_provision": null,
+    "doubtful_debts": null
+  },
+  "aging": {
+    "current_0_to_30": null,
+    "days_31_to_60": null,
+    "days_61_to_90": null,
+    "days_90_plus": null
+  },
+  "top_debtors": [
+    {
+      "name": "Equans Regeneration Ltd",
+      "amount": 434921.23,
+      "days_bucket": "31-60"
+    },
+    {
+      "name": "Asset Fineline",
+      "amount": 185173,
+      "days_bucket": "0-30"
+    },
+    {
+      "name": "Orbit Homes Ltd",
+      "amount": 165309.13,
+      "days_bucket": "31-60"
+    },
+    {
+      "name": "Charter Property Repairs Ltd",
+      "amount": 160559.68,
+      "days_bucket": "0-30"
+    },
+    {
+      "name": "DMD Installations Ltd",
+      "amount": 105426.14,
+      "days_bucket": "0-30"
+    },
+    {
+      "name": "Gasway Services Limited",
+      "amount": 97363,
+      "days_bucket": "0-30"
+    },
+    {
+      "name": "Worldwide Scaffold And Access LTD",
+      "amount": 91726.7,
+      "days_bucket": "90+"
+    },
+    {
+      "name": "Ashford Commercials",
+      "amount": 90591.78,
+      "days_bucket": "0-30"
+    },
+    {
+      "name": "Global Rail Construction Ltd",
+      "amount": 69316.01,
+      "days_bucket": "31-60"
+    },
+    {
+      "name": "MSI Defence Systems Ltd",
+      "amount": 66761.88,
+      "days_bucket": "61-90"
+    }
+  ],
+  "invoice_status_summary": {
+    "Paid": {
+      "count": null,
+      "value": null
+    },
+    "Part Paid": {
+      "count": null,
+      "value": null
+    },
+    "Unpaid": {
+      "count": null,
+      "value": null
+    }
+  },
+  "observations": [
+    "High customer concentration: Equans Regeneration Ltd represents approximately 29.6% of the top 10 total turnover.",
+    "Potential collection risk identified for Worldwide Scaffold And Access LTD with a balance of 91,726.70 and no invoice activity since November 2025.",
+    "Credit limits for all top 10 customers are set to 0, suggesting either a lack of formal credit control monitoring or a system default."
+  ],
+  "_isIM": false
+}

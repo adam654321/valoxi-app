@@ -1,0 +1,98 @@
+{
+  "expert": "deal_structure",
+  "company_name": "[AUDIT-89] Innova Design Group Limited",
+  "analysis_date": "2025-05-22",
+  "score": 45,
+  "confidence": "high",
+  "structures": [
+    {
+      "name": "Conservative Approach",
+      "strategy": "Focus on earnings-based valuation with maximum protection against customer loss and bad debt recovery.",
+      "risk_to_buyer": "high",
+      "suitable_when": "The buyer is highly risk-averse regarding the 68.7% customer concentration and the aging machinery fleet.",
+      "consideration": {
+        "total_headline": 250000,
+        "upfront_cash": 100000,
+        "upfront_percent": 40,
+        "deferred": 50000,
+        "earnout_maximum": 100000,
+        "earnout_metric": "Retention of Commercial Services Education Ltd and EBITDA stability",
+        "earnout_period_months": 36,
+        "earnout_rationale": "Addresses Trigger 1 (Customer Concentration) and Trigger 2 (Revenue Stagnation). The Risk Expert identified a 68.7% concentration in one client; this earnout ensures the buyer only pays the full valuation if that client remains.",
+        "retention_escrow": 52988
+      },
+      "key_conditions": [
+        "Pound-for-pound indemnity for all trade debt over 90 days",
+        "Successful novation or change-of-control consent from Commercial Services Education Ltd",
+        "Seller to remain as consultant for 12 months to transition key relationships"
+      ],
+      "notes": "Seller must provide a 12-month handover and a 3-year non-compete covering the UK education furniture sector. Specific indemnity required for the £52,988 in disputed aged debt. Warranty cap at 50% of consideration with a 24-month period. Completion accounts mechanism with a working capital peg of £519,000. Risk is high due to the 'capex cliff' and extreme customer concentration."
+    },
+    {
+      "name": "Balanced Approach",
+      "strategy": "Bridges the gap between the earnings-based valuation and the Net Asset Value floor to satisfy seller expectations while maintaining risk mitigation.",
+      "risk_to_buyer": "high",
+      "suitable_when": "The seller refuses to sell below NAV and the buyer sees long-term value in the design IP and sector relationships.",
+      "consideration": {
+        "total_headline": 450000,
+        "upfront_cash": 225000,
+        "upfront_percent": 50,
+        "deferred": 75000,
+        "earnout_maximum": 150000,
+        "earnout_metric": "Gross Profit margin maintenance and Top-1 customer revenue retention",
+        "earnout_period_months": 24,
+        "earnout_rationale": "Addresses Trigger 1 (Customer Concentration) and Trigger 4 (Uncertain Add-backs). The QoE expert noted that reported EBITDA is inflated; this earnout validates the sustainability of the 33.9% gross margins.",
+        "retention_escrow": 30000
+      },
+      "key_conditions": [
+        "Key customer retention clause for the duration of the earnout",
+        "Capital expenditure reserve of £100k to be established post-completion for machinery replacement",
+        "Bad debt provision of £52,988 to be deducted from the completion balance sheet"
+      ],
+      "notes": "6-month full-time handover followed by 12 months of on-call consultancy. Standard warranties with a 100% cap on the earnout portion. Locked-box mechanism based on the 2026-05-31 balance sheet. Risk is high because the buyer is paying a premium over earnings-based value for aging assets."
+    },
+    {
+      "name": "Competitive Approach",
+      "strategy": "Aggressive upfront offer closer to the Net Asset Value to secure the deal in a competitive process, while still protecting against the most critical risk.",
+      "risk_to_buyer": "high",
+      "suitable_when": "There are multiple bidders and the buyer has a specific synergy or plan to diversify the customer base rapidly.",
+      "consideration": {
+        "total_headline": 600000,
+        "upfront_cash": 360000,
+        "upfront_percent": 60,
+        "deferred": 100000,
+        "earnout_maximum": 140000,
+        "earnout_metric": "Retention of Commercial Services Education Ltd revenue at >90% of historic levels",
+        "earnout_period_months": 12,
+        "earnout_rationale": "Addresses Trigger 1 (Customer Concentration). Even in a competitive bid, the 68.7% concentration identified by the Risk Expert is too high to pay fully upfront without a retention guarantee.",
+        "retention_escrow": 25000
+      },
+      "key_conditions": [
+        "Seller to provide personal guarantee for the recovery of the top 3 disputed debts",
+        "Immediate recruitment of a Sales Director to mitigate key person/concentration risk",
+        "Warranty package focused on asset title and customer contracts"
+      ],
+      "notes": "3-month handover period. Lighter warranty requirements with a 25% basket and 1% de minimis. Completion accounts mechanism. Risk is high as the buyer is effectively paying for the asset base (NAV) while the earnings are insufficient to service the debt if the main customer leaves."
+    }
+  ],
+  "recommended_structure": "Conservative Approach",
+  "recommendation_rationale": "The massive discrepancy between the earnings-based valuation (£250k) and the seller's likely expectation (NAV of £648k+) creates a high-risk environment. The Conservative Approach is recommended because the 68.7% customer concentration is a 'single point of failure' that could bankrupt the entity post-acquisition. Furthermore, the 'capex cliff' identified by the Operational Expert means the buyer will need to reinvest significant cash flow into new machinery almost immediately, making a high upfront payment dangerous.",
+  "negotiation_priorities": [
+    "Verification of the status of the 19.7% aged debt and securing indemnities for it",
+    "Obtaining formal 'Change of Control' comfort from Commercial Services Education Ltd",
+    "Adjusting the purchase price for the imminent replacement cost of the 12-year-old Biesse machinery",
+    "Ensuring the working capital peg accounts for the high seasonality of the education sector"
+  ],
+  "deal_breaker_terms": [
+    "Loss of Commercial Services Education Ltd prior to completion",
+    "Discovery that the 2026 Beamsaw investment is subject to onerous finance terms not disclosed",
+    "Refusal of the seller to provide a pound-for-pound indemnity on the disputed £53k debt"
+  ],
+  "key_findings": [
+    "The business is asset-rich but earnings-poor, creating a valuation gap of nearly £400k.",
+    "Customer concentration (68.7%) is the primary risk factor and must dictate the earnout structure.",
+    "Reported EBITDA is 50% higher than normalized EBITDA due to under-market management costs.",
+    "The aging machinery fleet (66.5% depreciated) represents a significant hidden liability for the buyer."
+  ],
+  "narrative": "Structuring a deal for Innova Design Group is a challenge of balancing a strong balance sheet against fragile earnings. While the company has a healthy NAV of £648k, its adjusted EBITDA of £109k only supports a valuation of £250k. A buyer paying anywhere near the NAV is taking on significant risk, particularly given that nearly 70% of the revenue comes from one client and the core production machinery is at the end of its life. The recommended structure uses a low upfront payment based on earnings, with the remainder of the value (bridging toward NAV) tied to the actual retention of that key customer and the recovery of a troubled sales ledger. This ensures the buyer only pays for the 'assets' if those assets continue to produce the expected economic return."
+}

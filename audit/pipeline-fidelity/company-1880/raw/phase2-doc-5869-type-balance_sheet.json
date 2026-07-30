@@ -1,0 +1,141 @@
+{
+  "document": "balance_sheet",
+  "source": "statutory",
+  "years_covered": [
+    2022,
+    2023
+  ],
+  "period_ends": {
+    "2022": "2022-10-31",
+    "2023": "2023-10-31"
+  },
+  "months_covered": {
+    "2022": 12,
+    "2023": 12
+  },
+  "report_date": "2024-02-22",
+  "years": {
+    "2022": {
+      "year": 2022,
+      "balance_sheet": {
+        "fixed_assets": {
+          "intangible_assets": null,
+          "tangible_assets": 230701,
+          "freehold_property": null,
+          "leasehold_property": null,
+          "plant_machinery": null,
+          "fixtures_fittings": null,
+          "motor_vehicles": null,
+          "computer_equipment": null
+        },
+        "current_assets": {
+          "stock": 620875,
+          "trade_debtors": null,
+          "prepayments": null,
+          "amounts_owed_by_directors": null,
+          "amounts_owed_by_connected_companies": null,
+          "directors_current_account": null,
+          "other_debtors": 882706,
+          "cash_at_bank": 21316,
+          "total": 1524897
+        },
+        "current_liabilities": {
+          "trade_creditors": null,
+          "taxation_social_security": null,
+          "vat_payable": null,
+          "corporation_tax": null,
+          "bank_loans_current": null,
+          "hire_purchase_current": 67951,
+          "accruals": null,
+          "amounts_owed_to_directors": null,
+          "other_creditors": 1177045,
+          "total": 1244996
+        },
+        "long_term_liabilities": {
+          "bank_loans": null,
+          "hire_purchase_long_term": 12790,
+          "deferred_taxation": null,
+          "other_debt": 68623,
+          "total": 81413
+        },
+        "equity": {
+          "share_capital": 100,
+          "retained_earnings": 429089,
+          "total": 429189
+        }
+      },
+      "financial_ratios": {
+        "current_ratio": 1.2248208026371168,
+        "quick_ratio": 0.01712134014888401,
+        "net_assets_growth_percent": null,
+        "gearing_ratio_percent": 18.96903229113514
+      }
+    },
+    "2023": {
+      "year": 2023,
+      "balance_sheet": {
+        "fixed_assets": {
+          "intangible_assets": null,
+          "tangible_assets": 237474,
+          "freehold_property": null,
+          "leasehold_property": null,
+          "plant_machinery": null,
+          "fixtures_fittings": null,
+          "motor_vehicles": null,
+          "computer_equipment": null
+        },
+        "current_assets": {
+          "stock": 431286,
+          "trade_debtors": null,
+          "prepayments": null,
+          "amounts_owed_by_directors": null,
+          "amounts_owed_by_connected_companies": null,
+          "directors_current_account": null,
+          "other_debtors": 553354,
+          "cash_at_bank": 28094,
+          "total": 1012734
+        },
+        "current_liabilities": {
+          "trade_creditors": null,
+          "taxation_social_security": null,
+          "vat_payable": null,
+          "corporation_tax": null,
+          "bank_loans_current": null,
+          "hire_purchase_current": 115840,
+          "accruals": null,
+          "amounts_owed_to_directors": null,
+          "other_creditors": 590332,
+          "total": 706172
+        },
+        "long_term_liabilities": {
+          "bank_loans": null,
+          "hire_purchase_long_term": 27720,
+          "deferred_taxation": null,
+          "other_debt": 58623,
+          "total": 86343
+        },
+        "equity": {
+          "share_capital": 100,
+          "retained_earnings": 457593,
+          "total": 457693
+        }
+      },
+      "financial_ratios": {
+        "current_ratio": 1.434118033566185,
+        "quick_ratio": 0.0397835090459541,
+        "net_assets_growth_percent": 6.641363129062021,
+        "gearing_ratio_percent": 18.86482890131378
+      }
+    }
+  },
+  "summary_insights": [
+    "Net assets increased by 6.6% to £457,693, driven by retained profits for the year.",
+    "The current ratio improved from 1.22 to 1.43, indicating a stronger short-term liquidity position.",
+    "The quick ratio remains very low at 0.04, suggesting the company is heavily reliant on stock and debtors to meet immediate liabilities.",
+    "Current assets decreased by 33.6%, primarily due to a significant reduction in debtors and stock levels.",
+    "Total current liabilities were reduced by 43.3%, which materially improved the net current asset position.",
+    "Tangible fixed assets remained stable with a slight increase of 2.9% following additions of £61,300 during the year.",
+    "The capital structure remains healthy with a gearing ratio of approximately 18.9%, showing no significant increase in long-term leverage."
+  ],
+  "_isIM": false
+}

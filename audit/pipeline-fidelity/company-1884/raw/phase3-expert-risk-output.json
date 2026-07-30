@@ -1,0 +1,121 @@
+{
+  "expert": "risk",
+  "company_name": "[AUDIT-218] Canoports UK Limited",
+  "analysis_date": "2025-05-22",
+  "score": 78,
+  "confidence": "medium",
+  "customer_concentration": {
+    "risk_level": "low",
+    "top_customer_percent": null,
+    "top_3_customers_percent": null,
+    "top_5_customers_percent": null,
+    "hhi_index": null,
+    "hhi_classification": "diversified",
+    "total_customers": null,
+    "customers_over_15_percent": [],
+    "observations": [
+      "Sales ledger data was not provided in the input; however, the business model across three divisions (Trade, D2C, and Manufacturing) suggests a diversified revenue stream.",
+      "Trade Debtors as of 2026-05-31 (CURRENT POSITION) are £2,257,001, representing a decrease from £3,165,261 in 2025-05-31."
+    ]
+  },
+  "financial_risk": {
+    "risk_level": "low",
+    "technically_insolvent": false,
+    "current_ratio_trend": "improving",
+    "creditor_growth_vs_revenue": "Creditors decreased significantly in FY26 while equity grew.",
+    "director_loans_balance": 0,
+    "intercompany_balances": 0,
+    "interest_coverage_adequate": true,
+    "going_concern_indicators": [
+      "Strong positive net asset position of £7,873,818 as at 2026-05-31 (CURRENT POSITION).",
+      "Significant cash reserves of £2,949,661 as at 2026-05-31 (CURRENT POSITION)."
+    ],
+    "observations": [
+      "Current ratio as at 2026-05-31 (CURRENT POSITION) is 4.44, indicating very high liquidity.",
+      "Long-term bank loans have been almost entirely cleared, dropping from £934,926 in 2023-05-31 to just £3,867 in 2026-05-31."
+    ]
+  },
+  "key_person_risk": {
+    "risk_level": "moderate",
+    "highest_individual_payroll_percent": null,
+    "single_points_of_failure": [
+      "CEO / MD Division 1",
+      "Finance Controller"
+    ],
+    "management_depth": "adequate",
+    "average_tenure_years": 15,
+    "observations": [
+      "The CEO has a 15-year tenure, creating significant reliance on historical knowledge.",
+      "The Finance Controller is 'working toward FD', suggesting a lack of a fully qualified Finance Director at the board level.",
+      "Management is structured by division, which provides some operational redundancy."
+    ]
+  },
+  "revenue_quality": {
+    "risk_level": "moderate",
+    "revenue_type": "mixed",
+    "customer_trend": "unknown",
+    "seasonality_detected": false,
+    "observations": [
+      "Revenue is split between Trade, D2C, and Manufacturing, providing a mix of project-based and transactional income.",
+      "Inventory levels increased to £3,323,651 as at 2026-05-31 (CURRENT POSITION), which may indicate stocking for growth or slowing stock turn."
+    ]
+  },
+  "balance_sheet_risks": {
+    "director_loans": 0,
+    "connected_company_balances": 0,
+    "deferred_tax": null,
+    "pension_obligations": null,
+    "contingent_liabilities": "unable_to_assess",
+    "observations": [
+      "Balance sheet is largely unencumbered with very low debt.",
+      "Other Debtors of £591,620 as at 2026-05-31 (CURRENT POSITION) require verification to ensure they are not non-recoverable intercompany balances."
+    ]
+  },
+  "bad_debt": {
+    "total_overdue_90_plus": null,
+    "recommended_provision": null,
+    "existing_provision": null,
+    "net_profit_impact": null,
+    "observations": [
+      "Unable to calculate specific bad debt provisions as the sales ledger was not provided.",
+      "Trade Debtors represent 24.7% of total current assets as at 2026-05-31 (CURRENT POSITION)."
+    ]
+  },
+  "risk_register": [
+    {
+      "risk": "Key Person Dependency (CEO)",
+      "category": "people",
+      "severity": "medium",
+      "likelihood": "medium",
+      "financial_impact": null,
+      "impact_description": "Loss of strategic direction and industry relationships held by the 15-year tenure CEO.",
+      "mitigation": "Implement a robust handover period and long-term incentive plan (LTIP) for the CEO and divisional MDs."
+    },
+    {
+      "risk": "Aging Asset Base",
+      "category": "operational",
+      "severity": "medium",
+      "likelihood": "high",
+      "financial_impact": 1332000,
+      "impact_description": "Accumulated depreciation is 60% of gross book value, suggesting future CapEx requirements.",
+      "mitigation": "Conduct a technical survey of the powder coating line and factor replacement cycle into the 3-year financial forecast."
+    },
+    {
+      "risk": "Finance Function Maturity",
+      "category": "financial",
+      "severity": "low",
+      "likelihood": "medium",
+      "financial_impact": null,
+      "impact_description": "Lack of a formal FD may lead to reporting gaps during a complex M&A integration.",
+      "mitigation": "Appoint a Group Finance Director or ensure the buyer's finance team provides heavy oversight post-completion."
+    }
+  ],
+  "deal_breakers": [],
+  "key_findings": [
+    "The company is in a very strong liquidity position with a current ratio of 4.44 and nearly £3m in cash.",
+    "The business has successfully deleveraged, reducing long-term debt by over 99% since 2023.",
+    "Fixed asset intensity is low (4.9% of turnover), indicating an efficient manufacturing model but highlighting the importance of the QualiCoat-accredited powder coating line.",
+    "Inventory levels are high (£3.3m), representing the largest component of current assets."
+  ],
+  "narrative": "Canoports UK Limited presents a low-to-moderate risk profile from a financial perspective, characterized by exceptional liquidity and a strong equity base of £7.87m. The primary risks are operational and personnel-related: the asset base is aging (60% depreciated), and there is significant reliance on a long-tenured CEO. The absence of a formal Finance Director and the lack of detailed sales ledger data prevent a full assessment of bad debt and customer concentration, though the divisional structure suggests a diversified revenue model. The deal is supported by a clean balance sheet with minimal long-term liabilities."
+}

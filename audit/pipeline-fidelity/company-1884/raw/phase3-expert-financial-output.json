@@ -1,0 +1,115 @@
+{
+  "expert": "financial",
+  "company_name": "[AUDIT-218] Canoports UK Limited",
+  "analysis_date": "2025-05-22",
+  "score": 78,
+  "confidence": "medium",
+  "yearly_metrics": {
+    "2023": {
+      "revenue": null,
+      "revenue_yoy_growth_percent": null,
+      "cost_of_sales": null,
+      "gross_profit": null,
+      "gross_margin_percent": null,
+      "administrative_expenses": null,
+      "operating_profit": null,
+      "operating_margin_percent": null,
+      "depreciation_amortisation": null,
+      "ebitda": null,
+      "interest_payable": null,
+      "interest_coverage_ratio": null,
+      "profit_before_tax": null,
+      "corporation_tax": null,
+      "effective_tax_rate_percent": null,
+      "net_profit": null,
+      "net_margin_percent": null
+    },
+    "2024": {
+      "revenue": null,
+      "revenue_yoy_growth_percent": null,
+      "cost_of_sales": null,
+      "gross_profit": null,
+      "gross_margin_percent": null,
+      "administrative_expenses": null,
+      "operating_profit": null,
+      "operating_margin_percent": null,
+      "depreciation_amortisation": null,
+      "ebitda": null,
+      "interest_payable": null,
+      "interest_coverage_ratio": null,
+      "profit_before_tax": null,
+      "corporation_tax": null,
+      "effective_tax_rate_percent": null,
+      "net_profit": null,
+      "net_margin_percent": null
+    },
+    "2025": {
+      "revenue": 18333750,
+      "revenue_yoy_growth_percent": null,
+      "cost_of_sales": null,
+      "gross_profit": null,
+      "gross_margin_percent": null,
+      "administrative_expenses": null,
+      "operating_profit": null,
+      "operating_margin_percent": null,
+      "depreciation_amortisation": null,
+      "ebitda": null,
+      "interest_payable": null,
+      "interest_coverage_ratio": null,
+      "profit_before_tax": null,
+      "corporation_tax": 636375,
+      "effective_tax_rate_percent": null,
+      "net_profit": null,
+      "net_margin_percent": null
+    }
+  },
+  "cagr": {
+    "revenue_cagr_percent": null,
+    "gross_profit_cagr_percent": null,
+    "operating_profit_cagr_percent": null,
+    "period_years": null
+  },
+  "cost_structure": {
+    "cost_of_sales_percent_revenue": null,
+    "overheads_percent_revenue": null,
+    "staff_costs_percent_revenue": 15.6,
+    "director_costs_percent_revenue": null,
+    "top_5_overheads": [
+      {
+        "category": "Staff Costs",
+        "value": 2860065,
+        "percent_of_overheads": null
+      }
+    ],
+    "cost_base_classification": "mixed"
+  },
+  "earnings_quality": {
+    "net_profit_tracks_operating_profit": null,
+    "exceptional_items_identified": [],
+    "tax_rate_consistent": null,
+    "ebitda_latest": null,
+    "ebitda_trend": "stable",
+    "limitations": [
+      "Income statement data (P&L) was not provided in the RECONCILED_FINANCIALS block, limiting margin and EBITDA analysis.",
+      "Revenue for FY25 is inferred from staff cost observations in the IM data."
+    ]
+  },
+  "debt_service": {
+    "latest_interest_coverage": null,
+    "interest_coverage_trend": "improving",
+    "additional_debt_capacity_assessment": "High capacity for additional debt. The company has aggressively deleveraged, with long-term bank loans falling from £934,926 in 2023 to just £3,867 in 2026."
+  },
+  "key_findings": [
+    "Strong balance sheet growth with total equity increasing from £4.76m in 2023 to £7.87m in 2026.",
+    "Significant deleveraging profile; total bank debt (current and long-term) has reduced by over 98% since 2023.",
+    "Robust liquidity position with cash at bank increasing to £2.95m as of May 2026.",
+    "Asset-light manufacturing model with fixed assets representing a small fraction of turnover, though the asset base is 60% depreciated.",
+    "Staff costs are well-managed at approximately 15.6% of turnover, with a high concentration (60%) in production roles.",
+    "Inventory levels have increased to £3.32m in 2026, suggesting either growth anticipation or potential stock-holding inefficiencies."
+  ],
+  "red_flags": [
+    "Aging asset base: 60% of the gross book value of assets has been depreciated, suggesting a future requirement for capital expenditure.",
+    "Missing P&L data: The absence of a full income statement prevents a definitive assessment of operating margins and EBITDA quality."
+  ],
+  "narrative": "Canoports UK Limited demonstrates a highly stable and strengthening financial position from a balance sheet perspective. Between 2023 and 2026, the company has successfully transitioned from a moderately leveraged position to a virtually debt-free status, with long-term liabilities reduced to negligible levels (£3,867). This deleveraging has been achieved while simultaneously growing the cash reserve to nearly £3m, indicating strong underlying cash generation from operations.\n\nWhile the full P&L was not disclosed in the reconciled data, the available metrics suggest a business with a turnover in the region of £18.3m (based on staff cost ratios). The staff cost base of £2.86m is lean for a manufacturing entity, particularly one that maintains a QualiCoat-accredited powder coating line. The asset-light nature of the business (fixed assets at <5% of turnover) is a positive for ROI, though the high level of accumulated depreciation (60%) suggests that the primary manufacturing plant may require reinvestment in the medium term.\n\nThe liquidity profile is excellent, with a current ratio of approximately 4.4x in 2026, providing significant headroom for working capital fluctuations. The increase in stock levels to £3.3m warrants further investigation to ensure it aligns with sales growth rather than obsolescence. Overall, the financial performance indicates a mature, well-capitalised business with significant capacity to service acquisition debt or fund organic expansion from its own reserves."
+}

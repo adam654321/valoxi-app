@@ -1,0 +1,132 @@
+{
+  "expert": "quality_of_earnings",
+  "company_name": "[AUDIT-172] Ideal scaffolding",
+  "analysis_date": "2026-07-30",
+  "score": 48,
+  "confidence": "medium",
+  "reported_figures": {
+    "operating_profit": 183908.52,
+    "depreciation": 0,
+    "amortisation": 0,
+    "reported_ebitda": 183908.52,
+    "source_year": "2026"
+  },
+  "add_backs": [
+    {
+      "item": "Professional Fees Normalisation",
+      "category": "one_off_cost",
+      "amount": 75000,
+      "recurrence": "one_off",
+      "year": "2026",
+      "justification": "Professional fees spiked to £93,574 in 2026 from a historical average of ~£18k, likely related to transaction preparation or one-off legal matters.",
+      "confidence": "medium",
+      "defensibility_score": 6,
+      "case_for_inclusion": "These fees are significantly above the historical run-rate and represent non-operational costs that a buyer would not incur.",
+      "case_for_exclusion": "The seller may argue these fees relate to ongoing compliance or new regulatory requirements in the scaffolding sector."
+    }
+  ],
+  "deductions": [
+    {
+      "item": "Replacement Management Cost (MD/FD)",
+      "category": "missing_management",
+      "amount": 57500,
+      "recurrence": "recurring",
+      "year": "2026",
+      "justification": "The MD (Mark Jones) performs MD, Sales, and Rail Sentinel roles. A replacement manager for a £1.8m revenue business is benchmarked at £57,500 (mid-point of £45k-£70k range).",
+      "confidence": "high",
+      "defensibility_score": 9,
+      "case_for_inclusion": "The current director remuneration is not disclosed for 2026, and the business is heavily dependent on the owner's multi-role involvement.",
+      "case_for_exclusion": "The seller might argue the existing General Manager (Martin Ward) could absorb these duties without a new high-level hire."
+    },
+    {
+      "item": "Deferred Maintenance / Scaffolding Replacement",
+      "category": "deferred_maintenance",
+      "amount": 92854,
+      "recurrence": "recurring",
+      "year": "2026",
+      "justification": "71% of assets are fully depreciated. The 2025 depreciation charge of £92,854 is used as a proxy for the minimum annual maintenance capex required to sustain the aging fleet.",
+      "confidence": "medium",
+      "defensibility_score": 7,
+      "case_for_inclusion": "The aging scaffolding stock represents a 'capex cliff' that will require immediate and ongoing cash outlay to maintain operational capacity.",
+      "case_for_exclusion": "The seller may claim that scaffolding has a longer useful life than accounting depreciation suggests and current stock is fit for purpose."
+    },
+    {
+      "item": "Bad Debt Provision - Worldwide Scaffold",
+      "category": "bad_debt_provision",
+      "amount": 91726.7,
+      "recurrence": "one_off",
+      "year": "2026",
+      "justification": "A balance of £91,726.70 from Worldwide Scaffold and Access LTD has had no activity since November 2025 and is flagged as a collection risk.",
+      "confidence": "high",
+      "defensibility_score": 8,
+      "case_for_inclusion": "This aged debt is highly likely to be unrecoverable given the lack of activity for over 6 months in a high-risk sector.",
+      "case_for_exclusion": "The seller may argue the debt is still being negotiated or is subject to a payment plan not yet reflected in the ledger."
+    }
+  ],
+  "total_add_backs": 75000,
+  "total_deductions": 242080.7,
+  "adjusted_ebitda": {
+    "conservative": 16827.82,
+    "base": 16827.82,
+    "optimistic": 91827.82
+  },
+  "adjustment_summary": {
+    "reported_ebitda": 183908.52,
+    "plus_add_backs": 75000,
+    "minus_deductions": 242080.7,
+    "equals_adjusted_ebitda_base": 16827.82
+  },
+  "director_salary_analysis": {
+    "directors": [
+      {
+        "name": "Mark Jones",
+        "current_salary": null,
+        "estimated_market_rate": 57500,
+        "benchmark_range_used": "Revenue £1M-£5M: Working MD/Owner-Director (£45,000–£70,000)",
+        "adjustment": 57500,
+        "adjustment_type": "deduction"
+      },
+      {
+        "name": "Deborah Jones",
+        "current_salary": null,
+        "estimated_market_rate": 0,
+        "benchmark_range_used": "Non-working/sleeping director",
+        "adjustment": 0,
+        "adjustment_type": "none"
+      }
+    ]
+  },
+  "sustainability_assessment": {
+    "sustainable_for_3_years": false,
+    "key_assumptions": [
+      "Revenue remains stable at ~£1.8m despite historical volatility.",
+      "Subcontractor costs (currently 26% of revenue) do not continue to escalate.",
+      "The 'capex cliff' requires immediate cash injection for scaffolding replacement."
+    ],
+    "sensitivity_factors": [
+      "Loss of Equans Regeneration Ltd (29.6% of top turnover) would make the business loss-making.",
+      "Ability to recover the £91k Worldwide Scaffold debt."
+    ],
+    "upside_scenarios": [
+      "Internalising subcontractor work to improve gross margins back toward 55% levels.",
+      "Leveraging the relatively modern vehicle fleet for higher-margin rail work."
+    ],
+    "downside_scenarios": [
+      "Further margin compression due to rising labor and fuel costs.",
+      "Key person risk if Mark Jones exits without a comprehensive handover of the Rail Sentinel role."
+    ]
+  },
+  "key_findings": [
+    "Reported EBITDA has collapsed by 77% since 2022, indicating a significant loss of operational efficiency.",
+    "The 2026 management accounts do not include depreciation, which masks the true cost of asset wear and tear.",
+    "Heavy reliance on subcontractors in 2025/2026 has severely eroded the net margin.",
+    "The business is carrying significant non-operational risk in the form of inter-company loans (£212k in 2025)."
+  ],
+  "red_flags": [
+    "Significant customer concentration with Equans Regeneration.",
+    "Aging asset base with 71% of gross value fully depreciated.",
+    "Potential £91k bad debt write-off required for Worldwide Scaffold.",
+    "Deteriorating interest coverage and operating margins."
+  ],
+  "narrative": "The Quality of Earnings analysis for Ideal Scaffolding reveals a business in significant transition or decline. While the 2026 management accounts show a reported EBITDA of £183.9k, this figure is highly fragile. It fails to account for the necessary replacement of fully depreciated scaffolding (the 'capex cliff') and the cost of replacing a multi-functional owner-manager. Furthermore, the quality of the balance sheet is compromised by a large, aged debtor balance that appears uncollectible. After adjusting for market-rate management, maintenance requirements, and non-recurring professional fees, the base-case sustainable EBITDA drops to approximately £16.8k. This suggests that the current earnings are not sufficient to support a valuation based on historical multiples without a radical restructuring of the cost base and a mitigation of the high customer concentration risk."
+}

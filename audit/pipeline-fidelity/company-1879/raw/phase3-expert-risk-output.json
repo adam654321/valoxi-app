@@ -1,0 +1,141 @@
+{
+  "expert": "risk",
+  "company_name": "[AUDIT-172] Ideal scaffolding",
+  "analysis_date": "2026-07-30",
+  "score": 52,
+  "confidence": "medium",
+  "customer_concentration": {
+    "risk_level": "critical",
+    "top_customer_percent": 29.6,
+    "top_3_customers_percent": 53.5,
+    "top_5_customers_percent": 71.3,
+    "hhi_index": 1685,
+    "hhi_classification": "moderate",
+    "total_customers": 10,
+    "customers_over_15_percent": [
+      "Equans Regeneration Ltd",
+      "Asset Fineline",
+      "Orbit Homes Ltd",
+      "Charter Property Repairs Ltd"
+    ],
+    "observations": [
+      "Equans Regeneration Ltd represents 29.6% of the top 10 ledger, exceeding the 25% critical threshold.",
+      "The top 5 customers account for over 70% of the identified ledger value, creating high dependency.",
+      "HHI of 1685 suggests moderate concentration, but the reliance on a single large contractor (Equans) is the primary risk driver."
+    ]
+  },
+  "financial_risk": {
+    "risk_level": "moderate",
+    "technically_insolvent": false,
+    "current_ratio_trend": "deteriorating",
+    "creditor_growth_vs_revenue": "Creditors grew 66.5% (2024-2025) while revenue grew 8.6%.",
+    "director_loans_balance": 27852,
+    "intercompany_balances": 212457,
+    "interest_coverage_adequate": true,
+    "going_concern_indicators": [
+      "Significant drop in retained earnings from £555,956 (2025-03-31) to £128,124.90 (2026-04-30)."
+    ],
+    "observations": [
+      "Current ratio dropped from 4.6 (2023) to 2.0 (2024) and 2.9 (2025).",
+      "Intercompany balances (Amounts owed by connected companies) increased significantly to £212,457 as at 2025-03-31.",
+      "Interest coverage remains healthy as interest payable is low relative to operating profit."
+    ]
+  },
+  "key_person_risk": {
+    "risk_level": "high",
+    "highest_individual_payroll_percent": null,
+    "single_points_of_failure": [
+      "Mark Jones (MD, Secretary, Rail Sentinel Co-Ordinator)",
+      "Demi Streeter (Office Manager & Rail Sentinel Co-Ordinator)"
+    ],
+    "management_depth": "thin",
+    "average_tenure_years": null,
+    "observations": [
+      "The Managing Director holds multiple critical compliance roles (Rail Sentinel), creating a significant single point of failure.",
+      "Heavy reliance on external consultancy for HSQE (John Morgan) suggests a lack of internal safety management depth.",
+      "Staff matrix uses generic categories (Labourers, Trainees) rather than a robust middle-management structure."
+    ]
+  },
+  "revenue_quality": {
+    "risk_level": "moderate",
+    "revenue_type": "project_based",
+    "customer_trend": "stable_base",
+    "seasonality_detected": false,
+    "observations": [
+      "Revenue is primarily derived from scaffolding sales/contracts with large construction firms, suggesting project-based cycles.",
+      "Revenue has fluctuated between £1.6m and £2.1m over the last 5 years, showing some volatility.",
+      "High reliance on insurance claims as a secondary revenue stream in historical years (2022-2023)."
+    ]
+  },
+  "balance_sheet_risks": {
+    "director_loans": 27852,
+    "connected_company_balances": 212457,
+    "deferred_tax": 40481,
+    "pension_obligations": null,
+    "contingent_liabilities": "unable_to_assess",
+    "observations": [
+      "Amounts owed to directors of £27,852 as at 2025-03-31 will likely require settlement on completion.",
+      "Large intercompany balance of £212,457 (2025-03-31) represents a significant asset that may not be liquid or recoverable.",
+      "Deferred tax liability of £40,481 as at 2025-03-31."
+    ]
+  },
+  "bad_debt": {
+    "total_overdue_90_plus": 91806.7,
+    "recommended_provision": 91726.7,
+    "existing_provision": 0,
+    "net_profit_impact": 91726.7,
+    "observations": [
+      "Worldwide Scaffold And Access LTD has an outstanding balance of £91,726.70 with no activity since Nov 2025; 100% provision recommended.",
+      "Applying the recommended provision would reduce the 2026 management account profit by approximately 50%.",
+      "General ledger aging is otherwise healthy, with 90% of trade debtors under 30 days in the smaller ledger sample."
+    ]
+  },
+  "risk_register": [
+    {
+      "risk": "Customer Concentration",
+      "category": "customer",
+      "severity": "critical",
+      "likelihood": "medium",
+      "financial_impact": 553342,
+      "impact_description": "Loss of Equans Regeneration Ltd or Asset Fineline would remove ~40% of current ledger value.",
+      "mitigation": "Include customer retention clauses and earn-out structures linked to key account performance."
+    },
+    {
+      "risk": "Intercompany Recoverability",
+      "category": "balance_sheet",
+      "severity": "high",
+      "likelihood": "medium",
+      "financial_impact": 212457,
+      "impact_description": "The £212k owed by connected companies may be unrecoverable or represent a cash drain.",
+      "mitigation": "Require intercompany balances to be cleared or written off prior to completion; adjust EV accordingly."
+    },
+    {
+      "risk": "Bad Debt Exposure",
+      "category": "bad_debt",
+      "severity": "medium",
+      "likelihood": "high",
+      "financial_impact": 91726.7,
+      "impact_description": "Worldwide Scaffold balance is highly likely to be uncollectable.",
+      "mitigation": "Reflect a pound-for-pound reduction in the purchase price for any debt over 90 days."
+    },
+    {
+      "risk": "Key Person Dependency",
+      "category": "people",
+      "severity": "high",
+      "likelihood": "high",
+      "financial_impact": null,
+      "impact_description": "Loss of Mark Jones would leave the company without a Managing Director and Rail Sentinel Co-Ordinator.",
+      "mitigation": "Ensure a minimum 12-month handover period and incentivize the General Manager."
+    }
+  ],
+  "deal_breakers": [
+    "Significant unexplained drop in Total Equity/Retained Earnings between March 2025 (£556k) and April 2026 (£128k)."
+  ],
+  "key_findings": [
+    "The company has a high-quality vehicle fleet but the scaffolding assets are fully depreciated, potentially masking replacement capex needs.",
+    "Customer concentration is the primary operational risk, with one client exceeding 25% of the ledger.",
+    "Financial health is stable but deteriorating in terms of liquidity and equity reserves.",
+    "A specific bad debt of £91k needs immediate attention in the valuation."
+  ],
+  "narrative": "Ideal Scaffolding presents an elevated risk profile (Score: 52). While the company is profitable and maintains a modern vehicle fleet, there are significant concerns regarding customer concentration and a sharp decline in retained earnings in the most recent management period. The reliance on the Managing Director for technical rail compliance is a major 'key person' risk. Furthermore, the balance sheet is complicated by a large intercompany loan and a significant overdue debt from a single customer. A buyer should focus on the recoverability of the £212k intercompany balance and the sustainability of the Equans contract."
+}

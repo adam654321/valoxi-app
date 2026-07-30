@@ -1,0 +1,154 @@
+{
+  "expert": "financial",
+  "company_name": "[AUDIT-196] Compassion Home Care Limited",
+  "analysis_date": "2026-07-30",
+  "score": 72,
+  "confidence": "high",
+  "yearly_metrics": {
+    "2023": {
+      "revenue": 769931,
+      "revenue_yoy_growth_percent": null,
+      "cost_of_sales": 500774,
+      "gross_profit": 269157,
+      "gross_margin_percent": 34.96,
+      "administrative_expenses": 176070,
+      "operating_profit": 94104,
+      "operating_margin_percent": 12.22,
+      "depreciation_amortisation": 5775,
+      "ebitda": 99879,
+      "interest_payable": 840,
+      "interest_coverage_ratio": 112.03,
+      "profit_before_tax": 93264,
+      "corporation_tax": 17442,
+      "effective_tax_rate_percent": 18.7,
+      "net_profit": 75822,
+      "net_margin_percent": 9.85
+    },
+    "2024": {
+      "revenue": 836440,
+      "revenue_yoy_growth_percent": 8.64,
+      "cost_of_sales": 554581,
+      "gross_profit": 281859,
+      "gross_margin_percent": 33.7,
+      "administrative_expenses": 151105,
+      "operating_profit": 130754,
+      "operating_margin_percent": 15.63,
+      "depreciation_amortisation": 4377,
+      "ebitda": 135131,
+      "interest_payable": 641,
+      "interest_coverage_ratio": 203.98,
+      "profit_before_tax": 130228,
+      "corporation_tax": 30475,
+      "effective_tax_rate_percent": 23.4,
+      "net_profit": 99753,
+      "net_margin_percent": 11.93
+    },
+    "2025": {
+      "revenue": 778150,
+      "revenue_yoy_growth_percent": -6.97,
+      "cost_of_sales": 533540,
+      "gross_profit": 244610,
+      "gross_margin_percent": 31.43,
+      "administrative_expenses": 126231,
+      "operating_profit": 118379,
+      "operating_margin_percent": 15.21,
+      "depreciation_amortisation": 3047,
+      "ebitda": 121426,
+      "interest_payable": 446,
+      "interest_coverage_ratio": 265.42,
+      "profit_before_tax": 117818,
+      "corporation_tax": 27641,
+      "effective_tax_rate_percent": 23.46,
+      "net_profit": 90177,
+      "net_margin_percent": 11.59
+    },
+    "2026": {
+      "revenue": 818060,
+      "revenue_yoy_growth_percent": 5.13,
+      "cost_of_sales": 545454,
+      "gross_profit": 272606,
+      "gross_margin_percent": 33.32,
+      "administrative_expenses": 140179,
+      "operating_profit": 132427,
+      "operating_margin_percent": 16.19,
+      "depreciation_amortisation": 2649,
+      "ebitda": 135076,
+      "interest_payable": 242,
+      "interest_coverage_ratio": 547.22,
+      "profit_before_tax": 132530,
+      "corporation_tax": 31425,
+      "effective_tax_rate_percent": 23.71,
+      "net_profit": 101105,
+      "net_margin_percent": 12.36
+    }
+  },
+  "cagr": {
+    "revenue_cagr_percent": 2.04,
+    "gross_profit_cagr_percent": 0.43,
+    "operating_profit_cagr_percent": 12.06,
+    "period_years": 3
+  },
+  "cost_structure": {
+    "cost_of_sales_percent_revenue": 66.68,
+    "overheads_percent_revenue": 17.14,
+    "staff_costs_percent_revenue": 0.8,
+    "director_costs_percent_revenue": 9.96,
+    "top_5_overheads": [
+      {
+        "category": "Directors Salaries",
+        "value": 62470,
+        "percent_of_overheads": 44.56
+      },
+      {
+        "category": "Rent & Rates",
+        "value": 11098,
+        "percent_of_overheads": 7.92
+      },
+      {
+        "category": "Directors Pension",
+        "value": 11232,
+        "percent_of_overheads": 8.01
+      },
+      {
+        "category": "Professional Fees",
+        "value": 8710,
+        "percent_of_overheads": 6.21
+      },
+      {
+        "category": "Employers NI",
+        "value": 7811,
+        "percent_of_overheads": 5.57
+      }
+    ],
+    "cost_base_classification": "predominantly_variable"
+  },
+  "earnings_quality": {
+    "net_profit_tracks_operating_profit": true,
+    "exceptional_items_identified": [],
+    "tax_rate_consistent": true,
+    "ebitda_latest": 135076,
+    "ebitda_trend": "growing",
+    "limitations": [
+      "Staff costs field in 2026 appears to only reflect administrative staff wages, with direct labour captured in Cost of Sales."
+    ]
+  },
+  "debt_service": {
+    "latest_interest_coverage": 547.22,
+    "interest_coverage_trend": "improving",
+    "additional_debt_capacity_assessment": "Excellent. The company has minimal interest-bearing debt and very high coverage ratios, suggesting significant capacity for acquisition financing."
+  },
+  "key_findings": [
+    "Revenue has remained relatively stable over the four-year period, with a modest CAGR of 2.04%, though 2025 saw a temporary dip.",
+    "Operating margins have shown consistent improvement, rising from 12.22% in 2023 to 16.19% in 2026, indicating effective overhead management.",
+    "The cost structure is heavily weighted towards direct labour (approx. 58% of revenue), which is typical for the care sector.",
+    "Directors' remuneration (salaries + pensions) represents a significant portion of overheads, totalling £73,702 in 2026.",
+    "Cash position is strong, with £103,302 held at the 2026 year-end, providing a solid liquidity buffer.",
+    "The business operates with a high degree of variable costs, allowing for flexibility during periods of fluctuating demand.",
+    "Interest coverage is exceptionally high, as the company has successfully deleveraged its bank loans over the period."
+  ],
+  "red_flags": [
+    "Revenue volatility: The 7% decline in 2025 suggests potential sensitivity to contract losses or staffing shortages.",
+    "Management transition risk: The Business Director and Registered Manager are not remaining post-sale, which may impact operational continuity."
+  ],
+  "narrative": "Compassion Home Care Limited demonstrates a resilient financial profile characterized by stable revenue and expanding profitability. Over the four-year analysis period (2023-2026), the company has maintained a consistent gross margin in the 31-35% range, while successfully driving operating margin growth from 12.2% to 16.2%. This margin expansion is primarily the result of disciplined administrative cost control; overheads as a percentage of revenue have decreased despite inflationary pressures. \n\nThe earnings quality is high, with EBITDA and Net Profit closely tracking Operating Profit. There is no evidence of reliance on one-off gains or exceptional items to bolster the bottom line. The balance sheet has strengthened significantly, with bank debt being systematically repaid and the cash balance increasing to over £100k by February 2026. The current ratio is healthy, and the company is effectively debt-free on a net basis.\n\nFrom an acquisition perspective, the financial data suggests a well-managed, 'lean' operation. The primary risk is not financial but operational, specifically the departure of key management. However, the financial headroom and strong interest coverage provide a buyer with significant capacity to restructure management or service acquisition debt. The reliance on zero-hours contracts (22 of 24 staff) provides high operational flexibility but requires careful monitoring of recruitment and retention costs in a competitive labour market. Overall, the company presents a stable, cash-generative platform with a proven ability to maintain margins."
+}

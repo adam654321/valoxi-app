@@ -1,0 +1,81 @@
+{
+  "document": "balance_sheet",
+  "source": "management",
+  "years_covered": [
+    2025
+  ],
+  "period_ends": {
+    "2025": "2025-03-31"
+  },
+  "months_covered": {
+    "2025": 12
+  },
+  "report_date": "2025-06-30",
+  "years": {
+    "2025": {
+      "year": 2025,
+      "balance_sheet": {
+        "fixed_assets": {
+          "intangible_assets": null,
+          "tangible_assets": null,
+          "freehold_property": null,
+          "leasehold_property": null,
+          "plant_machinery": null,
+          "fixtures_fittings": null,
+          "motor_vehicles": null,
+          "computer_equipment": null
+        },
+        "current_assets": {
+          "stock": null,
+          "trade_debtors": null,
+          "prepayments": null,
+          "amounts_owed_by_directors": null,
+          "amounts_owed_by_connected_companies": null,
+          "directors_current_account": null,
+          "other_debtors": null,
+          "cash_at_bank": null,
+          "total": null
+        },
+        "current_liabilities": {
+          "trade_creditors": null,
+          "taxation_social_security": null,
+          "vat_payable": null,
+          "corporation_tax": null,
+          "bank_loans_current": null,
+          "hire_purchase_current": null,
+          "accruals": null,
+          "amounts_owed_to_directors": null,
+          "other_creditors": null,
+          "total": null
+        },
+        "long_term_liabilities": {
+          "bank_loans": null,
+          "hire_purchase_long_term": null,
+          "deferred_taxation": null,
+          "other_debt": null,
+          "total": null
+        },
+        "equity": {
+          "share_capital": null,
+          "retained_earnings": 279164.69,
+          "total": 279164.69
+        }
+      },
+      "financial_ratios": {
+        "current_ratio": null,
+        "quick_ratio": null,
+        "net_assets_growth_percent": null,
+        "gearing_ratio_percent": null
+      }
+    }
+  },
+  "summary_insights": [
+    "The provided document is a Profit and Loss statement rather than a full Balance Sheet, limiting the visibility of the company's asset base and liquidity ratios.",
+    "The company achieved a Gross Profit of £816,903.54 on a Turnover of £1,944,079.00, representing a healthy gross margin of 42%.",
+    "Operating Profit stands at £278,403.90, indicating that administrative costs are well-managed relative to the scale of turnover.",
+    "The Profit after Taxation for the year ended 31 March 2025 is £279,164.69, which will contribute significantly to the company's retained earnings and equity base.",
+    "Significant administrative expenses include Advertising and Marketing (£115,375.65) and Staff Salaries (£194,583.37), suggesting an active focus on growth and internal infrastructure.",
+    "The presence of multiple van lease payments (totalling over £80,000) indicates a substantial mobile service fleet, which is a key component of the company's operational capacity."
+  ],
+  "_isIM": false
+}

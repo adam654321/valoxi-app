@@ -1,0 +1,392 @@
+{
+  "document": "profit_and_loss",
+  "source": "management",
+  "years_covered": [
+    2023,
+    2024,
+    2025,
+    2026,
+    2027,
+    2028,
+    2029,
+    2030
+  ],
+  "period_ends": {
+    "2023": "2023-12-31",
+    "2024": "2024-12-31",
+    "2025": "2025-12-31",
+    "2026": "2026-12-31",
+    "2027": "2027-12-31",
+    "2028": "2028-12-31",
+    "2029": "2029-12-31",
+    "2030": "2030-12-31"
+  },
+  "months_covered": {
+    "2023": 12,
+    "2024": 12,
+    "2025": 12,
+    "2026": 12,
+    "2027": 12,
+    "2028": 12,
+    "2029": 12,
+    "2030": 12
+  },
+  "report_date": null,
+  "years": {
+    "2023": {
+      "year": 2023,
+      "profit_and_loss": {
+        "revenue": 15388788,
+        "cost_of_sales": 11164982,
+        "gross_profit": 4223806,
+        "administrative_expenses": 3403587,
+        "depreciation_amortisation": null,
+        "other_operating_income": null,
+        "operating_profit": 820219,
+        "interest_receivable": null,
+        "interest_payable": null,
+        "profit_before_tax": null,
+        "corporation_tax": null,
+        "net_profit": null
+      },
+      "revenue_breakdown": {
+        "by_product": {
+          "Alideck": 15388788,
+          "Milwood": 0,
+          "Lurano": 0
+        },
+        "by_segment": {}
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": null,
+        "direct_labour": null,
+        "subcontractor_costs": null,
+        "other_direct_costs": null
+      },
+      "overheads_breakdown": {
+        "other_overheads": 3403587
+      },
+      "total_staff_costs": null,
+      "total_directors_remuneration": null,
+      "dividends_paid": null,
+      "exceptional_items": [],
+      "financial_ratios": {
+        "gross_margin_percent": 27.45,
+        "net_margin_percent": null,
+        "interest_coverage_ratio": null
+      }
+    },
+    "2024": {
+      "year": 2024,
+      "profit_and_loss": {
+        "revenue": 14010534,
+        "cost_of_sales": 8831654,
+        "gross_profit": 5178880,
+        "administrative_expenses": 3552710,
+        "depreciation_amortisation": null,
+        "other_operating_income": null,
+        "operating_profit": 1626170,
+        "interest_receivable": null,
+        "interest_payable": null,
+        "profit_before_tax": null,
+        "corporation_tax": null,
+        "net_profit": null
+      },
+      "revenue_breakdown": {
+        "by_product": {
+          "Alideck": 14010534,
+          "Milwood": 0,
+          "Lurano": 0
+        },
+        "by_segment": {}
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": null,
+        "direct_labour": null,
+        "subcontractor_costs": null,
+        "other_direct_costs": null
+      },
+      "overheads_breakdown": {
+        "other_overheads": 3552710
+      },
+      "total_staff_costs": null,
+      "total_directors_remuneration": null,
+      "dividends_paid": null,
+      "exceptional_items": [],
+      "financial_ratios": {
+        "gross_margin_percent": 36.96,
+        "net_margin_percent": null,
+        "interest_coverage_ratio": null
+      }
+    },
+    "2025": {
+      "year": 2025,
+      "profit_and_loss": {
+        "revenue": 18366818,
+        "cost_of_sales": 11416987,
+        "gross_profit": 6949831,
+        "administrative_expenses": 4127104,
+        "depreciation_amortisation": null,
+        "other_operating_income": null,
+        "operating_profit": 2822727,
+        "interest_receivable": null,
+        "interest_payable": null,
+        "profit_before_tax": null,
+        "corporation_tax": null,
+        "net_profit": null
+      },
+      "revenue_breakdown": {
+        "by_product": {
+          "Alideck": 16074168,
+          "Milwood": 2292650,
+          "Lurano": 0
+        },
+        "by_segment": {}
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": null,
+        "direct_labour": null,
+        "subcontractor_costs": null,
+        "other_direct_costs": null
+      },
+      "overheads_breakdown": {
+        "other_overheads": 4127104
+      },
+      "total_staff_costs": null,
+      "total_directors_remuneration": null,
+      "dividends_paid": null,
+      "exceptional_items": [],
+      "financial_ratios": {
+        "gross_margin_percent": 37.84,
+        "net_margin_percent": null,
+        "interest_coverage_ratio": null
+      }
+    },
+    "2026": {
+      "year": 2026,
+      "profit_and_loss": {
+        "revenue": 18722852,
+        "cost_of_sales": 12131326,
+        "gross_profit": 6591524,
+        "administrative_expenses": 4849129,
+        "depreciation_amortisation": null,
+        "other_operating_income": null,
+        "operating_profit": 1742395,
+        "interest_receivable": null,
+        "interest_payable": null,
+        "profit_before_tax": null,
+        "corporation_tax": null,
+        "net_profit": 1532967
+      },
+      "revenue_breakdown": {
+        "by_product": {
+          "Alideck": 16239347,
+          "Milwood": 2323729,
+          "Lurano": 159776
+        },
+        "by_segment": {}
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": null,
+        "direct_labour": null,
+        "subcontractor_costs": null,
+        "other_direct_costs": null
+      },
+      "overheads_breakdown": {
+        "other_overheads": 4849129
+      },
+      "total_staff_costs": null,
+      "total_directors_remuneration": null,
+      "dividends_paid": null,
+      "exceptional_items": [],
+      "financial_ratios": {
+        "gross_margin_percent": 35.21,
+        "net_margin_percent": 8.19,
+        "interest_coverage_ratio": null
+      }
+    },
+    "2027": {
+      "year": 2027,
+      "profit_and_loss": {
+        "revenue": 20612840,
+        "cost_of_sales": 12791839,
+        "gross_profit": 7821001,
+        "administrative_expenses": 5055475,
+        "depreciation_amortisation": null,
+        "other_operating_income": null,
+        "operating_profit": 2765526,
+        "interest_receivable": null,
+        "interest_payable": null,
+        "profit_before_tax": null,
+        "corporation_tax": null,
+        "net_profit": null
+      },
+      "revenue_breakdown": {
+        "by_product": {
+          "Alideck": 17700888,
+          "Milwood": 2672289,
+          "Lurano": 239663
+        },
+        "by_segment": {}
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": null,
+        "direct_labour": null,
+        "subcontractor_costs": null,
+        "other_direct_costs": null
+      },
+      "overheads_breakdown": {
+        "other_overheads": 5055475
+      },
+      "total_staff_costs": null,
+      "total_directors_remuneration": null,
+      "dividends_paid": null,
+      "exceptional_items": [],
+      "financial_ratios": {
+        "gross_margin_percent": 37.94,
+        "net_margin_percent": null,
+        "interest_coverage_ratio": null
+      }
+    },
+    "2028": {
+      "year": 2028,
+      "profit_and_loss": {
+        "revenue": 22903604,
+        "cost_of_sales": 14106012,
+        "gross_profit": 8797592,
+        "administrative_expenses": 5263826,
+        "depreciation_amortisation": null,
+        "other_operating_income": null,
+        "operating_profit": 3533866,
+        "interest_receivable": null,
+        "interest_payable": null,
+        "profit_before_tax": null,
+        "corporation_tax": null,
+        "net_profit": null
+      },
+      "revenue_breakdown": {
+        "by_product": {
+          "Alideck": 19470977,
+          "Milwood": 3073132,
+          "Lurano": 359495
+        },
+        "by_segment": {}
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": null,
+        "direct_labour": null,
+        "subcontractor_costs": null,
+        "other_direct_costs": null
+      },
+      "overheads_breakdown": {
+        "other_overheads": 5263826
+      },
+      "total_staff_costs": null,
+      "total_directors_remuneration": null,
+      "dividends_paid": null,
+      "exceptional_items": [],
+      "financial_ratios": {
+        "gross_margin_percent": 38.41,
+        "net_margin_percent": null,
+        "interest_coverage_ratio": null
+      }
+    },
+    "2029": {
+      "year": 2029,
+      "profit_and_loss": {
+        "revenue": 25401546,
+        "cost_of_sales": 15508007,
+        "gross_profit": 9893539,
+        "administrative_expenses": 5499500,
+        "depreciation_amortisation": null,
+        "other_operating_income": null,
+        "operating_profit": 4394038,
+        "interest_receivable": null,
+        "interest_payable": null,
+        "profit_before_tax": null,
+        "corporation_tax": null,
+        "net_profit": null
+      },
+      "revenue_breakdown": {
+        "by_product": {
+          "Alideck": 21418075,
+          "Milwood": 3534102,
+          "Lurano": 449369
+        },
+        "by_segment": {}
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": null,
+        "direct_labour": null,
+        "subcontractor_costs": null,
+        "other_direct_costs": null
+      },
+      "overheads_breakdown": {
+        "other_overheads": 5499500
+      },
+      "total_staff_costs": null,
+      "total_directors_remuneration": null,
+      "dividends_paid": null,
+      "exceptional_items": [],
+      "financial_ratios": {
+        "gross_margin_percent": 38.95,
+        "net_margin_percent": null,
+        "interest_coverage_ratio": null
+      }
+    },
+    "2030": {
+      "year": 2030,
+      "profit_and_loss": {
+        "revenue": 28185810,
+        "cost_of_sales": 17173856,
+        "gross_profit": 11011955,
+        "administrative_expenses": 5747685,
+        "depreciation_amortisation": null,
+        "other_operating_income": null,
+        "operating_profit": 5264270,
+        "interest_receivable": null,
+        "interest_payable": null,
+        "profit_before_tax": null,
+        "corporation_tax": null,
+        "net_profit": null
+      },
+      "revenue_breakdown": {
+        "by_product": {
+          "Alideck": 23559882,
+          "Milwood": 4064217,
+          "Lurano": 561711
+        },
+        "by_segment": {}
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": null,
+        "direct_labour": null,
+        "subcontractor_costs": null,
+        "other_direct_costs": null
+      },
+      "overheads_breakdown": {
+        "other_overheads": 5747685
+      },
+      "total_staff_costs": null,
+      "total_directors_remuneration": null,
+      "dividends_paid": null,
+      "exceptional_items": [],
+      "financial_ratios": {
+        "gross_margin_percent": 39.07,
+        "net_margin_percent": null,
+        "interest_coverage_ratio": null
+      }
+    }
+  },
+  "summary_insights": [
+    "Total revenue shows a strong upward trajectory, growing from £15.4m in 2023 to a projected £28.2m by 2030, driven by the core Alideck brand and expansion into Milwood and Lurano.",
+    "Gross margin has improved significantly from 27.5% in 2023 to a steady 38-39% range from 2027 onwards, indicating better cost control or pricing power.",
+    "Operating profit (EBITDA) shows consistent growth, nearly doubling between 2025 (£2.8m) and 2030 (£5.3m) as the business achieves greater scale.",
+    "The Milwood and Lurano product lines, while smaller than Alideck, show high growth rates, with Milwood reaching £4m and Lurano over £0.5m by 2030.",
+    "Overheads are being managed effectively, growing at a much slower rate than revenue, which is driving significant operational leverage and margin expansion.",
+    "The 2024 dip in revenue (-8.96% for Alideck) was successfully reversed, with double-digit growth returning in subsequent years.",
+    "Profitability for the Milwood segment turned positive in 2027 after initial losses, contributing to the overall group's financial resilience.",
+    "The group demonstrates a healthy financial profile with increasing cash flow potential as EBITDA margins trend towards 19-20% in the later forecast years."
+  ],
+  "_isIM": true
+}

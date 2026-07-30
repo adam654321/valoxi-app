@@ -1,0 +1,83 @@
+{
+  "document": "balance_sheet",
+  "source": "management_accounts",
+  "years_covered": [
+    2025
+  ],
+  "period_ends": {
+    "2025": "2025-11-30"
+  },
+  "months_covered": {
+    "2025": 12
+  },
+  "report_date": null,
+  "years": {
+    "2025": {
+      "year": 2025,
+      "balance_sheet": {
+        "fixed_assets": {
+          "intangible_assets": null,
+          "tangible_assets": null,
+          "freehold_property": null,
+          "leasehold_property": null,
+          "plant_machinery": null,
+          "fixtures_fittings": null,
+          "motor_vehicles": null,
+          "computer_equipment": null
+        },
+        "current_assets": {
+          "stock": null,
+          "trade_debtors": 358524.86,
+          "prepayments": null,
+          "amounts_owed_by_directors": null,
+          "amounts_owed_by_connected_companies": null,
+          "directors_current_account": null,
+          "other_debtors": null,
+          "cash_at_bank": null,
+          "total": 358524.86
+        },
+        "current_liabilities": {
+          "trade_creditors": null,
+          "taxation_social_security": null,
+          "vat_payable": null,
+          "corporation_tax": null,
+          "bank_loans_current": null,
+          "hire_purchase_current": null,
+          "accruals": null,
+          "amounts_owed_to_directors": null,
+          "other_creditors": null,
+          "total": null
+        },
+        "long_term_liabilities": {
+          "bank_loans": null,
+          "hire_purchase_long_term": null,
+          "deferred_taxation": null,
+          "other_debt": null,
+          "total": null
+        },
+        "equity": {
+          "share_capital": null,
+          "retained_earnings": null,
+          "total": null
+        }
+      },
+      "financial_ratios": {
+        "current_ratio": null,
+        "quick_ratio": null,
+        "net_assets_growth_percent": null,
+        "gearing_ratio_percent": null
+      }
+    }
+  },
+  "summary_insights": [
+    "The provided document is a Sales Transaction ledger rather than a full Balance Sheet, limiting the assessment of the total asset base.",
+    "The company generated £358,524.86 in total sales for the 12-month period ending November 2025.",
+    "Revenue is heavily weighted towards the USA market, which accounts for 55% (£198,244) of total income.",
+    "The business maintains a strong blue-chip client base including Coca-Cola, JTI, and Mintel, suggesting high-quality trade receivables.",
+    "Average monthly income is approximately £23,901, providing a baseline for working capital requirements.",
+    "A significant portion of revenue (£313,557) is categorised as 'Brand' related, indicating a specialised service offering.",
+    "Without liability or cash data, a formal liquidity or gearing assessment cannot be performed from this specific document.",
+    "The reliance on a few key retainers (e.g., Integro and InsightsNow) represents a concentration risk that should be monitored."
+  ],
+  "_isIM": false
+}

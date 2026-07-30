@@ -1,0 +1,161 @@
+{
+  "expert": "operational",
+  "company_name": "[AUDIT-218] Canoports UK Limited",
+  "analysis_date": "2025-05-22",
+  "score": 68,
+  "confidence": "high",
+  "working_capital": {
+    "yearly_metrics": {
+      "2023": {
+        "debtor_days": null,
+        "creditor_days": null,
+        "stock_days": null,
+        "cash_conversion_cycle_days": null,
+        "net_working_capital": 4461010,
+        "working_capital_percent_revenue": null
+      },
+      "2024": {
+        "debtor_days": null,
+        "creditor_days": null,
+        "stock_days": null,
+        "cash_conversion_cycle_days": null,
+        "net_working_capital": 4515046,
+        "working_capital_percent_revenue": null
+      },
+      "2025": {
+        "debtor_days": 63.1,
+        "creditor_days": 45.5,
+        "stock_days": 52.5,
+        "cash_conversion_cycle_days": 70.1,
+        "net_working_capital": 5964606,
+        "working_capital_percent_revenue": 32.5
+      },
+      "2026": {
+        "debtor_days": null,
+        "creditor_days": null,
+        "stock_days": null,
+        "cash_conversion_cycle_days": null,
+        "net_working_capital": 7069707,
+        "working_capital_percent_revenue": null
+      }
+    },
+    "trend": "deteriorating",
+    "working_capital_intensity": "heavy",
+    "observations": [
+      "Net working capital has increased significantly from £4.46m in 2023 to £7.07m in 2026 (Current Position).",
+      "Stock levels are high, reaching £3.32m as of 2026-05-31, suggesting a stock-heavy manufacturing model.",
+      "Trade creditors decreased sharply in 2026 to £997k from £2.28m in 2025, which has significantly increased the cash tied up in the cycle.",
+      "The business is a net consumer of working capital as it scales."
+    ]
+  },
+  "capex": {
+    "total_gross_asset_value": 2231000,
+    "total_nbv": 899000,
+    "asset_freshness_percent": 40.3,
+    "recent_additions_24m_value": 1300000,
+    "recent_additions_percent": 58.3,
+    "annual_depreciation_charge": 180200,
+    "estimated_maintenance_capex": 180200,
+    "capex_cliff_risk": true,
+    "assets_requiring_replacement": [
+      {
+        "description": "IT hardware and infrastructure",
+        "nbv_percent_of_cost": 28.7
+      },
+      {
+        "description": "Office equipment and furniture",
+        "nbv_percent_of_cost": 33.3
+      }
+    ],
+    "category_breakdown": {
+      "property": {
+        "cost": 180000,
+        "nbv": 81000
+      },
+      "plant_machinery": {
+        "cost": 1705000,
+        "nbv": 682000
+      },
+      "vehicles": {
+        "cost": 180000,
+        "nbv": 85000
+      },
+      "it_equipment": {
+        "cost": 94000,
+        "nbv": 27000
+      },
+      "other": {
+        "cost": 72000,
+        "nbv": 24000
+      }
+    },
+    "observations": [
+      "The asset base is aging, with 60% of the gross cost already depreciated.",
+      "The powder coating line (£1.3m) is the primary operational asset and was purchased in 2022, providing some medium-term stability.",
+      "Capex cliff risk is flagged as the total NBV is only 40% of cost, and several minor categories are nearing full depreciation.",
+      "The business operates an asset-light model relative to turnover (4.9% intensity)."
+    ]
+  },
+  "workforce": {
+    "headcount": 92,
+    "total_payroll": 2860065,
+    "revenue_per_employee": 199271,
+    "payroll_percent_revenue": 15.6,
+    "average_salary_all": 31088,
+    "average_salary_excl_directors": 30113,
+    "director_remuneration_total": null,
+    "director_percent_of_payroll": null,
+    "ft_pt_split": {
+      "full_time": 92,
+      "part_time": 0
+    },
+    "longest_tenured_years": 15,
+    "newest_hire_months_ago": 1,
+    "observations": [
+      "Revenue per employee is strong at approx £199k based on FY25 figures.",
+      "60% of the workforce is dedicated to production/COS, indicating a labor-intensive manufacturing process.",
+      "The workforce is entirely full-time, which may limit flexibility during seasonal fluctuations.",
+      "Recent expansion in HR and Marketing overheads suggests a push for professionalization and growth."
+    ]
+  },
+  "owner_dependency": {
+    "risk_level": "medium",
+    "director_count": 3,
+    "highest_individual_salary": null,
+    "highest_individual_percent_of_payroll": null,
+    "critical_function_concentration": "Concentrated at MD level across three distinct divisions.",
+    "observations": [
+      "The business is split into three divisions, each led by a Managing Director, which provides some redundancy.",
+      "The CEO has a 15-year tenure, representing significant institutional knowledge risk.",
+      "Finance function is currently led by a Controller 'working toward FD', indicating a potential gap in senior strategic financial leadership."
+    ]
+  },
+  "scalability": {
+    "rating": "medium",
+    "headcount_for_25pct_growth": 14,
+    "capex_needed_for_growth": "Moderate; existing powder coating line has capacity but IT and warehouse infrastructure require updates.",
+    "working_capital_supports_growth": false,
+    "bottlenecks": [
+      "High stock requirements for growth",
+      "Manual fabrication and cutting processes",
+      "Dependence on full-time production staff"
+    ],
+    "observations": [
+      "A 25% growth in revenue would likely require at least 14 additional production staff given the current 60% COS headcount ratio.",
+      "The current working capital cycle is a major constraint; growth will require significant cash injection to fund stock and debtors.",
+      "The business is substantially unencumbered, providing room for asset-backed refinancing to fund expansion."
+    ]
+  },
+  "key_findings": [
+    "Strong revenue productivity per head for the manufacturing sector.",
+    "Significant investment in a QualiCoat-accredited powder coating line provides a competitive operational advantage.",
+    "Working capital management is the primary operational weakness, with increasing cash absorption.",
+    "The business is transitioning from an owner-managed style to a more professionalized structure with recent overhead hires."
+  ],
+  "red_flags": [
+    "Sharp increase in Net Working Capital (£2.6m increase in 3 years).",
+    "Aging IT and office infrastructure (NBV < 30% of cost).",
+    "Lack of a fully qualified Finance Director on the board."
+  ],
+  "narrative": "Canoports UK Limited exhibits a robust manufacturing core centered around its 2022 investment in a powder coating line. While workforce productivity is high and the business is scaling, it is doing so with decreasing working capital efficiency. The 2026 position shows a significant reduction in trade creditors and a rise in stock, suggesting that cash is being aggressively tied up in operations. To scale a further 25%, the business will need to address its cash conversion cycle or seek external financing, as the current operational model is a heavy consumer of liquidity. The transition of the leadership team and the expansion of support functions are positive indicators of scalability, provided the financial management is professionalized to match the manufacturing output."
+}

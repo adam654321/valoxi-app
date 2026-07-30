@@ -1,0 +1,331 @@
+{
+  "document": "profit_and_loss",
+  "source": "management",
+  "years_covered": [
+    2023,
+    2024,
+    2025,
+    2026
+  ],
+  "period_ends": {
+    "2023": "2023-06-09",
+    "2024": "2024-06-09",
+    "2025": "2025-06-09",
+    "2026": "2026-06-09"
+  },
+  "months_covered": {
+    "2023": 5,
+    "2024": 5,
+    "2025": 5,
+    "2026": 5
+  },
+  "report_date": "2026-06-09",
+  "years": {
+    "2023": {
+      "year": 2023,
+      "profit_and_loss": {
+        "revenue": 789486,
+        "cost_of_sales": 533510,
+        "gross_profit": 255976,
+        "administrative_expenses": 167609,
+        "depreciation_amortisation": null,
+        "other_operating_income": null,
+        "operating_profit": 88366,
+        "interest_receivable": 2464,
+        "interest_payable": 0,
+        "profit_before_tax": 88366,
+        "corporation_tax": null,
+        "net_profit": -60634
+      },
+      "revenue_breakdown": {
+        "by_product": {
+          "CLOSE POOLS": 325,
+          "Liner/Auto cover Change": 89613,
+          "Maintenance- repairs/ pressure testing": 8546,
+          "Renovations": 54638,
+          "SALES Carriage & Fuel Surcharge": 354,
+          "SALES chemicals": 56683,
+          "SALES new pools": 91770,
+          "SALES service dept- labour only": 300066,
+          "SALES specialist repairs/sub contractors": 1891,
+          "SALES sundries": 175588,
+          "SHOP SALES": 10012
+        }
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": 41792,
+        "direct_labour": 127675,
+        "subcontractor_costs": 62430,
+        "other_direct_costs": 301613
+      },
+      "overheads_breakdown": {
+        "staff_wages_salaries": 51616,
+        "directors_salaries": 4677,
+        "directors_pension": null,
+        "employers_national_insurance": 3661,
+        "staff_pension_contributions": null,
+        "staff_training_recruitment": null,
+        "use_of_home_as_office": null,
+        "rent_rates": 14852,
+        "utilities": 2331,
+        "insurance": 20082,
+        "accountancy_bookkeeping": 2410,
+        "professional_fees": null,
+        "software_subscriptions": null,
+        "computer_costs": 110,
+        "it_support_hosting": null,
+        "telecommunications": 379,
+        "printing_stationery": null,
+        "postage_courier": 541,
+        "subscriptions_memberships": 8478,
+        "bank_charges": 899,
+        "advertising_marketing": 1650,
+        "travel_subsistence": 276,
+        "motor_expenses": 3382,
+        "repairs_maintenance": null,
+        "depreciation": null,
+        "amortisation": null,
+        "other_overheads": 52331
+      },
+      "total_staff_costs": 55277,
+      "total_directors_remuneration": 4677,
+      "dividends_paid": 149000,
+      "financial_ratios": {
+        "gross_margin_percent": 32.42,
+        "net_margin_percent": -7.68,
+        "interest_coverage_ratio": null
+      }
+    },
+    "2024": {
+      "year": 2024,
+      "profit_and_loss": {
+        "revenue": 907292,
+        "cost_of_sales": 622665,
+        "gross_profit": 284626,
+        "administrative_expenses": 182393,
+        "depreciation_amortisation": null,
+        "other_operating_income": null,
+        "operating_profit": 102233,
+        "interest_receivable": 4787,
+        "interest_payable": 0,
+        "profit_before_tax": 102233,
+        "corporation_tax": null,
+        "net_profit": -62267
+      },
+      "revenue_breakdown": {
+        "by_product": {
+          "CLOSE POOLS": 325,
+          "Liner/Auto cover Change": 83823,
+          "Renovations": 130760,
+          "SALES Carriage & Fuel Surcharge": 294,
+          "SALES chemicals": 53132,
+          "SALES new pools": 175284,
+          "SALES service dept- labour only": 302203,
+          "SALES sundries": 153197,
+          "SHOP SALES": 8274
+        }
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": 31523,
+        "direct_labour": 168285,
+        "subcontractor_costs": 25822,
+        "other_direct_costs": 397035
+      },
+      "overheads_breakdown": {
+        "staff_wages_salaries": 58337,
+        "directors_salaries": 3792,
+        "directors_pension": null,
+        "employers_national_insurance": 4219,
+        "staff_pension_contributions": null,
+        "staff_training_recruitment": 199,
+        "use_of_home_as_office": null,
+        "rent_rates": 18896,
+        "utilities": 2072,
+        "insurance": 22612,
+        "accountancy_bookkeeping": 2660,
+        "professional_fees": 2334,
+        "software_subscriptions": null,
+        "computer_costs": 110,
+        "it_support_hosting": null,
+        "telecommunications": 5086,
+        "printing_stationery": null,
+        "postage_courier": 331,
+        "subscriptions_memberships": 2503,
+        "bank_charges": 853,
+        "advertising_marketing": 2042,
+        "travel_subsistence": 277,
+        "motor_expenses": 783,
+        "repairs_maintenance": 20,
+        "depreciation": null,
+        "amortisation": null,
+        "other_overheads": 56467
+      },
+      "total_staff_costs": 62556,
+      "total_directors_remuneration": 3792,
+      "dividends_paid": 164500,
+      "financial_ratios": {
+        "gross_margin_percent": 31.37,
+        "net_margin_percent": -6.86,
+        "interest_coverage_ratio": null
+      }
+    },
+    "2025": {
+      "year": 2025,
+      "profit_and_loss": {
+        "revenue": 986974,
+        "cost_of_sales": 675266,
+        "gross_profit": 311708,
+        "administrative_expenses": 182927,
+        "depreciation_amortisation": null,
+        "other_operating_income": null,
+        "operating_profit": 128781,
+        "interest_receivable": 7354,
+        "interest_payable": 0,
+        "profit_before_tax": 128781,
+        "corporation_tax": null,
+        "net_profit": 41781
+      },
+      "revenue_breakdown": {
+        "by_product": {
+          "CLOSE POOLS": 1465,
+          "Liner/Auto cover Change": 93578,
+          "Renovations": 299155,
+          "SALES Carriage & Fuel Surcharge": 433,
+          "SALES chemicals": 56176,
+          "SALES new pools": 44175,
+          "SALES service dept- labour only": 311700,
+          "SALES specialist repairs/sub contractors": 8998,
+          "SALES sundries": 162150,
+          "SHOP SALES": 9144
+        }
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": 36035,
+        "direct_labour": 158573,
+        "subcontractor_costs": 41782,
+        "other_direct_costs": 438876
+      },
+      "overheads_breakdown": {
+        "staff_wages_salaries": 70672,
+        "directors_salaries": 3792,
+        "directors_pension": null,
+        "employers_national_insurance": 4717,
+        "staff_pension_contributions": null,
+        "staff_training_recruitment": 0,
+        "use_of_home_as_office": null,
+        "rent_rates": 19947,
+        "utilities": 2079,
+        "insurance": 12335,
+        "accountancy_bookkeeping": 2600,
+        "professional_fees": 2350,
+        "software_subscriptions": null,
+        "computer_costs": 1033,
+        "it_support_hosting": null,
+        "telecommunications": 3332,
+        "printing_stationery": null,
+        "postage_courier": 329,
+        "subscriptions_memberships": 4965,
+        "bank_charges": 1303,
+        "advertising_marketing": 4648,
+        "travel_subsistence": 272,
+        "motor_expenses": 33,
+        "repairs_maintenance": 142,
+        "depreciation": null,
+        "amortisation": null,
+        "other_overheads": 48378
+      },
+      "total_staff_costs": 75389,
+      "total_directors_remuneration": 3792,
+      "dividends_paid": 87000,
+      "financial_ratios": {
+        "gross_margin_percent": 31.58,
+        "net_margin_percent": 4.23,
+        "interest_coverage_ratio": null
+      }
+    },
+    "2026": {
+      "year": 2026,
+      "profit_and_loss": {
+        "revenue": 1020629,
+        "cost_of_sales": 571219,
+        "gross_profit": 449410,
+        "administrative_expenses": 195418,
+        "depreciation_amortisation": null,
+        "other_operating_income": null,
+        "operating_profit": 253992,
+        "interest_receivable": 0,
+        "interest_payable": 1474,
+        "profit_before_tax": 253992,
+        "corporation_tax": null,
+        "net_profit": 91992
+      },
+      "revenue_breakdown": {
+        "by_product": {
+          "CLOSE POOLS": 305,
+          "Liner/Auto cover Change": 50861,
+          "Renovations": 169867,
+          "SALES Carriage & Fuel Surcharge": 8970,
+          "SALES chemicals": 70361,
+          "SALES new pools": 218577,
+          "SALES service dept- labour only": 350717,
+          "SALES specialist repairs/sub contractors": 18949,
+          "SALES sundries": 122998,
+          "SHOP SALES": 9024
+        }
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": 21325,
+        "direct_labour": 121164,
+        "subcontractor_costs": 92047,
+        "other_direct_costs": 336683
+      },
+      "overheads_breakdown": {
+        "staff_wages_salaries": 60162,
+        "directors_salaries": 3033,
+        "directors_pension": null,
+        "employers_national_insurance": 4954,
+        "staff_pension_contributions": null,
+        "staff_training_recruitment": 570,
+        "use_of_home_as_office": null,
+        "rent_rates": 25762,
+        "utilities": 2114,
+        "insurance": 15401,
+        "accountancy_bookkeeping": 3950,
+        "professional_fees": 6858,
+        "software_subscriptions": null,
+        "computer_costs": 163,
+        "it_support_hosting": null,
+        "telecommunications": 5038,
+        "printing_stationery": null,
+        "postage_courier": 507,
+        "subscriptions_memberships": 3606,
+        "bank_charges": 2815,
+        "advertising_marketing": 4311,
+        "travel_subsistence": 343,
+        "motor_expenses": 657,
+        "repairs_maintenance": 600,
+        "depreciation": null,
+        "amortisation": null,
+        "other_overheads": 54574
+      },
+      "total_staff_costs": 65116,
+      "total_directors_remuneration": 3033,
+      "dividends_paid": 162000,
+      "financial_ratios": {
+        "gross_margin_percent": 44.03,
+        "net_margin_percent": 9.01,
+        "interest_coverage_ratio": 172.31
+      }
+    }
+  },
+  "summary_insights": [
+    "Revenue has shown consistent growth, increasing by 29.3% from 2023 to 2026, reaching over £1m in the current period.",
+    "Gross margin improved significantly in 2026 to 44.0%, up from 31.6% in 2025, driven by a reduction in direct labour and material costs relative to turnover.",
+    "Operating profit has nearly tripled since 2023, rising from £88k to £254k, reflecting strong operational leverage.",
+    "Net profit turned positive in 2025 and more than doubled in 2026, though it remains impacted by high dividend distributions exceeding annual profits in several years.",
+    "The sales mix has shifted, with 'SALES new pools' seeing a massive 395% increase in 2026 compared to 2025, becoming a primary revenue driver.",
+    "Administrative costs have remained relatively stable as a percentage of revenue, indicating disciplined overhead management during the growth phase.",
+    "Interest coverage is exceptionally high at 172x in 2026, suggesting a very low level of debt-related financial risk."
+  ],
+  "_isIM": false
+}

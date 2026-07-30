@@ -1,0 +1,1346 @@
+[
+  {
+    "id": 2806,
+    "expert_type": "data_quality",
+    "status": "success",
+    "score": 62,
+    "confidence": "medium",
+    "created_at": "2026-07-18T10:53:58.318Z",
+    "analysis_data": {
+      "stage": "data_quality",
+      "company_name": "Keen As Mustard",
+      "assessment_date": "2024-05-22",
+      "overall_completeness_score": 62,
+      "overall_completeness_rating": "medium",
+      "confidence_for_analysis": "medium",
+      "data_sources": {
+        "company_accounts": {
+          "status": "complete",
+          "years_available": 5,
+          "years_list": [
+            2020,
+            2021,
+            2022,
+            2023,
+            2024
+          ],
+          "most_recent_period_end": "2024-11-30",
+          "data_staleness_months": 6,
+          "consecutive_years": true,
+          "key_fields_populated": [
+            "revenue",
+            "gross_profit",
+            "operating_profit",
+            "net_profit"
+          ],
+          "key_fields_missing": []
+        },
+        "profit_and_loss": {
+          "status": "complete",
+          "key_fields_populated": [
+            "revenue",
+            "cost_of_sales",
+            "gross_profit",
+            "administrative_expenses",
+            "operating_profit",
+            "net_profit"
+          ],
+          "key_fields_missing": [],
+          "has_overheads_breakdown": true,
+          "has_cost_of_sales_breakdown": true
+        },
+        "balance_sheet": {
+          "status": "complete",
+          "key_fields_populated": [
+            "fixed_assets",
+            "current_assets.total",
+            "current_liabilities.total",
+            "equity.total"
+          ],
+          "key_fields_missing": [],
+          "has_detailed_breakdown": true
+        },
+        "asset_register": {
+          "status": "missing",
+          "asset_count": 0,
+          "has_category_breakdown": false,
+          "has_individual_assets": false
+        },
+        "sales_ledger": {
+          "status": "partial",
+          "has_aging_breakdown": false,
+          "has_customer_breakdown": true,
+          "customer_count": 10
+        },
+        "staff_matrix": {
+          "status": "missing",
+          "headcount_reported": 0,
+          "has_individual_records": false,
+          "has_director_identification": false
+        }
+      },
+      "consistency_checks": {
+        "pl_revenue_vs_accounts": {
+          "result": "consistent",
+          "pl_value": 395530,
+          "accounts_value": 396623,
+          "variance_percent": 0.28
+        },
+        "bs_net_assets_vs_accounts": {
+          "result": "major_discrepancy",
+          "bs_value": 33096,
+          "accounts_value": 109592,
+          "variance_percent": 69.8
+        },
+        "staff_costs_vs_pl": {
+          "result": "unable_to_check",
+          "matrix_value": null,
+          "pl_value": 2695,
+          "variance_percent": null
+        },
+        "assets_nbv_vs_bs": {
+          "result": "unable_to_check",
+          "register_value": null,
+          "bs_value": 249,
+          "variance_percent": null
+        },
+        "debtors_vs_bs": {
+          "result": "major_discrepancy",
+          "ledger_value": 511411,
+          "bs_value": 39535,
+          "variance_percent": 1193.5
+        }
+      },
+      "red_flags": [
+        "Asset register is missing",
+        "Staff matrix is missing",
+        "Major discrepancy between Sales Ledger revenue/balances and Balance Sheet trade debtors",
+        "Major discrepancy between Management Balance Sheet net assets and Statutory Accounts",
+        "Sales ledger provided is a revenue forecast, not an aged debt report"
+      ],
+      "gaps_requiring_seller_action": [
+        "Provide a detailed Fixed Asset Register with purchase dates and depreciation schedules",
+        "Provide a full Staff Matrix including salaries, start dates, and roles",
+        "Provide a true Aged Debtors Report from the accounting system",
+        "Reconcile the significant variance between 2024 Statutory Net Assets and 2025 Management Net Assets"
+      ],
+      "analysis_limitations": [
+        "Cannot verify employee-level costs or headcount trends due to missing staff matrix",
+        "Cannot assess recoverability of debtors due to lack of aging buckets in sales ledger",
+        "Management accounts for 2025 show significant losses and bad debt provisions not reflected in prior statutory history"
+      ]
+    }
+  },
+  {
+    "id": 2814,
+    "expert_type": "deal_structure",
+    "status": "success",
+    "score": 58,
+    "confidence": "high",
+    "created_at": "2026-07-18T10:54:10.019Z",
+    "analysis_data": {
+      "expert": "deal_structure",
+      "company_name": "Keen As Mustard",
+      "analysis_date": "2025-05-20",
+      "score": 58,
+      "confidence": "high",
+      "structures": [
+        {
+          "name": "Conservative Approach",
+          "strategy": "Minimize initial capital outlay and shift risk to the seller via a heavy earnout and long-term deferred payments to mitigate extreme owner dependency and bad debt volatility.",
+          "risk_to_buyer": "low",
+          "suitable_when": "The buyer is concerned about the 'lifestyle' nature of the business and the potential for revenue to collapse once the founder exits.",
+          "consideration": {
+            "total_headline": 330000,
+            "upfront_cash": 132000,
+            "upfront_percent": 40,
+            "deferred": 66000,
+            "earnout_maximum": 132000,
+            "earnout_metric": "EBITDA Floor & Client Retention",
+            "earnout_period_months": 36,
+            "earnout_rationale": "Addresses 'Owner/key person dependency' (Risk/Op experts) and 'Unverified add-backs' (QoE expert). The earnout validates that the 2025 bad debt was an anomaly and ensures the owner remains incentivized during a long transition.",
+            "retention_escrow": 33000
+          },
+          "key_conditions": [
+            "24-month active handover period for the Managing Director",
+            "36-month non-compete and non-solicitation agreement",
+            "Implementation of new credit control software within 90 days",
+            "Restrictive covenant on dividend payments prior to completion"
+          ],
+          "notes": "Seller must provide a 24-month handover. Non-compete duration is 3 years. Specific indemnity required for any further 2025 bad debt write-offs. Warranty cap at 100% of consideration with a 24-month period. Completion mechanism: Completion accounts with a working capital peg of £115,000. Risk to buyer is low because 60% of the price is contingent on the business proving its post-acquisition viability without the owner's capital extraction."
+        },
+        {
+          "name": "Balanced Approach",
+          "strategy": "A middle-ground structure that provides the seller with a significant upfront sum while protecting the buyer against the immediate loss of agency relationships.",
+          "risk_to_buyer": "medium",
+          "suitable_when": "There is moderate confidence that the client base is truly diversified and the bad debt issue is isolated to one specific client failure.",
+          "consideration": {
+            "total_headline": 330000,
+            "upfront_cash": 198000,
+            "upfront_percent": 60,
+            "deferred": 66000,
+            "earnout_maximum": 66000,
+            "earnout_metric": "Adjusted EBITDA",
+            "earnout_period_months": 24,
+            "earnout_rationale": "Addresses 'Owner/key person dependency' (Risk expert). A 2-year earnout ensures the owner transitions the agency referral network effectively.",
+            "retention_escrow": 16500
+          },
+          "key_conditions": [
+            "12-month full-time handover followed by 12-month consultancy",
+            "Standard warranties on accounts and tax",
+            "Working capital adjustment based on a 12-month average"
+          ],
+          "notes": "Seller obligations include a 12-month handover and 24-month non-compete. Warranty cap at 50% of consideration. Completion mechanism: Completion accounts. Risk to buyer is medium due to the higher upfront cash and the reliance on the owner's goodwill during the 12-month transition to prevent client attrition."
+        },
+        {
+          "name": "Competitive Approach",
+          "strategy": "Maximize the upfront offer to bridge the valuation gap and win the deal in a competitive process, relying on strong legal protections rather than contingent payments.",
+          "risk_to_buyer": "high",
+          "suitable_when": "The buyer has a strong internal management team that can quickly absorb the operations and reduce owner dependency immediately.",
+          "consideration": {
+            "total_headline": 420000,
+            "upfront_cash": 315000,
+            "upfront_percent": 75,
+            "deferred": 63000,
+            "earnout_maximum": 42000,
+            "earnout_metric": "Revenue Retention",
+            "earnout_period_months": 12,
+            "earnout_rationale": "Addresses 'Owner/key person dependency' (Operational expert). Even in a competitive bid, a small earnout is required to ensure the owner does not exit abruptly, given they are the primary sales driver.",
+            "retention_escrow": 42000
+          },
+          "key_conditions": [
+            "6-month intensive handover",
+            "Comprehensive W&I insurance policy",
+            "Locked-box completion mechanism to provide price certainty"
+          ],
+          "notes": "Seller obligations: 6-month handover and 24-month non-compete. Warranty cap at 25% of consideration (assuming W&I insurance). Completion mechanism: Locked box based on the most recent audited or verified management accounts. Risk to buyer is high because the majority of the value is paid upfront for a business with significant key-man risk and recent credit failures."
+        }
+      ],
+      "recommended_structure": "Conservative Approach",
+      "recommendation_rationale": "The 'Conservative Approach' is recommended because the business currently operates as a lifestyle vehicle with extreme owner dependency and a significant recent bad debt event (£45k). The valuation gap between the seller's expectation (~£600k) and the adjusted reality (~£330k) is too wide to bridge without a structure that forces the business to 'earn' its valuation through post-acquisition performance. A 3-year earnout period is necessary to institutionalize the client relationships and prove the 11% bad debt rate was a one-off.",
+      "negotiation_priorities": [
+        "Bridge the £250k valuation gap using the earnout component",
+        "Secure a long-term non-compete to protect the agency referral network",
+        "Establish a robust working capital peg to stop further dividend extraction",
+        "Normalize the MD salary in the earnout EBITDA calculation"
+      ],
+      "deal_breaker_terms": [
+        "Refusal of the owner to commit to at least a 12-month handover",
+        "Any further significant bad debt write-offs during due diligence",
+        "Evidence of continued capital extraction exceeding net profit prior to close"
+      ],
+      "key_findings": [
+        "The business is highly efficient (76% GM) but fragile due to its micro-scale and owner-centricity.",
+        "Reported EBITDA is inflated by a low director salary and ignored bad debt trends.",
+        "Client diversification is a major strength that makes the business 'buyable' despite its size.",
+        "The asset-light model allows for easy integration but provides no physical security for the investment."
+      ],
+      "narrative": "Keen As Mustard is a classic 'Quality of Earnings' challenge. While the margins are excellent, the business is currently a personal piggy bank for the owner. To make this a successful acquisition, the deal must be structured to transform it from a lifestyle business into a commercial entity. This requires a structure that de-risks the owner's exit and ensures the buyer isn't paying for 'phantom' profits that were actually unpaid management salaries or uncollected debts. The Conservative Approach provides the necessary safety net while offering the seller a path to their desired valuation if the business continues its historical growth trajectory under new ownership."
+    }
+  },
+  {
+    "id": 2808,
+    "expert_type": "financial",
+    "status": "success",
+    "score": 68,
+    "confidence": "high",
+    "created_at": "2026-07-18T10:54:09.815Z",
+    "analysis_data": {
+      "expert": "financial",
+      "company_name": "Keen As Mustard",
+      "analysis_date": "2025-05-20",
+      "score": 68,
+      "confidence": "high",
+      "yearly_metrics": {
+        "2020": {
+          "revenue": 298350,
+          "revenue_yoy_growth_percent": null,
+          "cost_of_sales": 229,
+          "gross_profit": 298121,
+          "gross_margin_percent": 99.92,
+          "administrative_expenses": 192543,
+          "operating_profit": 105578,
+          "operating_margin_percent": 35.39,
+          "depreciation_amortisation": 350,
+          "ebitda": 105928,
+          "interest_payable": 0,
+          "interest_coverage_ratio": null,
+          "profit_before_tax": 105578,
+          "corporation_tax": 20712,
+          "effective_tax_rate_percent": 19.62,
+          "net_profit": 84866,
+          "net_margin_percent": 28.44
+        },
+        "2021": {
+          "revenue": 401445,
+          "revenue_yoy_growth_percent": 34.56,
+          "cost_of_sales": 85031,
+          "gross_profit": 316414,
+          "gross_margin_percent": 78.82,
+          "administrative_expenses": 77487,
+          "operating_profit": 238927,
+          "operating_margin_percent": 59.52,
+          "depreciation_amortisation": 264,
+          "ebitda": 239191,
+          "interest_payable": 508,
+          "interest_coverage_ratio": 470.33,
+          "profit_before_tax": 238419,
+          "corporation_tax": 46046,
+          "effective_tax_rate_percent": 19.31,
+          "net_profit": 192373,
+          "net_margin_percent": 47.92
+        },
+        "2022": {
+          "revenue": 424330,
+          "revenue_yoy_growth_percent": 5.7,
+          "cost_of_sales": 109679,
+          "gross_profit": 314651,
+          "gross_margin_percent": 74.15,
+          "administrative_expenses": 169993,
+          "operating_profit": 144658,
+          "operating_margin_percent": 34.09,
+          "depreciation_amortisation": 197,
+          "ebitda": 144855,
+          "interest_payable": 1141,
+          "interest_coverage_ratio": 126.78,
+          "profit_before_tax": 143517,
+          "corporation_tax": 27754,
+          "effective_tax_rate_percent": 19.34,
+          "net_profit": 115763,
+          "net_margin_percent": 27.28
+        },
+        "2023": {
+          "revenue": 396623,
+          "revenue_yoy_growth_percent": -6.53,
+          "cost_of_sales": 108601,
+          "gross_profit": 288022,
+          "gross_margin_percent": 72.62,
+          "administrative_expenses": 162308,
+          "operating_profit": 125714,
+          "operating_margin_percent": 31.7,
+          "depreciation_amortisation": 148,
+          "ebitda": 125862,
+          "interest_payable": 802,
+          "interest_coverage_ratio": 156.75,
+          "profit_before_tax": 124912,
+          "corporation_tax": 28749,
+          "effective_tax_rate_percent": 23.02,
+          "net_profit": 96163,
+          "net_margin_percent": 24.25
+        },
+        "2024": {
+          "revenue": 436233,
+          "revenue_yoy_growth_percent": 9.99,
+          "cost_of_sales": 103808,
+          "gross_profit": 332425,
+          "gross_margin_percent": 76.2,
+          "administrative_expenses": 134730,
+          "operating_profit": 197695,
+          "operating_margin_percent": 45.32,
+          "depreciation_amortisation": 111,
+          "ebitda": 197806,
+          "interest_payable": 450,
+          "interest_coverage_ratio": 439.32,
+          "profit_before_tax": 198347,
+          "corporation_tax": 50839,
+          "effective_tax_rate_percent": 25.63,
+          "net_profit": 147508,
+          "net_margin_percent": 33.81
+        }
+      },
+      "cagr": {
+        "revenue_cagr_percent": 9.96,
+        "gross_profit_cagr_percent": 2.76,
+        "operating_profit_cagr_percent": 17,
+        "period_years": 4
+      },
+      "cost_structure": {
+        "cost_of_sales_percent_revenue": 23.8,
+        "overheads_percent_revenue": 30.88,
+        "staff_costs_percent_revenue": 16.91,
+        "director_costs_percent_revenue": 4.13,
+        "top_5_overheads": [
+          {
+            "category": "Travel & Subsistence",
+            "value": 28310,
+            "percent_of_overheads": 21.01
+          },
+          {
+            "category": "Computer Costs",
+            "value": 20940,
+            "percent_of_overheads": 15.54
+          },
+          {
+            "category": "Directors Salaries",
+            "value": 18000,
+            "percent_of_overheads": 13.36
+          },
+          {
+            "category": "Professional Fees",
+            "value": 17640,
+            "percent_of_overheads": 13.09
+          },
+          {
+            "category": "Staff Training & Recruitment",
+            "value": 14559,
+            "percent_of_overheads": 10.81
+          }
+        ],
+        "cost_base_classification": "mixed"
+      },
+      "earnings_quality": {
+        "net_profit_tracks_operating_profit": true,
+        "exceptional_items_identified": [
+          "Bad Debt provision of 44,892 in 2025 management accounts",
+          "Director pension contribution of 50,000 in 2022"
+        ],
+        "tax_rate_consistent": false,
+        "ebitda_latest": 197806,
+        "ebitda_trend": "growing",
+        "limitations": [
+          "2025 data is based on partial-year management accounts",
+          "Depreciation is minimal due to asset-light model"
+        ]
+      },
+      "debt_service": {
+        "latest_interest_coverage": 439.32,
+        "interest_coverage_trend": "improving",
+        "additional_debt_capacity_assessment": "Excellent. The company has negligible gearing and extremely high interest coverage, suggesting significant capacity for acquisition-related debt."
+      },
+      "key_findings": [
+        "Revenue demonstrates a healthy 4-year CAGR of 9.96%, despite a minor contraction in 2023.",
+        "Operating margins are volatile but strong, peaking at 45.3% in 2024 due to effective overhead control.",
+        "The business model is highly scalable with a low fixed-asset base and high gross margins (70-76%).",
+        "Dividend policy is aggressive, frequently exceeding net profit and resulting in periodic erosion of retained earnings.",
+        "Significant bad debt provision in 2025 management accounts suggests potential credit control weaknesses or client-specific risks.",
+        "The shift towards agency clients appears to be supporting margin stability despite revenue fluctuations.",
+        "Liquidity remains robust with current ratios consistently above 2.5x, providing a strong working capital buffer."
+      ],
+      "red_flags": [
+        "Aggressive capital extraction via dividends exceeding annual net profit.",
+        "Significant bad debt provision (11.3% of turnover) identified in 2025 management data.",
+        "High volatility in administrative expenses, particularly travel and professional fees."
+      ],
+      "narrative": "Keen As Mustard presents a financially robust profile typical of a high-value creative consultancy. The company has achieved a revenue CAGR of nearly 10% over the last four years, with 2024 showing a strong recovery from a 2023 dip. Profitability is a standout feature, with gross margins consistently exceeding 70% and operating margins reaching 45% in the most recent full financial year. This suggests a high degree of operational leverage where revenue growth translates efficiently into bottom-line earnings. However, the quality of earnings is slightly tempered by an aggressive dividend policy. In multiple years, distributions to shareholders have exceeded net profit, which has led to a contraction of the equity base and retained earnings. While the company remains highly liquid with a current ratio of 2.54, this pattern of capital extraction limits the internal funding available for organic growth. From a cost perspective, the business has successfully transitioned from a fixed-staff model to a more flexible structure utilizing subcontractors, which protects margins during revenue downturns. The primary concern for a buyer is the 2025 management data, which highlights a substantial bad debt provision of nearly £45k. This suggests that while the company is successful at winning high-value contracts, its credit risk management or client concentration may pose a risk. Overall, the company is an attractive acquisition target due to its high margins, low debt, and proven ability to scale without significant capital expenditure, provided that the dividend policy is normalized post-acquisition and credit controls are tightened."
+    }
+  },
+  {
+    "id": 2809,
+    "expert_type": "operational",
+    "status": "success",
+    "score": 68,
+    "confidence": "high",
+    "created_at": "2026-07-18T10:54:09.848Z",
+    "analysis_data": {
+      "expert": "operational",
+      "company_name": "Keen As Mustard",
+      "analysis_date": "2025-05-20",
+      "score": 68,
+      "confidence": "high",
+      "working_capital": {
+        "yearly_metrics": {
+          "2022": {
+            "debtor_days": 89.9,
+            "creditor_days": 0,
+            "stock_days": 0,
+            "cash_conversion_cycle_days": 89.9,
+            "net_working_capital": 152344,
+            "working_capital_percent_revenue": 35.9
+          },
+          "2023": {
+            "debtor_days": 55.3,
+            "creditor_days": 5.7,
+            "stock_days": 0,
+            "cash_conversion_cycle_days": 49.6,
+            "net_working_capital": 104557,
+            "working_capital_percent_revenue": 26.4
+          },
+          "2024": {
+            "debtor_days": 78.7,
+            "creditor_days": 1.6,
+            "stock_days": 0,
+            "cash_conversion_cycle_days": 77.1,
+            "net_working_capital": 115778,
+            "working_capital_percent_revenue": 26.5
+          }
+        },
+        "trend": "stable",
+        "working_capital_intensity": "moderate",
+        "observations": [
+          "Debtor days show significant volatility, peaking at 90 days in 2022 before improving and then extending again in 2024.",
+          "The business is a net generator of cash but maintains a high debtor balance relative to its size, typical of agency/consultancy models.",
+          "Creditor days are exceptionally low, suggesting immediate payment to suppliers/subcontractors which does not maximize float.",
+          "A significant bad debt provision of £44,892 in 2025 highlights a breakdown in credit control or a specific client failure."
+        ]
+      },
+      "capex": {
+        "total_gross_asset_value": 1524,
+        "total_nbv": 250,
+        "asset_freshness_percent": 16.4,
+        "recent_additions_24m_value": 0,
+        "recent_additions_percent": 0,
+        "annual_depreciation_charge": 111,
+        "estimated_maintenance_capex": 111,
+        "capex_cliff_risk": true,
+        "assets_requiring_replacement": [
+          {
+            "category": "IT Equipment",
+            "reason": "NBV is < 20% of cost; asset base is near fully depreciated"
+          }
+        ],
+        "category_breakdown": {
+          "property": {
+            "cost": 0,
+            "nbv": 0
+          },
+          "plant_machinery": {
+            "cost": 0,
+            "nbv": 0
+          },
+          "vehicles": {
+            "cost": 0,
+            "nbv": 0
+          },
+          "it_equipment": {
+            "cost": 1524,
+            "nbv": 250
+          },
+          "other": {
+            "cost": 0,
+            "nbv": 0
+          }
+        },
+        "observations": [
+          "The business operates an extremely asset-light model, which is positive for scalability but indicates no proprietary physical infrastructure.",
+          "Asset freshness is very low (16.4%), suggesting the current IT/Computer equipment is at the end of its useful life.",
+          "Capex cliff risk is flagged because the entire asset base is nearly fully depreciated, though the absolute value is immaterial to the group."
+        ]
+      },
+      "workforce": {
+        "headcount": 3,
+        "total_payroll": 73787,
+        "revenue_per_employee": 145411,
+        "payroll_percent_revenue": 16.9,
+        "average_salary_all": 24595,
+        "average_salary_excl_directors": 18595,
+        "director_remuneration_total": 18000,
+        "director_percent_of_payroll": 24.4,
+        "ft_pt_split": {
+          "full_time": "Unknown",
+          "part_time": "Unknown"
+        },
+        "longest_tenured_years": null,
+        "newest_hire_months_ago": null,
+        "observations": [
+          "Revenue per employee is high at £145k, indicating a productive core team.",
+          "The business relies heavily on subcontractors (£30k in 2024), which provides operational flexibility but carries higher variable costs.",
+          "Payroll as a % of revenue is low (16.9%), but this excludes the significant subcontractor spend which is effectively 'external headcount'."
+        ]
+      },
+      "owner_dependency": {
+        "risk_level": "high",
+        "director_count": 1,
+        "highest_individual_salary": 18000,
+        "highest_individual_percent_of_payroll": 24.4,
+        "critical_function_concentration": "High concentration in the Managing Director/Owner role.",
+        "observations": [
+          "The business is highly dependent on the owner for both sales and high-level consultancy delivery.",
+          "Dividend extractions (£126k-£135k) consistently exceed net profits, indicating the business is being managed for owner cash flow rather than equity growth.",
+          "The loss of the key director would likely result in a significant immediate revenue drop given the consultancy nature of the firm."
+        ]
+      },
+      "scalability": {
+        "rating": "medium",
+        "headcount_for_25pct_growth": 1,
+        "capex_needed_for_growth": "Minimal (£5k-£10k for IT/Software)",
+        "working_capital_supports_growth": true,
+        "bottlenecks": [
+          "Owner bandwidth",
+          "Subcontractor availability",
+          "Credit control/Bad debt"
+        ],
+        "observations": [
+          "The business can scale using its existing subcontractor model without immediate fixed headcount increases.",
+          "The asset base does not restrict growth, but the owner's personal involvement in delivery is a ceiling.",
+          "Working capital is sufficient to fund growth, provided the recent bad debt issue is a one-off and not a systemic collection failure."
+        ]
+      },
+      "key_findings": [
+        "Extremely asset-light consultancy model with high gross margins (>70%).",
+        "Strong liquidity with current ratios consistently above 2.0, despite aggressive dividend payouts.",
+        "Operational shift towards agency clients has maintained margins but introduced higher credit risk (evidenced by 2025 bad debt).",
+        "Substantial reliance on subcontractors allows for a flexible cost base that can contract or expand with project volume."
+      ],
+      "red_flags": [
+        "Dividends consistently exceed net profit, eroding the company's capital base over time.",
+        "Significant bad debt provision (£44k) in 2025 suggests a lack of robust credit insurance or vetting for larger contracts.",
+        "Critical dependency on a single director for business development and client relationships."
+      ],
+      "narrative": "Keen As Mustard is a highly efficient, asset-light marketing consultancy. Operationally, it is lean, utilizing a small core team supplemented by a flexible subcontractor network. This allows for high revenue per employee and strong margins. However, the business is currently managed as a lifestyle vehicle for the owner, with capital being extracted faster than it is generated. While the business is scalable due to its low fixed-cost base, the primary operational risks are the high level of owner dependency and a recent significant failure in debtor collection. A transition to a more institutionalized model would require strengthening the middle management layer and formalizing credit control processes."
+    }
+  },
+  {
+    "id": 2811,
+    "expert_type": "qoe",
+    "status": "success",
+    "score": 62,
+    "confidence": "high",
+    "created_at": "2026-07-18T10:54:09.916Z",
+    "analysis_data": {
+      "expert": "quality_of_earnings",
+      "company_name": "Keen As Mustard",
+      "analysis_date": "2025-05-20",
+      "score": 62,
+      "confidence": "high",
+      "reported_figures": {
+        "operating_profit": 197695,
+        "depreciation": 111,
+        "amortisation": 0,
+        "reported_ebitda": 197806,
+        "source_year": 2024
+      },
+      "add_backs": [
+        {
+          "item": "Exceptional Professional Services",
+          "category": "one_off_cost",
+          "amount": 11700,
+          "recurrence": "one_off",
+          "year": 2023,
+          "justification": "Management accounts for 2023 identify ��11,700 in professional services as an exceptional item, likely related to non-recurring strategic or legal advice.",
+          "confidence": "high",
+          "defensibility_score": 8,
+          "case_for_inclusion": "These costs are explicitly flagged as exceptional in the management accounts and do not relate to the ongoing operational delivery of the consultancy.",
+          "case_for_exclusion": "The seller may argue that professional fees are a recurring necessity for a consultancy business, even if the specific provider or project changes."
+        }
+      ],
+      "deductions": [
+        {
+          "item": "Director Salary Market Rate Adjustment",
+          "category": "replacement_salary",
+          "amount": 39500,
+          "recurrence": "recurring",
+          "year": 2024,
+          "justification": "The sole director is paid £18,000. UK SME benchmark for a working MD at this revenue level (£436k) is £45k-£70k. Using the mid-point of £57,500 results in a £39,500 deduction.",
+          "confidence": "high",
+          "defensibility_score": 9,
+          "case_for_inclusion": "The current salary is a 'lifestyle' figure supplemented by dividends; a commercial buyer must account for the true cost of a replacement manager.",
+          "case_for_exclusion": "The seller might argue that the business is highly automated or that the owner's time commitment does not justify a full-time executive salary."
+        },
+        {
+          "item": "Bad Debt Provision Normalisation",
+          "category": "bad_debt_provision",
+          "amount": 44892,
+          "recurrence": "one_off",
+          "year": 2025,
+          "justification": "2025 management accounts show a £44,892 bad debt provision (11.3% of revenue). While flagged as exceptional, it indicates a failure in credit control that must be deducted from sustainable earnings.",
+          "confidence": "high",
+          "defensibility_score": 7,
+          "case_for_inclusion": "This represents a real loss of economic benefit and suggests that reported 2024 earnings may be overstated if credit risks were already present.",
+          "case_for_exclusion": "The seller will argue this is a one-off client failure in 2025 and should not impact the valuation of the 2024 historical earnings."
+        },
+        {
+          "item": "IT Infrastructure Catch-up (Maintenance)",
+          "category": "deferred_maintenance",
+          "amount": 5000,
+          "recurrence": "recurring",
+          "year": 2024,
+          "justification": "Operational expert flags a 'Capex Cliff' with asset freshness at 16.4% and IT equipment near fully depreciated. An annualised maintenance/replacement budget is required.",
+          "confidence": "medium",
+          "defensibility_score": 6,
+          "case_for_inclusion": "The business is currently under-investing in its core tools; a buyer will incur these costs immediately to maintain operational standards.",
+          "case_for_exclusion": "The seller may argue that in an asset-light model, IT costs are immaterial and covered by the existing 'Computer Costs' overhead line."
+        }
+      ],
+      "total_add_backs": 11700,
+      "total_deductions": 89392,
+      "adjusted_ebitda": {
+        "conservative": 108414,
+        "base": 120114,
+        "optimistic": 170006
+      },
+      "adjustment_summary": {
+        "reported_ebitda": 197806,
+        "plus_add_backs": 11700,
+        "minus_deductions": 89392,
+        "equals_adjusted_ebitda_base": 120114
+      },
+      "director_salary_analysis": {
+        "directors": [
+          {
+            "name": "Managing Director",
+            "current_salary": 18000,
+            "estimated_market_rate": 57500,
+            "benchmark_range_used": "Revenue £1M-£5M (Adjusted for lower revenue scale of £436k)",
+            "adjustment": 39500,
+            "adjustment_type": "deduction"
+          }
+        ]
+      },
+      "sustainability_assessment": {
+        "sustainable_for_3_years": false,
+        "key_assumptions": [
+          "Subcontractor availability remains stable at current margins.",
+          "The pivot to agency clients does not further deteriorate the debtor collection cycle.",
+          "The owner provides a minimum 12-month transition period to mitigate high owner-dependency."
+        ],
+        "sensitivity_factors": [
+          "Loss of any of the top 3 clients (34% revenue concentration).",
+          "Increase in subcontractor day rates in the creative sector.",
+          "Further bad debt write-offs from the new agency-heavy client mix."
+        ],
+        "upside_scenarios": [
+          "Institutionalizing credit control to eliminate the 11% bad debt leakage.",
+          "Leveraging the high interest coverage to fund an acquisition of a complementary smaller agency."
+        ],
+        "downside_scenarios": [
+          "Owner exit leads to 'key man' revenue attrition.",
+          "Dividend-led capital erosion leaves the business with insufficient working capital for a large project."
+        ]
+      },
+      "key_findings": [
+        "Reported EBITDA is significantly inflated by a below-market director salary and the exclusion of recent bad debt trends.",
+        "The business model is highly efficient (76% GM) but currently operates as a lifestyle vehicle with aggressive capital extraction.",
+        "The 2025 bad debt provision of £44k is a major red flag regarding the quality of the current sales ledger.",
+        "Asset-light model provides high scalability but offers no 'moat' or proprietary infrastructure beyond client relationships."
+      ],
+      "red_flags": [
+        "Dividends consistently exceed net profit, resulting in a 30% decline in net assets in 2023.",
+        "Significant bad debt provision (11.3% of revenue) identified in 2025 management data.",
+        "High owner dependency for business development and high-level consultancy delivery."
+      ],
+      "narrative": "Keen As Mustard demonstrates the high-margin characteristics of a successful creative consultancy, but the 'Quality of Earnings' is compromised by its current management as a lifestyle business. While the reported 2024 EBITDA of £197k is impressive, it is not 'transferable' at that level. A buyer must deduct approximately £40k to account for a commercial management salary and recognize that the 2025 bad debt issue suggests the 2024 revenue may have been lower quality than it appeared. Furthermore, the aggressive extraction of dividends has left the balance sheet with declining equity. The adjusted base EBITDA of £120k is a more defensible starting point for valuation, reflecting the true cost of operations and a normalized risk profile."
+    }
+  },
+  {
+    "id": 2810,
+    "expert_type": "risk",
+    "status": "success",
+    "score": 62,
+    "confidence": "high",
+    "created_at": "2026-07-18T10:54:09.882Z",
+    "analysis_data": {
+      "expert": "risk",
+      "company_name": "Keen As Mustard",
+      "analysis_date": "2025-05-20",
+      "score": 62,
+      "confidence": "high",
+      "customer_concentration": {
+        "risk_level": "moderate",
+        "top_customer_percent": 13.4,
+        "top_3_customers_percent": 33.9,
+        "top_5_customers_percent": 48.4,
+        "hhi_index": 685,
+        "hhi_classification": "diversified",
+        "total_customers": 13,
+        "customers_over_15_percent": [],
+        "observations": [
+          "Revenue is well-distributed across a base of approximately 13 key clients.",
+          "The top client (Integro) represents 13.4% of projected revenue, which is below the 15% warning threshold.",
+          "Strategic pivot from brand clients to agency clients has maintained a healthy HHI, indicating low concentration risk."
+        ]
+      },
+      "financial_risk": {
+        "risk_level": "moderate",
+        "technically_insolvent": false,
+        "current_ratio_trend": "deteriorating",
+        "creditor_growth_vs_revenue": "Creditors (Taxation) growing significantly faster than revenue growth.",
+        "director_loans_balance": 1761.56,
+        "intercompany_balances": 0,
+        "interest_coverage_adequate": true,
+        "going_concern_indicators": [
+          "Dividends consistently exceed net profit",
+          "Significant reduction in retained earnings"
+        ],
+        "observations": [
+          "Current ratio has declined from 4.01 (2022) to 1.75 (2025), though still above the 1.5 benchmark.",
+          "Aggressive dividend policy is depleting the company's capital buffer.",
+          "Interest coverage remains exceptionally high (>100x), indicating no immediate debt service risk."
+        ]
+      },
+      "key_person_risk": {
+        "risk_level": "high",
+        "highest_individual_payroll_percent": 25,
+        "single_points_of_failure": [
+          "Owner/Director dependency for business development",
+          "Lean administrative structure"
+        ],
+        "management_depth": "thin",
+        "average_tenure_years": null,
+        "observations": [
+          "Total staff costs are low relative to revenue, suggesting a heavy reliance on the director and a small pool of subcontractors.",
+          "The business model is highly dependent on the director's personal network for agency referrals."
+        ]
+      },
+      "revenue_quality": {
+        "risk_level": "moderate",
+        "revenue_type": "project_based",
+        "customer_trend": "stable_base",
+        "seasonality_detected": true,
+        "observations": [
+          "Revenue shows significant monthly volatility (e.g., £53.7k peak vs £17.4k trough).",
+          "High gross margins (>70%) suggest high-value consultancy, but lack of long-term retainers creates 'lumpy' cash flow."
+        ]
+      },
+      "balance_sheet_risks": {
+        "director_loans": 1761.56,
+        "connected_company_balances": 0,
+        "deferred_tax": null,
+        "pension_obligations": 0,
+        "contingent_liabilities": "unable_to_assess",
+        "observations": [
+          "Director is owed £1,761.56 as of Nov 2025.",
+          "Corporation tax liability of £41,386 is a significant upcoming cash outflow relative to cash at bank (£52,209)."
+        ]
+      },
+      "bad_debt": {
+        "total_overdue_90_plus": 44892.34,
+        "recommended_provision": 44892.34,
+        "existing_provision": 44892.34,
+        "net_profit_impact": -44892.34,
+        "observations": [
+          "A massive bad debt write-off of £44,892 occurred in 2025, representing 11.3% of turnover.",
+          "This write-off reduced net profit margin from a potential ~25% to 13.4%."
+        ]
+      },
+      "risk_register": [
+        {
+          "risk": "Capital Extraction",
+          "category": "financial",
+          "severity": "high",
+          "likelihood": "high",
+          "financial_impact": 129600,
+          "impact_description": "Dividends exceeding profit leads to erosion of working capital and net asset value.",
+          "mitigation": "Implement a restrictive covenant on dividend payments post-acquisition to rebuild reserves."
+        },
+        {
+          "risk": "Bad Debt Volatility",
+          "category": "bad_debt",
+          "severity": "high",
+          "likelihood": "medium",
+          "financial_impact": 44892,
+          "impact_description": "Significant impact on bottom-line profitability and cash flow predictability.",
+          "mitigation": "Perform deep-dive due diligence on the specific 2025 default; implement stricter credit control for agency clients."
+        },
+        {
+          "risk": "Key Person Dependency",
+          "category": "people",
+          "severity": "high",
+          "likelihood": "high",
+          "financial_impact": null,
+          "impact_description": "Loss of the director could lead to immediate loss of key agency relationships.",
+          "mitigation": "Structure the deal with a significant earn-out period (2-3 years) and non-compete agreements."
+        },
+        {
+          "risk": "Tax Liability Pressure",
+          "category": "balance_sheet",
+          "severity": "medium",
+          "likelihood": "high",
+          "financial_impact": 41386,
+          "impact_description": "Large tax creditor balance relative to declining cash reserves.",
+          "mitigation": "Ensure tax liabilities are fully provided for in the completion accounts and adjusted in the final purchase price."
+        }
+      ],
+      "deal_breakers": [
+        "None identified, but the trend of dividends exceeding net profit is a significant concern for long-term sustainability."
+      ],
+      "key_findings": [
+        "The company is highly profitable at a gross level but vulnerable to single-event shocks like the 2025 bad debt.",
+        "Liquidity is tightening due to aggressive capital extraction by the current owners.",
+        "Customer concentration is surprisingly low for a boutique agency, which is a major strength.",
+        "The business model relies heavily on subcontractors, providing flexibility but increasing operational risk if talent is not secured."
+      ],
+      "narrative": "Keen As Mustard presents a moderate risk profile. Its core strength lies in its diversified client base and high gross margins, which indicate a strong market position. However, the financial management shows signs of 'lifestyle' business behavior, specifically the extraction of dividends in excess of net profits, which has weakened the balance sheet. The recent significant bad debt write-off suggests a need for more robust credit management. A buyer should focus on securing the principal director through a long-term earn-out and stabilizing the working capital position."
+    }
+  },
+  {
+    "id": 2807,
+    "expert_type": "screening",
+    "status": "success",
+    "score": null,
+    "confidence": null,
+    "created_at": "2026-07-18T10:54:04.503Z",
+    "analysis_data": {
+      "stage": "screening",
+      "company_name": "Keen As Mustard",
+      "sector": "Media, Marketing & Creative",
+      "analysis_date": "2024-05-22",
+      "data_quality_score": 62,
+      "analysis_period": {
+        "earliest_year": 2020,
+        "latest_year": 2024,
+        "years_of_data": 5
+      },
+      "dimensions": {
+        "earnings_trajectory": {
+          "rag": "GREEN",
+          "score": 75,
+          "revenue_cagr_percent": 10,
+          "latest_revenue": 436233,
+          "latest_gross_margin_percent": 76.2,
+          "latest_operating_margin_percent": 45.3,
+          "latest_net_margin_percent": 33.8,
+          "margin_direction": "expanding",
+          "explanation": "Revenue has grown from 298,350 in 2020 to 436,233 in 2024, representing a healthy CAGR. Margins expanded significantly in the latest full year (2024) with net profit reaching 147,508."
+        },
+        "balance_sheet_health": {
+          "rag": "GREEN",
+          "score": 80,
+          "latest_current_ratio": 2.5,
+          "latest_net_assets": 109592,
+          "net_asset_growth_percent": 24.1,
+          "long_term_debt": 6519,
+          "explanation": "The company maintains a strong current ratio of 2.5 and has successfully reduced long-term bank loans by over 60% in the last year. Net assets grew by 24.1% despite significant dividend extractions."
+        },
+        "cash_reality": {
+          "rag": "AMBER",
+          "score": 55,
+          "latest_cash_at_bank": 96620,
+          "cash_trend": "stable",
+          "cash_vs_profit_alignment": "partial",
+          "explanation": "While cash remains robust at 96,620, dividend payments (126,200) frequently exceed net profit, leading to a reliance on existing reserves. Management accounts for 2025 suggest a recent dip in cash to 52,209 following bad debt issues."
+        },
+        "customer_risk": {
+          "rag": "AMBER",
+          "score": 50,
+          "top_customer_concentration_percent": 13.4,
+          "aged_debt_90_plus_percent": null,
+          "total_customers": 13,
+          "explanation": "Top 3 clients account for approximately 34% of projected revenue, indicating moderate concentration. A significant bad debt provision of 44,892 in 2025 management accounts highlights a specific recent credit risk event."
+        },
+        "asset_quality": {
+          "rag": "RED",
+          "score": 20,
+          "nbv_to_cost_percent": 21.9,
+          "recent_additions_percent": 0,
+          "total_nbv": 333,
+          "explanation": "The company operates with a negligible fixed asset base (333) which is almost fully depreciated. While typical for the sector, there is no evidence of recent capital investment in proprietary technology or infrastructure."
+        },
+        "people_capability": {
+          "rag": "GREEN",
+          "score": 85,
+          "headcount": 5,
+          "revenue_per_employee": 87246,
+          "payroll_to_revenue_percent": 16.9,
+          "director_cost_percent_of_payroll": 24.4,
+          "explanation": "Revenue per head is strong for a creative boutique, and director remuneration is well-controlled at 24.4% of total payroll. The business model is lean and highly efficient."
+        }
+      },
+      "overall_score": 65,
+      "recommendation": "PROCEED",
+      "recommendation_justification": "The company demonstrates strong historical earnings growth and exceptional liquidity. While asset-light and recently impacted by a bad debt event, the core profitability and lean cost structure make it an attractive bolt-on acquisition.",
+      "key_strengths": [
+        "Consistent revenue growth with a 10% year-on-year increase in the latest statutory period.",
+        "High operational efficiency with net margins exceeding 30% in 2024.",
+        "Strong liquidity position with a current ratio of 2.5 and minimal long-term leverage."
+      ],
+      "key_concerns": [
+        "Aggressive dividend policy where distributions frequently exceed annual net profits.",
+        "Recent 44,892 bad debt write-off in 2025 management accounts suggests potential credit control weaknesses.",
+        "Negligible tangible asset base provides no downside protection or collateral."
+      ],
+      "questions_for_seller": [
+        "What were the specific circumstances surrounding the 44,892 bad debt provision in early 2025?",
+        "Can you provide a detailed breakdown of the 'Other Overheads' which increased significantly in the 2025 management accounts?",
+        "What is the contractual status of the top 3 clients (Integro, InsightsNow, Brand Genetics) for the next 12 months?",
+        "Why did travel and subsistence costs spike to over 10% of revenue in 2023 before moderating?"
+      ],
+      "comparable_context": "Keen As Mustard's net margins (25-33%) are significantly higher than the UK SME media sector average (10-15%). However, its revenue per employee is slightly below top-tier consultancy benchmarks, suggesting a high reliance on subcontractors.",
+      "executive_summary": "Keen As Mustard is a highly profitable, lean marketing and creative agency showing strong financial performance through 2024. The recommendation is to PROCEED with further due diligence. The company achieved a 10% revenue increase and a 33.8% net margin in its latest full year, supported by a robust current ratio of 2.5. Key strengths include its ability to scale revenue while maintaining a low fixed-cost base and minimal debt. However, caution is required regarding recent 2025 management data which shows a significant bad debt hit of nearly 45k and a resulting dip in cash reserves. Furthermore, the owners have historically extracted capital aggressively via dividends, which may limit immediate post-acquisition working capital. Further investigation should focus on client contract stickiness and the robustness of their credit control processes following the recent bad debt event."
+    }
+  },
+  {
+    "id": 2812,
+    "expert_type": "sector",
+    "status": "success",
+    "score": 62,
+    "confidence": "medium",
+    "created_at": "2026-07-18T10:54:09.950Z",
+    "analysis_data": {
+      "expert": "sector",
+      "company_name": "Keen As Mustard",
+      "sector": "Media, Marketing & Creative",
+      "analysis_date": "2023-10-27",
+      "score": 62,
+      "confidence": "medium",
+      "sector_overview": {
+        "growth_outlook": "mixed",
+        "uk_market_size_estimate": "£45bn - £50bn (Total UK Creative Industries)",
+        "key_trends": [
+          "Shift toward data-driven creative and performance marketing",
+          "Increased demand for ESG and sustainability-focused branding",
+          "AI integration in design workflows to reduce production costs",
+          "Consolidation of boutique agencies into larger full-service groups"
+        ],
+        "regulatory_factors": [
+          "GDPR/Data protection compliance for marketing data",
+          "ASA (Advertising Standards Authority) tightening on greenwashing",
+          "IR35 legislation affecting freelancer engagement models"
+        ],
+        "observations": [
+          "The UK creative sector remains a global hub but faces margin pressure from rising talent costs.",
+          "Boutique agencies like Keen As Mustard often differentiate through deep niche expertise (e.g., B2B or Data/Insights branding)."
+        ]
+      },
+      "competitive_positioning": {
+        "company_size_classification": "micro",
+        "typical_gross_margin_range": {
+          "low": 0.4,
+          "high": 0.6
+        },
+        "typical_operating_margin_range": {
+          "low": 0.1,
+          "high": 0.18
+        },
+        "typical_ebitda_margin_range": {
+          "low": 0.12,
+          "high": 0.2
+        },
+        "positioning_assessment": "Based on typical profiles for boutique branding agencies, Keen As Mustard likely operates as a micro-to-small specialist agency. It likely competes on high-touch service and niche expertise rather than scale."
+      },
+      "comparable_multiples": {
+        "ev_revenue_range": {
+          "low": 0.4,
+          "mid": 0.7,
+          "high": 1
+        },
+        "ev_ebitda_range": {
+          "low": 2,
+          "mid": 3,
+          "high": 4
+        },
+        "factors_affecting_multiple": [
+          "Revenue recurring vs project-based",
+          "Client concentration levels",
+          "Founder dependency",
+          "Niche specialization"
+        ],
+        "premium_factors": [
+          "Specialization in high-value niches (e.g., Data/Insights sector branding)",
+          "Strong portfolio of blue-chip clients",
+          "High proportion of retained/recurring revenue"
+        ],
+        "discount_factors": [
+          "Small headcount (likely <15 employees)",
+          "High dependency on the founder for business development",
+          "Project-based revenue volatility",
+          "Low barriers to entry for competitors"
+        ],
+        "data_confidence": "based_on_training_data"
+      },
+      "growth_opportunities": [
+        {
+          "opportunity": "Service Line Expansion",
+          "effort": "medium",
+          "potential_impact": "high",
+          "timeframe": "medium_term",
+          "description": "Expanding from pure branding/design into digital execution and ongoing content strategy to increase recurring revenue."
+        },
+        {
+          "opportunity": "Geographic Expansion (US Market)",
+          "effort": "high",
+          "potential_impact": "high",
+          "timeframe": "long_term",
+          "description": "Leveraging UK creative reputation to win higher-margin US-based clients in the data and insights space."
+        },
+        {
+          "opportunity": "AI-Driven Efficiency",
+          "effort": "low",
+          "potential_impact": "medium",
+          "timeframe": "short_term",
+          "description": "Implementing generative AI tools to reduce time-to-delivery for initial design concepts and production tasks."
+        }
+      ],
+      "sector_risks": [
+        {
+          "risk": "Economic Cyclicality",
+          "severity": "high",
+          "timeframe": "immediate",
+          "description": "Marketing and branding budgets are often the first to be cut during UK economic downturns."
+        },
+        {
+          "risk": "Talent Attrition",
+          "severity": "medium",
+          "timeframe": "near_term",
+          "description": "High competition for creative talent and rising wage inflation in the UK market."
+        },
+        {
+          "risk": "Low Switching Costs",
+          "severity": "medium",
+          "timeframe": "medium_term",
+          "description": "Clients can easily move to alternative agencies at the end of a project or contract."
+        }
+      ],
+      "key_findings": [
+        "The agency likely falls into the 2.0x - 3.5x EBITDA range typical for UK SMEs under £5M revenue.",
+        "Valuation will be heavily sensitive to the 'stickiness' of the client base and the level of founder involvement.",
+        "The sector is currently stable but faces headwinds from reduced corporate discretionary spending."
+      ],
+      "narrative": "Keen As Mustard is a specialist branding and design agency. In the UK SME market, such firms are valued primarily on their ability to generate sustainable EBITDA beyond the founder's personal efforts. While the creative sector is vibrant, the lack of recurring revenue in pure-play design often keeps multiples in the lower quartile (2.5x-3.5x) unless the agency has secured long-term retainer contracts or a unique proprietary process. A buyer should focus on verifying client concentration and the transitionability of client relationships."
+    }
+  },
+  {
+    "id": 2815,
+    "expert_type": "synthesis",
+    "status": "success",
+    "score": null,
+    "confidence": null,
+    "created_at": "2026-07-18T10:54:10.054Z",
+    "analysis_data": {
+      "stage": "synthesis",
+      "company_name": "Keen As Mustard",
+      "sector": "Media, Marketing & Creative",
+      "analysis_date": "2025-05-20",
+      "overall_score": 64,
+      "recommendation": "PROCEED_WITH_CAUTION",
+      "scores_dashboard": {
+        "financial": {
+          "score": 68,
+          "confidence": "high"
+        },
+        "operational": {
+          "score": 68,
+          "confidence": "high"
+        },
+        "risk": {
+          "score": 62,
+          "confidence": "high"
+        },
+        "quality_of_earnings": {
+          "score": 62,
+          "confidence": "high"
+        },
+        "sector": {
+          "score": 62,
+          "confidence": "medium"
+        },
+        "valuation": {
+          "score": 72,
+          "confidence": "high"
+        },
+        "deal_structure": {
+          "score": 58,
+          "confidence": "high"
+        }
+      },
+      "executive_summary": "Keen As Mustard is a high-margin, asset-light creative consultancy specializing in branding and design. The business demonstrates exceptional operational efficiency with gross margins exceeding 70% and a diversified client base (HHI 685) that is rare for a micro-agency. However, the company is currently managed as a 'lifestyle' vehicle, characterized by aggressive dividend extraction that exceeds net profits and a director salary significantly below market rates. Financial metrics show a 2024 Revenue of £436k and a reported EBITDA of £198k; however, after normalizing for a commercial management salary and accounting for a significant 2025 bad debt event (£45k), the Adjusted EBITDA sits at £120k. The valuation range is £220k - £420k, with a recommended mid-point equity value of £330k. The primary reasons to proceed are the high-value niche expertise, low customer concentration, and a scalable subcontractor-led cost model. Conversely, the deal faces significant risks from extreme owner dependency, recent credit control failures, and a deteriorating capital base. We recommend a 'Conservative' deal structure: a £330k headline price with only 40% paid upfront, utilizing a 36-month earn-out to mitigate key-person risk and validate the sustainability of the client ledger post-acquisition.",
+      "expert_consensus": {
+        "agreements": [
+          "The business is highly efficient with a flexible cost base (subcontractors).",
+          "Reported EBITDA is significantly inflated and requires normalization for a market-rate MD salary.",
+          "The 2025 bad debt provision of £44.8k is a major red flag indicating operational fragility.",
+          "The company is currently managed for owner cash flow rather than equity growth (lifestyle business)."
+        ],
+        "contradictions": [
+          {
+            "topic": "Scalability vs. Owner Dependency",
+            "expert_a": "Operational",
+            "expert_a_view": "The business is scalable due to its low fixed-asset base and subcontractor model.",
+            "expert_b": "Risk",
+            "expert_b_view": "The business is highly fragile due to extreme dependency on the owner for sales and delivery.",
+            "resolution": "While the 'delivery' is scalable via subcontractors, the 'origination' is not. Growth is capped by the owner's personal network until a dedicated business development function is institutionalized."
+          }
+        ]
+      },
+      "devils_advocate": {
+        "worst_case_scenario": "The Managing Director exits or disengages during the earn-out, leading to a 'silent' exodus of agency referral partners. Simultaneously, the 2025 bad debt proves to be the first of several defaults from a new, riskier agency client mix. The buyer is left with a shell company, an aging IT infrastructure, and no internal talent to rebuild the pipeline.",
+        "weakest_assumptions": [
+          "That the 76% gross margin is sustainable under new management without the founder's personal 'prestige' pricing.",
+          "That the subcontractor network is loyal to the brand rather than the individual director.",
+          "That the 2025 bad debt is a 'one-off' rather than a symptom of a declining sector or poor client vetting."
+        ],
+        "underweighted_risks": [
+          "The 'Capex Cliff': While IT costs are small, the 16.4% asset freshness suggests a total lack of investment in modern creative tools/AI workflows.",
+          "Tax Liability: The corporation tax due is nearly equal to the total cash at bank, leaving zero margin for error in the next 6 months."
+        ],
+        "post_mortem_predictions": [
+          "The buyer will realize the 'diversified' client base was actually a series of one-off projects that required the founder's constant intervention to close.",
+          "The 'Adjusted EBITDA' of £120k will prove optimistic because the cost of replacing the founder's multi-disciplinary role (Sales + Creative + Admin) exceeds a single £57k salary."
+        ]
+      },
+      "investment_thesis": {
+        "positive_case": "Keen As Mustard is a 'diamond in the rough'—a highly profitable specialist with a blue-chip client history that has been held back by lifestyle-focused management. By institutionalizing credit controls, investing in a small sales team, and leveraging the existing high margins, a buyer can scale this from a micro-consultancy into a robust mid-tier agency.",
+        "conditions_for_success": [
+          "The founder must commit to a minimum 24-month transition period.",
+          "The 2025 bad debt must be proven as an isolated incident with a specific client.",
+          "Post-acquisition dividend policy must be halted to rebuild the working capital buffer."
+        ],
+        "integration_priorities_100_days": [
+          "Implement formal credit vetting and insurance for all agency clients.",
+          "Refresh IT infrastructure and migrate to a centralized project management system.",
+          "Formalize subcontractor contracts to ensure IP ownership and availability."
+        ]
+      },
+      "information_requests": {
+        "critical": [
+          {
+            "request": "Full breakdown of the £44,892 bad debt provision",
+            "source_expert": "Financial/Risk",
+            "rationale": "To determine if this is a systemic failure or a single client insolvency."
+          },
+          {
+            "request": "Detailed 2025 Management Accounts (P&L and Balance Sheet)",
+            "source_expert": "Financial",
+            "rationale": "To verify the current run-rate and the impact of the bad debt on liquidity."
+          }
+        ],
+        "important": [
+          {
+            "request": "Subcontractor agreements and IP assignment clauses",
+            "source_expert": "Operational",
+            "rationale": "To ensure the buyer owns the creative output and has continuity of supply."
+          },
+          {
+            "request": "Client contract terms (Retainer vs Project)",
+            "source_expert": "Sector/Risk",
+            "rationale": "To quantify the 'lumpiness' of revenue and the true level of recurring income."
+          }
+        ],
+        "nice_to_have": [
+          {
+            "request": "Historical dividend vs. Net Profit schedule (5 years)",
+            "source_expert": "Financial",
+            "rationale": "To establish a baseline for a normalized capital structure negotiation."
+          }
+        ]
+      },
+      "valuation_summary": {
+        "equity_value_range": {
+          "low": 220000,
+          "mid": 330000,
+          "high": 420000
+        },
+        "recommended_offer": 330000,
+        "recommended_structure": "Conservative Approach (40% Upfront, 20% Deferred, 40% Earn-out)"
+      },
+      "narrative_report": "INVESTMENT MEMORANDUM: PROJECT MUSTARD\n\n1. STRATEGIC OVERVIEW\nKeen As Mustard represents a niche opportunity to acquire a highly efficient branding consultancy. The company has carved out a strong position in the Media and Creative sector, evidenced by its 76% gross margins and a 10% revenue CAGR. Unlike many boutique agencies, it is not overly reliant on a single 'anchor' client, with its top customer representing only 13.4% of revenue. This diversification provides a solid foundation for an institutional buyer.\n\n2. FINANCIAL PERFORMANCE & QUALITY OF EARNINGS\nWhile the headline 2024 EBITDA of £198k is attractive, our 'Quality of Earnings' analysis reveals significant 'lifestyle' distortions. The current Managing Director is significantly underpaid (£18k), and the company has been used to extract capital via dividends in excess of profits, eroding the net asset base. Furthermore, the 2025 management accounts have flagged a £45k bad debt provision—equivalent to 11% of annual turnover. When normalized for a market-rate salary and the recent credit failure, the sustainable EBITDA is adjusted downward to £120k. This adjustment is critical for valuation, as the reported figures do not reflect the true cost of operating the business as a commercial entity.\n\n3. OPERATIONAL VIABILITY\nThe business model is lean and asset-light, utilizing a core team of three supplemented by a flexible subcontractor network. This allows the firm to maintain high margins and scale costs in line with project volume. However, the 'Capex Cliff' identified by our operational expert—with IT assets near 100% depreciation—indicates a period of under-investment. A buyer should budget for an immediate refresh of the firm's technical infrastructure. The primary operational risk remains the 'Key Person' dependency; the founder is the primary driver of both strategy and sales.\n\n4. RISK ASSESSMENT\nThe risk profile is 'Moderate-High' due to the combination of micro-scale and the recent breakdown in credit control. The 2025 bad debt event suggests that the pivot toward agency clients, while beneficial for margins, has introduced higher counterparty risk. Additionally, the current liquidity position is tight; the upcoming corporation tax liability of £41k is nearly equal to the cash on hand, leaving the business vulnerable to any further delays in debtor collection.\n\n5. VALUATION & DEAL STRUCTURE\nWe value the business at £330,000 (Equity Value), representing a 2.75x multiple of Adjusted EBITDA. This multiple reflects a discount for the company's micro-scale and owner dependency, balanced against its high margins and client diversification. To bridge the gap between our valuation and the seller's likely higher expectations, we propose a 'Conservative' deal structure. This involves a 40% upfront payment (£132k), with the remainder tied to a 36-month earn-out and deferred payments. This structure ensures the founder remains incentivized to transition relationships and proves the sustainability of the earnings post-acquisition.\n\n6. CONCLUSION\nKeen As Mustard is a viable acquisition for a buyer looking to add high-margin creative capabilities to an existing portfolio. However, the deal must be approached as a 'turnaround' of management practices rather than a passive investment. Success depends entirely on securing the founder's cooperation during a long handover and professionalizing the firm's financial and credit operations."
+    }
+  },
+  {
+    "id": 2813,
+    "expert_type": "valuation",
+    "status": "success",
+    "score": 72,
+    "confidence": "high",
+    "created_at": "2026-07-18T10:54:09.985Z",
+    "analysis_data": {
+      "expert": "valuation",
+      "company_name": "Keen As Mustard",
+      "analysis_date": "2025-05-20",
+      "score": 72,
+      "confidence": "high",
+      "ebitda_multiple_valuation": {
+        "adjusted_ebitda_base": 120114,
+        "sector_multiple_range": {
+          "low": 2,
+          "mid": 3,
+          "high": 4
+        },
+        "selected_multiple": 2.75,
+        "multiple_justification": "A multiple of 2.75x is selected, sitting slightly below the sector midpoint. While the company boasts exceptional gross margins (76%) and a diversified client base (HHI 685), it is heavily discounted due to its micro-scale (revenue <£500k), extreme owner dependency, and recent significant bad debt issues which suggest operational fragility.",
+        "premium_factors_applied": [
+          "High Gross Margins (76%) indicating strong value proposition",
+          "Low Customer Concentration (Top client <15%)",
+          "Scalable asset-light model",
+          "Strong interest coverage and zero gearing"
+        ],
+        "discount_factors_applied": [
+          "Micro-scale revenue (<£1M)",
+          "High Key Person Dependency (Owner-led sales/delivery)",
+          "Significant Bad Debt Provision (11.3% of revenue in 2025)",
+          "Aggressive dividend policy eroding capital base",
+          "Aging IT infrastructure (Asset freshness 16.4%)"
+        ],
+        "enterprise_value_range": {
+          "conservative": 216828,
+          "base": 330313,
+          "optimistic": 420399
+        }
+      },
+      "ev_to_equity_bridge": {
+        "enterprise_value_base": 330313,
+        "plus_cash": 52209,
+        "minus_long_term_debt": 0,
+        "minus_director_loans": 1762,
+        "minus_bad_debt_provision": 44892,
+        "minus_working_capital_adjustment": 5000,
+        "equity_value": {
+          "conservative": 217383,
+          "base": 330868,
+          "optimistic": 420954
+        }
+      },
+      "asset_based_valuation": {
+        "net_asset_value": 115778,
+        "property_adjustment": 0,
+        "bad_debt_adjustment": -44892,
+        "adjusted_nav": 70886,
+        "nav_as_floor": true
+      },
+      "revenue_multiple_crosscheck": {
+        "latest_revenue": 436233,
+        "revenue_multiple_range": {
+          "low": 0.4,
+          "high": 0.7
+        },
+        "implied_ev_range": {
+          "low": 174493,
+          "high": 305363
+        }
+      },
+      "valuation_summary": {
+        "recommended_range": {
+          "equity_value_low": 220000,
+          "equity_value_mid": 330000,
+          "equity_value_high": 420000
+        },
+        "primary_methodology": "ebitda_multiple",
+        "cross_check_alignment": "moderate"
+      },
+      "sensitivity": {
+        "ebitda_plus_10pct": {
+          "enterprise_value": 363344,
+          "equity_value": 363899
+        },
+        "ebitda_minus_10pct": {
+          "enterprise_value": 297282,
+          "equity_value": 297837
+        },
+        "multiple_plus_half": {
+          "enterprise_value": 390370,
+          "equity_value": 390925
+        },
+        "multiple_minus_half": {
+          "enterprise_value": 270256,
+          "equity_value": 270811
+        },
+        "key_customer_loss_impact": 44262,
+        "director_replacement_impact": 39500
+      },
+      "seller_expectations": {
+        "likely_seller_expectation_range": {
+          "low": 450000,
+          "high": 650000
+        },
+        "seller_anchor_points": [
+          "Reported 2024 EBITDA of £197k",
+          "High historical dividend payouts",
+          "Emotional value of a 10% revenue CAGR"
+        ],
+        "negotiation_gap_assessment": "Significant. The seller will likely anchor on the unadjusted EBITDA of £197k and expect a 3x multiple on that figure (~£600k). The buyer's focus on the £45k bad debt and the £40k salary adjustment creates a ~£250k valuation gap that will likely require an earn-out structure to bridge."
+      },
+      "key_findings": [
+        "Adjusted EBITDA is 39% lower than reported due to market-rate salary adjustments and bad debt normalization.",
+        "The business is highly efficient but operates as a lifestyle vehicle with high capital extraction.",
+        "Client diversification is a major strength, reducing the risk of single-client failure despite the 2025 bad debt event.",
+        "The asset-light model allows for high scalability but offers no physical 'moat'."
+      ],
+      "red_flags": [
+        "Dividends consistently exceeding net profit, leading to equity erosion.",
+        "2025 bad debt provision of £44.8k indicates credit control weaknesses.",
+        "Extreme owner dependency for both business development and technical delivery.",
+        "IT infrastructure is near end-of-life (16.4% freshness)."
+      ],
+      "narrative": "Keen As Mustard is a high-performing boutique consultancy that presents a classic 'Quality of Earnings' challenge. While reported figures are strong, they reflect a lifestyle management style where the owner is underpaid in salary to maximize dividends. Once normalized for a commercial manager's salary and the recent £45k bad debt shock, the sustainable EBITDA drops to approximately £120k. Given the micro-scale and high key-person risk, a multiple of 2.75x is appropriate. The valuation is supported by a diversified client base and high gross margins, but a buyer must address the capital extraction trend and tighten credit controls. An earn-out is highly recommended to mitigate the risk of revenue attrition post-founder exit."
+    }
+  }
+]

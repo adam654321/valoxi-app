@@ -1,0 +1,258 @@
+{
+  "document": "balance_sheet",
+  "source": "statutory",
+  "years_covered": [
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "period_ends": {
+    "2022": "2022-02-28",
+    "2023": "2023-02-28",
+    "2024": "2024-02-29",
+    "2025": "2025-02-28"
+  },
+  "months_covered": {
+    "2022": 12,
+    "2023": 12,
+    "2024": 12,
+    "2025": 12
+  },
+  "report_date": null,
+  "years": {
+    "2022": {
+      "year": 2022,
+      "balance_sheet": {
+        "fixed_assets": {
+          "intangible_assets": null,
+          "tangible_assets": 1984,
+          "freehold_property": null,
+          "leasehold_property": null,
+          "plant_machinery": null,
+          "fixtures_fittings": null,
+          "motor_vehicles": null,
+          "computer_equipment": null
+        },
+        "current_assets": {
+          "stock": null,
+          "trade_debtors": null,
+          "prepayments": null,
+          "amounts_owed_by_directors": null,
+          "amounts_owed_by_connected_companies": null,
+          "directors_current_account": null,
+          "other_debtors": null,
+          "cash_at_bank": 210479,
+          "total": 210479
+        },
+        "current_liabilities": {
+          "trade_creditors": null,
+          "taxation_social_security": null,
+          "vat_payable": null,
+          "corporation_tax": null,
+          "bank_loans_current": null,
+          "hire_purchase_current": null,
+          "accruals": null,
+          "amounts_owed_to_directors": null,
+          "other_creditors": null,
+          "total": 85142
+        },
+        "long_term_liabilities": {
+          "bank_loans": null,
+          "hire_purchase_long_term": null,
+          "deferred_taxation": null,
+          "other_debt": null,
+          "total": 0
+        },
+        "equity": {
+          "share_capital": null,
+          "retained_earnings": 127321,
+          "total": 127321
+        }
+      },
+      "financial_ratios": {
+        "current_ratio": 2.472093678795424,
+        "quick_ratio": 2.472093678795424,
+        "net_assets_growth_percent": null,
+        "gearing_ratio_percent": 0
+      }
+    },
+    "2023": {
+      "year": 2023,
+      "balance_sheet": {
+        "fixed_assets": {
+          "intangible_assets": null,
+          "tangible_assets": 1737,
+          "freehold_property": null,
+          "leasehold_property": null,
+          "plant_machinery": null,
+          "fixtures_fittings": null,
+          "motor_vehicles": null,
+          "computer_equipment": null
+        },
+        "current_assets": {
+          "stock": null,
+          "trade_debtors": null,
+          "prepayments": 18660,
+          "amounts_owed_by_directors": null,
+          "amounts_owed_by_connected_companies": null,
+          "directors_current_account": null,
+          "other_debtors": null,
+          "cash_at_bank": 167499,
+          "total": 186159
+        },
+        "current_liabilities": {
+          "trade_creditors": null,
+          "taxation_social_security": null,
+          "vat_payable": null,
+          "corporation_tax": null,
+          "bank_loans_current": null,
+          "hire_purchase_current": null,
+          "accruals": null,
+          "amounts_owed_to_directors": null,
+          "other_creditors": null,
+          "total": 64016
+        },
+        "long_term_liabilities": {
+          "bank_loans": null,
+          "hire_purchase_long_term": null,
+          "deferred_taxation": null,
+          "other_debt": null,
+          "total": 38
+        },
+        "equity": {
+          "share_capital": null,
+          "retained_earnings": 123842,
+          "total": 123842
+        }
+      },
+      "financial_ratios": {
+        "current_ratio": 2.908007373156711,
+        "quick_ratio": 2.616517745563609,
+        "net_assets_growth_percent": -2.732463615585803,
+        "gearing_ratio_percent": 0.03068425897514575
+      }
+    },
+    "2024": {
+      "year": 2024,
+      "balance_sheet": {
+        "fixed_assets": {
+          "intangible_assets": null,
+          "tangible_assets": 1097,
+          "freehold_property": null,
+          "leasehold_property": null,
+          "plant_machinery": null,
+          "fixtures_fittings": null,
+          "motor_vehicles": null,
+          "computer_equipment": null
+        },
+        "current_assets": {
+          "stock": null,
+          "trade_debtors": null,
+          "prepayments": 2030,
+          "amounts_owed_by_directors": null,
+          "amounts_owed_by_connected_companies": null,
+          "directors_current_account": null,
+          "other_debtors": null,
+          "cash_at_bank": 173616,
+          "total": 175646
+        },
+        "current_liabilities": {
+          "trade_creditors": null,
+          "taxation_social_security": null,
+          "vat_payable": null,
+          "corporation_tax": null,
+          "bank_loans_current": null,
+          "hire_purchase_current": null,
+          "accruals": null,
+          "amounts_owed_to_directors": null,
+          "other_creditors": null,
+          "total": 46771
+        },
+        "long_term_liabilities": {
+          "bank_loans": null,
+          "hire_purchase_long_term": null,
+          "deferred_taxation": null,
+          "other_debt": null,
+          "total": 0
+        },
+        "equity": {
+          "share_capital": null,
+          "retained_earnings": 129972,
+          "total": 129972
+        }
+      },
+      "financial_ratios": {
+        "current_ratio": 3.755446751191978,
+        "quick_ratio": 3.712043787817237,
+        "net_assets_growth_percent": 4.949855461014841,
+        "gearing_ratio_percent": 0
+      }
+    },
+    "2025": {
+      "year": 2025,
+      "balance_sheet": {
+        "fixed_assets": {
+          "intangible_assets": null,
+          "tangible_assets": 9142,
+          "freehold_property": null,
+          "leasehold_property": null,
+          "plant_machinery": null,
+          "fixtures_fittings": null,
+          "motor_vehicles": null,
+          "computer_equipment": null
+        },
+        "current_assets": {
+          "stock": null,
+          "trade_debtors": null,
+          "prepayments": null,
+          "amounts_owed_by_directors": null,
+          "amounts_owed_by_connected_companies": null,
+          "directors_current_account": null,
+          "other_debtors": null,
+          "cash_at_bank": null,
+          "total": 302622
+        },
+        "current_liabilities": {
+          "trade_creditors": null,
+          "taxation_social_security": null,
+          "vat_payable": null,
+          "corporation_tax": null,
+          "bank_loans_current": null,
+          "hire_purchase_current": null,
+          "accruals": null,
+          "amounts_owed_to_directors": null,
+          "other_creditors": null,
+          "total": 97627
+        },
+        "long_term_liabilities": {
+          "bank_loans": null,
+          "hire_purchase_long_term": null,
+          "deferred_taxation": null,
+          "other_debt": null,
+          "total": 0
+        },
+        "equity": {
+          "share_capital": null,
+          "retained_earnings": 214137,
+          "total": 214137
+        }
+      },
+      "financial_ratios": {
+        "current_ratio": 3.099777725414076,
+        "quick_ratio": null,
+        "net_assets_growth_percent": 64.7562536546333,
+        "gearing_ratio_percent": 0
+      }
+    }
+  },
+  "summary_insights": [
+    "The company maintains an exceptionally strong liquidity position, with the current ratio consistently exceeding 2.4 across all four years.",
+    "Net assets saw a significant 64.8% increase in YE25, rising from £129,972 to £214,137, indicating strong recent profitability.",
+    "The business operates with virtually zero long-term debt, resulting in a negligible gearing ratio and high financial independence.",
+    "Tangible assets increased substantially in YE25 to £9,142, suggesting recent capital investment in the business infrastructure.",
+    "Net current assets (working capital) have grown from £125,337 in YE22 to £204,995 in YE25, providing a robust buffer for operational requirements.",
+    "The balance sheet is primarily composed of liquid current assets, reflecting the low-overhead, service-based nature of the consultancy model."
+  ],
+  "_isIM": true
+}

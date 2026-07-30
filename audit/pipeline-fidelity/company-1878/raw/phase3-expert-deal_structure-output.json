@@ -1,0 +1,98 @@
+{
+  "expert": "deal_structure",
+  "company_name": "[AUDIT-196] Compassion Home Care Limited",
+  "analysis_date": "2026-07-30",
+  "score": 55,
+  "confidence": "high",
+  "structures": [
+    {
+      "name": "Conservative Approach",
+      "strategy": "Minimize risk by tying a significant portion of the value to the successful transition of regulatory management and the recovery of the unexplained debtor spike.",
+      "risk_to_buyer": "low",
+      "suitable_when": "The buyer is highly concerned about the 'Management Vacuum' and the potential for the £98k debtor balance to be uncollectable.",
+      "consideration": {
+        "total_headline": 215000,
+        "upfront_cash": 86000,
+        "upfront_percent": 40,
+        "deferred": 64500,
+        "earnout_maximum": 64500,
+        "earnout_metric": "CQC Registered Manager Appointment & Debtor Collection",
+        "earnout_period_months": 24,
+        "earnout_rationale": "Addresses Trigger 3 (Key Person Dependency) and Trigger 4 (Unverified Add-backs/Debtor Spike). The earnout is split: 50% upon the successful CQC registration of a new RM and 50% upon the collection of at least 90% of the FY2026 trade debtor balance.",
+        "retention_escrow": 30000
+      },
+      "key_conditions": [
+        "Successful recruitment and CQC registration of a new Registered Manager prior to second payment tranche",
+        "Specific indemnity for any trade debtor write-offs exceeding £9,802",
+        "6-month handover period for the outgoing Business Director"
+      ],
+      "notes": "Seller must provide a 6-month consultancy handover. Non-compete for 3 years within a 20-mile radius. Specific indemnity required for the £98k debtor spike. Warranty cap at 50% of consideration with a 24-month period. Completion accounts mechanism with a working capital peg based on the 3-year average (excluding the FY2026 spike). Risk is low for the buyer due to high deferment and specific protections against the management vacuum."
+    },
+    {
+      "name": "Balanced Approach",
+      "strategy": "A fair split that provides the seller with a reasonable upfront sum while protecting the buyer against the immediate operational risks identified in the QoE report.",
+      "risk_to_buyer": "medium",
+      "suitable_when": "The buyer has moderate confidence that a replacement manager can be found but wants to ensure the EBITDA of £94k is sustainable.",
+      "consideration": {
+        "total_headline": 281000,
+        "upfront_cash": 168600,
+        "upfront_percent": 60,
+        "deferred": 56200,
+        "earnout_maximum": 56200,
+        "earnout_metric": "Adjusted EBITDA Stability",
+        "earnout_period_months": 12,
+        "earnout_rationale": "Addresses Trigger 4 (Uncertainty in normalized earnings). The earnout verifies that the business can maintain a £94k EBITDA floor after accounting for the new Registered Manager's salary and the required capex for fleet replacement.",
+        "retention_escrow": 15000
+      },
+      "key_conditions": [
+        "EBITDA floor of £90,000 required for full earnout payment",
+        "Retention released only after 12 months of clean CQC compliance",
+        "Seller to assist in the recruitment process of the new Registered Manager"
+      ],
+      "notes": "4-month handover period. Standard warranties with a 100% cap on upfront cash. 18-month warranty period. Locked-box mechanism could be used if the debtor spike is clarified during due diligence. Risk is medium because the buyer takes on the recruitment risk but mitigates the financial risk through the EBITDA-linked earnout."
+    },
+    {
+      "name": "Competitive Approach",
+      "strategy": "Maximizing the upfront offer to bridge the gap with seller expectations, while using a targeted earnout to manage the most critical regulatory risk.",
+      "risk_to_buyer": "high",
+      "suitable_when": "A competitive bidding environment where the buyer is confident in their ability to manage the CQC transition and views the debtor spike as a timing issue.",
+      "consideration": {
+        "total_headline": 365000,
+        "upfront_cash": 273750,
+        "upfront_percent": 75,
+        "deferred": 36500,
+        "earnout_maximum": 54750,
+        "earnout_metric": "CQC Registration & Revenue Retention",
+        "earnout_period_months": 12,
+        "earnout_rationale": "Addresses Trigger 3 (Key Person Dependency). Given the high upfront, the earnout is focused solely on the 'deal-breaker' risk: maintaining the CQC registration under a new manager.",
+        "retention_escrow": 10000
+      },
+      "key_conditions": [
+        "Earnout triggered upon successful CQC 'Good' rating maintenance during the first inspection post-sale",
+        "Minimal deferred period to appeal to the exiting seller",
+        "Full pound-for-pound credit for cash on the balance sheet"
+      ],
+      "notes": "3-month handover. Lighter warranty package with a 12-month period. Completion accounts mechanism to ensure the £103k cash is verified. Risk is high because the buyer is paying a premium (high end of valuation) and assuming significant management transition risk with less deferred protection."
+    }
+  ],
+  "recommended_structure": "Balanced Approach",
+  "recommendation_rationale": "The Balanced Approach is recommended because it directly addresses the 'Management Vacuum' and 'Debtor Spike' without being so aggressive that it alienates a seller who is already anchoring on a much higher valuation. By using an EBITDA-linked earnout, the buyer ensures they only pay the full £281k if the business proves it can sustain its margins after the mandatory replacement of the Registered Manager.",
+  "negotiation_priorities": [
+    "Clarification and audit of the £98,020 trade debtor balance",
+    "Agreement on the 'Market Rate' for the replacement Registered Manager",
+    "Securing a commitment from the seller to lead the recruitment of their successor",
+    "Establishing a clear working capital peg that excludes the abnormal FY2026 debtor growth"
+  ],
+  "deal_breaker_terms": [
+    "Failure to identify a viable Registered Manager candidate during due diligence",
+    "Discovery that the debtor spike relates to a disputed or cancelled Local Authority contract",
+    "Any 'Inadequate' CQC rating prior to completion"
+  ],
+  "key_findings": [
+    "The business is fundamentally profitable but faces a 100% management turnover at completion.",
+    "The 413% debtor spike is the primary financial risk and must be indemnified.",
+    "The 'Capex Cliff' (fully depreciated vehicles) requires a deduction from the headline price or a working capital adjustment.",
+    "The seller's expectations (£400k+) are significantly higher than the adjusted earnings support, requiring a structured bridge."
+  ],
+  "narrative": "Compassion Home Care Limited is a classic 'owner-operator' risk profile. While the financials show a debt-free, cash-rich company, the simultaneous exit of the Director and the Registered Manager creates a regulatory void that could stop the business overnight. Furthermore, the sudden lock-up of £98k in debtors suggests operational slippage. A successful deal must bridge the gap between the seller's unadjusted EBITDA expectations and the buyer's need to reinvest in management and assets. The Balanced Approach provides a path to the mid-point valuation while ensuring the buyer doesn't overpay for a business that might lose its CQC license or fail to collect its revenue."
+}

@@ -1,0 +1,107 @@
+{
+  "expert": "sector",
+  "company_name": "[AUDIT-138] Cooper Gibson",
+  "sector": "Professional Services",
+  "analysis_date": "2023-10-27",
+  "score": 68,
+  "confidence": "medium",
+  "sector_overview": {
+    "growth_outlook": "stable",
+    "uk_market_size_estimate": "£200bn+ (Total Professional Services)",
+    "key_trends": [
+      "Shift towards value-based pricing over hourly billing",
+      "Increased adoption of AI for document automation and research",
+      "Consolidation of boutique firms by private equity-backed platforms",
+      "Focus on ESG and sustainability advisory services"
+    ],
+    "regulatory_factors": [
+      "IR35 compliance for contractor engagement",
+      "Potential changes to UK audit and corporate governance standards",
+      "GDPR and data privacy requirements for client data"
+    ],
+    "observations": [
+      "The UK professional services sector remains a global leader but faces domestic margin pressure due to wage inflation.",
+      "Business consulting is increasingly bifurcated between high-end strategy and commoditised implementation."
+    ]
+  },
+  "competitive_positioning": {
+    "company_size_classification": "micro",
+    "typical_gross_margin_range": {
+      "low": 40,
+      "high": 60
+    },
+    "typical_operating_margin_range": {
+      "low": 10,
+      "high": 20
+    },
+    "typical_ebitda_margin_range": {
+      "low": 12,
+      "high": 25
+    },
+    "positioning_assessment": "As a boutique advisory firm with no public revenue data, Cooper Gibson likely operates in the micro-to-small segment. These firms typically rely on high-touch partner relationships and niche expertise but face challenges in scalability and owner-dependency."
+  },
+  "comparable_multiples": {
+    "ev_revenue_range": {
+      "low": 0.4,
+      "mid": 0.7,
+      "high": 1
+    },
+    "ev_ebitda_range": {
+      "low": 2,
+      "high": 3.5
+    },
+    "factors_affecting_multiple": [
+      "Quality of recurring revenue vs one-off project fees",
+      "Key person risk (founder dependency)",
+      "Client concentration levels",
+      "Specialisation in high-growth sub-sectors"
+    ],
+    "premium_factors": [
+      "Retainer-based revenue models",
+      "Niche expertise in high-barrier sectors (e.g., Life Sciences, Fintech)",
+      "Strong second-tier management team"
+    ],
+    "discount_factors": [
+      "High dependency on the founder for business development",
+      "Project-based revenue with low visibility",
+      "Small headcount (<10) limiting capacity for growth"
+    ],
+    "data_confidence": "based_on_training_data"
+  },
+  "growth_opportunities": [
+    {
+      "opportunity": "Digital Service Productisation",
+      "effort": "medium",
+      "potential_impact": "high",
+      "timeframe": "medium_term",
+      "description": "Converting bespoke advisory into scalable digital toolkits or subscription-based insights to reduce labour dependency."
+    },
+    {
+      "opportunity": "Strategic Partnerships",
+      "effort": "low",
+      "potential_impact": "medium",
+      "timeframe": "short_term",
+      "description": "Partnering with complementary firms (e.g., accounting or legal) to create a cross-referral ecosystem."
+    }
+  ],
+  "sector_risks": [
+    {
+      "risk": "Talent Attrition",
+      "severity": "high",
+      "timeframe": "immediate",
+      "description": "High competition for skilled consultants leading to wage inflation and margin erosion."
+    },
+    {
+      "risk": "Economic Cyclicality",
+      "severity": "medium",
+      "timeframe": "near_term",
+      "description": "Discretionary consulting spend is often the first budget cut during corporate belt-tightening."
+    }
+  ],
+  "key_findings": [
+    "The business likely falls into the 2.0x - 3.5x EBITDA range typical for UK SME professional services.",
+    "Valuation will be heavily sensitive to the 'stickiness' of the client base and the level of founder involvement.",
+    "M&A activity in this space is currently driven by larger firms seeking niche expertise or 'acqui-hires'."
+  ],
+  "narrative": "Cooper Gibson operates in a mature and highly fragmented UK consulting market. Without specific financial data, the company is assessed as a boutique player. In the UK SME market, such firms are valued conservatively due to high 'key person' risk and the project-based nature of the work. To achieve a multiple at the higher end of the 2.0x-3.5x range, the buyer would need to see evidence of multi-year contracts and a management team capable of operating independently of the current owners."
+}

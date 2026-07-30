@@ -1,0 +1,159 @@
+{
+  "document": "asset_register",
+  "report_date": "2025-05-31",
+  "summary": {
+    "total_asset_count": 7,
+    "total_gross_book_value": 2231000,
+    "total_accumulated_depreciation": 1332000,
+    "total_net_book_value": 899000,
+    "refinanceable_assets_value": 648000,
+    "fully_depreciated_still_in_use": null
+  },
+  "categories": {
+    "property": {
+      "gross_value": 180000,
+      "accumulated_depreciation": 99000,
+      "net_book_value": 81000
+    },
+    "plant_machinery": {
+      "gross_value": 1705000,
+      "accumulated_depreciation": 1023000,
+      "net_book_value": 682000
+    },
+    "vehicles": {
+      "gross_value": 180000,
+      "accumulated_depreciation": 95000,
+      "net_book_value": 85000
+    },
+    "it_equipment": {
+      "gross_value": 94000,
+      "accumulated_depreciation": 67000,
+      "net_book_value": 27000
+    },
+    "other": {
+      "gross_value": 72000,
+      "accumulated_depreciation": 48000,
+      "net_book_value": 24000
+    }
+  },
+  "property_details": [
+    {
+      "address": "Primary manufacturing site, South East England",
+      "tenure": "Leasehold",
+      "purchase_price": null,
+      "market_value": null,
+      "net_book_value": null
+    },
+    {
+      "address": "Secondary distribution site, East Midlands",
+      "tenure": "Leasehold",
+      "purchase_price": null,
+      "market_value": null,
+      "net_book_value": null
+    }
+  ],
+  "vehicle_details": [
+    {
+      "make_model": "Delivery fleet",
+      "registration": null,
+      "purchase_date": null,
+      "cost": 180000,
+      "net_book_value": 85000,
+      "market_value": null
+    }
+  ],
+  "assets": [
+    {
+      "description": "Plant and machinery (powder coating line)",
+      "category": "Plant and machinery",
+      "purchase_date": "2022-01-01",
+      "cost": 1300000,
+      "accumulated_depreciation": 780000,
+      "net_book_value": 520000,
+      "depreciation_rate": null,
+      "depreciation_method": null,
+      "location": null,
+      "condition": "QualiCoat-accredited"
+    },
+    {
+      "description": "Plant and machinery (fabrication and cutting)",
+      "category": "Plant and machinery",
+      "purchase_date": null,
+      "cost": 320000,
+      "accumulated_depreciation": 192000,
+      "net_book_value": 128000,
+      "depreciation_rate": null,
+      "depreciation_method": null,
+      "location": null,
+      "condition": null
+    },
+    {
+      "description": "Motor vehicles (delivery fleet)",
+      "category": "Motor vehicles",
+      "purchase_date": null,
+      "cost": 180000,
+      "accumulated_depreciation": 95000,
+      "net_book_value": 85000,
+      "depreciation_rate": null,
+      "depreciation_method": null,
+      "location": null,
+      "condition": null
+    },
+    {
+      "description": "Leasehold improvements",
+      "category": "Leasehold improvements",
+      "purchase_date": null,
+      "cost": 180000,
+      "accumulated_depreciation": 99000,
+      "net_book_value": 81000,
+      "depreciation_rate": null,
+      "depreciation_method": null,
+      "location": null,
+      "condition": null
+    },
+    {
+      "description": "Warehouse and racking equipment",
+      "category": "Warehouse and racking",
+      "purchase_date": null,
+      "cost": 85000,
+      "accumulated_depreciation": 51000,
+      "net_book_value": 34000,
+      "depreciation_rate": null,
+      "depreciation_method": null,
+      "location": null,
+      "condition": null
+    },
+    {
+      "description": "IT hardware and infrastructure",
+      "category": "IT hardware",
+      "purchase_date": null,
+      "cost": 94000,
+      "accumulated_depreciation": 67000,
+      "net_book_value": 27000,
+      "depreciation_rate": null,
+      "depreciation_method": null,
+      "location": null,
+      "condition": null
+    },
+    {
+      "description": "Office equipment and furniture",
+      "category": "Office equipment",
+      "purchase_date": null,
+      "cost": 72000,
+      "accumulated_depreciation": 48000,
+      "net_book_value": 24000,
+      "depreciation_rate": null,
+      "depreciation_method": null,
+      "location": null,
+      "condition": null
+    }
+  ],
+  "observations": [
+    "The asset base is aging, with total accumulated depreciation representing 60% of gross cost.",
+    "The principal manufacturing asset (powder coating line) was a significant investment in FY22-23 at £1.3m.",
+    "The powder coating line and delivery fleet represent the primary refinancing potential.",
+    "The business operates an asset-light model with a fixed asset intensity of only 4.9% of turnover.",
+    "Balance sheet is substantially unencumbered with no material finance leases in place."
+  ],
+  "_isIM": true
+}

@@ -1,0 +1,136 @@
+{
+  "expert": "quality_of_earnings",
+  "company_name": "[AUDIT-138] Cooper Gibson",
+  "analysis_date": "2024-05-22",
+  "score": 45,
+  "confidence": "medium",
+  "reported_figures": {
+    "operating_profit": 49479,
+    "depreciation": 1350,
+    "amortisation": 3422,
+    "reported_ebitda": 57012,
+    "source_year": "2026"
+  },
+  "add_backs": [
+    {
+      "item": "Loss on disposal of tangible fixed assets",
+      "category": "disposal_loss",
+      "amount": 2761,
+      "recurrence": "one_off",
+      "year": "2026",
+      "justification": "Non-cash accounting loss arising from the disposal of assets, which is non-recurring in nature.",
+      "confidence": "high",
+      "defensibility_score": 10,
+      "case_for_inclusion": "This is a one-off accounting entry that does not represent a recurring cash cost of the business operations.",
+      "case_for_exclusion": "The seller might argue it reflects a regular cycle of asset replacement, though the amount is clearly identified as exceptional."
+    },
+    {
+      "item": "Directors Pension Contributions",
+      "category": "owner_salary",
+      "amount": 24000,
+      "recurrence": "recurring",
+      "year": "2026",
+      "justification": "Discretionary pension contributions for the owner-director which would not be required for a replacement manager.",
+      "confidence": "high",
+      "defensibility_score": 9,
+      "case_for_inclusion": "Pension contributions for owners are discretionary profit extractions rather than a market-rate cost of employment.",
+      "case_for_exclusion": "The seller may argue this is part of a total competitive compensation package for a high-level executive."
+    },
+    {
+      "item": "Use of Home as Office",
+      "category": "personal_expense",
+      "amount": 312,
+      "recurrence": "recurring",
+      "year": "2026",
+      "justification": "Standard tax-deductible personal expense reimbursement for the director.",
+      "confidence": "high",
+      "defensibility_score": 8,
+      "case_for_inclusion": "This is a personal benefit to the owner that a commercial buyer would not incur.",
+      "case_for_exclusion": "The amount is immaterial and the seller may argue it is a legitimate business overhead for a remote-working model."
+    }
+  ],
+  "deductions": [
+    {
+      "item": "Replacement Management Salary Adjustment",
+      "category": "replacement_salary",
+      "amount": 44930,
+      "recurrence": "recurring",
+      "year": "2026",
+      "justification": "The current director salary (£12,570) is significantly below the UK SME benchmark for a working MD (£57,500 mid-point for <£1M revenue).",
+      "confidence": "high",
+      "defensibility_score": 8,
+      "case_for_inclusion": "A buyer must account for the true market cost of replacing the owner-manager to maintain operations.",
+      "case_for_exclusion": "The seller may argue that the business can be managed part-time or that existing staff can absorb the duties."
+    },
+    {
+      "item": "Revenue Concentration Risk Adjustment",
+      "category": "unsustainable_revenue",
+      "amount": 44681,
+      "recurrence": "recurring",
+      "year": "2026",
+      "justification": "20% precautionary deduction on the 88.31% revenue concentration from Client 1 (£223,404 * 0.8831 * 0.20).",
+      "confidence": "medium",
+      "defensibility_score": 5,
+      "case_for_inclusion": "The extreme reliance on a single client makes nearly 90% of the earnings highly fragile and potentially unsustainable.",
+      "case_for_exclusion": "The seller will argue the relationship is long-standing and secure, and that no actual revenue loss has occurred."
+    }
+  ],
+  "total_add_backs": 27073,
+  "total_deductions": 89611,
+  "adjusted_ebitda": {
+    "conservative": -5529,
+    "base": -5526,
+    "optimistic": 39154
+  },
+  "adjustment_summary": {
+    "reported_ebitda": 57012,
+    "plus_add_backs": 27073,
+    "minus_deductions": 89611,
+    "equals_adjusted_ebitda_base": -5526
+  },
+  "director_salary_analysis": {
+    "directors": [
+      {
+        "name": "Owner-Director",
+        "current_salary": 12570,
+        "estimated_market_rate": 57500,
+        "benchmark_range_used": "Revenue <£1M: Working MD/Owner-Director (£45,000–£70,000)",
+        "adjustment": 44930,
+        "adjustment_type": "deduction"
+      }
+    ]
+  },
+  "sustainability_assessment": {
+    "sustainable_for_3_years": false,
+    "key_assumptions": [
+      "Client 1 remains the primary revenue driver.",
+      "The shift to a subcontractor model remains viable without increasing fixed costs.",
+      "The owner-director's personal relationships are not the sole reason for contract retention."
+    ],
+    "sensitivity_factors": [
+      "Loss of Client 1 would result in an immediate 88% drop in revenue.",
+      "Availability and pricing of skilled subcontractors."
+    ],
+    "upside_scenarios": [
+      "Successful diversification of the client base using current cash reserves.",
+      "Expansion of services to the existing primary client."
+    ],
+    "downside_scenarios": [
+      "Client 1 terminates the contract post-acquisition.",
+      "Key subcontractors leave or increase rates significantly."
+    ]
+  },
+  "key_findings": [
+    "Reported EBITDA is heavily inflated by under-market director salaries and discretionary pension contributions.",
+    "The business has extreme customer concentration, with one client representing 88.31% of the sales ledger as of Feb 2026.",
+    "Revenue is highly volatile, having dropped 49% between 2025 and 2026.",
+    "The business is heavily reliant on owner financing, with £149,587 owed to directors as of June 2026."
+  ],
+  "red_flags": [
+    "88.31% revenue concentration in a single client.",
+    "49% year-on-year revenue decline in the most recent fiscal year.",
+    "Significant director loan account (£149k) indicates the business may not be self-sustaining.",
+    "Inconsistent reporting of staff costs vs subcontractor costs suggests potential accounting irregularities."
+  ],
+  "narrative": "The Quality of Earnings analysis for Cooper Gibson reveals a business with significant structural risks. While the reported EBITDA for 2026 is £57,012, this figure is not representative of a standalone commercial operation. Once the owner's salary is adjusted to a market rate for a replacement manager and discretionary pension contributions are normalized, the 'Base Case' adjusted EBITDA falls into negative territory. The most critical risk is the 88% revenue concentration in a single client, which, combined with a 49% revenue decline in the last year, suggests the earnings are highly fragile. A buyer should view the current earnings as unsustainable without significant diversification and should likely structure any deal as an asset purchase or with a heavy earn-out tied to the retention of the primary client."
+}

@@ -1,0 +1,3567 @@
+{
+  "generatedAt": "2026-07-30T00:57:00Z",
+  "phase0Completed": true,
+  "companies": {
+    "89": {
+      "name": "Innova Design Group Limited",
+      "phase": 4,
+      "devTcId": 1880,
+      "phases": {
+        "1": {
+          "completed": true,
+          "devDocIds": [
+            5857,
+            5858,
+            5859,
+            5860,
+            5861,
+            5862,
+            5863,
+            5864,
+            5865,
+            5866,
+            5867,
+            5868,
+            5869,
+            5870,
+            5871,
+            5872
+          ],
+          "eventIds": [
+            629,
+            630,
+            631,
+            632,
+            633,
+            634,
+            635,
+            636,
+            637,
+            638,
+            639,
+            640,
+            641,
+            642,
+            643,
+            644
+          ],
+          "docMap": [
+            {
+              "prodDocId": 1668,
+              "devDocId": 5857,
+              "eventId": 629,
+              "filename": "doc-1777320748873-193749054.pdf",
+              "category": "Restored",
+              "fileType": "application/octet-stream",
+              "fileSize": 90888,
+              "r2Key": "companies/89/doc-1777320748873-193749054.pdf",
+              "headOk": true,
+              "headSize": 90888,
+              "headContentType": "application/octet-stream",
+              "uploadDate": "2026-04-27T20:12:28.873Z"
+            },
+            {
+              "prodDocId": 1669,
+              "devDocId": 5858,
+              "eventId": 630,
+              "filename": "doc-1777320831981-40650166.xlsx",
+              "category": "Restored",
+              "fileType": "application/octet-stream",
+              "fileSize": 130708,
+              "r2Key": "companies/89/doc-1777320831981-40650166.xlsx",
+              "headOk": true,
+              "headSize": 130708,
+              "headContentType": "application/octet-stream",
+              "uploadDate": "2026-04-27T20:13:51.981Z"
+            },
+            {
+              "prodDocId": 1670,
+              "devDocId": 5859,
+              "eventId": 631,
+              "filename": "doc-1777320863799-891328168.pdf",
+              "category": "Restored",
+              "fileType": "application/octet-stream",
+              "fileSize": 130756,
+              "r2Key": "companies/89/doc-1777320863799-891328168.pdf",
+              "headOk": true,
+              "headSize": 130756,
+              "headContentType": "application/octet-stream",
+              "uploadDate": "2026-04-27T20:14:23.799Z"
+            },
+            {
+              "prodDocId": 1671,
+              "devDocId": 5860,
+              "eventId": 632,
+              "filename": "doc-1777320908889-481369088.pdf",
+              "category": "Restored",
+              "fileType": "application/octet-stream",
+              "fileSize": 264075,
+              "r2Key": "companies/89/doc-1777320908889-481369088.pdf",
+              "headOk": true,
+              "headSize": 264075,
+              "headContentType": "application/octet-stream",
+              "uploadDate": "2026-04-27T20:15:08.889Z"
+            },
+            {
+              "prodDocId": 1672,
+              "devDocId": 5861,
+              "eventId": 633,
+              "filename": "doc-1777320937794-82781259.pdf",
+              "category": "Restored",
+              "fileType": "application/octet-stream",
+              "fileSize": 97831,
+              "r2Key": "companies/89/doc-1777320937794-82781259.pdf",
+              "headOk": true,
+              "headSize": 97831,
+              "headContentType": "application/octet-stream",
+              "uploadDate": "2026-04-27T20:15:37.794Z"
+            },
+            {
+              "prodDocId": 1673,
+              "devDocId": 5862,
+              "eventId": 634,
+              "filename": "doc-1777320972331-861910426.pdf",
+              "category": "Restored",
+              "fileType": "application/octet-stream",
+              "fileSize": 89064,
+              "r2Key": "companies/89/doc-1777320972331-861910426.pdf",
+              "headOk": true,
+              "headSize": 89064,
+              "headContentType": "application/octet-stream",
+              "uploadDate": "2026-04-27T20:16:12.331Z"
+            },
+            {
+              "prodDocId": 1674,
+              "devDocId": 5863,
+              "eventId": 635,
+              "filename": "doc-1777321003082-792026998.pdf",
+              "category": "Restored",
+              "fileType": "application/octet-stream",
+              "fileSize": 88966,
+              "r2Key": "companies/89/doc-1777321003082-792026998.pdf",
+              "headOk": true,
+              "headSize": 88966,
+              "headContentType": "application/octet-stream",
+              "uploadDate": "2026-04-27T20:16:43.082Z"
+            },
+            {
+              "prodDocId": 1675,
+              "devDocId": 5864,
+              "eventId": 636,
+              "filename": "doc-1777321108865-628961648.pdf",
+              "category": "Restored",
+              "fileType": "application/octet-stream",
+              "fileSize": 167867,
+              "r2Key": "companies/89/doc-1777321108865-628961648.pdf",
+              "headOk": true,
+              "headSize": 167867,
+              "headContentType": "application/octet-stream",
+              "uploadDate": "2026-04-27T20:18:28.865Z"
+            },
+            {
+              "prodDocId": 1676,
+              "devDocId": 5865,
+              "eventId": 637,
+              "filename": "doc-1783152904384-594607571.pdf",
+              "category": "Restored",
+              "fileType": "application/pdf",
+              "fileSize": 357718,
+              "r2Key": "companies/89/doc-1783152904384-594607571.pdf",
+              "headOk": true,
+              "headSize": 357718,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-07-04T08:15:04.384Z"
+            },
+            {
+              "prodDocId": 1677,
+              "devDocId": 5866,
+              "eventId": 638,
+              "filename": "doc-1783152919710-270636692.pdf",
+              "category": "Restored",
+              "fileType": "application/pdf",
+              "fileSize": 304416,
+              "r2Key": "companies/89/doc-1783152919710-270636692.pdf",
+              "headOk": true,
+              "headSize": 304416,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-07-04T08:15:19.710Z"
+            },
+            {
+              "prodDocId": 1678,
+              "devDocId": 5867,
+              "eventId": 639,
+              "filename": "doc-1783152961971-950185558.pdf",
+              "category": "Restored",
+              "fileType": "application/pdf",
+              "fileSize": 81641,
+              "r2Key": "companies/89/doc-1783152961971-950185558.pdf",
+              "headOk": true,
+              "headSize": 81641,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-07-04T08:16:01.971Z"
+            },
+            {
+              "prodDocId": 1679,
+              "devDocId": 5868,
+              "eventId": 640,
+              "filename": "doc-1783152989923-333352671.pdf",
+              "category": "Restored",
+              "fileType": "application/pdf",
+              "fileSize": 97831,
+              "r2Key": "companies/89/doc-1783152989923-333352671.pdf",
+              "headOk": true,
+              "headSize": 97831,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-07-04T08:16:29.923Z"
+            },
+            {
+              "prodDocId": 1680,
+              "devDocId": 5869,
+              "eventId": 641,
+              "filename": "doc-1783153004056-936850820.pdf",
+              "category": "Restored",
+              "fileType": "application/pdf",
+              "fileSize": 80398,
+              "r2Key": "companies/89/doc-1783153004056-936850820.pdf",
+              "headOk": true,
+              "headSize": 80398,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-07-04T08:16:44.056Z"
+            },
+            {
+              "prodDocId": 1681,
+              "devDocId": 5870,
+              "eventId": 642,
+              "filename": "doc-1783153025122-485578271.pdf",
+              "category": "Restored",
+              "fileType": "application/pdf",
+              "fileSize": 119478,
+              "r2Key": "companies/89/doc-1783153025122-485578271.pdf",
+              "headOk": true,
+              "headSize": 119478,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-07-04T08:17:05.122Z"
+            },
+            {
+              "prodDocId": 1682,
+              "devDocId": 5871,
+              "eventId": 643,
+              "filename": "doc-1783153036464-32715274.xlsx",
+              "category": "Restored",
+              "fileType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+              "fileSize": 130376,
+              "r2Key": "companies/89/doc-1783153036464-32715274.xlsx",
+              "headOk": true,
+              "headSize": 130376,
+              "headContentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+              "uploadDate": "2026-07-04T08:17:16.464Z"
+            },
+            {
+              "prodDocId": 1683,
+              "devDocId": 5872,
+              "eventId": 644,
+              "filename": "doc-1783153142469-611908424.xlsx",
+              "category": "Restored",
+              "fileType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+              "fileSize": 18502,
+              "r2Key": "companies/89/doc-1783153142469-611908424.xlsx",
+              "headOk": true,
+              "headSize": 18502,
+              "headContentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+              "uploadDate": "2026-07-04T08:19:02.469Z"
+            }
+          ],
+          "missingR2": []
+        },
+        "2": {
+          "completed": true,
+          "docResults": [
+            {
+              "prodDocId": 1668,
+              "devDocId": 5857,
+              "filename": "doc-1777320748873-193749054.pdf",
+              "category": "Restored",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 1669,
+              "devDocId": 5858,
+              "filename": "doc-1777320831981-40650166.xlsx",
+              "category": "Restored",
+              "extractionStatus": "produced_structure_all_nulls",
+              "extractionReason": "1 result row(s) but no year data"
+            },
+            {
+              "prodDocId": 1670,
+              "devDocId": 5859,
+              "filename": "doc-1777320863799-891328168.pdf",
+              "category": "Restored",
+              "extractionStatus": "produced_nothing",
+              "extractionReason": "webhook_status=classification_complete"
+            },
+            {
+              "prodDocId": 1671,
+              "devDocId": 5860,
+              "filename": "doc-1777320908889-481369088.pdf",
+              "category": "Restored",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "1 result row(s)"
+            },
+            {
+              "prodDocId": 1672,
+              "devDocId": 5861,
+              "filename": "doc-1777320937794-82781259.pdf",
+              "category": "Restored",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 1673,
+              "devDocId": 5862,
+              "filename": "doc-1777320972331-861910426.pdf",
+              "category": "Restored",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 1674,
+              "devDocId": 5863,
+              "filename": "doc-1777321003082-792026998.pdf",
+              "category": "Restored",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 1675,
+              "devDocId": 5864,
+              "filename": "doc-1777321108865-628961648.pdf",
+              "category": "Restored",
+              "extractionStatus": "produced_structure_all_nulls",
+              "extractionReason": "1 result row(s) but no year data"
+            },
+            {
+              "prodDocId": 1676,
+              "devDocId": 5865,
+              "filename": "doc-1783152904384-594607571.pdf",
+              "category": "Restored",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "1 result row(s)"
+            },
+            {
+              "prodDocId": 1677,
+              "devDocId": 5866,
+              "filename": "doc-1783152919710-270636692.pdf",
+              "category": "Restored",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "1 result row(s)"
+            },
+            {
+              "prodDocId": 1678,
+              "devDocId": 5867,
+              "filename": "doc-1783152961971-950185558.pdf",
+              "category": "Restored",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 1679,
+              "devDocId": 5868,
+              "filename": "doc-1783152989923-333352671.pdf",
+              "category": "Restored",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 1680,
+              "devDocId": 5869,
+              "filename": "doc-1783153004056-936850820.pdf",
+              "category": "Restored",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 1681,
+              "devDocId": 5870,
+              "filename": "doc-1783153025122-485578271.pdf",
+              "category": "Restored",
+              "extractionStatus": "produced_nothing",
+              "extractionReason": "webhook_status=classification_complete"
+            },
+            {
+              "prodDocId": 1682,
+              "devDocId": 5871,
+              "filename": "doc-1783153036464-32715274.xlsx",
+              "category": "Restored",
+              "extractionStatus": "produced_structure_all_nulls",
+              "extractionReason": "1 result row(s) but no year data"
+            },
+            {
+              "prodDocId": 1683,
+              "devDocId": 5872,
+              "filename": "doc-1783153142469-611908424.xlsx",
+              "category": "Restored",
+              "extractionStatus": "produced_nothing",
+              "extractionReason": "webhook_status=classification_complete"
+            }
+          ],
+          "finalPeriodCount": 7,
+          "finalISCount": 7,
+          "finalBSCount": 6,
+          "usableYears": [
+            2021,
+            2024,
+            2025,
+            2023,
+            2022
+          ]
+        },
+        "3": {
+          "completed": true,
+          "pipelineError": null,
+          "expertSummary": [
+            {
+              "type": "synthesis",
+              "id": 824,
+              "status": "success",
+              "score": null,
+              "confidence": null
+            },
+            {
+              "type": "risk",
+              "id": 819,
+              "status": "success",
+              "score": 58,
+              "confidence": "high"
+            },
+            {
+              "type": "operational",
+              "id": 818,
+              "status": "success",
+              "score": 68,
+              "confidence": "medium"
+            },
+            {
+              "type": "financial",
+              "id": 817,
+              "status": "success",
+              "score": 68,
+              "confidence": "high"
+            },
+            {
+              "type": "sector",
+              "id": 821,
+              "status": "success",
+              "score": 58,
+              "confidence": "medium"
+            },
+            {
+              "type": "qoe",
+              "id": 820,
+              "status": "success",
+              "score": 62,
+              "confidence": "high"
+            },
+            {
+              "type": "valuation",
+              "id": 822,
+              "status": "success",
+              "score": 65,
+              "confidence": "medium"
+            },
+            {
+              "type": "deal_structure",
+              "id": 823,
+              "status": "success",
+              "score": 45,
+              "confidence": "high"
+            }
+          ]
+        },
+        "4": {
+          "completed": true,
+          "modelId": 489,
+          "averageAdjustedEbitda": 280789.3333333333,
+          "offerPrice": 340254.33333333326,
+          "enterpriseValue": 701973.3333333333,
+          "bridgeOk": true
+        },
+        "6": {
+          "completed": true,
+          "liveUsableYears": [
+            2021,
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "liveRawAvgEbitda": 331164
+        }
+      },
+      "completedPhases": {
+        "phase1": true,
+        "phase2": true,
+        "phase3": true,
+        "phase4": true,
+        "phase6": true
+      },
+      "status": "complete"
+    },
+    "130": {
+      "name": "Keen As Mustard",
+      "phase": 4,
+      "devTcId": 1918,
+      "phases": {
+        "1": {
+          "completed": true,
+          "devDocIds": [
+            5942,
+            5943,
+            5944,
+            5945,
+            5946,
+            5947,
+            5948,
+            5949,
+            5950,
+            5951,
+            5952,
+            5953
+          ],
+          "eventIds": [
+            714,
+            715,
+            716,
+            717,
+            718,
+            719,
+            720,
+            721,
+            722,
+            723,
+            724,
+            725
+          ],
+          "docMap": [
+            {
+              "prodDocId": 747,
+              "devDocId": 5942,
+              "eventId": 714,
+              "filename": "ProjectRiver.pdf",
+              "category": "Deal Documents",
+              "fileType": "application/pdf",
+              "fileSize": 7140311,
+              "r2Key": "companies/130/doc-1778252106325-550318593.pdf",
+              "headOk": true,
+              "headSize": 7140311,
+              "headContentType": "application/octet-stream",
+              "uploadDate": "2026-05-08T14:55:08.163Z"
+            },
+            {
+              "prodDocId": 748,
+              "devDocId": 5943,
+              "eventId": 715,
+              "filename": "RiverUpdate.pdf",
+              "category": "Deal Documents",
+              "fileType": "application/pdf",
+              "fileSize": 37879,
+              "r2Key": "companies/130/doc-1778252373543-960763146.pdf",
+              "headOk": true,
+              "headSize": 37879,
+              "headContentType": "application/octet-stream",
+              "uploadDate": "2026-05-08T14:59:34.376Z"
+            },
+            {
+              "prodDocId": 749,
+              "devDocId": 5944,
+              "eventId": 716,
+              "filename": "Keen As Mustard Marketing Ltd - Limited Company Accounts 30.11.24[87].pdf",
+              "category": "Company Accounts",
+              "fileType": "application/pdf",
+              "fileSize": 240944,
+              "r2Key": "companies/130/doc-1778252389462-276579290.pdf",
+              "headOk": true,
+              "headSize": 240944,
+              "headContentType": "application/octet-stream",
+              "uploadDate": "2026-05-08T14:59:50.031Z"
+            },
+            {
+              "prodDocId": 750,
+              "devDocId": 5945,
+              "eventId": 717,
+              "filename": "Copy of Client income 24-25.xlsx",
+              "category": "Company Accounts",
+              "fileType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+              "fileSize": 18526,
+              "r2Key": "companies/130/doc-1778252407825-352867235.xlsx",
+              "headOk": true,
+              "headSize": 18526,
+              "headContentType": "application/octet-stream",
+              "uploadDate": "2026-05-08T15:00:08.323Z"
+            },
+            {
+              "prodDocId": 751,
+              "devDocId": 5946,
+              "eventId": 718,
+              "filename": "Copy of Client income 23-24.xlsx",
+              "category": "Company Accounts",
+              "fileType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+              "fileSize": 16788,
+              "r2Key": "companies/130/doc-1778252420654-508662059.xlsx",
+              "headOk": true,
+              "headSize": 16788,
+              "headContentType": "application/octet-stream",
+              "uploadDate": "2026-05-08T15:00:21.199Z"
+            },
+            {
+              "prodDocId": 862,
+              "devDocId": 5947,
+              "eventId": 719,
+              "filename": "Keen as Mustard Marketing Ltd - MA 31.8.25.pdf",
+              "category": "Deal Documents",
+              "fileType": "application/pdf",
+              "fileSize": 313052,
+              "r2Key": "companies/130/doc-1778855718053-449324318.pdf",
+              "headOk": true,
+              "headSize": 313052,
+              "headContentType": "application/octet-stream",
+              "uploadDate": "2026-05-15T14:35:18.911Z"
+            },
+            {
+              "prodDocId": 863,
+              "devDocId": 5948,
+              "eventId": 720,
+              "filename": "Keen as Mustard Marketing Ltd - MA 31.5.25.pdf",
+              "category": "Deal Documents",
+              "fileType": "application/pdf",
+              "fileSize": 283259,
+              "r2Key": "companies/130/doc-1778855730274-88747200.pdf",
+              "headOk": true,
+              "headSize": 283259,
+              "headContentType": "application/octet-stream",
+              "uploadDate": "2026-05-15T14:35:30.970Z"
+            },
+            {
+              "prodDocId": 864,
+              "devDocId": 5949,
+              "eventId": 721,
+              "filename": "Keen as Mustard Marketing Ltd - MA 30.11.25.pdf",
+              "category": "Deal Documents",
+              "fileType": "application/pdf",
+              "fileSize": 314246,
+              "r2Key": "companies/130/doc-1778855744378-985876393.pdf",
+              "headOk": true,
+              "headSize": 314246,
+              "headContentType": "application/octet-stream",
+              "uploadDate": "2026-05-15T14:35:44.998Z"
+            },
+            {
+              "prodDocId": 865,
+              "devDocId": 5950,
+              "eventId": 722,
+              "filename": "KEENASMUST-Limited company accounts 20.1-LTD- YE 30.11.21.PDF",
+              "category": "Deal Documents",
+              "fileType": "application/pdf",
+              "fileSize": 20583,
+              "r2Key": "companies/130/doc-1778855764041-747022787.pdf",
+              "headOk": true,
+              "headSize": 20583,
+              "headContentType": "application/octet-stream",
+              "uploadDate": "2026-05-15T14:36:04.951Z"
+            },
+            {
+              "prodDocId": 866,
+              "devDocId": 5951,
+              "eventId": 723,
+              "filename": "Full Company Accounts YE 30.11.2023 - KAM Ltd.PDF",
+              "category": "Deal Documents",
+              "fileType": "application/pdf",
+              "fileSize": 22239,
+              "r2Key": "companies/130/doc-1778855784404-478903916.pdf",
+              "headOk": true,
+              "headSize": 22239,
+              "headContentType": "application/octet-stream",
+              "uploadDate": "2026-05-15T14:36:25.008Z"
+            },
+            {
+              "prodDocId": 867,
+              "devDocId": 5952,
+              "eventId": 724,
+              "filename": "Full Company Accounts YE 30.11.2022 - KAM Ltd.PDF",
+              "category": "Deal Documents",
+              "fileType": "application/pdf",
+              "fileSize": 22150,
+              "r2Key": "companies/130/doc-1778855808030-260968986.pdf",
+              "headOk": true,
+              "headSize": 22150,
+              "headContentType": "application/octet-stream",
+              "uploadDate": "2026-05-15T14:36:48.592Z"
+            },
+            {
+              "prodDocId": 868,
+              "devDocId": 5953,
+              "eventId": 725,
+              "filename": "KEENASMUST-Limited company accounts 20.1-LTD- YE 30.11.21.PDF",
+              "category": "Deal Documents",
+              "fileType": "application/pdf",
+              "fileSize": 20583,
+              "r2Key": "companies/130/doc-1778855825125-207172519.pdf",
+              "headOk": true,
+              "headSize": 20583,
+              "headContentType": "application/octet-stream",
+              "uploadDate": "2026-05-15T14:37:05.698Z"
+            }
+          ],
+          "missingR2": []
+        },
+        "2": {
+          "completed": true,
+          "docResults": [
+            {
+              "prodDocId": 747,
+              "devDocId": 5942,
+              "filename": "ProjectRiver.pdf",
+              "category": "Deal Documents",
+              "extractionStatus": "produced_nothing",
+              "extractionReason": "webhook_status=classification_complete"
+            },
+            {
+              "prodDocId": 748,
+              "devDocId": 5943,
+              "filename": "RiverUpdate.pdf",
+              "category": "Deal Documents",
+              "extractionStatus": "produced_nothing",
+              "extractionReason": "webhook_status=classification_complete"
+            },
+            {
+              "prodDocId": 749,
+              "devDocId": 5944,
+              "filename": "Keen As Mustard Marketing Ltd - Limited Company Accounts 30.11.24[87].pdf",
+              "category": "Company Accounts",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 750,
+              "devDocId": 5945,
+              "filename": "Copy of Client income 24-25.xlsx",
+              "category": "Company Accounts",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 751,
+              "devDocId": 5946,
+              "filename": "Copy of Client income 23-24.xlsx",
+              "category": "Company Accounts",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 862,
+              "devDocId": 5947,
+              "filename": "Keen as Mustard Marketing Ltd - MA 31.8.25.pdf",
+              "category": "Deal Documents",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 863,
+              "devDocId": 5948,
+              "filename": "Keen as Mustard Marketing Ltd - MA 31.5.25.pdf",
+              "category": "Deal Documents",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 864,
+              "devDocId": 5949,
+              "filename": "Keen as Mustard Marketing Ltd - MA 30.11.25.pdf",
+              "category": "Deal Documents",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 865,
+              "devDocId": 5950,
+              "filename": "KEENASMUST-Limited company accounts 20.1-LTD- YE 30.11.21.PDF",
+              "category": "Deal Documents",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 866,
+              "devDocId": 5951,
+              "filename": "Full Company Accounts YE 30.11.2023 - KAM Ltd.PDF",
+              "category": "Deal Documents",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 867,
+              "devDocId": 5952,
+              "filename": "Full Company Accounts YE 30.11.2022 - KAM Ltd.PDF",
+              "category": "Deal Documents",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 868,
+              "devDocId": 5953,
+              "filename": "KEENASMUST-Limited company accounts 20.1-LTD- YE 30.11.21.PDF",
+              "category": "Deal Documents",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            }
+          ],
+          "finalPeriodCount": 8,
+          "finalISCount": 8,
+          "finalBSCount": 7,
+          "usableYears": [
+            2023,
+            2024,
+            2025
+          ]
+        },
+        "3": {
+          "completed": true,
+          "pipelineError": null,
+          "expertSummary": [
+            {
+              "type": "qoe",
+              "id": 909,
+              "status": "success",
+              "score": 68,
+              "confidence": "high"
+            },
+            {
+              "type": "sector",
+              "id": 910,
+              "status": "success",
+              "score": 62,
+              "confidence": "medium"
+            },
+            {
+              "type": "financial",
+              "id": 906,
+              "status": "success",
+              "score": 72,
+              "confidence": "high"
+            },
+            {
+              "type": "risk",
+              "id": 908,
+              "status": "success",
+              "score": 72,
+              "confidence": "medium"
+            },
+            {
+              "type": "operational",
+              "id": 907,
+              "status": "success",
+              "score": 62,
+              "confidence": "medium"
+            },
+            {
+              "type": "valuation",
+              "id": 911,
+              "status": "success",
+              "score": 74,
+              "confidence": "medium"
+            },
+            {
+              "type": "deal_structure",
+              "id": 912,
+              "status": "success",
+              "score": 65,
+              "confidence": "high"
+            },
+            {
+              "type": "synthesis",
+              "id": 913,
+              "status": "success",
+              "score": null,
+              "confidence": null
+            }
+          ]
+        },
+        "4": {
+          "completed": true,
+          "modelId": 495,
+          "averageAdjustedEbitda": 107889.33333333333,
+          "offerPrice": 263204.3333333333,
+          "enterpriseValue": 269723.3333333333,
+          "bridgeOk": true
+        },
+        "6": {
+          "completed": true,
+          "liveUsableYears": [
+            2024
+          ],
+          "liveRawAvgEbitda": 197806
+        }
+      },
+      "completedPhases": {
+        "phase1": true,
+        "phase2": true,
+        "phase3": true,
+        "phase4": true,
+        "phase6": true
+      },
+      "status": "complete"
+    },
+    "137": {
+      "name": "MANOR BUILDING SOLUTIONS (UK) LTD",
+      "phase": 4,
+      "devTcId": 1882,
+      "phases": {
+        "1": {
+          "completed": true,
+          "devDocIds": [
+            5884,
+            5885,
+            5886,
+            5887,
+            5888,
+            5889,
+            5890,
+            5891
+          ],
+          "eventIds": [
+            656,
+            657,
+            658,
+            659,
+            660,
+            661,
+            662,
+            663
+          ],
+          "docMap": [
+            {
+              "prodDocId": 844,
+              "devDocId": 5884,
+              "eventId": 656,
+              "filename": "Manor Building Solutions 2023-2024 accounts.pdf",
+              "category": "Company Accounts",
+              "fileType": "application/pdf",
+              "fileSize": 25848,
+              "r2Key": "companies/137/doc-1778762835534-224681364.pdf",
+              "headOk": true,
+              "headSize": 25848,
+              "headContentType": "application/octet-stream",
+              "uploadDate": "2026-05-14T12:47:16.235Z"
+            },
+            {
+              "prodDocId": 845,
+              "devDocId": 5885,
+              "eventId": 657,
+              "filename": "Manor Building Solutions 2024-2025 accounts.pdf",
+              "category": "Company Accounts",
+              "fileType": "application/pdf",
+              "fileSize": 25935,
+              "r2Key": "companies/137/doc-1778762871273-49146718.pdf",
+              "headOk": true,
+              "headSize": 25935,
+              "headContentType": "application/octet-stream",
+              "uploadDate": "2026-05-14T12:47:52.181Z"
+            },
+            {
+              "prodDocId": 846,
+              "devDocId": 5886,
+              "eventId": 658,
+              "filename": "HPM304_Information_Memorandum_Manor_Building_Solutions_(UK)_Ltd_1.pdf",
+              "category": "Deal Documents",
+              "fileType": "application/pdf",
+              "fileSize": 1393998,
+              "r2Key": "companies/137/doc-1778762918053-236828570.pdf",
+              "headOk": true,
+              "headSize": 1393998,
+              "headContentType": "application/octet-stream",
+              "uploadDate": "2026-05-14T12:48:39.590Z"
+            },
+            {
+              "prodDocId": 1299,
+              "devDocId": 5887,
+              "eventId": 659,
+              "filename": "Manor 2025-26 draft accounts.pdf",
+              "category": "Company Accounts",
+              "fileType": "application/pdf",
+              "fileSize": 32888,
+              "r2Key": "companies/137/doc-1781535664647-511389281.pdf",
+              "headOk": true,
+              "headSize": 32888,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-06-15T15:01:06.872Z"
+            },
+            {
+              "prodDocId": 1310,
+              "devDocId": 5888,
+              "eventId": 660,
+              "filename": "Staff Organisation 2026-06-16 172912.png",
+              "category": "Staff Matrix",
+              "fileType": "image/png",
+              "fileSize": 70911,
+              "r2Key": "companies/137/doc-1781629035894-757641589.png",
+              "headOk": true,
+              "headSize": 70911,
+              "headContentType": "image/png",
+              "uploadDate": "2026-06-16T16:57:16.836Z"
+            },
+            {
+              "prodDocId": 1312,
+              "devDocId": 5889,
+              "eventId": 661,
+              "filename": "Fixed Assets.xlsm",
+              "category": "Asset Register",
+              "fileType": "application/vnd.ms-excel.sheet.macroEnabled.12",
+              "fileSize": 9625,
+              "r2Key": "companies/137/doc-1781629257930-589578561.xlsm",
+              "headOk": true,
+              "headSize": 9625,
+              "headContentType": "application/vnd.ms-excel.sheet.macroEnabled.12",
+              "uploadDate": "2026-06-16T17:00:58.691Z"
+            },
+            {
+              "prodDocId": 1596,
+              "devDocId": 5890,
+              "eventId": 662,
+              "filename": "Manor Building Solutions YTD P&L.pdf",
+              "category": "Deal Documents",
+              "fileType": "application/pdf",
+              "fileSize": 211271,
+              "r2Key": "companies/137/doc-1783613615639-259551387.pdf",
+              "headOk": true,
+              "headSize": 211271,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-07-09T16:13:36.550Z"
+            },
+            {
+              "prodDocId": 1597,
+              "devDocId": 5891,
+              "eventId": 663,
+              "filename": "Manor Building Solutions YTD Balance Sheet.pdf",
+              "category": "YTD Balance Sheet",
+              "fileType": "application/pdf",
+              "fileSize": 204124,
+              "r2Key": "companies/137/doc-1783613637890-211287282.pdf",
+              "headOk": true,
+              "headSize": 204124,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-07-09T16:13:58.834Z"
+            }
+          ],
+          "missingR2": []
+        },
+        "2": {
+          "completed": true,
+          "docResults": [
+            {
+              "prodDocId": 844,
+              "devDocId": 5884,
+              "filename": "Manor Building Solutions 2023-2024 accounts.pdf",
+              "category": "Company Accounts",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 845,
+              "devDocId": 5885,
+              "filename": "Manor Building Solutions 2024-2025 accounts.pdf",
+              "category": "Company Accounts",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 846,
+              "devDocId": 5886,
+              "filename": "HPM304_Information_Memorandum_Manor_Building_Solutions_(UK)_Ltd_1.pdf",
+              "category": "Deal Documents",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 1299,
+              "devDocId": 5887,
+              "filename": "Manor 2025-26 draft accounts.pdf",
+              "category": "Company Accounts",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 1310,
+              "devDocId": 5888,
+              "filename": "Staff Organisation 2026-06-16 172912.png",
+              "category": "Staff Matrix",
+              "extractionStatus": "produced_structure_all_nulls",
+              "extractionReason": "1 result row(s) but no year data"
+            },
+            {
+              "prodDocId": 1312,
+              "devDocId": 5889,
+              "filename": "Fixed Assets.xlsm",
+              "category": "Asset Register",
+              "extractionStatus": "produced_structure_all_nulls",
+              "extractionReason": "1 result row(s) but no year data"
+            },
+            {
+              "prodDocId": 1596,
+              "devDocId": 5890,
+              "filename": "Manor Building Solutions YTD P&L.pdf",
+              "category": "Deal Documents",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "1 result row(s)"
+            },
+            {
+              "prodDocId": 1597,
+              "devDocId": 5891,
+              "filename": "Manor Building Solutions YTD Balance Sheet.pdf",
+              "category": "YTD Balance Sheet",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "1 result row(s)"
+            }
+          ],
+          "finalPeriodCount": 6,
+          "finalISCount": 6,
+          "finalBSCount": 5,
+          "usableYears": [
+            2026,
+            2023,
+            2024,
+            2025
+          ]
+        },
+        "3": {
+          "completed": true,
+          "pipelineError": null,
+          "expertSummary": [
+            {
+              "type": "operational",
+              "id": 834,
+              "status": "success",
+              "score": 68,
+              "confidence": "high"
+            },
+            {
+              "type": "sector",
+              "id": 837,
+              "status": "success",
+              "score": 52,
+              "confidence": "medium"
+            },
+            {
+              "type": "risk",
+              "id": 835,
+              "status": "success",
+              "score": 72,
+              "confidence": "medium"
+            },
+            {
+              "type": "financial",
+              "id": 833,
+              "status": "success",
+              "score": 82,
+              "confidence": "high"
+            },
+            {
+              "type": "qoe",
+              "id": 836,
+              "status": "success",
+              "score": 72,
+              "confidence": "high"
+            },
+            {
+              "type": "valuation",
+              "id": 838,
+              "status": "success",
+              "score": 78,
+              "confidence": "high"
+            },
+            {
+              "type": "deal_structure",
+              "id": 839,
+              "status": "success",
+              "score": 74,
+              "confidence": "high"
+            },
+            {
+              "type": "synthesis",
+              "id": 840,
+              "status": "success",
+              "score": null,
+              "confidence": null
+            }
+          ]
+        },
+        "4": {
+          "completed": true,
+          "modelId": 491,
+          "averageAdjustedEbitda": 378668.6666666667,
+          "offerPrice": 1464601.4033333333,
+          "enterpriseValue": 1041338.8333333334,
+          "bridgeOk": true
+        },
+        "6": {
+          "completed": true,
+          "liveUsableYears": [
+            2025,
+            2026
+          ],
+          "liveRawAvgEbitda": 260032.245
+        }
+      },
+      "completedPhases": {
+        "phase1": true,
+        "phase2": true,
+        "phase3": true,
+        "phase4": true,
+        "phase6": true
+      },
+      "status": "complete"
+    },
+    "138": {
+      "name": "Cooper Gibson",
+      "phase": 5,
+      "devTcId": 1881,
+      "phases": {
+        "1": {
+          "completed": true,
+          "devDocIds": [
+            5873,
+            5874,
+            5875,
+            5876,
+            5877,
+            5878,
+            5879,
+            5880,
+            5881,
+            5882,
+            5883
+          ],
+          "eventIds": [
+            645,
+            646,
+            647,
+            648,
+            649,
+            650,
+            651,
+            652,
+            653,
+            654,
+            655
+          ],
+          "docMap": [
+            {
+              "prodDocId": 848,
+              "devDocId": 5873,
+              "eventId": 645,
+              "filename": "IM - 163009.pdf",
+              "category": "Deal Documents",
+              "fileType": "application/pdf",
+              "fileSize": 2082278,
+              "r2Key": "companies/138/doc-1778838673399-328152625.pdf",
+              "headOk": true,
+              "headSize": 2082278,
+              "headContentType": "application/octet-stream",
+              "uploadDate": "2026-05-15T09:51:14.097Z"
+            },
+            {
+              "prodDocId": 849,
+              "devDocId": 5874,
+              "eventId": 646,
+              "filename": "Cooper-Gibson Limited AC and CT ye 29.02.2024.pdf",
+              "category": "Company Accounts",
+              "fileType": "application/pdf",
+              "fileSize": 118101,
+              "r2Key": "companies/138/doc-1778838689011-823319302.pdf",
+              "headOk": true,
+              "headSize": 118101,
+              "headContentType": "application/octet-stream",
+              "uploadDate": "2026-05-15T09:51:29.741Z"
+            },
+            {
+              "prodDocId": 851,
+              "devDocId": 5875,
+              "eventId": 647,
+              "filename": "CGRProfitandLoss1Mar24.pdf",
+              "category": "Company Accounts",
+              "fileType": "application/pdf",
+              "fileSize": 40179,
+              "r2Key": "companies/138/doc-1778838746863-404999227.pdf",
+              "headOk": true,
+              "headSize": 40179,
+              "headContentType": "application/octet-stream",
+              "uploadDate": "2026-05-15T09:52:27.539Z"
+            },
+            {
+              "prodDocId": 852,
+              "devDocId": 5876,
+              "eventId": 648,
+              "filename": "CompanyOverview-end28.2.25.pdf",
+              "category": "Deal Documents",
+              "fileType": "application/pdf",
+              "fileSize": 35253,
+              "r2Key": "companies/138/doc-1778838776011-725630720.pdf",
+              "headOk": true,
+              "headSize": 35253,
+              "headContentType": "application/octet-stream",
+              "uploadDate": "2026-05-15T09:52:56.580Z"
+            },
+            {
+              "prodDocId": 853,
+              "devDocId": 5877,
+              "eventId": 649,
+              "filename": "FS_Cooper-GibsonLimited_28022025.pdf",
+              "category": "Company Accounts",
+              "fileType": "application/pdf",
+              "fileSize": 73405,
+              "r2Key": "companies/138/doc-1778838798393-104382606.pdf",
+              "headOk": true,
+              "headSize": 73405,
+              "headContentType": "application/octet-stream",
+              "uploadDate": "2026-05-15T09:53:18.960Z"
+            },
+            {
+              "prodDocId": 854,
+              "devDocId": 5878,
+              "eventId": 650,
+              "filename": "YE23 Accounts.pdf",
+              "category": "Company Accounts",
+              "fileType": "application/pdf",
+              "fileSize": 182192,
+              "r2Key": "companies/138/doc-1778838811755-535012742.pdf",
+              "headOk": true,
+              "headSize": 182192,
+              "headContentType": "application/octet-stream",
+              "uploadDate": "2026-05-15T09:53:32.314Z"
+            },
+            {
+              "prodDocId": 1335,
+              "devDocId": 5879,
+              "eventId": 651,
+              "filename": "Cooper-Gibson Ltd AC and CT ye 29.02.26._final.pdf",
+              "category": "Company Accounts",
+              "fileType": "application/pdf",
+              "fileSize": 109852,
+              "r2Key": "companies/138/doc-1782036715100-291703953.pdf",
+              "headOk": true,
+              "headSize": 109852,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-06-21T10:11:56.805Z"
+            },
+            {
+              "prodDocId": 1432,
+              "devDocId": 5880,
+              "eventId": 652,
+              "filename": "FYTDBalanceSheet_25.6.26.pdf",
+              "category": "YTD Balance Sheet",
+              "fileType": "application/pdf",
+              "fileSize": 37383,
+              "r2Key": "companies/138/doc-1782760216464-656399555.pdf",
+              "headOk": true,
+              "headSize": 37383,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-06-29T19:10:17.843Z"
+            },
+            {
+              "prodDocId": 1433,
+              "devDocId": 5881,
+              "eventId": 653,
+              "filename": "FYTD_ProfitandLoss_25.6.26.pdf",
+              "category": "Deal Documents",
+              "fileType": "application/pdf",
+              "fileSize": 35681,
+              "r2Key": "companies/138/doc-1782760240362-645911187.pdf",
+              "headOk": true,
+              "headSize": 35681,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-06-29T19:10:41.290Z"
+            },
+            {
+              "prodDocId": 1434,
+              "devDocId": 5882,
+              "eventId": 654,
+              "filename": "Cooper-Gibson Ltd_Sales by Customer Summary_LastFYto28.2.26.xlsx",
+              "category": "Sales Ledger",
+              "fileType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+              "fileSize": 10347,
+              "r2Key": "companies/138/doc-1782760262433-615318484.xlsx",
+              "headOk": true,
+              "headSize": 10347,
+              "headContentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+              "uploadDate": "2026-06-29T19:11:03.278Z"
+            },
+            {
+              "prodDocId": 1435,
+              "devDocId": 5883,
+              "eventId": 655,
+              "filename": "Cooper-Gibson Ltd_Sales by Customer Summary_1.3.26-25.6.26.xlsx",
+              "category": "Deal Documents",
+              "fileType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+              "fileSize": 10099,
+              "r2Key": "companies/138/doc-1782760273763-234847667.xlsx",
+              "headOk": true,
+              "headSize": 10099,
+              "headContentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+              "uploadDate": "2026-06-29T19:11:14.691Z"
+            }
+          ],
+          "missingR2": []
+        },
+        "2": {
+          "completed": true,
+          "docResults": [
+            {
+              "prodDocId": 848,
+              "devDocId": 5873,
+              "filename": "IM - 163009.pdf",
+              "category": "Deal Documents",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 849,
+              "devDocId": 5874,
+              "filename": "Cooper-Gibson Limited AC and CT ye 29.02.2024.pdf",
+              "category": "Company Accounts",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 851,
+              "devDocId": 5875,
+              "filename": "CGRProfitandLoss1Mar24.pdf",
+              "category": "Company Accounts",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 852,
+              "devDocId": 5876,
+              "filename": "CompanyOverview-end28.2.25.pdf",
+              "category": "Deal Documents",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 853,
+              "devDocId": 5877,
+              "filename": "FS_Cooper-GibsonLimited_28022025.pdf",
+              "category": "Company Accounts",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 854,
+              "devDocId": 5878,
+              "filename": "YE23 Accounts.pdf",
+              "category": "Company Accounts",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 1335,
+              "devDocId": 5879,
+              "filename": "Cooper-Gibson Ltd AC and CT ye 29.02.26._final.pdf",
+              "category": "Company Accounts",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 1432,
+              "devDocId": 5880,
+              "filename": "FYTDBalanceSheet_25.6.26.pdf",
+              "category": "YTD Balance Sheet",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "1 result row(s)"
+            },
+            {
+              "prodDocId": 1433,
+              "devDocId": 5881,
+              "filename": "FYTD_ProfitandLoss_25.6.26.pdf",
+              "category": "Deal Documents",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "1 result row(s)"
+            },
+            {
+              "prodDocId": 1434,
+              "devDocId": 5882,
+              "filename": "Cooper-Gibson Ltd_Sales by Customer Summary_LastFYto28.2.26.xlsx",
+              "category": "Sales Ledger",
+              "extractionStatus": "produced_structure_all_nulls",
+              "extractionReason": "1 result row(s) but no year data"
+            },
+            {
+              "prodDocId": 1435,
+              "devDocId": 5883,
+              "filename": "Cooper-Gibson Ltd_Sales by Customer Summary_1.3.26-25.6.26.xlsx",
+              "category": "Deal Documents",
+              "extractionStatus": "produced_structure_all_nulls",
+              "extractionReason": "1 result row(s) but no year data"
+            }
+          ],
+          "finalPeriodCount": 6,
+          "finalISCount": 6,
+          "finalBSCount": 6,
+          "usableYears": [
+            2024,
+            2025,
+            2022,
+            2023,
+            2026
+          ]
+        },
+        "3": {
+          "completed": true,
+          "pipelineError": null,
+          "expertSummary": [
+            {
+              "type": "synthesis",
+              "id": 832,
+              "status": "success",
+              "score": null,
+              "confidence": null
+            },
+            {
+              "type": "risk",
+              "id": 827,
+              "status": "success",
+              "score": 45,
+              "confidence": "medium"
+            },
+            {
+              "type": "operational",
+              "id": 826,
+              "status": "success",
+              "score": 58,
+              "confidence": "medium"
+            },
+            {
+              "type": "financial",
+              "id": 825,
+              "status": "success",
+              "score": 62,
+              "confidence": "high"
+            },
+            {
+              "type": "sector",
+              "id": 829,
+              "status": "success",
+              "score": 68,
+              "confidence": "medium"
+            },
+            {
+              "type": "qoe",
+              "id": 828,
+              "status": "success",
+              "score": 45,
+              "confidence": "medium"
+            },
+            {
+              "type": "valuation",
+              "id": 830,
+              "status": "success",
+              "score": 42,
+              "confidence": "low"
+            },
+            {
+              "type": "deal_structure",
+              "id": 831,
+              "status": "success",
+              "score": 35,
+              "confidence": "high"
+            }
+          ]
+        },
+        "4": {
+          "completed": true,
+          "modelId": 490,
+          "averageAdjustedEbitda": 132284.66666666666,
+          "offerPrice": 300421.1533333333,
+          "enterpriseValue": 264569.3333333333,
+          "bridgeOk": true
+        },
+        "5": {
+          "completed": true,
+          "noiseFloor": 55
+        },
+        "6": {
+          "completed": true,
+          "liveUsableYears": [
+            2022,
+            2023,
+            2024,
+            2025,
+            2026
+          ],
+          "liveRawAvgEbitda": 131365
+        }
+      },
+      "completedPhases": {
+        "phase1": true,
+        "phase2": true,
+        "phase3": true,
+        "phase4": true,
+        "phase6": true,
+        "phase5": true
+      },
+      "status": "complete"
+    },
+    "172": {
+      "name": "Ideal scaffolding",
+      "phase": 4,
+      "devTcId": 1879,
+      "phases": {
+        "1": {
+          "completed": true,
+          "devDocIds": [
+            5845,
+            5846,
+            5847,
+            5848,
+            5849,
+            5850,
+            5851,
+            5852,
+            5853,
+            5854,
+            5855,
+            5856
+          ],
+          "eventIds": [
+            617,
+            618,
+            619,
+            620,
+            621,
+            622,
+            623,
+            624,
+            625,
+            626,
+            627,
+            628
+          ],
+          "docMap": [
+            {
+              "prodDocId": 1418,
+              "devDocId": 5845,
+              "eventId": 617,
+              "filename": "staff matrix.pdf",
+              "category": "Staff Matrix",
+              "fileType": "application/pdf",
+              "fileSize": 202179,
+              "r2Key": "companies/172/doc-1782745506616-343766368.pdf",
+              "headOk": true,
+              "headSize": 202179,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-06-29T15:05:08.251Z"
+            },
+            {
+              "prodDocId": 1419,
+              "devDocId": 5846,
+              "eventId": 618,
+              "filename": "Aged Creditors.pdf",
+              "category": "Deal Documents",
+              "fileType": "application/pdf",
+              "fileSize": 46389,
+              "r2Key": "companies/172/doc-1782745536494-290817100.pdf",
+              "headOk": true,
+              "headSize": 46389,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-06-29T15:05:37.432Z"
+            },
+            {
+              "prodDocId": 1420,
+              "devDocId": 5847,
+              "eventId": 619,
+              "filename": "Balance sheet.pdf",
+              "category": "YTD Balance Sheet",
+              "fileType": "application/pdf",
+              "fileSize": 35258,
+              "r2Key": "companies/172/doc-1782745553429-98334794.pdf",
+              "headOk": true,
+              "headSize": 35258,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-06-29T15:05:54.498Z"
+            },
+            {
+              "prodDocId": 1421,
+              "devDocId": 5848,
+              "eventId": 620,
+              "filename": "PNL.pdf",
+              "category": "YTD Profit & Loss",
+              "fileType": "application/pdf",
+              "fileSize": 37601,
+              "r2Key": "companies/172/doc-1782745572400-43519776.pdf",
+              "headOk": true,
+              "headSize": 37601,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-06-29T15:06:13.297Z"
+            },
+            {
+              "prodDocId": 1422,
+              "devDocId": 5849,
+              "eventId": 621,
+              "filename": "draft year end 25.pdf",
+              "category": "Company Accounts",
+              "fileType": "application/pdf",
+              "fileSize": 167993,
+              "r2Key": "companies/172/doc-1782745600050-281519454.pdf",
+              "headOk": true,
+              "headSize": 167993,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-06-29T15:06:41.314Z"
+            },
+            {
+              "prodDocId": 1423,
+              "devDocId": 5850,
+              "eventId": 622,
+              "filename": "year end 23.pdf",
+              "category": "Company Accounts",
+              "fileType": "application/pdf",
+              "fileSize": 177855,
+              "r2Key": "companies/172/doc-1782745615640-147464204.pdf",
+              "headOk": true,
+              "headSize": 177855,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-06-29T15:06:57.245Z"
+            },
+            {
+              "prodDocId": 1424,
+              "devDocId": 5851,
+              "eventId": 623,
+              "filename": "year end 24.pdf",
+              "category": "Company Accounts",
+              "fileType": "application/pdf",
+              "fileSize": 362236,
+              "r2Key": "companies/172/doc-1782745628074-406531217.pdf",
+              "headOk": true,
+              "headSize": 362236,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-06-29T15:07:09.835Z"
+            },
+            {
+              "prodDocId": 1427,
+              "devDocId": 5852,
+              "eventId": 624,
+              "filename": "Aged Debtors.pdf",
+              "category": "Deal Documents",
+              "fileType": "application/pdf",
+              "fileSize": 40949,
+              "r2Key": "companies/172/doc-1782745745753-152767478.pdf",
+              "headOk": true,
+              "headSize": 40949,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-06-29T15:09:06.807Z"
+            },
+            {
+              "prodDocId": 1428,
+              "devDocId": 5853,
+              "eventId": 625,
+              "filename": "Top 10 Customers 21.05.26.xlsx",
+              "category": "Deal Documents",
+              "fileType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+              "fileSize": 10362,
+              "r2Key": "companies/172/doc-1782745776593-732346438.xlsx",
+              "headOk": true,
+              "headSize": 10362,
+              "headContentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+              "uploadDate": "2026-06-29T15:09:37.483Z"
+            },
+            {
+              "prodDocId": 1429,
+              "devDocId": 5854,
+              "eventId": 626,
+              "filename": "april management accs.pdf",
+              "category": "Company Accounts",
+              "fileType": "application/pdf",
+              "fileSize": 35017,
+              "r2Key": "companies/172/doc-1782745795060-407329196.pdf",
+              "headOk": true,
+              "headSize": 35017,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-06-29T15:09:55.984Z"
+            },
+            {
+              "prodDocId": 1430,
+              "devDocId": 5855,
+              "eventId": 627,
+              "filename": "Business Overview.pdf",
+              "category": "Company Accounts",
+              "fileType": "application/pdf",
+              "fileSize": 5147128,
+              "r2Key": "companies/172/doc-1782745955640-799391522.pdf",
+              "headOk": true,
+              "headSize": 5147128,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-06-29T15:13:09.209Z"
+            },
+            {
+              "prodDocId": 1431,
+              "devDocId": 5856,
+              "eventId": 628,
+              "filename": "Asset register.xlsx",
+              "category": "Asset Register",
+              "fileType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+              "fileSize": 88328,
+              "r2Key": "companies/172/doc-1782746843001-523269281.xlsx",
+              "headOk": true,
+              "headSize": 88328,
+              "headContentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+              "uploadDate": "2026-06-29T15:27:24.325Z"
+            }
+          ],
+          "missingR2": []
+        },
+        "2": {
+          "completed": true,
+          "docResults": [
+            {
+              "prodDocId": 1418,
+              "devDocId": 5845,
+              "filename": "staff matrix.pdf",
+              "category": "Staff Matrix",
+              "extractionStatus": "produced_structure_all_nulls",
+              "extractionReason": "1 result row(s) but no year data"
+            },
+            {
+              "prodDocId": 1419,
+              "devDocId": 5846,
+              "filename": "Aged Creditors.pdf",
+              "category": "Deal Documents",
+              "extractionStatus": "produced_nothing",
+              "extractionReason": "webhook_status=classification_complete"
+            },
+            {
+              "prodDocId": 1420,
+              "devDocId": 5847,
+              "filename": "Balance sheet.pdf",
+              "category": "YTD Balance Sheet",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "1 result row(s)"
+            },
+            {
+              "prodDocId": 1421,
+              "devDocId": 5848,
+              "filename": "PNL.pdf",
+              "category": "YTD Profit & Loss",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "1 result row(s)"
+            },
+            {
+              "prodDocId": 1422,
+              "devDocId": 5849,
+              "filename": "draft year end 25.pdf",
+              "category": "Company Accounts",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 1423,
+              "devDocId": 5850,
+              "filename": "year end 23.pdf",
+              "category": "Company Accounts",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 1424,
+              "devDocId": 5851,
+              "filename": "year end 24.pdf",
+              "category": "Company Accounts",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 1427,
+              "devDocId": 5852,
+              "filename": "Aged Debtors.pdf",
+              "category": "Deal Documents",
+              "extractionStatus": "produced_structure_all_nulls",
+              "extractionReason": "1 result row(s) but no year data"
+            },
+            {
+              "prodDocId": 1428,
+              "devDocId": 5853,
+              "filename": "Top 10 Customers 21.05.26.xlsx",
+              "category": "Deal Documents",
+              "extractionStatus": "produced_structure_all_nulls",
+              "extractionReason": "1 result row(s) but no year data"
+            },
+            {
+              "prodDocId": 1429,
+              "devDocId": 5854,
+              "filename": "april management accs.pdf",
+              "category": "Company Accounts",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 1430,
+              "devDocId": 5855,
+              "filename": "Business Overview.pdf",
+              "category": "Company Accounts",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 1431,
+              "devDocId": 5856,
+              "filename": "Asset register.xlsx",
+              "category": "Asset Register",
+              "extractionStatus": "produced_structure_all_nulls",
+              "extractionReason": "1 result row(s) but no year data"
+            }
+          ],
+          "finalPeriodCount": 6,
+          "finalISCount": 6,
+          "finalBSCount": 6,
+          "usableYears": [
+            2023,
+            2024,
+            2025,
+            2022,
+            2026
+          ]
+        },
+        "3": {
+          "completed": true,
+          "pipelineError": null,
+          "expertSummary": [
+            {
+              "type": "risk",
+              "id": 811,
+              "status": "success",
+              "score": 52,
+              "confidence": "medium"
+            },
+            {
+              "type": "operational",
+              "id": 810,
+              "status": "success",
+              "score": 58,
+              "confidence": "medium"
+            },
+            {
+              "type": "financial",
+              "id": 809,
+              "status": "success",
+              "score": 52,
+              "confidence": "high"
+            },
+            {
+              "type": "sector",
+              "id": 813,
+              "status": "success",
+              "score": 52,
+              "confidence": "medium"
+            },
+            {
+              "type": "qoe",
+              "id": 812,
+              "status": "success",
+              "score": 48,
+              "confidence": "medium"
+            },
+            {
+              "type": "valuation",
+              "id": 814,
+              "status": "success",
+              "score": 45,
+              "confidence": "medium"
+            },
+            {
+              "type": "deal_structure",
+              "id": 815,
+              "status": "success",
+              "score": 35,
+              "confidence": "medium"
+            },
+            {
+              "type": "synthesis",
+              "id": 816,
+              "status": "success",
+              "score": null,
+              "confidence": null
+            }
+          ]
+        },
+        "4": {
+          "completed": true,
+          "modelId": 488,
+          "averageAdjustedEbitda": 263117.17333333334,
+          "offerPrice": 472573.3466666667,
+          "enterpriseValue": 526234.3466666667,
+          "bridgeOk": true
+        },
+        "6": {
+          "completed": true,
+          "liveUsableYears": [
+            2022,
+            2023,
+            2024,
+            2025,
+            2026
+          ],
+          "liveRawAvgEbitda": 265019.50666666665
+        }
+      },
+      "completedPhases": {
+        "phase1": true,
+        "phase2": true,
+        "phase3": true,
+        "phase4": true,
+        "phase6": true
+      },
+      "status": "complete"
+    },
+    "190": {
+      "name": "Spruce Pools",
+      "phase": 4,
+      "devTcId": 1917,
+      "phases": {
+        "1": {
+          "completed": true,
+          "devDocIds": [
+            5934,
+            5935,
+            5936,
+            5937,
+            5938,
+            5939,
+            5940,
+            5941
+          ],
+          "eventIds": [
+            706,
+            707,
+            708,
+            709,
+            710,
+            711,
+            712,
+            713
+          ],
+          "docMap": [
+            {
+              "prodDocId": 1728,
+              "devDocId": 5934,
+              "eventId": 706,
+              "filename": "doc-1780951102372-305980669.pdf",
+              "category": "Restored",
+              "fileType": "application/pdf",
+              "fileSize": 483553,
+              "r2Key": "companies/190/doc-1780951102372-305980669.pdf",
+              "headOk": true,
+              "headSize": 483553,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-06-08T20:38:22.372Z"
+            },
+            {
+              "prodDocId": 1729,
+              "devDocId": 5935,
+              "eventId": 707,
+              "filename": "doc-1780951121766-626520292.pdf",
+              "category": "Restored",
+              "fileType": "application/pdf",
+              "fileSize": 485224,
+              "r2Key": "companies/190/doc-1780951121766-626520292.pdf",
+              "headOk": true,
+              "headSize": 485224,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-06-08T20:38:41.766Z"
+            },
+            {
+              "prodDocId": 1730,
+              "devDocId": 5936,
+              "eventId": 708,
+              "filename": "doc-1780951138693-955328715.pdf",
+              "category": "Restored",
+              "fileType": "application/pdf",
+              "fileSize": 485812,
+              "r2Key": "companies/190/doc-1780951138693-955328715.pdf",
+              "headOk": true,
+              "headSize": 485812,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-06-08T20:38:58.693Z"
+            },
+            {
+              "prodDocId": 1731,
+              "devDocId": 5937,
+              "eventId": 709,
+              "filename": "doc-1780951192444-255571185.pdf",
+              "category": "Restored",
+              "fileType": "application/pdf",
+              "fileSize": 49960,
+              "r2Key": "companies/190/doc-1780951192444-255571185.pdf",
+              "headOk": true,
+              "headSize": 49960,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-06-08T20:39:52.444Z"
+            },
+            {
+              "prodDocId": 1732,
+              "devDocId": 5938,
+              "eventId": 710,
+              "filename": "doc-1781036006204-332566439.docx",
+              "category": "Restored",
+              "fileType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+              "fileSize": 19554,
+              "r2Key": "companies/190/doc-1781036006204-332566439.docx",
+              "headOk": true,
+              "headSize": 19554,
+              "headContentType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+              "uploadDate": "2026-06-09T20:13:26.204Z"
+            },
+            {
+              "prodDocId": 1733,
+              "devDocId": 5939,
+              "eventId": 711,
+              "filename": "doc-1781036027379-2936647.pdf",
+              "category": "Restored",
+              "fileType": "application/pdf",
+              "fileSize": 28068,
+              "r2Key": "companies/190/doc-1781036027379-2936647.pdf",
+              "headOk": true,
+              "headSize": 28068,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-06-09T20:13:47.379Z"
+            },
+            {
+              "prodDocId": 1734,
+              "devDocId": 5940,
+              "eventId": 712,
+              "filename": "doc-1781036039445-618029331.pdf",
+              "category": "Restored",
+              "fileType": "application/pdf",
+              "fileSize": 28654,
+              "r2Key": "companies/190/doc-1781036039445-618029331.pdf",
+              "headOk": true,
+              "headSize": 28654,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-06-09T20:13:59.445Z"
+            },
+            {
+              "prodDocId": 1735,
+              "devDocId": 5941,
+              "eventId": 713,
+              "filename": "doc-1781036052408-171685303.pdf",
+              "category": "Restored",
+              "fileType": "application/pdf",
+              "fileSize": 27597,
+              "r2Key": "companies/190/doc-1781036052408-171685303.pdf",
+              "headOk": true,
+              "headSize": 27597,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-06-09T20:14:12.408Z"
+            }
+          ],
+          "missingR2": []
+        },
+        "2": {
+          "completed": true,
+          "docResults": [
+            {
+              "prodDocId": 1728,
+              "devDocId": 5934,
+              "filename": "doc-1780951102372-305980669.pdf",
+              "category": "Restored",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 1729,
+              "devDocId": 5935,
+              "filename": "doc-1780951121766-626520292.pdf",
+              "category": "Restored",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 1730,
+              "devDocId": 5936,
+              "filename": "doc-1780951138693-955328715.pdf",
+              "category": "Restored",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 1731,
+              "devDocId": 5937,
+              "filename": "doc-1780951192444-255571185.pdf",
+              "category": "Restored",
+              "extractionStatus": "produced_nothing",
+              "extractionReason": "webhook_status=classification_complete"
+            },
+            {
+              "prodDocId": 1732,
+              "devDocId": 5938,
+              "filename": "doc-1781036006204-332566439.docx",
+              "category": "Restored",
+              "extractionStatus": "produced_nothing",
+              "extractionReason": "webhook_status=classification_failed"
+            },
+            {
+              "prodDocId": 1733,
+              "devDocId": 5939,
+              "filename": "doc-1781036027379-2936647.pdf",
+              "category": "Restored",
+              "extractionStatus": "produced_structure_all_nulls",
+              "extractionReason": "1 result row(s) but no year data"
+            },
+            {
+              "prodDocId": 1734,
+              "devDocId": 5940,
+              "filename": "doc-1781036039445-618029331.pdf",
+              "category": "Restored",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "1 result row(s)"
+            },
+            {
+              "prodDocId": 1735,
+              "devDocId": 5941,
+              "filename": "doc-1781036052408-171685303.pdf",
+              "category": "Restored",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "1 result row(s)"
+            }
+          ],
+          "finalPeriodCount": 9,
+          "finalISCount": 8,
+          "finalBSCount": 5,
+          "usableYears": [
+            2024,
+            2025,
+            2023,
+            2022
+          ]
+        },
+        "3": {
+          "completed": true,
+          "pipelineError": null,
+          "expertSummary": [
+            {
+              "type": "deal_structure",
+              "id": 904,
+              "status": "success",
+              "score": 65,
+              "confidence": "high"
+            },
+            {
+              "type": "synthesis",
+              "id": 905,
+              "status": "success",
+              "score": null,
+              "confidence": null
+            },
+            {
+              "type": "risk",
+              "id": 900,
+              "status": "success",
+              "score": 72,
+              "confidence": "medium"
+            },
+            {
+              "type": "financial",
+              "id": 898,
+              "status": "success",
+              "score": 58,
+              "confidence": "high"
+            },
+            {
+              "type": "operational",
+              "id": 899,
+              "status": "success",
+              "score": 68,
+              "confidence": "high"
+            },
+            {
+              "type": "sector",
+              "id": 902,
+              "status": "success",
+              "score": 58,
+              "confidence": "medium"
+            },
+            {
+              "type": "qoe",
+              "id": 901,
+              "status": "success",
+              "score": 62,
+              "confidence": "high"
+            },
+            {
+              "type": "valuation",
+              "id": 903,
+              "status": "success",
+              "score": 65,
+              "confidence": "medium"
+            }
+          ]
+        },
+        "4": {
+          "completed": true,
+          "modelId": 494,
+          "averageAdjustedEbitda": 263552.3333333333,
+          "offerPrice": 1262387.3533333333,
+          "enterpriseValue": 658880.8333333333,
+          "bridgeOk": true
+        },
+        "6": {
+          "completed": true,
+          "liveUsableYears": [
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "liveRawAvgEbitda": 263552.3333333333
+        }
+      },
+      "completedPhases": {
+        "phase1": true,
+        "phase2": true,
+        "phase3": true,
+        "phase4": true,
+        "phase6": true
+      },
+      "status": "complete"
+    },
+    "196": {
+      "name": "Compassion Home Care Limited",
+      "phase": 6,
+      "devTcId": 1878,
+      "phases": {
+        "1": {
+          "completed": true,
+          "devDocIds": [
+            5841,
+            5842,
+            5843,
+            5844
+          ],
+          "eventIds": [
+            613,
+            614,
+            615,
+            616
+          ],
+          "docMap": [
+            {
+              "prodDocId": 1615,
+              "devDocId": 5841,
+              "eventId": 613,
+              "filename": "2026-D~1.PDF",
+              "category": "Company Accounts",
+              "fileType": "application/pdf",
+              "fileSize": 1279714,
+              "r2Key": "companies/196/doc-1784054591431-728881096.pdf",
+              "headOk": true,
+              "headSize": 1279714,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-07-14T18:43:12.423Z"
+            },
+            {
+              "prodDocId": 1616,
+              "devDocId": 5842,
+              "eventId": 614,
+              "filename": "51973A~1.PDF",
+              "category": "Company Accounts",
+              "fileType": "application/pdf",
+              "fileSize": 308777,
+              "r2Key": "companies/196/doc-1784054631356-508928467.pdf",
+              "headOk": true,
+              "headSize": 308777,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-07-14T18:43:52.320Z"
+            },
+            {
+              "prodDocId": 1617,
+              "devDocId": 5843,
+              "eventId": 615,
+              "filename": "51973A~1.PDF",
+              "category": "Company Accounts",
+              "fileType": "application/pdf",
+              "fileSize": 6883271,
+              "r2Key": "companies/196/doc-1784054658646-772722481.pdf",
+              "headOk": true,
+              "headSize": 6883271,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-07-14T18:44:20.263Z"
+            },
+            {
+              "prodDocId": 1618,
+              "devDocId": 5844,
+              "eventId": 616,
+              "filename": "519763~1.XLS",
+              "category": "Staff Matrix",
+              "fileType": "application/vnd.ms-excel",
+              "fileSize": 81184,
+              "r2Key": "companies/196/doc-1784054704563-861027790.xls",
+              "headOk": true,
+              "headSize": 81184,
+              "headContentType": "application/vnd.ms-excel",
+              "uploadDate": "2026-07-14T18:45:05.421Z"
+            }
+          ],
+          "missingR2": []
+        },
+        "2": {
+          "completed": true,
+          "docResults": [
+            {
+              "prodDocId": 1615,
+              "devDocId": 5841,
+              "filename": "2026-D~1.PDF",
+              "category": "Company Accounts",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 1616,
+              "devDocId": 5842,
+              "filename": "51973A~1.PDF",
+              "category": "Company Accounts",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 1617,
+              "devDocId": 5843,
+              "filename": "51973A~1.PDF",
+              "category": "Company Accounts",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 1618,
+              "devDocId": 5844,
+              "filename": "519763~1.XLS",
+              "category": "Staff Matrix",
+              "extractionStatus": "produced_structure_all_nulls",
+              "extractionReason": "1 result row(s) but no year data"
+            }
+          ],
+          "finalPeriodCount": 5,
+          "finalISCount": 4,
+          "finalBSCount": 4,
+          "usableYears": [
+            2025,
+            2026,
+            2024,
+            2023
+          ]
+        },
+        "3": {
+          "completed": true,
+          "pipelineError": null,
+          "expertSummary": [
+            {
+              "type": "risk",
+              "id": 803,
+              "status": "success",
+              "score": 68,
+              "confidence": "medium"
+            },
+            {
+              "type": "operational",
+              "id": 802,
+              "status": "success",
+              "score": 58,
+              "confidence": "medium"
+            },
+            {
+              "type": "financial",
+              "id": 801,
+              "status": "success",
+              "score": 72,
+              "confidence": "high"
+            },
+            {
+              "type": "sector",
+              "id": 805,
+              "status": "success",
+              "score": 68,
+              "confidence": "high"
+            },
+            {
+              "type": "qoe",
+              "id": 804,
+              "status": "success",
+              "score": 68,
+              "confidence": "high"
+            },
+            {
+              "type": "valuation",
+              "id": 806,
+              "status": "success",
+              "score": 75,
+              "confidence": "high"
+            },
+            {
+              "type": "deal_structure",
+              "id": 807,
+              "status": "success",
+              "score": 55,
+              "confidence": "high"
+            },
+            {
+              "type": "synthesis",
+              "id": 808,
+              "status": "success",
+              "score": null,
+              "confidence": null
+            }
+          ]
+        },
+        "4": {
+          "completed": true,
+          "modelId": 487,
+          "averageAdjustedEbitda": 130544.33333333333,
+          "offerPrice": 192982.66666666666,
+          "enterpriseValue": 261088.66666666666,
+          "bridgeOk": true
+        },
+        "6": {
+          "completed": true,
+          "liveUsableYears": [
+            2023,
+            2024,
+            2025,
+            2026
+          ],
+          "liveRawAvgEbitda": 130544.33333333333
+        }
+      },
+      "completedPhases": {
+        "phase1": true,
+        "phase2": true,
+        "phase3": true,
+        "phase4": true,
+        "phase6": true
+      },
+      "status": "complete"
+    },
+    "218": {
+      "name": "Canoports UK Limited (uc=107)",
+      "phase": 4,
+      "devTcId": 1884,
+      "phases": {
+        "1": {
+          "completed": true,
+          "devDocIds": [
+            5901,
+            5902,
+            5903,
+            5904,
+            5905,
+            5906,
+            5907,
+            5908
+          ],
+          "eventIds": [
+            673,
+            674,
+            675,
+            676,
+            677,
+            678,
+            679,
+            680
+          ],
+          "docMap": [
+            {
+              "prodDocId": 1484,
+              "devDocId": 5901,
+              "eventId": 673,
+              "filename": "Doc4_Asset_Register.pdf",
+              "category": "Asset Register",
+              "fileType": "application/pdf",
+              "fileSize": 3939,
+              "r2Key": "companies/218/doc-1782905055173-270625069.pdf",
+              "headOk": true,
+              "headSize": 3939,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-07-01T11:24:16.203Z"
+            },
+            {
+              "prodDocId": 1486,
+              "devDocId": 5902,
+              "eventId": 674,
+              "filename": "Doc6_Staff_Matrix.pdf",
+              "category": "Staff Matrix",
+              "fileType": "application/pdf",
+              "fileSize": 4638,
+              "r2Key": "companies/218/doc-1782905171025-509966349.pdf",
+              "headOk": true,
+              "headSize": 4638,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-07-01T11:26:11.886Z"
+            },
+            {
+              "prodDocId": 1487,
+              "devDocId": 5903,
+              "eventId": 675,
+              "filename": "Doc7_Deal_Documents.pdf",
+              "category": "Deal Documents",
+              "fileType": "application/pdf",
+              "fileSize": 5254,
+              "r2Key": "companies/218/doc-1782905193639-297224374.pdf",
+              "headOk": true,
+              "headSize": 5254,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-07-01T11:26:34.426Z"
+            },
+            {
+              "prodDocId": 1488,
+              "devDocId": 5904,
+              "eventId": 676,
+              "filename": "Doc1_Company_Accounts.pdf",
+              "category": "Company Accounts",
+              "fileType": "application/pdf",
+              "fileSize": 5326,
+              "r2Key": "companies/218/doc-1782905245818-224651570.pdf",
+              "headOk": true,
+              "headSize": 5326,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-07-01T11:27:27.728Z"
+            },
+            {
+              "prodDocId": 1489,
+              "devDocId": 5905,
+              "eventId": 677,
+              "filename": "Doc2_YTD_Profit_and_Loss.pdf",
+              "category": "YTD Profit & Loss",
+              "fileType": "application/pdf",
+              "fileSize": 4918,
+              "r2Key": "companies/218/doc-1782905265628-448187592.pdf",
+              "headOk": true,
+              "headSize": 4918,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-07-01T11:27:47.896Z"
+            },
+            {
+              "prodDocId": 1490,
+              "devDocId": 5906,
+              "eventId": 678,
+              "filename": "Doc3_YTD_Balance_Sheet (1).pdf",
+              "category": "YTD Balance Sheet",
+              "fileType": "application/pdf",
+              "fileSize": 4684,
+              "r2Key": "companies/218/doc-1782905296744-796886983.pdf",
+              "headOk": true,
+              "headSize": 4684,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-07-01T11:28:17.550Z"
+            },
+            {
+              "prodDocId": 1505,
+              "devDocId": 5907,
+              "eventId": 679,
+              "filename": "Doc8_Company_Accounts_FY26.pdf",
+              "category": "Company Accounts",
+              "fileType": "application/pdf",
+              "fileSize": 6434,
+              "r2Key": "companies/218/doc-1782991317146-437307000.pdf",
+              "headOk": true,
+              "headSize": 6434,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-07-02T11:21:58.068Z"
+            },
+            {
+              "prodDocId": 1506,
+              "devDocId": 5908,
+              "eventId": 680,
+              "filename": "Sales Ledger 2.pdf",
+              "category": "Sales Ledger",
+              "fileType": "application/pdf",
+              "fileSize": 400246,
+              "r2Key": "companies/218/doc-1782995714308-283716183.pdf",
+              "headOk": true,
+              "headSize": 400246,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-07-02T12:35:15.247Z"
+            }
+          ],
+          "missingR2": []
+        },
+        "2": {
+          "completed": true,
+          "docResults": [
+            {
+              "prodDocId": 1484,
+              "devDocId": 5901,
+              "filename": "Doc4_Asset_Register.pdf",
+              "category": "Asset Register",
+              "extractionStatus": "produced_structure_all_nulls",
+              "extractionReason": "1 result row(s) but no year data"
+            },
+            {
+              "prodDocId": 1486,
+              "devDocId": 5902,
+              "filename": "Doc6_Staff_Matrix.pdf",
+              "category": "Staff Matrix",
+              "extractionStatus": "produced_structure_all_nulls",
+              "extractionReason": "1 result row(s) but no year data"
+            },
+            {
+              "prodDocId": 1487,
+              "devDocId": 5903,
+              "filename": "Doc7_Deal_Documents.pdf",
+              "category": "Deal Documents",
+              "extractionStatus": "produced_nothing",
+              "extractionReason": "webhook_status=classification_complete"
+            },
+            {
+              "prodDocId": 1488,
+              "devDocId": 5904,
+              "filename": "Doc1_Company_Accounts.pdf",
+              "category": "Company Accounts",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 1489,
+              "devDocId": 5905,
+              "filename": "Doc2_YTD_Profit_and_Loss.pdf",
+              "category": "YTD Profit & Loss",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "1 result row(s)"
+            },
+            {
+              "prodDocId": 1490,
+              "devDocId": 5906,
+              "filename": "Doc3_YTD_Balance_Sheet (1).pdf",
+              "category": "YTD Balance Sheet",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "1 result row(s)"
+            },
+            {
+              "prodDocId": 1505,
+              "devDocId": 5907,
+              "filename": "Doc8_Company_Accounts_FY26.pdf",
+              "category": "Company Accounts",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 1506,
+              "devDocId": 5908,
+              "filename": "Sales Ledger 2.pdf",
+              "category": "Sales Ledger",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "1 result row(s)"
+            }
+          ],
+          "finalPeriodCount": 8,
+          "finalISCount": 8,
+          "finalBSCount": 6,
+          "usableYears": []
+        },
+        "3": {
+          "completed": true,
+          "pipelineError": null,
+          "expertSummary": [
+            {
+              "type": "risk",
+              "id": 892,
+              "status": "success",
+              "score": 78,
+              "confidence": "medium"
+            },
+            {
+              "type": "operational",
+              "id": 891,
+              "status": "success",
+              "score": 68,
+              "confidence": "high"
+            },
+            {
+              "type": "financial",
+              "id": 890,
+              "status": "success",
+              "score": 78,
+              "confidence": "medium"
+            },
+            {
+              "type": "sector",
+              "id": 894,
+              "status": "success",
+              "score": 68,
+              "confidence": "medium"
+            },
+            {
+              "type": "qoe",
+              "id": 893,
+              "status": "success",
+              "score": 65,
+              "confidence": "medium"
+            },
+            {
+              "type": "deal_structure",
+              "id": 896,
+              "status": "success",
+              "score": 62,
+              "confidence": "medium"
+            },
+            {
+              "type": "valuation",
+              "id": 895,
+              "status": "success",
+              "score": 55,
+              "confidence": "low"
+            },
+            {
+              "type": "synthesis",
+              "id": 897,
+              "status": "success",
+              "score": null,
+              "confidence": null
+            }
+          ]
+        },
+        "4": {
+          "completed": true,
+          "modelId": 493,
+          "averageAdjustedEbitda": 0,
+          "offerPrice": 2945794,
+          "enterpriseValue": 0,
+          "bridgeOk": true
+        },
+        "6": {
+          "completed": true,
+          "liveUsableYears": [
+            2023,
+            2024,
+            2025,
+            2026
+          ],
+          "liveRawAvgEbitda": 2151496.6666666665
+        }
+      },
+      "completedPhases": {
+        "phase1": true,
+        "phase2": true,
+        "phase3": true,
+        "phase4": true,
+        "phase6": true
+      },
+      "status": "complete"
+    },
+    "220": {
+      "name": "Canoports UK Limited (uc=108)",
+      "phase": 4,
+      "devTcId": 1883,
+      "phases": {
+        "1": {
+          "completed": true,
+          "devDocIds": [
+            5892,
+            5893,
+            5894,
+            5895,
+            5896,
+            5897,
+            5898,
+            5899,
+            5900
+          ],
+          "eventIds": [
+            664,
+            665,
+            666,
+            667,
+            668,
+            669,
+            670,
+            671,
+            672
+          ],
+          "docMap": [
+            {
+              "prodDocId": 1521,
+              "devDocId": 5892,
+              "eventId": 664,
+              "filename": "Canoports_Company_Accounts_FY26.pdf",
+              "category": "Company Accounts",
+              "fileType": "application/pdf",
+              "fileSize": 6828,
+              "r2Key": "companies/220/doc-1783111602195-571600881.pdf",
+              "headOk": true,
+              "headSize": 6828,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-07-03T20:46:43.092Z"
+            },
+            {
+              "prodDocId": 1522,
+              "devDocId": 5893,
+              "eventId": 665,
+              "filename": "Canoports_YTD_Balance_Sheet.pdf",
+              "category": "YTD Balance Sheet",
+              "fileType": "application/pdf",
+              "fileSize": 4853,
+              "r2Key": "companies/220/doc-1783111615066-242378147.pdf",
+              "headOk": true,
+              "headSize": 4853,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-07-03T20:46:55.919Z"
+            },
+            {
+              "prodDocId": 1535,
+              "devDocId": 5894,
+              "eventId": 666,
+              "filename": "Canoports_Company_Accounts_FY24.pdf",
+              "category": "Company Accounts",
+              "fileType": "application/pdf",
+              "fileSize": 4510,
+              "r2Key": "companies/220/doc-1783153881605-945901845.pdf",
+              "headOk": true,
+              "headSize": 4510,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-07-04T08:31:22.487Z"
+            },
+            {
+              "prodDocId": 1536,
+              "devDocId": 5895,
+              "eventId": 667,
+              "filename": "Canoports_Company_Accounts_FY23.pdf",
+              "category": "Company Accounts",
+              "fileType": "application/pdf",
+              "fileSize": 4760,
+              "r2Key": "companies/220/doc-1783153894157-473886272.pdf",
+              "headOk": true,
+              "headSize": 4760,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-07-04T08:31:34.987Z"
+            },
+            {
+              "prodDocId": 1537,
+              "devDocId": 5896,
+              "eventId": 668,
+              "filename": "Canoports_Company_Accounts_FY22.pdf",
+              "category": "Company Accounts",
+              "fileType": "application/pdf",
+              "fileSize": 3044,
+              "r2Key": "companies/220/doc-1783153906598-767648853.pdf",
+              "headOk": true,
+              "headSize": 3044,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-07-04T08:31:47.352Z"
+            },
+            {
+              "prodDocId": 1540,
+              "devDocId": 5897,
+              "eventId": 669,
+              "filename": "Canoports_Sales_Ledger.pdf",
+              "category": "Sales Ledger",
+              "fileType": "application/pdf",
+              "fileSize": 4901,
+              "r2Key": "companies/220/doc-1783154018711-492050023.pdf",
+              "headOk": true,
+              "headSize": 4901,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-07-04T08:33:39.465Z"
+            },
+            {
+              "prodDocId": 1541,
+              "devDocId": 5898,
+              "eventId": 670,
+              "filename": "Canoports_Asset_Register (1).pdf",
+              "category": "Asset Register",
+              "fileType": "application/pdf",
+              "fileSize": 5002,
+              "r2Key": "companies/220/doc-1783154900390-668752262.pdf",
+              "headOk": true,
+              "headSize": 5002,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-07-04T08:48:21.315Z"
+            },
+            {
+              "prodDocId": 1542,
+              "devDocId": 5899,
+              "eventId": 671,
+              "filename": "Canoports_Staff_Matrix (1).pdf",
+              "category": "Staff Matrix",
+              "fileType": "application/pdf",
+              "fileSize": 6307,
+              "r2Key": "companies/220/doc-1783154907393-627077613.pdf",
+              "headOk": true,
+              "headSize": 6307,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-07-04T08:48:28.100Z"
+            },
+            {
+              "prodDocId": 1543,
+              "devDocId": 5900,
+              "eventId": 672,
+              "filename": "Canoports_YTD_Profit_and_Loss.pdf",
+              "category": "YTD Profit & Loss",
+              "fileType": "application/pdf",
+              "fileSize": 6460,
+              "r2Key": "companies/220/doc-1783154915000-431657599.pdf",
+              "headOk": true,
+              "headSize": 6460,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-07-04T08:48:35.709Z"
+            }
+          ],
+          "missingR2": []
+        },
+        "2": {
+          "completed": true,
+          "docResults": [
+            {
+              "prodDocId": 1521,
+              "devDocId": 5892,
+              "filename": "Canoports_Company_Accounts_FY26.pdf",
+              "category": "Company Accounts",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 1522,
+              "devDocId": 5893,
+              "filename": "Canoports_YTD_Balance_Sheet.pdf",
+              "category": "YTD Balance Sheet",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "1 result row(s)"
+            },
+            {
+              "prodDocId": 1535,
+              "devDocId": 5894,
+              "filename": "Canoports_Company_Accounts_FY24.pdf",
+              "category": "Company Accounts",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 1536,
+              "devDocId": 5895,
+              "filename": "Canoports_Company_Accounts_FY23.pdf",
+              "category": "Company Accounts",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 1537,
+              "devDocId": 5896,
+              "filename": "Canoports_Company_Accounts_FY22.pdf",
+              "category": "Company Accounts",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 1540,
+              "devDocId": 5897,
+              "filename": "Canoports_Sales_Ledger.pdf",
+              "category": "Sales Ledger",
+              "extractionStatus": "produced_structure_all_nulls",
+              "extractionReason": "1 result row(s) but no year data"
+            },
+            {
+              "prodDocId": 1541,
+              "devDocId": 5898,
+              "filename": "Canoports_Asset_Register (1).pdf",
+              "category": "Asset Register",
+              "extractionStatus": "produced_structure_all_nulls",
+              "extractionReason": "1 result row(s) but no year data"
+            },
+            {
+              "prodDocId": 1542,
+              "devDocId": 5899,
+              "filename": "Canoports_Staff_Matrix (1).pdf",
+              "category": "Staff Matrix",
+              "extractionStatus": "produced_structure_all_nulls",
+              "extractionReason": "1 result row(s) but no year data"
+            },
+            {
+              "prodDocId": 1543,
+              "devDocId": 5900,
+              "filename": "Canoports_YTD_Profit_and_Loss.pdf",
+              "category": "YTD Profit & Loss",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "1 result row(s)"
+            }
+          ],
+          "finalPeriodCount": 9,
+          "finalISCount": 9,
+          "finalBSCount": 6,
+          "usableYears": [
+            2024
+          ]
+        },
+        "3": {
+          "completed": true,
+          "pipelineError": null,
+          "expertSummary": [
+            {
+              "type": "synthesis",
+              "id": 881,
+              "status": "success",
+              "score": null,
+              "confidence": null
+            },
+            {
+              "type": "risk",
+              "id": 876,
+              "status": "success",
+              "score": 78,
+              "confidence": "medium"
+            },
+            {
+              "type": "operational",
+              "id": 875,
+              "status": "success",
+              "score": 72,
+              "confidence": "medium"
+            },
+            {
+              "type": "financial",
+              "id": 874,
+              "status": "success",
+              "score": 72,
+              "confidence": "medium"
+            },
+            {
+              "type": "sector",
+              "id": 878,
+              "status": "success",
+              "score": 68,
+              "confidence": "high"
+            },
+            {
+              "type": "qoe",
+              "id": 877,
+              "status": "success",
+              "score": 75,
+              "confidence": "high"
+            },
+            {
+              "type": "valuation",
+              "id": 879,
+              "status": "success",
+              "score": 82,
+              "confidence": "high"
+            },
+            {
+              "type": "deal_structure",
+              "id": 880,
+              "status": "success",
+              "score": 78,
+              "confidence": "high"
+            }
+          ]
+        },
+        "4": {
+          "completed": true,
+          "modelId": 492,
+          "averageAdjustedEbitda": 1626170,
+          "offerPrice": 10697081,
+          "enterpriseValue": 8130850,
+          "bridgeOk": true
+        },
+        "6": {
+          "completed": true,
+          "liveUsableYears": [
+            2022,
+            2023,
+            2024,
+            2025,
+            2026
+          ],
+          "liveRawAvgEbitda": 2239957.3333333335
+        }
+      },
+      "completedPhases": {
+        "phase1": true,
+        "phase2": true,
+        "phase3": true,
+        "phase4": true,
+        "phase6": true
+      },
+      "status": "complete"
+    },
+    "228": {
+      "name": "Thor-CON",
+      "phase": 6,
+      "devTcId": 1877,
+      "phases": {
+        "1": {
+          "completed": true,
+          "devDocIds": [
+            5830,
+            5831,
+            5832,
+            5833,
+            5834,
+            5835,
+            5836,
+            5837,
+            5838,
+            5839,
+            5840
+          ],
+          "eventIds": [
+            602,
+            603,
+            604,
+            605,
+            606,
+            607,
+            608,
+            609,
+            610,
+            611,
+            612
+          ],
+          "docMap": [
+            {
+              "prodDocId": 1624,
+              "devDocId": 5830,
+              "eventId": 602,
+              "filename": "Signed - Full Accounts - 31032024_230330.pdf",
+              "category": "Company Accounts",
+              "fileType": "application/pdf",
+              "fileSize": 397088,
+              "r2Key": "companies/228/doc-1784214789681-342348647.pdf",
+              "headOk": true,
+              "headSize": 397088,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-07-16T15:13:10.806Z"
+            },
+            {
+              "prodDocId": 1759,
+              "devDocId": 5831,
+              "eventId": 603,
+              "filename": "Year Ending 31.03.2023.pdf",
+              "category": "Company Accounts",
+              "fileType": "application/pdf",
+              "fileSize": 91859,
+              "r2Key": "companies/228/doc-1784216448649-638236711.pdf",
+              "headOk": true,
+              "headSize": 91859,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-07-16T15:40:49.565Z"
+            },
+            {
+              "prodDocId": 1762,
+              "devDocId": 5832,
+              "eventId": 604,
+              "filename": "Midland_Air_Conditioning___Facility_Management_Ltd_-_Profit_and_Loss (31) DRAFT.pdf",
+              "category": "Company Accounts",
+              "fileType": "application/pdf",
+              "fileSize": 28001,
+              "r2Key": "companies/228/doc-1784216927322-99318749.pdf",
+              "headOk": true,
+              "headSize": 28001,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-07-16T15:48:48.077Z"
+            },
+            {
+              "prodDocId": 1763,
+              "devDocId": 5833,
+              "eventId": 605,
+              "filename": "P&L YE 31.03.2026.pdf",
+              "category": "YTD Profit & Loss",
+              "fileType": "application/pdf",
+              "fileSize": 25634,
+              "r2Key": "companies/228/doc-1784216942561-584515673.pdf",
+              "headOk": true,
+              "headSize": 25634,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-07-16T15:49:03.390Z"
+            },
+            {
+              "prodDocId": 1764,
+              "devDocId": 5834,
+              "eventId": 606,
+              "filename": "MI Presentation 06-25.pptx",
+              "category": "Deal Documents",
+              "fileType": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+              "fileSize": 796328,
+              "r2Key": "companies/228/doc-1784217011240-707079318.pptx",
+              "headOk": true,
+              "headSize": 796328,
+              "headContentType": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+              "uploadDate": "2026-07-16T15:50:11.988Z"
+            },
+            {
+              "prodDocId": 1765,
+              "devDocId": 5835,
+              "eventId": 607,
+              "filename": "154764 - Midland Air Conditioning & Facility Management Ltd.pdf",
+              "category": "Deal Documents",
+              "fileType": "application/pdf",
+              "fileSize": 5607240,
+              "r2Key": "companies/228/doc-1784217025842-596919980.pdf",
+              "headOk": true,
+              "headSize": 5607240,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-07-16T15:50:27.112Z"
+            },
+            {
+              "prodDocId": 1775,
+              "devDocId": 5836,
+              "eventId": 608,
+              "filename": "Balance Sheet.pdf",
+              "category": "Company Accounts",
+              "fileType": "application/pdf",
+              "fileSize": 26424,
+              "r2Key": "companies/228/doc-1784222385163-591978777.pdf",
+              "headOk": true,
+              "headSize": 26424,
+              "headContentType": "application/pdf",
+              "uploadDate": "2026-07-16T17:19:46.018Z"
+            },
+            {
+              "prodDocId": 1777,
+              "devDocId": 5837,
+              "eventId": 609,
+              "filename": "MAC Sales Ledger 01.04.25 to 08.09.25.csv",
+              "category": "Sales Ledger",
+              "fileType": "text/csv",
+              "fileSize": 53351,
+              "r2Key": "companies/228/doc-1784226449803-712664815.csv",
+              "headOk": true,
+              "headSize": 53351,
+              "headContentType": "text/csv",
+              "uploadDate": "2026-07-16T18:27:30.663Z"
+            },
+            {
+              "prodDocId": 1778,
+              "devDocId": 5838,
+              "eventId": 610,
+              "filename": "MAC Staff Matrix - Sept 2025.csv",
+              "category": "Staff Matrix",
+              "fileType": "text/csv",
+              "fileSize": 3821,
+              "r2Key": "companies/228/doc-1784226459457-262851834.csv",
+              "headOk": true,
+              "headSize": 3821,
+              "headContentType": "text/csv",
+              "uploadDate": "2026-07-16T18:27:40.151Z"
+            },
+            {
+              "prodDocId": 1779,
+              "devDocId": 5839,
+              "eventId": 611,
+              "filename": "MAC Fixed Asset Register 08.09.25.csv",
+              "category": "Asset Register",
+              "fileType": "text/csv",
+              "fileSize": 6329,
+              "r2Key": "companies/228/doc-1784226472422-618799378.csv",
+              "headOk": true,
+              "headSize": 6329,
+              "headContentType": "text/csv",
+              "uploadDate": "2026-07-16T18:27:53.104Z"
+            },
+            {
+              "prodDocId": 1780,
+              "devDocId": 5840,
+              "eventId": 612,
+              "filename": "signed_nda_228_2026-07-16T18-58-57-118Z.pdf",
+              "category": "Deal Documents",
+              "fileType": "application/pdf",
+              "fileSize": 70090,
+              "r2Key": "signed-ndas/doc-1784228337118-311080624.pdf",
+              "headOk": true,
+              "headSize": 70090,
+              "headContentType": "application/octet-stream",
+              "uploadDate": "2026-07-16T18:58:57.850Z"
+            }
+          ],
+          "missingR2": []
+        },
+        "2": {
+          "completed": true,
+          "docResults": [
+            {
+              "prodDocId": 1624,
+              "devDocId": 5830,
+              "filename": "Signed - Full Accounts - 31032024_230330.pdf",
+              "category": "Company Accounts",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 1759,
+              "devDocId": 5831,
+              "filename": "Year Ending 31.03.2023.pdf",
+              "category": "Company Accounts",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 1762,
+              "devDocId": 5832,
+              "filename": "Midland_Air_Conditioning___Facility_Management_Ltd_-_Profit_and_Loss (31) DRAFT.pdf",
+              "category": "Company Accounts",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 1763,
+              "devDocId": 5833,
+              "filename": "P&L YE 31.03.2026.pdf",
+              "category": "YTD Profit & Loss",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "1 result row(s)"
+            },
+            {
+              "prodDocId": 1764,
+              "devDocId": 5834,
+              "filename": "MI Presentation 06-25.pptx",
+              "category": "Deal Documents",
+              "extractionStatus": "produced_nothing",
+              "extractionReason": "webhook_status=classification_failed"
+            },
+            {
+              "prodDocId": 1765,
+              "devDocId": 5835,
+              "filename": "154764 - Midland Air Conditioning & Facility Management Ltd.pdf",
+              "category": "Deal Documents",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 1775,
+              "devDocId": 5836,
+              "filename": "Balance Sheet.pdf",
+              "category": "Company Accounts",
+              "extractionStatus": "produced_usable_figures",
+              "extractionReason": "3 result row(s)"
+            },
+            {
+              "prodDocId": 1777,
+              "devDocId": 5837,
+              "filename": "MAC Sales Ledger 01.04.25 to 08.09.25.csv",
+              "category": "Sales Ledger",
+              "extractionStatus": "produced_structure_all_nulls",
+              "extractionReason": "1 result row(s) but no year data"
+            },
+            {
+              "prodDocId": 1778,
+              "devDocId": 5838,
+              "filename": "MAC Staff Matrix - Sept 2025.csv",
+              "category": "Staff Matrix",
+              "extractionStatus": "produced_structure_all_nulls",
+              "extractionReason": "1 result row(s) but no year data"
+            },
+            {
+              "prodDocId": 1779,
+              "devDocId": 5839,
+              "filename": "MAC Fixed Asset Register 08.09.25.csv",
+              "category": "Asset Register",
+              "extractionStatus": "produced_structure_all_nulls",
+              "extractionReason": "1 result row(s) but no year data"
+            },
+            {
+              "prodDocId": 1780,
+              "devDocId": 5840,
+              "filename": "signed_nda_228_2026-07-16T18-58-57-118Z.pdf",
+              "category": "Deal Documents",
+              "extractionStatus": "produced_nothing",
+              "extractionReason": "webhook_status=classification_complete"
+            }
+          ],
+          "finalPeriodCount": 7,
+          "finalISCount": 6,
+          "finalBSCount": 6,
+          "usableYears": [
+            2025,
+            2023,
+            2024,
+            2022
+          ]
+        },
+        "3": {
+          "completed": true,
+          "pipelineError": null,
+          "expertSummary": [
+            {
+              "type": "synthesis",
+              "id": 800,
+              "status": "success",
+              "score": null,
+              "confidence": null
+            },
+            {
+              "type": "risk",
+              "id": 795,
+              "status": "success",
+              "score": 68,
+              "confidence": "high"
+            },
+            {
+              "type": "financial",
+              "id": 793,
+              "status": "success",
+              "score": 72,
+              "confidence": "high"
+            },
+            {
+              "type": "operational",
+              "id": 794,
+              "status": "success",
+              "score": 72,
+              "confidence": "high"
+            },
+            {
+              "type": "sector",
+              "id": 797,
+              "status": "success",
+              "score": 68,
+              "confidence": "high"
+            },
+            {
+              "type": "qoe",
+              "id": 796,
+              "status": "success",
+              "score": 68,
+              "confidence": "medium"
+            },
+            {
+              "type": "valuation",
+              "id": 798,
+              "status": "success",
+              "score": 75,
+              "confidence": "high"
+            },
+            {
+              "type": "deal_structure",
+              "id": 799,
+              "status": "success",
+              "score": 65,
+              "confidence": "high"
+            }
+          ]
+        },
+        "4": {
+          "completed": true,
+          "modelId": 486,
+          "averageAdjustedEbitda": 197064.96666666667,
+          "offerPrice": -4411.553333333286,
+          "enterpriseValue": 492662.4166666667,
+          "bridgeOk": true
+        },
+        "6": {
+          "completed": true,
+          "liveUsableYears": [],
+          "liveRawAvgEbitda": 0
+        }
+      },
+      "completedPhases": {
+        "phase1": true,
+        "phase2": true,
+        "phase3": true,
+        "phase4": true,
+        "phase6": true
+      },
+      "status": "complete"
+    }
+  },
+  "auditCompleted": "2026-07-30",
+  "auditStatus": "complete"
+}

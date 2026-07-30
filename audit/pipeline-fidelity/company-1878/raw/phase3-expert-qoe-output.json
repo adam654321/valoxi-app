@@ -1,0 +1,124 @@
+{
+  "expert": "quality_of_earnings",
+  "company_name": "[AUDIT-196] Compassion Home Care Limited",
+  "analysis_date": "2026-07-30",
+  "score": 68,
+  "confidence": "high",
+  "reported_figures": {
+    "operating_profit": 132427,
+    "depreciation": 2649,
+    "amortisation": 0,
+    "reported_ebitda": 135076,
+    "source_year": "2026"
+  },
+  "add_backs": [
+    {
+      "item": "Excess Director Remuneration",
+      "category": "owner_salary",
+      "amount": 16202,
+      "recurrence": "recurring",
+      "year": 2026,
+      "justification": "The sole Business Director's total compensation (Salary £62,470 + Pension £11,232 = £73,702) exceeds the market mid-point of £57,500 for a company of this revenue size.",
+      "confidence": "high",
+      "defensibility_score": 8,
+      "case_for_inclusion": "The buyer should not pay a multiple on compensation that exceeds the market rate for a replacement manager.",
+      "case_for_exclusion": "The seller may argue the director's dual role as Business Director and Registered Manager justifies a premium over standard benchmarks."
+    }
+  ],
+  "deductions": [
+    {
+      "item": "Replacement Registered Manager Cost",
+      "category": "missing_management",
+      "amount": 42500,
+      "recurrence": "recurring",
+      "year": 2026,
+      "justification": "Both the Director and Registered Manager are exiting; a new CQC Registered Manager is a statutory requirement and represents a new fixed cost if not replaced by the owner.",
+      "confidence": "high",
+      "defensibility_score": 9,
+      "case_for_inclusion": "This is a mandatory regulatory role that must be filled to continue operations post-sale.",
+      "case_for_exclusion": "The seller might argue that the replacement manager's salary is already partially covered by the 'market rate' adjustment of the outgoing director."
+    },
+    {
+      "item": "Deferred IT and Vehicle Maintenance",
+      "category": "deferred_maintenance",
+      "amount": 5000,
+      "recurrence": "recurring",
+      "year": 2026,
+      "justification": "Tangible assets have depleted from £16k to £6k in 3 years, with motor vehicles at £0 NBV, indicating a lack of sustainable reinvestment in the fleet and IT.",
+      "confidence": "medium",
+      "defensibility_score": 6,
+      "case_for_inclusion": "The current EBITDA is inflated by neglecting the necessary lifecycle replacement costs of operational assets.",
+      "case_for_exclusion": "The seller may claim the business model has shifted to be more asset-light, reducing the need for company-owned vehicles."
+    },
+    {
+      "item": "Bad Debt Provision (Debtor Spike)",
+      "category": "bad_debt_provision",
+      "amount": 9802,
+      "recurrence": "one_off",
+      "year": 2026,
+      "justification": "Trade debtors spiked from £19,102 in 2025 to £98,020 in 2026 without a corresponding revenue jump; a 10% provision is prudent given the collection delay.",
+      "confidence": "medium",
+      "defensibility_score": 7,
+      "case_for_inclusion": "The sudden increase in debtor days from 9 to 44 suggests potential recoverability issues or billing disputes.",
+      "case_for_exclusion": "The seller may argue the balance is fully recoverable from a reliable local authority and is merely a timing issue."
+    }
+  ],
+  "total_add_backs": 16202,
+  "total_deductions": 57302,
+  "adjusted_ebitda": {
+    "conservative": 81176,
+    "base": 93976,
+    "optimistic": 108776
+  },
+  "adjustment_summary": {
+    "reported_ebitda": 135076,
+    "plus_add_backs": 16202,
+    "minus_deductions": 57302,
+    "equals_adjusted_ebitda_base": 93976
+  },
+  "director_salary_analysis": {
+    "directors": [
+      {
+        "name": "Business Director",
+        "current_salary": 73702,
+        "estimated_market_rate": 57500,
+        "benchmark_range_used": "Revenue £1M-£5M: Working MD/Owner-Director (£45k-£70k) - adjusted for small scale",
+        "adjustment": 16202,
+        "adjustment_type": "add_back"
+      }
+    ]
+  },
+  "sustainability_assessment": {
+    "sustainable_for_3_years": true,
+    "key_assumptions": [
+      "Successful recruitment of a CQC Registered Manager immediately post-completion.",
+      "Stabilisation of the debtor collection cycle back to historical norms.",
+      "Retention of the 92% zero-hours workforce during the management transition."
+    ],
+    "sensitivity_factors": [
+      "CQC rating maintenance during leadership change.",
+      "Local authority fee rate increases vs. carer wage inflation.",
+      "Recruitment market competitiveness for qualified carers."
+    ],
+    "upside_scenarios": [
+      "Expansion of live-in care services which typically command higher margins.",
+      "Improved working capital management reducing the need for overdraft facilities."
+    ],
+    "downside_scenarios": [
+      "Loss of CQC registration due to failure to appoint a Registered Manager.",
+      "Significant bad debt write-off from the FY2026 debtor spike."
+    ]
+  },
+  "key_findings": [
+    "Reported EBITDA is healthy but relies on a lean management structure that is exiting the business.",
+    "The business is effectively debt-free with a strong cash position of £103,302 as of 2026-02-28.",
+    "There is a clear 'capex cliff' regarding IT and vehicles that has artificially lowered historical expenses.",
+    "The 2026 debtor spike is the primary financial red flag, locking up nearly £80k in additional cash compared to 2025."
+  ],
+  "red_flags": [
+    "Management Vacuum: Departure of both Director and Registered Manager simultaneously.",
+    "Working Capital: Debtor days increased by 400% in the latest fiscal year.",
+    "Asset Depletion: Tangible fixed assets are at a historical low, suggesting imminent replacement costs."
+  ],
+  "narrative": "Compassion Home Care Limited presents a solid underlying business with consistent margins, but the reported EBITDA of £135k requires downward normalization to £94k (Base Case). The primary adjustments stem from the need to institutionalize the management team following the exit of the owner-director and the Registered Manager. While the director's current compensation is slightly above market, the cost of a standalone Registered Manager—essential for CQC compliance—more than offsets this add-back. Furthermore, the buyer must account for a likely increase in maintenance or replacement capex, as the current asset base is heavily depreciated. The significant spike in trade debtors in FY2026 suggests an operational breakdown in billing or collections that must be resolved to ensure the sustainability of cash flows."
+}

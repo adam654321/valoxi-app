@@ -1,0 +1,98 @@
+{
+  "expert": "quality_of_earnings",
+  "company_name": "[AUDIT-130] Keen As Mustard",
+  "analysis_date": "2025-05-20",
+  "score": 68,
+  "confidence": "high",
+  "reported_figures": {
+    "operating_profit": 197695,
+    "depreciation": 111,
+    "amortisation": 0,
+    "reported_ebitda": 197806,
+    "source_year": "2024"
+  },
+  "add_backs": [],
+  "deductions": [
+    {
+      "item": "Director Replacement Salary Adjustment",
+      "category": "replacement_salary",
+      "amount": 39500,
+      "recurrence": "recurring",
+      "year": 2024,
+      "justification": "The sole director is currently paid £18,000, which is significantly below the UK SME market midpoint of £57,500 for a working MD in a business with <£1M revenue.",
+      "confidence": "high",
+      "defensibility_score": 9,
+      "case_for_inclusion": "A buyer will need to hire a professional manager or compensate themselves at market rates to replace the owner's full-time operational role.",
+      "case_for_exclusion": "The seller may argue that the business requires minimal management time or that the current structure is sustainable without a full-time replacement."
+    },
+    {
+      "item": "Provision for Maintenance Capex",
+      "category": "deferred_maintenance",
+      "amount": 1000,
+      "recurrence": "recurring",
+      "year": 2024,
+      "justification": "The asset base (Plant & Machinery) has a Net Book Value of only £333 as at 2024-11-30, with no additions since 2020, indicating a need for an annualised IT/equipment refresh budget.",
+      "confidence": "medium",
+      "defensibility_score": 6,
+      "case_for_inclusion": "The current depreciation charge is artificially low due to fully depreciated assets; a realistic annual cost for equipment replacement must be factored in.",
+      "case_for_exclusion": "The seller may argue that as an asset-light creative agency, no further investment is required beyond what is already in the P&L."
+    }
+  ],
+  "total_add_backs": 0,
+  "total_deductions": 40500,
+  "adjusted_ebitda": {
+    "conservative": 157306,
+    "base": 157306,
+    "optimistic": 157306
+  },
+  "adjustment_summary": {
+    "reported_ebitda": 197806,
+    "plus_add_backs": 0,
+    "minus_deductions": 40500,
+    "equals_adjusted_ebitda_base": 157306
+  },
+  "director_salary_analysis": {
+    "directors": [
+      {
+        "name": "Sole Director",
+        "current_salary": 18000,
+        "estimated_market_rate": 57500,
+        "benchmark_range_used": "Revenue £1M-£5M (adjusted for sub-£1M scale): £45,000–£70,000",
+        "adjustment": 39500,
+        "adjustment_type": "deduction"
+      }
+    ]
+  },
+  "sustainability_assessment": {
+    "sustainable_for_3_years": true,
+    "key_assumptions": [
+      "Subcontractor costs remain flexible and scale with revenue",
+      "The 2025 revenue figure represents a partial year or specific project timing rather than a permanent loss of client base",
+      "The USA market (55% of 2025 revenue) remains stable"
+    ],
+    "sensitivity_factors": [
+      "High owner dependency: loss of the principal could lead to client churn",
+      "Debtor collection: 2024 debtor days of 78.76 suggest cash flow pressure if revenue scales"
+    ],
+    "upside_scenarios": [
+      "Expansion of the USA client base which currently shows strong momentum",
+      "Reduction in travel and subsistence costs (£28k in 2024) through remote delivery"
+    ],
+    "downside_scenarios": [
+      "Key client loss in the UK or Europe",
+      "Inability to source high-quality subcontractors at current margin levels"
+    ]
+  },
+  "key_findings": [
+    "The business operates with exceptionally high margins (45% Operating Margin in 2024).",
+    "Reported EBITDA is inflated by a below-market director salary and minimal depreciation on aged assets.",
+    "The 2025 management accounts show Trade Debtors of £358,524.86 exactly matching Revenue, which is a significant data integrity red flag.",
+    "The business is highly cash-generative but pays out nearly all profit as dividends (£126,200 in 2024)."
+  ],
+  "red_flags": [
+    "Trade Debtors exactly matching Revenue in 2025 management accounts suggests revenue may not have been collected or is incorrectly recorded.",
+    "High owner dependency with no formal management structure below the director level.",
+    "Significant increase in debtor days from 55 to 79 between 2023 and 2024."
+  ],
+  "narrative": "Keen As Mustard is a high-margin creative consultancy that appears very profitable on paper. However, the reported EBITDA of £197,806 is unsustainable for a buyer because it relies on the owner taking a nominal salary of £18,000 and extracting value via dividends. After adjusting for a market-rate MD salary and a modest equipment refresh budget, the Base Adjusted EBITDA is £157,306. The primary concern for a buyer is the 2025 data, which shows a potential revenue decline and a highly unusual debtor position where 100% of revenue appears uncollected. While the core business model is attractive and asset-light, the valuation must be based on the adjusted earnings and a clear explanation of the 2025 trading position."
+}

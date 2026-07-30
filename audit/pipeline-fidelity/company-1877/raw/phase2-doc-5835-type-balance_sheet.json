@@ -1,0 +1,258 @@
+{
+  "document": "balance_sheet",
+  "source": "statutory",
+  "years_covered": [
+    2021,
+    2022,
+    2023,
+    2024
+  ],
+  "period_ends": {
+    "2021": "2021-03-31",
+    "2022": "2022-03-31",
+    "2023": "2023-03-31",
+    "2024": "2024-03-31"
+  },
+  "months_covered": {
+    "2021": 12,
+    "2022": 12,
+    "2023": 12,
+    "2024": 12
+  },
+  "report_date": null,
+  "years": {
+    "2021": {
+      "year": 2021,
+      "balance_sheet": {
+        "fixed_assets": {
+          "intangible_assets": null,
+          "tangible_assets": 0,
+          "freehold_property": null,
+          "leasehold_property": null,
+          "plant_machinery": null,
+          "fixtures_fittings": null,
+          "motor_vehicles": null,
+          "computer_equipment": null
+        },
+        "current_assets": {
+          "stock": null,
+          "trade_debtors": null,
+          "prepayments": null,
+          "amounts_owed_by_directors": null,
+          "amounts_owed_by_connected_companies": null,
+          "directors_current_account": null,
+          "other_debtors": null,
+          "cash_at_bank": null,
+          "total": 194994
+        },
+        "current_liabilities": {
+          "trade_creditors": null,
+          "taxation_social_security": null,
+          "vat_payable": null,
+          "corporation_tax": null,
+          "bank_loans_current": null,
+          "hire_purchase_current": null,
+          "accruals": null,
+          "amounts_owed_to_directors": null,
+          "other_creditors": null,
+          "total": 136629
+        },
+        "long_term_liabilities": {
+          "bank_loans": null,
+          "hire_purchase_long_term": null,
+          "deferred_taxation": null,
+          "other_debt": null,
+          "total": 120131
+        },
+        "equity": {
+          "share_capital": 0,
+          "retained_earnings": 33166,
+          "total": 33166
+        }
+      },
+      "financial_ratios": {
+        "current_ratio": 1.4271787102306246,
+        "quick_ratio": null,
+        "net_assets_growth_percent": null,
+        "gearing_ratio_percent": 362.211291684255
+      }
+    },
+    "2022": {
+      "year": 2022,
+      "balance_sheet": {
+        "fixed_assets": {
+          "intangible_assets": null,
+          "tangible_assets": 49395,
+          "freehold_property": null,
+          "leasehold_property": null,
+          "plant_machinery": null,
+          "fixtures_fittings": null,
+          "motor_vehicles": null,
+          "computer_equipment": null
+        },
+        "current_assets": {
+          "stock": null,
+          "trade_debtors": null,
+          "prepayments": null,
+          "amounts_owed_by_directors": null,
+          "amounts_owed_by_connected_companies": null,
+          "directors_current_account": null,
+          "other_debtors": null,
+          "cash_at_bank": null,
+          "total": 321236
+        },
+        "current_liabilities": {
+          "trade_creditors": null,
+          "taxation_social_security": null,
+          "vat_payable": null,
+          "corporation_tax": null,
+          "bank_loans_current": null,
+          "hire_purchase_current": null,
+          "accruals": null,
+          "amounts_owed_to_directors": null,
+          "other_creditors": null,
+          "total": 216893
+        },
+        "long_term_liabilities": {
+          "bank_loans": null,
+          "hire_purchase_long_term": null,
+          "deferred_taxation": null,
+          "other_debt": null,
+          "total": 75830
+        },
+        "equity": {
+          "share_capital": 100,
+          "retained_earnings": 77808,
+          "total": 77908
+        }
+      },
+      "financial_ratios": {
+        "current_ratio": 1.481080431364715,
+        "quick_ratio": null,
+        "net_assets_growth_percent": 134.90321413495747,
+        "gearing_ratio_percent": 97.33275145042872
+      }
+    },
+    "2023": {
+      "year": 2023,
+      "balance_sheet": {
+        "fixed_assets": {
+          "intangible_assets": null,
+          "tangible_assets": 45607,
+          "freehold_property": null,
+          "leasehold_property": null,
+          "plant_machinery": null,
+          "fixtures_fittings": null,
+          "motor_vehicles": null,
+          "computer_equipment": null
+        },
+        "current_assets": {
+          "stock": null,
+          "trade_debtors": null,
+          "prepayments": null,
+          "amounts_owed_by_directors": null,
+          "amounts_owed_by_connected_companies": null,
+          "directors_current_account": null,
+          "other_debtors": null,
+          "cash_at_bank": null,
+          "total": 391084
+        },
+        "current_liabilities": {
+          "trade_creditors": null,
+          "taxation_social_security": null,
+          "vat_payable": null,
+          "corporation_tax": null,
+          "bank_loans_current": null,
+          "hire_purchase_current": null,
+          "accruals": null,
+          "amounts_owed_to_directors": null,
+          "other_creditors": null,
+          "total": 222713
+        },
+        "long_term_liabilities": {
+          "bank_loans": null,
+          "hire_purchase_long_term": null,
+          "deferred_taxation": null,
+          "other_debt": null,
+          "total": 45044
+        },
+        "equity": {
+          "share_capital": 100,
+          "retained_earnings": 164400,
+          "total": 164500
+        }
+      },
+      "financial_ratios": {
+        "current_ratio": 1.7560000089801673,
+        "quick_ratio": null,
+        "net_assets_growth_percent": 111.14648046413718,
+        "gearing_ratio_percent": 27.38237082066869
+      }
+    },
+    "2024": {
+      "year": 2024,
+      "balance_sheet": {
+        "fixed_assets": {
+          "intangible_assets": null,
+          "tangible_assets": 332464,
+          "freehold_property": null,
+          "leasehold_property": null,
+          "plant_machinery": null,
+          "fixtures_fittings": null,
+          "motor_vehicles": null,
+          "computer_equipment": null
+        },
+        "current_assets": {
+          "stock": null,
+          "trade_debtors": null,
+          "prepayments": null,
+          "amounts_owed_by_directors": null,
+          "amounts_owed_by_connected_companies": null,
+          "directors_current_account": null,
+          "other_debtors": null,
+          "cash_at_bank": null,
+          "total": 446241
+        },
+        "current_liabilities": {
+          "trade_creditors": null,
+          "taxation_social_security": null,
+          "vat_payable": null,
+          "corporation_tax": null,
+          "bank_loans_current": null,
+          "hire_purchase_current": null,
+          "accruals": null,
+          "amounts_owed_to_directors": null,
+          "other_creditors": null,
+          "total": 293522
+        },
+        "long_term_liabilities": {
+          "bank_loans": null,
+          "hire_purchase_long_term": null,
+          "deferred_taxation": null,
+          "other_debt": null,
+          "total": 272466
+        },
+        "equity": {
+          "share_capital": 100,
+          "retained_earnings": 165682,
+          "total": 165782
+        }
+      },
+      "financial_ratios": {
+        "current_ratio": 1.520298308133632,
+        "quick_ratio": null,
+        "net_assets_growth_percent": 0.7793313069908815,
+        "gearing_ratio_percent": 164.3519803114934
+      }
+    }
+  },
+  "summary_insights": [
+    "Net assets have grown significantly from £33,166 in YE21 to £165,782 in YE24, representing a 400% increase over the period.",
+    "The company significantly expanded its asset base in YE24, with tangible assets increasing from £45,607 to £332,464, likely indicating investment in equipment or facilities.",
+    "Liquidity remains stable and healthy, with a current ratio of 1.52 in YE24, consistently staying above the 1.0 threshold throughout the reported years.",
+    "Net current assets (working capital) reached £152,719 in YE24, providing a solid buffer for day-to-day operational requirements.",
+    "Long-term liabilities increased sharply in YE24 to £272,466, resulting in a gearing ratio of 164%, which suggests the recent asset expansion was likely debt-funded.",
+    "Shareholder value is primarily driven by retained profits, which have grown from £33,166 to £165,682, demonstrating consistent profitability and capital retention."
+  ],
+  "_isIM": true
+}

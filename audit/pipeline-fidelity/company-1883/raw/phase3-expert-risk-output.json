@@ -1,0 +1,122 @@
+{
+  "expert": "risk",
+  "company_name": "[AUDIT-220] Canoports UK Limited",
+  "analysis_date": "2025-07-24",
+  "score": 78,
+  "confidence": "medium",
+  "customer_concentration": {
+    "risk_level": "low",
+    "top_customer_percent": 10,
+    "top_3_customers_percent": null,
+    "top_5_customers_percent": null,
+    "hhi_index": null,
+    "hhi_classification": "diversified",
+    "total_customers": null,
+    "customers_over_15_percent": [],
+    "observations": [
+      "Customer concentration is reported as low with the largest single customer representing less than 10% of turnover.",
+      "High customer loyalty noted with a 91% repeat order rate for the AliDeck division.",
+      "Significant secured pipeline of £17.4m provides revenue visibility."
+    ]
+  },
+  "financial_risk": {
+    "risk_level": "low",
+    "technically_insolvent": false,
+    "current_ratio_trend": "improving",
+    "creditor_growth_vs_revenue": "Creditors decreased significantly in 2026 while equity grew.",
+    "director_loans_balance": null,
+    "intercompany_balances": null,
+    "interest_coverage_adequate": true,
+    "going_concern_indicators": [],
+    "observations": [
+      "Current ratio as of 2026-05-31 is 4.44, indicating very strong liquidity.",
+      "Total equity has grown from £4,755,914 (2023-05-31) to £7,873,818 (2026-05-31).",
+      "Interest coverage is comfortable with an operating profit of £1,322,241 against interest payable of £102,433 in FY24.",
+      "Bank debt is being rapidly deleveraged, with long-term bank loans falling to £3,867 by 2026-05-31."
+    ]
+  },
+  "key_person_risk": {
+    "risk_level": "moderate",
+    "highest_individual_payroll_percent": null,
+    "single_points_of_failure": [
+      "Mark Wood",
+      "Louisa Wood"
+    ],
+    "management_depth": "adequate",
+    "average_tenure_years": 15,
+    "observations": [
+      "The CEO (Richard) has a 15-year tenure, providing strong operational continuity.",
+      "Succession plan is in place for the CEO to lead post-transaction.",
+      "Director remuneration is noted as being materially below market-rate, which may mask true overhead costs."
+    ]
+  },
+  "revenue_quality": {
+    "risk_level": "low",
+    "revenue_type": "mixed",
+    "customer_trend": "stable_base",
+    "seasonality_detected": false,
+    "observations": [
+      "High repeat order rate (91%) suggests strong recurring-like revenue characteristics despite project-based nature.",
+      "Secured pipeline of £17.4m mitigates short-term revenue volatility."
+    ]
+  },
+  "balance_sheet_risks": {
+    "director_loans": null,
+    "connected_company_balances": null,
+    "deferred_tax": null,
+    "pension_obligations": null,
+    "contingent_liabilities": "unable_to_assess",
+    "observations": [
+      "Fixed charge exists in favor of Metro Bank PLC (dated 26 April 2022).",
+      "Property portfolio is entirely leasehold, which may impact long-term security of tenure or refinancing options.",
+      "Asset-light model with tangible fixed assets representing only 4.9% of turnover."
+    ]
+  },
+  "bad_debt": {
+    "total_overdue_90_plus": null,
+    "recommended_provision": null,
+    "existing_provision": null,
+    "net_profit_impact": null,
+    "observations": [
+      "Aged debtor breakdown was not provided; 90+ day risk cannot be quantified from current data.",
+      "Debtor days are reported at 62.9, which is moderate for the manufacturing sector."
+    ]
+  },
+  "risk_register": [
+    {
+      "risk": "Aged Debt Visibility",
+      "category": "bad_debt",
+      "severity": "medium",
+      "likelihood": "medium",
+      "financial_impact": null,
+      "impact_description": "Potential for unidentified bad debt within the £2.26m trade debtor balance (2026-05-31).",
+      "mitigation": "Perform a full aged debt audit and request a breakdown of the 90+ day category during DD."
+    },
+    {
+      "risk": "Director Remuneration Normalisation",
+      "category": "financial",
+      "severity": "low",
+      "likelihood": "high",
+      "financial_impact": null,
+      "impact_description": "Current director pay is below market; post-acquisition management costs will likely increase.",
+      "mitigation": "Adjust EBITDA for market-rate management salaries in the valuation model."
+    },
+    {
+      "risk": "Leasehold Property Dependency",
+      "category": "operational",
+      "severity": "low",
+      "likelihood": "low",
+      "financial_impact": null,
+      "impact_description": "Lack of freehold property limits asset-backed lending and creates lease renewal risk.",
+      "mitigation": "Review lease terms and remaining duration for Rochester and Hinckley sites."
+    }
+  ],
+  "deal_breakers": [],
+  "key_findings": [
+    "The company exhibits strong liquidity with a current ratio of 4.44 as of 2026-05-31.",
+    "Revenue quality is supported by a high repeat order rate and a substantial secured pipeline.",
+    "Financial risk is low due to significant deleveraging and consistent equity growth.",
+    "Key person risk is mitigated by a long-tenured CEO and a clear succession plan."
+  ],
+  "narrative": "Canoports UK Limited presents a low-to-moderate risk profile. The financial position is robust, characterized by high liquidity and minimal long-term debt. While customer concentration is low, the primary risk lies in the lack of granular data regarding aged debtors and the potential for increased overheads once director salaries are normalized to market rates. The business model is asset-light but supported by recent capital investment in specialized machinery. The presence of a long-tenured CEO provides significant comfort regarding operational continuity post-acquisition."
+}

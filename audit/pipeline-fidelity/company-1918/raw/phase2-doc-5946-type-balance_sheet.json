@@ -1,0 +1,17 @@
+{
+  "document": "balance_sheet",
+  "source": "statutory",
+  "years_covered": [],
+  "period_ends": {},
+  "months_covered": {},
+  "report_date": null,
+  "years": {},
+  "summary_insights": [
+    "The provided document contains sales transaction data (income) rather than a balance sheet.",
+    "No balance sheet fields (assets, liabilities, or equity) could be extracted from the transaction list.",
+    "Financial ratios cannot be calculated as the document lacks a snapshot of the company's financial position.",
+    "The data shows active revenue generation across multiple international clients including Foresight Associates and WIN.",
+    "A full balance sheet document is required to assess liquidity, gearing, and net asset growth."
+  ],
+  "_isIM": false
+}

@@ -1,0 +1,81 @@
+{
+  "document": "profit_and_loss",
+  "source": "management",
+  "years_covered": [
+    2026
+  ],
+  "period_ends": {
+    "2026": "2026-04-30"
+  },
+  "months_covered": {
+    "2026": 1
+  },
+  "report_date": "2026-05-26",
+  "years": {
+    "2026": {
+      "year": 2026,
+      "balance_sheet": {
+        "fixed_assets": {
+          "intangible_assets": null,
+          "tangible_assets": null,
+          "freehold_property": null,
+          "leasehold_property": null,
+          "plant_machinery": null,
+          "fixtures_fittings": null,
+          "motor_vehicles": null,
+          "computer_equipment": null
+        },
+        "current_assets": {
+          "stock": null,
+          "trade_debtors": null,
+          "prepayments": null,
+          "amounts_owed_by_directors": null,
+          "amounts_owed_by_connected_companies": null,
+          "directors_current_account": null,
+          "other_debtors": null,
+          "cash_at_bank": null,
+          "total": null
+        },
+        "current_liabilities": {
+          "trade_creditors": null,
+          "taxation_social_security": null,
+          "vat_payable": null,
+          "corporation_tax": null,
+          "bank_loans_current": null,
+          "hire_purchase_current": null,
+          "accruals": null,
+          "amounts_owed_to_directors": null,
+          "other_creditors": null,
+          "total": null
+        },
+        "long_term_liabilities": {
+          "bank_loans": null,
+          "hire_purchase_long_term": null,
+          "deferred_taxation": null,
+          "other_debt": null,
+          "total": null
+        },
+        "equity": {
+          "share_capital": null,
+          "retained_earnings": 128124.9,
+          "total": 128124.9
+        }
+      },
+      "financial_ratios": {
+        "current_ratio": null,
+        "quick_ratio": null,
+        "net_assets_growth_percent": null,
+        "gearing_ratio_percent": null
+      }
+    }
+  },
+  "summary_insights": [
+    "The provided document is a Profit and Loss statement for April 2026, not a full Balance Sheet; therefore, asset and liability breakdowns are unavailable.",
+    "The company generated a significant Net Profit of £128,124.90 in a single month (April 2026).",
+    "Gross Profit margin is strong at approximately 75.6%, with Scaffolding Sales reaching £231,364.06.",
+    "Direct expenses are well-controlled, with labor costs (Payroll, CIS, and Casual) totaling £49,881.41.",
+    "Overheads are diverse, with Gross Wages (£15,560.18) and Vehicle-related costs being the primary drivers of administrative spend.",
+    "The net profit for the period suggests a substantial contribution to retained earnings and shareholder value for the start of the financial year."
+  ],
+  "_isIM": false
+}

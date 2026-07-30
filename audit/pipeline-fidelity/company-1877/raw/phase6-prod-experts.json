@@ -1,0 +1,1375 @@
+[
+  {
+    "id": 2736,
+    "expert_type": "data_quality",
+    "status": "success",
+    "score": 92,
+    "confidence": "high",
+    "created_at": "2026-07-16T18:29:25.273Z",
+    "analysis_data": {
+      "stage": "data_quality",
+      "company_name": "Thor-CON",
+      "assessment_date": "2025-10-27",
+      "overall_completeness_score": 92,
+      "overall_completeness_rating": "high",
+      "confidence_for_analysis": "high",
+      "data_sources": {
+        "company_accounts": {
+          "status": "complete",
+          "years_available": 4,
+          "years_list": [
+            2021,
+            2022,
+            2023,
+            2024
+          ],
+          "most_recent_period_end": "2024-03-31",
+          "data_staleness_months": 19,
+          "consecutive_years": true,
+          "key_fields_populated": [
+            "revenue",
+            "gross_profit",
+            "operating_profit",
+            "net_profit"
+          ],
+          "key_fields_missing": []
+        },
+        "profit_and_loss": {
+          "status": "complete",
+          "key_fields_populated": [
+            "revenue",
+            "cost_of_sales",
+            "gross_profit",
+            "administrative_expenses",
+            "operating_profit",
+            "net_profit"
+          ],
+          "key_fields_missing": [],
+          "has_overheads_breakdown": true,
+          "has_cost_of_sales_breakdown": true
+        },
+        "balance_sheet": {
+          "status": "complete",
+          "key_fields_populated": [
+            "fixed_assets",
+            "current_assets.total",
+            "current_liabilities.total",
+            "equity.total"
+          ],
+          "key_fields_missing": [],
+          "has_detailed_breakdown": true
+        },
+        "asset_register": {
+          "status": "complete",
+          "asset_count": 31,
+          "has_category_breakdown": true,
+          "has_individual_assets": true
+        },
+        "sales_ledger": {
+          "status": "complete",
+          "has_aging_breakdown": true,
+          "has_customer_breakdown": true,
+          "customer_count": 56
+        },
+        "staff_matrix": {
+          "status": "partial",
+          "headcount_reported": 18,
+          "has_individual_records": true,
+          "has_director_identification": true,
+          "key_fields_missing": [
+            "total_employer_ni",
+            "total_employer_pension"
+          ]
+        }
+      },
+      "consistency_checks": {
+        "pl_revenue_vs_accounts": {
+          "result": "consistent",
+          "pl_value": 1695203,
+          "accounts_value": 1695203,
+          "variance_percent": 0
+        },
+        "bs_net_assets_vs_accounts": {
+          "result": "consistent",
+          "bs_value": 165782,
+          "accounts_value": 165782,
+          "variance_percent": 0
+        },
+        "staff_costs_vs_pl": {
+          "result": "major_discrepancy",
+          "matrix_value": 446130,
+          "pl_value": 531652,
+          "variance_percent": -16.08
+        },
+        "assets_nbv_vs_bs": {
+          "result": "consistent",
+          "register_value": 332463.82,
+          "bs_value": 332464,
+          "variance_percent": 0
+        },
+        "debtors_vs_bs": {
+          "result": "major_discrepancy",
+          "ledger_value": 234444.45,
+          "bs_value": 140300,
+          "variance_percent": 67.1
+        }
+      },
+      "red_flags": [
+        "Data staleness for filed accounts exceeds 18 months (March 2024)",
+        "Major discrepancy between Sales Ledger total and Balance Sheet trade debtors",
+        "Staff matrix total costs significantly lower than P&L staff costs (16% variance)",
+        "Sales ledger contains a long-term dispute (>180 days) for Customer 1"
+      ],
+      "gaps_requiring_seller_action": [
+        "Reconcile Sales Ledger (£234k) to the latest Balance Sheet (£140k)",
+        "Provide breakdown of Employer NI and Pension in Staff Matrix to align with P&L",
+        "Clarify status of Customer 1 dispute and bad debt provisioning"
+      ],
+      "analysis_limitations": [
+        "Staff matrix lacks employer-side tax/pension contributions",
+        "Management accounts for 2025 are partial (P&L provided, but Balance Sheet for same period is missing key current asset/liability breakdowns)"
+      ]
+    }
+  },
+  {
+    "id": 2744,
+    "expert_type": "deal_structure",
+    "status": "success",
+    "score": 65,
+    "confidence": "high",
+    "created_at": "2026-07-16T18:29:54.664Z",
+    "analysis_data": {
+      "expert": "deal_structure",
+      "company_name": "Thor-CON",
+      "analysis_date": "2025-10-27",
+      "score": 65,
+      "confidence": "high",
+      "structures": [
+        {
+          "name": "Conservative Approach",
+          "strategy": "Asset-backed floor with heavy performance weighting to mitigate margin compression and debt load.",
+          "risk_to_buyer": "low",
+          "suitable_when": "The buyer is concerned about the 20% gross margin drop and the high financial leverage of the vehicle fleet.",
+          "consideration": {
+            "total_headline": 472000,
+            "upfront_cash": 188800,
+            "upfront_percent": 40,
+            "deferred": 141600,
+            "earnout_maximum": 141600,
+            "earnout_metric": "Adjusted EBITDA",
+            "earnout_period_months": 24,
+            "earnout_rationale": "Trigger 4 (Unverified add-backs) and Trigger 6 (Forecasted growth). The QoE expert identified a significant omission of depreciation in 2025 accounts; the earnout ensures the business generates the normalized EBITDA of £188k post-acquisition.",
+            "retention_escrow": 47200
+          },
+          "key_conditions": [
+            "Settlement of £122k intercompany loan prior to close",
+            "General Manager enters into a 3-year LTIP",
+            "Gross Margin must remain above 40% for earnout eligibility"
+          ],
+          "notes": "Seller to provide 6-month handover; 36-month non-compete. Specific indemnity required for HP debt title and intercompany loan recovery. Warranty cap at 25% of consideration with a 12-month period. Completion accounts mechanism with a working capital peg of £324k. Risk is low due to high deferred/contingent component."
+        },
+        {
+          "name": "Balanced Approach",
+          "strategy": "Bridging the gap between EBITDA valuation and Net Asset Value (NAV) floor.",
+          "risk_to_buyer": "medium",
+          "suitable_when": "The seller refuses to sell below the NAV of £622k, but the buyer requires protection against the shift to lower-margin renewables.",
+          "consideration": {
+            "total_headline": 618452,
+            "upfront_cash": 309226,
+            "upfront_percent": 50,
+            "deferred": 154613,
+            "earnout_maximum": 154613,
+            "earnout_metric": "Gross Profit Margin %",
+            "earnout_period_months": 18,
+            "earnout_rationale": "Trigger 6 (Forecasted growth/sustainability). The operational expert noted a drop from 62% to 42% margin. This earnout protects the buyer if the 'volume game' fails to materialize or margins compress further.",
+            "retention_escrow": 61845
+          },
+          "key_conditions": [
+            "Exclusion of A&M Smith Properties loan from completion balance sheet",
+            "Key customer retention (Top 5) during transition",
+            "Standard warranty suite with specific tax indemnity"
+          ],
+          "notes": "3-month handover followed by 12-month consultancy. Warranty cap at 50% of consideration. Locked-box mechanism possible if 2025 accounts are audited. Risk is medium as upfront cash covers the majority of the adjusted equity value."
+        },
+        {
+          "name": "Competitive Approach",
+          "strategy": "Aggressive upfront offer to meet seller expectations while using fixed deferment to manage cash flow.",
+          "risk_to_buyer": "high",
+          "suitable_when": "A competitive bidding environment where the buyer prioritizes deal certainty and the high growth CAGR (44.7%).",
+          "consideration": {
+            "total_headline": 850000,
+            "upfront_cash": 595000,
+            "upfront_percent": 70,
+            "deferred": 255000,
+            "earnout_maximum": 0,
+            "earnout_metric": "N/A",
+            "earnout_period_months": 0,
+            "earnout_rationale": "No earnout included to maximize offer attractiveness, relying instead on a high fixed deferred component and strict warranties to manage risk.",
+            "retention_escrow": 85000
+          },
+          "key_conditions": [
+            "General Manager signs a new 5-year employment contract",
+            "Full disclosure of all HP agreements and personal guarantees",
+            "Clean title on all 81% 'fresh' vehicle assets"
+          ],
+          "notes": "1-month handover; 24-month non-compete. Warranty cap at 100% of consideration given the high upfront payment. Completion accounts mechanism required to adjust for high HP debt. Risk is high due to the premium paid over both EBITDA and NAV valuations."
+        }
+      ],
+      "recommended_structure": "Balanced Approach",
+      "recommendation_rationale": "The Balanced Approach is recommended because it respects the Net Asset Value (£622k) which acts as a natural floor for the seller, while using an earnout to address the primary risk identified by all experts: the 20% gross margin compression. It bridges the significant negotiation gap identified in the valuation report without over-exposing the buyer to the high financial leverage of the fleet.",
+      "negotiation_priorities": [
+        "Settlement or extraction of the £122k intercompany loan",
+        "Securing the General Manager's long-term commitment",
+        "Establishing a clear Working Capital Peg to account for the deteriorating cash conversion cycle",
+        "Verification of the 2025 depreciation charge to confirm normalized EBITDA"
+      ],
+      "deal_breaker_terms": [
+        "Failure to settle intercompany loans prior to completion",
+        "Resignation of the General Manager during due diligence",
+        "Discovery of undisclosed defaults on HP vehicle debt"
+      ],
+      "key_findings": [
+        "Significant valuation gap between seller expectations (£1M+) and earnings-based value (£288k).",
+        "NAV of £622k provides a logical floor for deal structuring.",
+        "Margin compression from 62% to 42% is the critical risk to future earnings sustainability.",
+        "The business is operationally de-risked by a strong General Manager but financially burdened by HP debt."
+      ],
+      "narrative": "Thor-CON is a classic 'growth vs. margin' trade-off. The business has scaled impressively, but the shift into renewables has made it a volume-dependent entity with high fixed costs (HP debt). A successful deal must bridge the gap between the seller's high price expectations and the reality of the compressed earnings. By anchoring the deal on the Net Asset Value and using performance-based earnouts to verify the sustainability of the new lower-margin model, a buyer can capitalize on the growth while protecting against a potential earnings collapse. The extraction of non-operating intercompany loans is a non-negotiable prerequisite for a clean transaction."
+    }
+  },
+  {
+    "id": 2738,
+    "expert_type": "financial",
+    "status": "success",
+    "score": 78,
+    "confidence": "high",
+    "created_at": "2026-07-16T18:29:54.470Z",
+    "analysis_data": {
+      "expert": "financial",
+      "company_name": "Thor-CON",
+      "analysis_date": "2025-10-27",
+      "score": 78,
+      "confidence": "high",
+      "yearly_metrics": {
+        "2021": {
+          "revenue": 443962,
+          "revenue_yoy_growth_percent": null,
+          "cost_of_sales": 127439,
+          "gross_profit": 316523,
+          "gross_margin_percent": 71.29,
+          "administrative_expenses": 432058,
+          "operating_profit": -2200,
+          "operating_margin_percent": -0.5,
+          "depreciation_amortisation": 25307,
+          "ebitda": 23107,
+          "interest_payable": null,
+          "interest_coverage_ratio": null,
+          "profit_before_tax": -2200,
+          "corporation_tax": null,
+          "effective_tax_rate_percent": null,
+          "net_profit": -2200,
+          "net_margin_percent": -0.5
+        },
+        "2022": {
+          "revenue": 1097307,
+          "revenue_yoy_growth_percent": 147.16,
+          "cost_of_sales": 440662,
+          "gross_profit": 656645,
+          "gross_margin_percent": 59.84,
+          "administrative_expenses": 554473,
+          "operating_profit": 126779,
+          "operating_margin_percent": 11.55,
+          "depreciation_amortisation": 10962,
+          "ebitda": 137741,
+          "interest_payable": 7720,
+          "interest_coverage_ratio": 16.42,
+          "profit_before_tax": 119062,
+          "corporation_tax": 29820,
+          "effective_tax_rate_percent": 25.05,
+          "net_profit": 89242,
+          "net_margin_percent": 8.13
+        },
+        "2023": {
+          "revenue": 1441671,
+          "revenue_yoy_growth_percent": 31.38,
+          "cost_of_sales": 538883,
+          "gross_profit": 902788,
+          "gross_margin_percent": 62.62,
+          "administrative_expenses": 730019,
+          "operating_profit": 172769,
+          "operating_margin_percent": 11.98,
+          "depreciation_amortisation": 10824,
+          "ebitda": 183593,
+          "interest_payable": 4524,
+          "interest_coverage_ratio": 38.19,
+          "profit_before_tax": 168306,
+          "corporation_tax": 31780,
+          "effective_tax_rate_percent": 18.88,
+          "net_profit": 136526,
+          "net_margin_percent": 9.47
+        },
+        "2024": {
+          "revenue": 1695203,
+          "revenue_yoy_growth_percent": 17.59,
+          "cost_of_sales": 632814,
+          "gross_profit": 1062389,
+          "gross_margin_percent": 62.67,
+          "administrative_expenses": 985102,
+          "operating_profit": 77287,
+          "operating_margin_percent": 4.56,
+          "depreciation_amortisation": 51911,
+          "ebitda": 129198,
+          "interest_payable": 6761,
+          "interest_coverage_ratio": 11.43,
+          "profit_before_tax": 71038,
+          "corporation_tax": 17148,
+          "effective_tax_rate_percent": 24.14,
+          "net_profit": 53890,
+          "net_margin_percent": 3.18
+        },
+        "2025": {
+          "revenue": 1944079,
+          "revenue_yoy_growth_percent": 14.68,
+          "cost_of_sales": 1127175,
+          "gross_profit": 816904,
+          "gross_margin_percent": 42.02,
+          "administrative_expenses": 538500,
+          "operating_profit": 278404,
+          "operating_margin_percent": 14.32,
+          "depreciation_amortisation": null,
+          "ebitda": 278404,
+          "interest_payable": 3255,
+          "interest_coverage_ratio": 85.53,
+          "profit_before_tax": 279165,
+          "corporation_tax": null,
+          "effective_tax_rate_percent": null,
+          "net_profit": 279165,
+          "net_margin_percent": 14.36
+        }
+      },
+      "cagr": {
+        "revenue_cagr_percent": 44.67,
+        "gross_profit_cagr_percent": 26.74,
+        "operating_profit_cagr_percent": null,
+        "period_years": 4
+      },
+      "cost_structure": {
+        "cost_of_sales_percent_revenue": 58,
+        "overheads_percent_revenue": 27.7,
+        "staff_costs_percent_revenue": 11,
+        "director_costs_percent_revenue": 0.47,
+        "top_5_overheads": [
+          {
+            "category": "Staff Wages & Salaries",
+            "value": 194583,
+            "percent_of_overheads": 36.13
+          },
+          {
+            "category": "Advertising & Marketing",
+            "value": 115376,
+            "percent_of_overheads": 21.43
+          },
+          {
+            "category": "Motor Expenses",
+            "value": 41477,
+            "percent_of_overheads": 7.7
+          },
+          {
+            "category": "Professional Fees",
+            "value": 35753,
+            "percent_of_overheads": 6.64
+          },
+          {
+            "category": "Insurance",
+            "value": 33319,
+            "percent_of_overheads": 6.19
+          }
+        ],
+        "cost_base_classification": "predominantly_variable"
+      },
+      "earnings_quality": {
+        "net_profit_tracks_operating_profit": true,
+        "exceptional_items_identified": [
+          "Bad Debts (£7,534 in 2024)",
+          "Director's Costs (£6,000 in 2024)",
+          "Other Operating Income (£113,335 in 2021)"
+        ],
+        "tax_rate_consistent": false,
+        "ebitda_latest": 278404,
+        "ebitda_trend": "growing",
+        "limitations": [
+          "Depreciation not provided in 2025 management accounts",
+          "2025 data is based on management projections/interim figures",
+          "2021 operating profit heavily skewed by other operating income"
+        ]
+      },
+      "debt_service": {
+        "latest_interest_coverage": 85.53,
+        "interest_coverage_trend": "improving",
+        "additional_debt_capacity_assessment": "High capacity. Interest coverage is exceptionally strong, and the business has a significant unencumbered or refinanceable asset base in its vehicle fleet."
+      },
+      "key_findings": [
+        "Revenue has demonstrated a strong 44.7% CAGR over the last four years, indicating robust market demand.",
+        "Gross margins compressed significantly in 2025 (42%) compared to 2024 (62.7%), likely due to a shift in product mix toward lower-margin renewables.",
+        "Operating leverage is evident; despite margin compression, the absolute operating profit is projected to reach record highs in 2025.",
+        "The cost structure is increasingly dominated by marketing spend, which doubled between 2023 and 2024 to drive top-line growth.",
+        "Liquidity is currently very strong with a current ratio of 4.38 in the latest management accounts, though this includes intercompany loans.",
+        "The company has transitioned from a loss-making position in 2021 to a high-margin, profitable operation by 2025.",
+        "Significant investment in the vehicle fleet (£332k NBV) has increased gearing but provides tangible collateral for future financing."
+      ],
+      "red_flags": [
+        "Significant gross margin volatility (20% drop in one year) suggests pricing pressure or a high-volume, low-margin strategy shift.",
+        "High dependency on marketing spend (£115k) to maintain revenue trajectory.",
+        "Complex intercompany and director loan accounts (£122k owed by connected companies) require normalization.",
+        "Net profit margin in 2024 dipped to 3.2%, showing vulnerability to overhead spikes."
+      ],
+      "narrative": "Thor-CON presents a compelling acquisition target from a financial performance perspective, characterized by aggressive top-line growth and a successful transition from a small-scale operation to a multi-million pound enterprise. The revenue CAGR of 44.7% is exceptional for the home services sector, though it has been achieved through a significant increase in customer acquisition costs, with marketing spend now exceeding 5% of turnover. \n\nA critical area for due diligence is the 2025 margin compression. While the company has successfully diversified into Solar and EV installations, these appear to carry significantly lower gross margins (42%) than the legacy Air Conditioning business (62%). However, the business has demonstrated strong operational leverage; by scaling the top line, it has managed to increase absolute EBITDA and operating profit despite the percentage margin decline. \n\nThe earnings quality is generally high, with net profit tracking operating profit closely, although 2021 results were heavily reliant on non-operating income. The 2024 dip in profitability appears to be a 'reinvestment year' where headcount and infrastructure were expanded ahead of the 2025 growth spurt. \n\nFinancially, the business is very stable. Interest coverage is excellent, and the balance sheet has been significantly strengthened by retained earnings, which now exceed £620k. The high gearing noted in 2024 has been mitigated by the value of the underlying assets (the vehicle fleet). For a buyer, the primary risk is the sustainability of the current growth rate and whether the overhead base can be further optimized post-acquisition. The current management has built a scalable platform that is now producing robust cash flows and maintains a very healthy liquidity position."
+    }
+  },
+  {
+    "id": 2739,
+    "expert_type": "operational",
+    "status": "success",
+    "score": 72,
+    "confidence": "high",
+    "created_at": "2026-07-16T18:29:54.502Z",
+    "analysis_data": {
+      "expert": "operational",
+      "company_name": "Thor-CON",
+      "analysis_date": "2025-09-08",
+      "score": 72,
+      "confidence": "high",
+      "working_capital": {
+        "yearly_metrics": {
+          "2023": {
+            "debtor_days": 40.2,
+            "creditor_days": 75.9,
+            "stock_days": 0,
+            "cash_conversion_cycle_days": -35.7,
+            "net_working_capital": 168371,
+            "working_capital_percent_revenue": 11.68
+          },
+          "2024": {
+            "debtor_days": 30.2,
+            "creditor_days": 62.5,
+            "stock_days": 0,
+            "cash_conversion_cycle_days": -32.3,
+            "net_working_capital": 152719,
+            "working_capital_percent_revenue": 9.01
+          },
+          "2025": {
+            "debtor_days": 42.6,
+            "creditor_days": 4.57,
+            "stock_days": 0,
+            "cash_conversion_cycle_days": 38.03,
+            "net_working_capital": 324044,
+            "working_capital_percent_revenue": 16.67
+          }
+        },
+        "trend": "deteriorating",
+        "working_capital_intensity": "moderate",
+        "observations": [
+          "The cash conversion cycle has moved from negative (favorable) to positive 38 days in 2025, indicating the business is now a net consumer of cash as it grows.",
+          "Creditor days have dropped significantly in the 2025 management accounts (4.57 days), suggesting either a change in supplier terms or a timing issue in the management data.",
+          "Debtor days are stable but saw a slight extension to 42.6 days in 2025, though still within acceptable industry norms for property maintenance.",
+          "Significant cash is tied up in inter-company loans (£122k) which reduces operational liquidity."
+        ]
+      },
+      "capex": {
+        "total_gross_asset_value": 410039.92,
+        "total_nbv": 332463.82,
+        "asset_freshness_percent": 81.08,
+        "recent_additions_24m_value": 332464,
+        "recent_additions_percent": 81.08,
+        "annual_depreciation_charge": 51911,
+        "estimated_maintenance_capex": 51911,
+        "capex_cliff_risk": false,
+        "assets_requiring_replacement": [
+          {
+            "description": "Investment property",
+            "nbv": 6879.1,
+            "cost": 16761.29,
+            "percent": 41
+          }
+        ],
+        "category_breakdown": {
+          "property": {
+            "cost": 16761.29,
+            "nbv": 6879.1
+          },
+          "plant_machinery": {
+            "cost": 3765,
+            "nbv": 2008
+          },
+          "vehicles": {
+            "cost": 345776.69,
+            "nbv": 297992.12
+          },
+          "it_equipment": {
+            "cost": 24286.62,
+            "nbv": 12798.44
+          },
+          "other": {
+            "cost": 19450.32,
+            "nbv": 12786.16
+          }
+        },
+        "observations": [
+          "The asset base is exceptionally fresh (81% NBV/Cost), following a massive fleet renewal program in 2023-2024.",
+          "Vehicles represent 90% of the net book value, indicating a highly mobile but asset-heavy operational model.",
+          "Capex cliff risk is low for the next 3-4 years due to the recent age of the fleet.",
+          "The business relies heavily on Hire Purchase (HP) to fund assets, with HP liabilities exceeding £300k."
+        ]
+      },
+      "workforce": {
+        "headcount": 18,
+        "total_payroll": 446130,
+        "revenue_per_employee": 108004,
+        "payroll_percent_revenue": 22.95,
+        "average_salary_all": 24785,
+        "average_salary_excl_directors": 25738,
+        "director_remuneration_total": 8580,
+        "director_percent_of_payroll": 1.92,
+        "ft_pt_split": {
+          "full_time": 16,
+          "part_time": 2
+        },
+        "longest_tenured_years": 16.5,
+        "newest_hire_months_ago": 0,
+        "observations": [
+          "Revenue per employee of £108k is healthy for the home services sector, though it has declined from 2023 levels as headcount grew faster than revenue.",
+          "The business has a high ratio of apprentices/improvers (5 out of 18), which is good for long-term cost control but requires high supervision from senior engineers.",
+          "Heavy reliance on a single General Manager for operational continuity.",
+          "Marketing and SEO headcount (3 staff) is high for a business of this scale, representing 16% of the workforce."
+        ]
+      },
+      "owner_dependency": {
+        "risk_level": "medium",
+        "director_count": 1,
+        "highest_individual_salary": 55000,
+        "highest_individual_percent_of_payroll": 12.33,
+        "critical_function_concentration": "The General Manager holds the majority of operational control; the Director's role appears focused on high-level strategy and property interests.",
+        "observations": [
+          "Director salary is kept at the NI threshold, with the majority of value taken via dividends (£75k in 2025).",
+          "The General Manager is identified as a successor, which significantly de-risks the owner's exit.",
+          "Financial control is outsourced or handled by a part-time controller, which is a potential bottleneck for a £2m+ revenue business."
+        ]
+      },
+      "scalability": {
+        "rating": "medium",
+        "headcount_for_25pct_growth": 4,
+        "capex_needed_for_growth": "Approximately £70k-£100k for 2-3 additional vans and equipment.",
+        "working_capital_supports_growth": true,
+        "bottlenecks": [
+          "Senior Engineer capacity to supervise the high number of apprentices.",
+          "High marketing spend required to maintain lead flow for new renewable segments.",
+          "Tightening quick ratio (1.00 in 2024) before the 2025 cash injection."
+        ],
+        "observations": [
+          "The business has successfully scaled from £444k to £1.9m in 4 years, proving the model is scalable.",
+          "The shift into Solar/EV has compressed gross margins (62% to 42%), meaning the business must now grow volume significantly faster to maintain the same profit growth.",
+          "The current vehicle fleet has some spare capacity, but 25% growth would trigger a need for more 'Senior' level hires."
+        ]
+      },
+      "key_findings": [
+        "Strong revenue growth (338% over 4 years) driven by diversification into renewables.",
+        "Modernized vehicle fleet with high NBV and low immediate maintenance requirements.",
+        "Successful delegation of operations to a General Manager, reducing exit risk.",
+        "Stable debtor collection despite rapid growth."
+      ],
+      "red_flags": [
+        "Significant margin compression (20% drop in GM%) following the move into Solar/EV products.",
+        "High gearing (192% in 2024) due to aggressive HP financing of the fleet.",
+        "Large inter-company loan (£122k) to a property entity which may not be recoverable or liquid.",
+        "Operating profit volatility—overhead growth outpaced revenue in 2024."
+      ],
+      "narrative": "Thor-CON is an operationally robust business that has successfully transitioned from a small AC contractor to a multi-service property maintenance firm. The operational infrastructure is modern, evidenced by a very young vehicle fleet and the adoption of field management software (Simpro). While the business is currently 'asset-heavy' and carries significant finance debt, this is offset by the freshness of the assets and a strong GM-led management structure. The primary operational challenge is the recent compression in gross margins; the business is now in a 'volume game' where operational efficiency and workforce productivity will be more critical than in its previous high-margin niche."
+    }
+  },
+  {
+    "id": 2741,
+    "expert_type": "qoe",
+    "status": "success",
+    "score": 74,
+    "confidence": "high",
+    "created_at": "2026-07-16T18:29:54.567Z",
+    "analysis_data": {
+      "expert": "quality_of_earnings",
+      "company_name": "Thor-CON",
+      "analysis_date": "2025-10-27",
+      "score": 74,
+      "confidence": "high",
+      "reported_figures": {
+        "operating_profit": 278404,
+        "depreciation": 0,
+        "amortisation": 0,
+        "reported_ebitda": 278404,
+        "source_year": 2025
+      },
+      "add_backs": [
+        {
+          "item": "Director's Pension (One-off)",
+          "category": "one_off_cost",
+          "amount": 6000,
+          "recurrence": "one_off",
+          "year": 2024,
+          "justification": "Identified as an exceptional 'Director's Cost' in the 2024 financial expert output and detailed P&L as a pension contribution not present in other years.",
+          "confidence": "high",
+          "defensibility_score": 9,
+          "case_for_inclusion": "This is a discretionary owner benefit that does not reflect the underlying operational cost of the business.",
+          "case_for_exclusion": "The seller may argue it is a standard part of a director's total compensation package."
+        },
+        {
+          "item": "Bad Debt Write-off (2024)",
+          "category": "one_off_cost",
+          "amount": 7534,
+          "recurrence": "one_off",
+          "year": 2024,
+          "justification": "Explicitly identified as an exceptional item in the 2024 accounts; significantly higher than the historical average of ~£1,500.",
+          "confidence": "high",
+          "defensibility_score": 8,
+          "case_for_inclusion": "This represents a non-recurring loss from a specific customer default that does not reflect ongoing earning capacity.",
+          "case_for_exclusion": "Bad debts are a recurring risk in the property maintenance sector and should be considered an operating expense."
+        }
+      ],
+      "deductions": [
+        {
+          "item": "Director Salary Market Rate Adjustment",
+          "category": "replacement_salary",
+          "amount": 48920,
+          "recurrence": "recurring",
+          "year": 2025,
+          "justification": "Current director salary is £8,580 (NI threshold). For a £1.9m revenue business, the benchmark for a working MD is £57,500 (mid-point of £45k-£70k range).",
+          "confidence": "high",
+          "defensibility_score": 9,
+          "case_for_inclusion": "A commercial buyer must account for the true cost of management; the current salary is artificially low for tax optimization.",
+          "case_for_exclusion": "The seller may argue the General Manager already handles operations, reducing the MD's required 'market' salary."
+        },
+        {
+          "item": "Specific Bad Debt Provision (Customer 1)",
+          "category": "bad_debt_provision",
+          "amount": 2270,
+          "recurrence": "one_off",
+          "year": 2025,
+          "justification": "Sales ledger identifies a specific dispute for Customer 1 (INV-8412) for £2,269.82 which is over 180 days overdue.",
+          "confidence": "high",
+          "defensibility_score": 10,
+          "case_for_inclusion": "This specific invoice is highly unlikely to be collected and should be removed from the current year's earnings.",
+          "case_for_exclusion": "The seller may claim the dispute is resolvable and the debt is still valid."
+        },
+        {
+          "item": "Normalized Depreciation Charge",
+          "category": "deferred_maintenance",
+          "amount": 51911,
+          "recurrence": "recurring",
+          "year": 2025,
+          "justification": "The 2025 management accounts show 0 depreciation, but the 2024 statutory accounts and asset register confirm a recurring annual charge of £51,911 is required.",
+          "confidence": "high",
+          "defensibility_score": 9,
+          "case_for_inclusion": "EBITDA should reflect the true wear and tear of the fleet; the 2025 management accounts are incomplete in this regard.",
+          "case_for_exclusion": "The seller may argue that EBITDA by definition excludes depreciation, so no adjustment is needed to reach an EBITDA figure."
+        }
+      ],
+      "total_add_backs": 13534,
+      "total_deductions": 103101,
+      "adjusted_ebitda": {
+        "conservative": 188837,
+        "base": 188837,
+        "optimistic": 202371
+      },
+      "adjustment_summary": {
+        "reported_ebitda": 278404,
+        "plus_add_backs": 13534,
+        "minus_deductions": 103101,
+        "equals_adjusted_ebitda_base": 188837
+      },
+      "director_salary_analysis": {
+        "directors": [
+          {
+            "name": "Unnamed Director",
+            "current_salary": 8580,
+            "estimated_market_rate": 57500,
+            "benchmark_range_used": "Revenue £1M-£5M: Working MD/Owner-Director (£45,000–£70,000)",
+            "adjustment": 48920,
+            "adjustment_type": "deduction"
+          }
+        ]
+      },
+      "sustainability_assessment": {
+        "sustainable_for_3_years": true,
+        "key_assumptions": [
+          "The shift to Solar/EV (42% margin) can maintain volume to offset the loss of high-margin AC work (62%).",
+          "Marketing spend of >£115k remains effective at current customer acquisition costs.",
+          "The General Manager remains in place to provide operational continuity."
+        ],
+        "sensitivity_factors": [
+          "Gross margin sensitivity: A further 5% drop in GM would eliminate nearly £100k of EBITDA.",
+          "Marketing efficiency: High reliance on SEO/Marketing staff (3 FTE) makes the business vulnerable to lead-gen cost increases."
+        ],
+        "upside_scenarios": [
+          "Optimization of the high marketing spend post-acquisition.",
+          "Cross-selling maintenance contracts to the new Solar/EV install base."
+        ],
+        "downside_scenarios": [
+          "Loss of the General Manager who holds the majority of operational control.",
+          "Failure of the intercompany loan (£122k) impacting group liquidity."
+        ]
+      },
+      "key_findings": [
+        "Reported 2025 EBITDA is significantly inflated by the absence of depreciation in management accounts.",
+        "The business has successfully transitioned to a GM-led model, but the owner's salary is significantly below market rates.",
+        "Earnings quality is impacted by a major shift in product mix, moving from high-margin niche AC to high-volume, lower-margin renewables.",
+        "The balance sheet is complicated by intercompany loans to property entities that appear unrelated to core operations."
+      ],
+      "red_flags": [
+        "20% drop in Gross Margin within 12 months due to product mix shift.",
+        "High gearing (192% in 2024) and heavy reliance on HP financing for the fleet.",
+        "Significant intercompany debt (£122k) which may represent a 'trapped' asset for a buyer."
+      ],
+      "narrative": "Thor-CON's reported 2025 EBITDA of £278k requires significant downward normalization to £188.8k. The primary drivers for this are the omission of depreciation in the interim management accounts and the requirement to adjust the director's salary to a commercial market rate. While the top-line growth is impressive, the business is undergoing a fundamental shift in its earnings profile—moving from a high-margin specialist to a volume-driven renewable installer. The sustainability of the adjusted EBITDA is dependent on maintaining the current high-velocity lead generation and ensuring the General Manager is incentivized to stay, as they represent the primary de-risking factor for the owner's exit."
+    }
+  },
+  {
+    "id": 2740,
+    "expert_type": "risk",
+    "status": "success",
+    "score": 68,
+    "confidence": "high",
+    "created_at": "2026-07-16T18:29:54.535Z",
+    "analysis_data": {
+      "expert": "risk",
+      "company_name": "Thor-CON",
+      "analysis_date": "2025-09-08",
+      "score": 68,
+      "confidence": "high",
+      "customer_concentration": {
+        "risk_level": "moderate",
+        "top_customer_percent": 9.69,
+        "top_3_customers_percent": 27.38,
+        "top_5_customers_percent": 34.36,
+        "hhi_index": 324,
+        "hhi_classification": "diversified",
+        "total_customers": 315,
+        "customers_over_15_percent": [],
+        "observations": [
+          "The HHI index indicates a well-diversified customer base, typical for home services.",
+          "Top 3 debtors (Customers 278, 290, 292) represent 27% of current trade debt, reflecting large retail fit-out projects.",
+          "High volume of low-value domestic maintenance (HomeCare) receivables provides granular revenue but high admin burden.",
+          "No single customer exceeds the 15% warning threshold for total invoiced value based on current ledger."
+        ]
+      },
+      "financial_risk": {
+        "risk_level": "moderate",
+        "technically_insolvent": false,
+        "current_ratio_trend": "improving",
+        "creditor_growth_vs_revenue": "Creditors grew 31% vs Revenue growth of 17.6% (2024), but significantly improved in 2025 management accounts.",
+        "director_loans_balance": -91197.52,
+        "intercompany_balances": 122038.22,
+        "interest_coverage_adequate": true,
+        "going_concern_indicators": [
+          "Strong net asset position of £622k in Sept 2025.",
+          "Interest coverage is exceptionally high at 85.5x in 2025 management accounts."
+        ],
+        "observations": [
+          "Gearing spiked to 192% in 2024 due to vehicle financing but normalized to 32.7% by Sept 2025.",
+          "Net profit margin compressed to 3.2% in 2024 due to aggressive overhead expansion but recovered to 14.4% in 2025 projections.",
+          "Significant intercompany loan of £83,847 to A&M Smith Properties requires investigation."
+        ]
+      },
+      "key_person_risk": {
+        "risk_level": "moderate",
+        "highest_individual_payroll_percent": 12.33,
+        "single_points_of_failure": [
+          "General Manager",
+          "Financial Controller"
+        ],
+        "management_depth": "adequate",
+        "average_tenure_years": 4.2,
+        "observations": [
+          "The General Manager is the highest-paid employee (£55k) and is identified as the successor, mitigating owner-dependency.",
+          "Director remuneration is low (£8.5k), suggesting heavy reliance on dividend distributions which must be normalized post-acquisition.",
+          "Strong technical depth with 3 Senior Engineers and a pipeline of 3 Apprentices."
+        ]
+      },
+      "revenue_quality": {
+        "risk_level": "low",
+        "revenue_type": "mixed",
+        "customer_trend": "growing_base",
+        "seasonality_detected": true,
+        "observations": [
+          "74.4% of revenue is project-based (Air Conditioning Installation).",
+          "Maintenance and reactive works provide £290k (approx. 15%) of recurring-style income.",
+          "Successful diversification into Renewables (Solar/EV) is driving volume but compressing gross margins (from 62% to 42%)."
+        ]
+      },
+      "balance_sheet_risks": {
+        "director_loans": -91197.52,
+        "connected_company_balances": 122038.22,
+        "deferred_tax": 46935,
+        "pension_obligations": 0,
+        "contingent_liabilities": "unable_to_assess",
+        "observations": [
+          "Significant Hire Purchase debt (£302k) tied to the vehicle fleet.",
+          "Customer deposits of £101,313 held as liabilities; need to ensure these are backed by cash or work-in-progress.",
+          "Intercompany loan to A&M Smith Properties is a non-operating asset that should likely be stripped from the deal."
+        ]
+      },
+      "bad_debt": {
+        "total_overdue_90_plus": 4825.64,
+        "recommended_provision": 3547.73,
+        "existing_provision": 2269.82,
+        "net_profit_impact": -1277.91,
+        "observations": [
+          "Specific dispute with Customer 1 for £2,269.82 (180+ days) is already identified.",
+          "Overall debtor days of 41.25 is healthy for the sector.",
+          "Bad debt as a % of revenue is low (<0.5%)."
+        ]
+      },
+      "risk_register": [
+        {
+          "risk": "Intercompany Loan Exposure",
+          "category": "balance_sheet",
+          "severity": "medium",
+          "likelihood": "high",
+          "financial_impact": 122038.22,
+          "impact_description": "Capital tied up in non-trading entities (A&M Smith Properties).",
+          "mitigation": "Exclude intercompany balances from the completion balance sheet; require settlement prior to close."
+        },
+        {
+          "risk": "Margin Compression",
+          "category": "revenue",
+          "severity": "high",
+          "likelihood": "medium",
+          "financial_impact": 388000,
+          "impact_description": "Gross margin dropped from 62% to 42% due to shift into Renewables.",
+          "mitigation": "Implement strict pricing controls on Solar/EV quotes and monitor subcontractor efficiency."
+        },
+        {
+          "risk": "High Financial Leverage (Vehicles)",
+          "category": "financial",
+          "severity": "medium",
+          "likelihood": "low",
+          "financial_impact": 302670.9,
+          "impact_description": "Significant fixed monthly HP commitments regardless of revenue volume.",
+          "mitigation": "Ensure fleet utilization is high; consider refinancing or sale-and-leaseback to improve cash flow."
+        },
+        {
+          "risk": "Key Person Dependency (GM)",
+          "category": "people",
+          "severity": "medium",
+          "likelihood": "medium",
+          "financial_impact": null,
+          "impact_description": "Loss of GM would destabilize operations and the succession plan.",
+          "mitigation": "Introduce long-term incentive plan (LTIP) or equity-linked earn-out for the GM."
+        }
+      ],
+      "deal_breakers": [],
+      "key_findings": [
+        "The company is on a high-growth trajectory, with revenue increasing 338% since 2021.",
+        "The transition from high-margin AC to lower-margin Renewables is the primary strategic risk.",
+        "Liquidity is exceptionally strong (Current Ratio 4.38) as of late 2025.",
+        "The balance sheet contains significant non-trading items (intercompany loans) that need cleaning."
+      ],
+      "narrative": "Thor-CON presents a moderate risk profile with strong growth fundamentals. The primary concerns are the recent compression in gross margins and the complexity of the balance sheet regarding intercompany loans. However, the business has successfully built a management layer (GM/FC) that reduces dependency on the owner. The high level of vehicle debt is well-supported by the asset values and strong interest coverage. The deal structure should focus on normalizing the balance sheet and securing the General Manager's long-term commitment."
+    }
+  },
+  {
+    "id": 2737,
+    "expert_type": "screening",
+    "status": "success",
+    "score": null,
+    "confidence": null,
+    "created_at": "2026-07-16T18:29:33.141Z",
+    "analysis_data": {
+      "stage": "screening",
+      "company_name": "Thor-CON",
+      "sector": "Home Services & Property Maintenance",
+      "analysis_date": "2025-10-27",
+      "data_quality_score": 92,
+      "analysis_period": {
+        "earliest_year": 2021,
+        "latest_year": 2025,
+        "years_of_data": 5
+      },
+      "dimensions": {
+        "earnings_trajectory": {
+          "rag": "GREEN",
+          "score": 85,
+          "revenue_cagr_percent": 44.7,
+          "latest_revenue": 1944079,
+          "latest_gross_margin_percent": 42,
+          "latest_operating_margin_percent": 14.3,
+          "latest_net_margin_percent": 14.4,
+          "margin_direction": "expanding",
+          "explanation": "Revenue has grown by 338% since 2021, with 2025 projections showing a strong recovery in net margins to 14.4%. While gross margins compressed due to product diversification into renewables, operating efficiency remains high."
+        },
+        "balance_sheet_health": {
+          "rag": "GREEN",
+          "score": 78,
+          "latest_current_ratio": 4.4,
+          "latest_net_assets": 622963,
+          "net_asset_growth_percent": 275.8,
+          "long_term_debt": 203413,
+          "explanation": "The balance sheet is robust with a current ratio of 4.4 and net assets growing from 165,782 in 2024 to 622,963 in late 2025. Gearing is moderate at 32.7%, though complex inter-company loans require investigation."
+        },
+        "cash_reality": {
+          "rag": "GREEN",
+          "score": 82,
+          "latest_cash_at_bank": 187480,
+          "cash_trend": "growing",
+          "cash_vs_profit_alignment": "aligned",
+          "explanation": "Cash position has remained stable and positive (187,480) despite significant capital expenditure on the vehicle fleet. Profits are being successfully converted to cash, supporting both dividend payments and debt servicing."
+        },
+        "customer_risk": {
+          "rag": "GREEN",
+          "score": 90,
+          "top_customer_concentration_percent": 9.7,
+          "aged_debt_90_plus_percent": 2.1,
+          "total_customers": 295,
+          "explanation": "Customer concentration is low with the largest debtor representing only 9.7% of the ledger. Aged debt over 90 days is minimal at 2.1%, indicating a high-quality and well-managed debtor book."
+        },
+        "asset_quality": {
+          "rag": "GREEN",
+          "score": 88,
+          "nbv_to_cost_percent": 81.1,
+          "recent_additions_percent": 72,
+          "total_nbv": 332464,
+          "explanation": "The asset base is exceptionally fresh with an NBV/Cost ratio of 81.1%, driven by a major fleet renewal in 2023-2024. This significantly mitigates near-term capex risk, though it carries associated hire purchase obligations."
+        },
+        "people_capability": {
+          "rag": "GREEN",
+          "score": 75,
+          "headcount": 18,
+          "revenue_per_employee": 108004,
+          "payroll_to_revenue_percent": 22.9,
+          "director_cost_percent_of_payroll": 1.9,
+          "explanation": "Revenue per head is healthy for the sector and director remuneration is very low (1.9% of payroll), suggesting low owner-dependency. The presence of a General Manager as a successor provides strong transition security."
+        }
+      },
+      "overall_score": 84,
+      "recommendation": "PROCEED",
+      "recommendation_justification": "Thor-CON is a high-performing target with exceptional revenue growth, a modern asset base, and strong liquidity. It has successfully diversified into renewable energy lines without sacrificing net profitability, and the management structure supports a clean exit for the owner.",
+      "key_strengths": [
+        "Exceptional revenue CAGR of 44.7% over a 5-year period demonstrating strong market demand.",
+        "Modern vehicle fleet with 81.1% freshness, removing the need for significant capital expenditure post-acquisition.",
+        "Highly granular customer base with no significant concentration risk or aged debt issues."
+      ],
+      "key_concerns": [
+        "Complex inter-company loan of 83,847 to A&M Smith Properties needs to be cleared or restructured.",
+        "Gross margin compression from 62% to 42% indicates the new renewable lines are lower margin than core AC work.",
+        "Significant long-term hire purchase obligations of over 300,000 linked to the fleet renewal."
+      ],
+      "questions_for_seller": [
+        "What is the repayment timeline and purpose for the 83,847 loan to A&M Smith Properties?",
+        "Can you provide a breakdown of the 101,313 in customer deposits and the associated project timelines?",
+        "What is the strategy to mitigate the gross margin compression observed in the 2025 management accounts?",
+        "Are the two regular CIS subcontractors open to moving onto permanent PAYE contracts post-sale?"
+      ],
+      "comparable_context": "Thor-CON's net margins (14.4%) and current ratio (4.4) are significantly above the UK Home Services sector averages of 6-8% and 1.2 respectively. The revenue per employee of 108k is slightly above the 90k-100k benchmark for property maintenance firms.",
+      "executive_summary": "Thor-CON is a highly attractive acquisition target in the Home Services sector, showing a clear 'Go' signal across all six analysis dimensions. The company has achieved a 338% revenue increase over five years, reaching a projected 1.94m in 2025. While gross margins have tightened due to a strategic shift into Solar and EV installations, net profitability has remained robust at 14.4%, indicating excellent overhead control. The balance sheet is a primary strength, featuring a current ratio of 4.4 and a very 'young' vehicle fleet (81% NBV/Cost), which eliminates the risk of a near-term capex cliff. Customer risk is negligible, with no single client exceeding 10% of sales and excellent debt collection metrics. The primary areas for due diligence are the complex inter-company and director loan accounts, which total over 120k in assets. With a General Manager already identified as a successor, the business is well-positioned for a transition. We recommend immediate progression to a formal Letter of Intent (LOI)."
+    }
+  },
+  {
+    "id": 2742,
+    "expert_type": "sector",
+    "status": "success",
+    "score": 68,
+    "confidence": "high",
+    "created_at": "2026-07-16T18:29:54.600Z",
+    "analysis_data": {
+      "expert": "sector",
+      "company_name": "Thor-CON",
+      "sector": "Home Services & Property Maintenance",
+      "analysis_date": "2023-10-27",
+      "score": 68,
+      "confidence": "high",
+      "sector_overview": {
+        "growth_outlook": "growing",
+        "uk_market_size_estimate": "£3.5bn - £4.5bn (HVAC specific)",
+        "key_trends": [
+          "Decarbonisation and transition from gas boilers to heat pumps",
+          "Smart home integration and IoT-enabled HVAC monitoring",
+          "Increased focus on Indoor Air Quality (IAQ) post-pandemic",
+          "Energy efficiency retrofitting driven by rising utility costs"
+        ],
+        "regulatory_factors": [
+          "UK Government 'Boiler Upgrade Scheme' (BUS)",
+          "F-Gas regulations regarding refrigerant handling",
+          "Minimum Energy Efficiency Standards (MEES) for rental properties",
+          "Part L Building Regulations updates"
+        ],
+        "observations": [
+          "The sector is highly fragmented with many micro-entities.",
+          "There is a significant shift toward 'as-a-service' maintenance contracts to ensure recurring revenue.",
+          "Labour shortages in skilled trades are driving up wage costs but also increasing pricing power for established firms."
+        ]
+      },
+      "competitive_positioning": {
+        "company_size_classification": "micro",
+        "typical_gross_margin_range": {
+          "low": 35,
+          "high": 50
+        },
+        "typical_operating_margin_range": {
+          "low": 8,
+          "high": 15
+        },
+        "typical_ebitda_margin_range": {
+          "low": 10,
+          "high": 18
+        },
+        "positioning_assessment": "Thor-CON is a micro-SME in the UK HVAC market. With £1.2M revenue and 6 staff, it likely operates as a local specialist. It sits in a highly competitive tier where differentiation is usually based on local reputation and response times rather than scale or proprietary tech."
+      },
+      "comparable_multiples": {
+        "ev_revenue_range": {
+          "low": 0.3,
+          "mid": 0.5,
+          "high": 0.7
+        },
+        "ev_ebitda_range": {
+          "low": 1.5,
+          "mid": 2.25,
+          "high": 3
+        },
+        "factors_affecting_multiple": [
+          "Revenue scale (<£2M)",
+          "Headcount (<20 employees)",
+          "Service-based trade model"
+        ],
+        "premium_factors": [
+          "Potential for recurring maintenance contracts",
+          "High demand for energy-efficient HVAC upgrades",
+          "Strong local brand reputation"
+        ],
+        "discount_factors": [
+          "High owner dependency typical of 6-person teams",
+          "Small team size creates key-man risk",
+          "Project-based revenue volatility",
+          "Labour-dependent scalability"
+        ],
+        "data_confidence": "based_on_training_data"
+      },
+      "growth_opportunities": [
+        {
+          "opportunity": "Service Contract Conversion",
+          "effort": "medium",
+          "potential_impact": "high",
+          "timeframe": "medium_term",
+          "description": "Transitioning one-off installation customers into multi-year preventative maintenance contracts to increase recurring revenue and valuation."
+        },
+        {
+          "opportunity": "Heat Pump Certification",
+          "effort": "medium",
+          "potential_impact": "high",
+          "timeframe": "short_term",
+          "description": "Upskilling the 6-person team to MCS certification to capitalise on government-subsidised heat pump installations."
+        },
+        {
+          "opportunity": "Digital Lead Generation",
+          "effort": "low",
+          "potential_impact": "medium",
+          "timeframe": "short_term",
+          "description": "Implementing automated CRM and local SEO to reduce reliance on word-of-mouth and founder-led sales."
+        }
+      ],
+      "sector_risks": [
+        {
+          "risk": "Skilled Labour Shortage",
+          "severity": "high",
+          "timeframe": "immediate",
+          "description": "Difficulty in recruiting and retaining qualified HVAC engineers in a competitive UK market."
+        },
+        {
+          "risk": "Supply Chain Inflation",
+          "severity": "medium",
+          "timeframe": "near_term",
+          "description": "Rising costs of units and components may squeeze margins if not passed on to customers quickly."
+        },
+        {
+          "risk": "Economic Sensitivity",
+          "severity": "medium",
+          "timeframe": "near_term",
+          "description": "Discretionary spend on HVAC upgrades may slow down during UK economic downturns, though maintenance remains essential."
+        }
+      ],
+      "key_findings": [
+        "Thor-CON is a small but potentially agile player in a growing 'green' sector.",
+        "Valuation is heavily constrained by its size (£1.2M revenue) and likely high owner-dependency.",
+        "The primary value driver for a buyer would be the existing customer base and the potential to professionalise the service-contract side of the business."
+      ],
+      "narrative": "Thor-CON operates in a resilient and evolving sub-sector of the UK property maintenance market. While the HVAC sector is benefiting from significant tailwinds related to energy efficiency and decarbonisation, Thor-CON's micro-SME status (6 staff, £1.2M revenue) places it in a valuation bracket typically ranging from 1.5x to 3.0x EBITDA. To achieve the higher end of this range, a buyer would need to verify the percentage of recurring revenue and the extent to which the business can operate independently of its founder. The sector is currently attractive for consolidation, but micro-targets like Thor-CON are often valued as 'bolt-ons' where the primary assets are the skilled workforce and the local customer list."
+    }
+  },
+  {
+    "id": 2745,
+    "expert_type": "synthesis",
+    "status": "success",
+    "score": null,
+    "confidence": null,
+    "created_at": "2026-07-16T18:29:54.696Z",
+    "analysis_data": {
+      "stage": "synthesis",
+      "company_name": "Thor-CON",
+      "sector": "Home Services & Property Maintenance",
+      "analysis_date": "2025-10-27",
+      "overall_score": 72.5,
+      "recommendation": "PROCEED_WITH_CAUTION",
+      "scores_dashboard": {
+        "financial": {
+          "score": 78,
+          "confidence": "high"
+        },
+        "operational": {
+          "score": 72,
+          "confidence": "high"
+        },
+        "risk": {
+          "score": 68,
+          "confidence": "high"
+        },
+        "quality_of_earnings": {
+          "score": 74,
+          "confidence": "high"
+        },
+        "sector": {
+          "score": 68,
+          "confidence": "high"
+        },
+        "valuation": {
+          "score": 76,
+          "confidence": "high"
+        },
+        "deal_structure": {
+          "score": 65,
+          "confidence": "high"
+        }
+      },
+      "executive_summary": "Thor-CON is a rapidly scaling property maintenance firm that has successfully pivoted from niche HVAC services into the high-growth renewables sector (Solar/EV). Verdict: Proceed with caution, anchoring the deal on asset value rather than earnings multiples. Financials show an impressive 44.7% revenue CAGR, reaching a projected £1.94m in 2025. However, this growth has come at the cost of significant gross margin compression, falling from 62% to 42% as the product mix shifted. Reported EBITDA of £278k is misleading; after adjusting for missing depreciation and market-rate director salaries, the sustainable EBITDA is £188.8k. The valuation presents a paradox: the earnings-based equity value is ~£288k, but the Net Asset Value (NAV) is £622k, driven by a modern, debt-heavy vehicle fleet. Top reasons to proceed: 1) Exceptional top-line momentum and market positioning in renewables; 2) Strong operational de-risking via a capable General Manager; 3) High-quality, modern asset base. Top reasons for caution: 1) Severe margin volatility suggesting a 'volume trap'; 2) High financial leverage with £302k in HP debt; 3) Complex intercompany loans (£122k) to non-trading entities. Recommended structure: A 'Balanced Approach' with a headline price of £618,452 (NAV floor), 50% upfront, and 50% deferred/contingent on Gross Margin stability.",
+      "expert_consensus": {
+        "agreements": [
+          "The business has successfully transitioned from owner-dependency to a GM-led operational model.",
+          "Revenue growth is exceptional for the sector but requires high marketing reinvestment.",
+          "The shift to renewables is the primary driver of both growth and margin compression.",
+          "The balance sheet is cluttered with non-operating intercompany loans that must be extracted."
+        ],
+        "contradictions": [
+          {
+            "topic": "Valuation Floor",
+            "expert_a": "Valuation",
+            "expert_a_view": "Equity value is ~£288k based on a 2.5x EBITDA multiple.",
+            "expert_b": "Operational/Financial",
+            "expert_b_view": "Net Asset Value is £622k, providing a much higher floor due to the fresh vehicle fleet.",
+            "resolution": "The deal must be structured around the NAV floor to be acceptable to the seller, but with heavy earn-outs to protect the buyer from the low earnings yield."
+          },
+          {
+            "topic": "2025 Profitability",
+            "expert_a": "Financial",
+            "expert_a_view": "Projecting record operating profits of £278k.",
+            "expert_b": "Quality of Earnings",
+            "expert_b_view": "Earnings are overstated by £90k+ due to omitted depreciation and low director pay.",
+            "resolution": "Adopt the QoE adjusted EBITDA of £188.8k for all debt-service and ROI modeling."
+          }
+        ]
+      },
+      "devils_advocate": {
+        "worst_case_scenario": "The 'Renewable Bubble' bursts or competition intensifies, driving gross margins below 35%. Simultaneously, the General Manager departs, and the high fixed costs of the £302k HP debt fleet become unsustainable as revenue growth stalls. The buyer is left with a loss-making, asset-heavy business that cannot cover its interest payments.",
+        "weakest_assumptions": [
+          "That the 44% revenue growth is sustainable without further exponential increases in marketing spend.",
+          "That the intercompany loan of £122k is actually recoverable or offsettable.",
+          "That the 42% margin in renewables is a stable floor rather than a point on a downward trend."
+        ],
+        "underweighted_risks": [
+          "The 'Apprentice-to-Senior' ratio: 5 apprentices to 18 staff suggests a looming quality control or supervision crisis if growth continues.",
+          "Cash Conversion Cycle: The move from -35 days to +38 days indicates the business is becoming a cash-hungry 'treadmill'."
+        ],
+        "post_mortem_predictions": [
+          "The buyer failed to realize that the 'growth' was actually 'buying revenue' through unsustainable marketing costs.",
+          "The HP debt title was encumbered or the vehicles had higher-than-expected wear despite their age."
+        ]
+      },
+      "investment_thesis": {
+        "positive_case": "Thor-CON is a 'platform' play. It has the infrastructure (fleet, software, management) to become a regional leader in the green energy transition. By professionalizing the marketing and converting the new install base into recurring maintenance contracts, the buyer can expand margins and stabilize cash flow.",
+        "conditions_for_success": [
+          "Gross margins must be stabilized at or above 40%.",
+          "The General Manager must be tied in with long-term incentives.",
+          "The intercompany property loans must be fully settled or excluded from the deal."
+        ],
+        "integration_priorities_100_days": [
+          "Implement a 'Maintenance Contract' sales drive for all 2024/25 Solar/EV customers.",
+          "Audit the marketing spend to optimize Customer Acquisition Cost (CAC).",
+          "Formalize the Financial Controller role to replace the current part-time/outsourced arrangement."
+        ]
+      },
+      "information_requests": {
+        "critical": [
+          {
+            "request": "Full breakdown of Solar vs. AC margins for 2025 YTD",
+            "source_expert": "Financial",
+            "rationale": "To confirm if the 20% margin drop is a permanent structural shift."
+          },
+          {
+            "request": "Confirmation of settlement terms for the £122k intercompany loan",
+            "source_expert": "Risk",
+            "rationale": "This is a significant non-operating asset that affects liquidity."
+          }
+        ],
+        "important": [
+          {
+            "request": "General Manager's employment contract and bonus structure",
+            "source_expert": "Operational",
+            "rationale": "To assess key-person risk and design retention incentives."
+          },
+          {
+            "request": "Schedule of all HP agreements and current settlement figures",
+            "source_expert": "Valuation",
+            "rationale": "To accurately calculate the EV-to-Equity bridge."
+          }
+        ],
+        "nice_to_have": [
+          {
+            "request": "Customer satisfaction scores/reviews for the new Solar division",
+            "source_expert": "Sector",
+            "rationale": "To verify if rapid growth has compromised service quality."
+          }
+        ]
+      },
+      "valuation_summary": {
+        "equity_value_range": {
+          "low": 250000,
+          "mid": 350000,
+          "high": 618452
+        },
+        "recommended_offer": 618452,
+        "recommended_structure": "Balanced Approach: 50% Upfront, 25% Deferred (12m), 25% Earn-out based on Gross Margin %."
+      },
+      "narrative_report": "INVESTMENT MEMORANDUM: PROJECT THOR\n\n1. STRATEGIC OVERVIEW\nThor-CON represents a high-growth opportunity within the UK Home Services sector, specifically capitalising on the 'Green Revolution.' The company has successfully scaled from a £440k turnover AC specialist to a £1.9m multi-service provider in four years. This growth is underpinned by a strategic pivot into Solar and EV installations, sectors benefiting from significant regulatory tailwinds and consumer demand.\n\n2. FINANCIAL PERFORMANCE & QUALITY OF EARNINGS\nWhile the top-line growth is undeniable (44.7% CAGR), the quality of earnings requires careful scrutiny. The 2025 management accounts report an EBITDA of £278k, but this figure is 'hollow.' It fails to account for approximately £52k in annual depreciation and relies on a director's salary that is £49k below market rates. Our adjusted EBITDA of £188.8k provides a more realistic basis for valuation. Furthermore, the gross margin has compressed from 62% to 42%. This indicates that Thor-CON is no longer a high-margin specialist but a high-volume contractor. The sustainability of this model depends on maintaining high lead flow, which currently costs over £115k per annum in marketing.\n\n3. OPERATIONAL INFRASTRUCTURE\nOperationally, the business is well-positioned. The vehicle fleet is exceptionally modern (81% freshness), meaning minimal capex requirements for the next 36 months. More importantly, the Director has successfully delegated day-to-day operations to a General Manager. This significantly reduces the 'owner-dependency' risk typically found in businesses of this size. However, the high ratio of apprentices (28% of workforce) suggests that the business is at its limit for technical supervision; further growth will require the recruitment of expensive senior engineers.\n\n4. RISK PROFILE\nThe primary risks are financial and structural. The business is highly geared, with £302k in Hire Purchase debt. While this is secured against the fleet, it creates a high fixed-cost base that requires constant volume to service. Additionally, the balance sheet is 'muddied' by £122k in loans to connected property companies. These must be treated as non-operating items and settled prior to any transaction. The transition to lower-margin work also makes the business more sensitive to inflationary pressures in the supply chain.\n\n5. VALUATION & DEAL STRUCTURE\nThere is a significant gap between the earnings-based valuation (£288k equity value) and the Net Asset Value (£622k). We believe the seller will anchor on the NAV, given the recent investment in the fleet. To bridge this gap, we recommend a headline offer of £618,452. To protect the buyer, only 50% should be paid upfront. The remaining 50% should be split between fixed deferred payments and a performance-based earn-out tied to maintaining a Gross Margin of at least 40%. This structure ensures the buyer is not overpaying for 'growth' that fails to deliver bottom-line profit.\n\n6. CONCLUSION\nThor-CON is a robust, modern business with a clear growth trajectory. It is an ideal 'bolt-on' for a larger group or a solid platform for a private equity-backed buy-and-build strategy. However, the recent margin decline and high debt load necessitate a disciplined approach to the deal structure. We recommend proceeding with the 'Balanced Approach' to align the seller's price expectations with the buyer's need for earnings security."
+    }
+  },
+  {
+    "id": 2743,
+    "expert_type": "valuation",
+    "status": "success",
+    "score": 76,
+    "confidence": "high",
+    "created_at": "2026-07-16T18:29:54.632Z",
+    "analysis_data": {
+      "expert": "valuation",
+      "company_name": "Thor-CON",
+      "analysis_date": "2025-10-27",
+      "score": 76,
+      "confidence": "high",
+      "ebitda_multiple_valuation": {
+        "adjusted_ebitda_base": 188837,
+        "sector_multiple_range": {
+          "low": 1.5,
+          "mid": 2.25,
+          "high": 3
+        },
+        "selected_multiple": 2.5,
+        "multiple_justification": "A multiple of 2.5x is selected, positioning the company above the sector midpoint due to exceptional revenue growth (44.7% CAGR) and the successful delegation of operations to a General Manager. However, it is capped below 3.0x due to significant gross margin compression (62% to 42%) and the small scale of the business (<£2m revenue).",
+        "premium_factors_applied": [
+          "Exceptional revenue CAGR of 44.7%",
+          "Modernized vehicle fleet (81% freshness)",
+          "Low owner dependency with established General Manager",
+          "Strong sector tailwinds in Renewables/EV"
+        ],
+        "discount_factors_applied": [
+          "Significant gross margin volatility (20% drop in 2025)",
+          "Small business scale (<£2m revenue)",
+          "High marketing dependency for lead generation",
+          "High financial leverage (HP debt)"
+        ],
+        "enterprise_value_range": {
+          "conservative": 377674,
+          "base": 472093,
+          "optimistic": 566511
+        }
+      },
+      "ev_to_equity_bridge": {
+        "enterprise_value_base": 472093,
+        "plus_cash": 122038,
+        "minus_long_term_debt": 302671,
+        "minus_director_loans": 0,
+        "minus_bad_debt_provision": 3548,
+        "minus_working_capital_adjustment": 0,
+        "equity_value": {
+          "conservative": 193493,
+          "base": 287912,
+          "optimistic": 382330
+        }
+      },
+      "asset_based_valuation": {
+        "net_asset_value": 622000,
+        "property_adjustment": 0,
+        "bad_debt_adjustment": -3548,
+        "adjusted_nav": 618452,
+        "nav_as_floor": true
+      },
+      "revenue_multiple_crosscheck": {
+        "latest_revenue": 1944079,
+        "revenue_multiple_range": {
+          "low": 0.3,
+          "high": 0.5
+        },
+        "implied_ev_range": {
+          "low": 583224,
+          "high": 972040
+        }
+      },
+      "valuation_summary": {
+        "recommended_range": {
+          "equity_value_low": 250000,
+          "equity_value_mid": 350000,
+          "equity_value_high": 618452
+        },
+        "primary_methodology": "ebitda_multiple",
+        "cross_check_alignment": "weak"
+      },
+      "sensitivity": {
+        "ebitda_plus_10pct": {
+          "enterprise_value": 519302,
+          "equity_value": 335121
+        },
+        "ebitda_minus_10pct": {
+          "enterprise_value": 424883,
+          "equity_value": 240702
+        },
+        "multiple_plus_half": {
+          "enterprise_value": 566511,
+          "equity_value": 382330
+        },
+        "multiple_minus_half": {
+          "enterprise_value": 377674,
+          "equity_value": 193493
+        },
+        "key_customer_loss_impact": 45745,
+        "director_replacement_impact": 48920
+      },
+      "seller_expectations": {
+        "likely_seller_expectation_range": {
+          "low": 1000000,
+          "high": 1500000
+        },
+        "seller_anchor_points": [
+          "Revenue growth trajectory",
+          "Net Asset Value of £622k",
+          "Emotional value of building a multi-million pound brand"
+        ],
+        "negotiation_gap_assessment": "Significant. The seller is likely to anchor on the Net Asset Value (£622k) or a revenue multiple, whereas the earnings-based valuation is much lower due to high debt and margin compression. A deal may only be possible via an asset-backed structure or a significant earn-out."
+      },
+      "key_findings": [
+        "The business has a strong growth profile but is currently asset-heavy and debt-burdened.",
+        "Adjusted EBITDA is significantly lower than reported EBITDA due to depreciation and salary normalization.",
+        "The Net Asset Value (£622k) exceeds the EBITDA-based Equity Value, suggesting the business is currently worth more for its parts than its earnings.",
+        "The shift to lower-margin renewables creates a 'volume risk' for any incoming buyer."
+      ],
+      "red_flags": [
+        "Equity value is lower than Net Asset Value, indicating poor return on capital.",
+        "20% Gross Margin drop in 12 months is a major risk to future earnings stability.",
+        "High HP debt (£302k) creates a high fixed-cost base.",
+        "Intercompany loans (£122k) complicate the cash-at-bank position."
+      ],
+      "narrative": "Thor-CON presents a valuation paradox common in rapidly growing, asset-heavy SMEs. While the top-line growth is impressive, the heavy investment in a vehicle fleet and the recent shift to lower-margin renewable products has compressed the earnings-based valuation. The Enterprise Value of £472k is well-supported by the sector multiple of 2.5x, but once the £302k of HP debt is deducted, the Equity Value falls to approximately £288k. Crucially, this is significantly lower than the company's Net Asset Value of £622k. In such cases, the NAV typically acts as a 'floor' for the valuation. A buyer is unlikely to pay a premium over assets for a business with a 3.2% net margin (2024), while a seller is unlikely to accept less than the value of the assets they have accumulated. The most likely deal structure will involve a price close to NAV, with a portion deferred to ensure the margin compression stabilizes."
+    }
+  }
+]

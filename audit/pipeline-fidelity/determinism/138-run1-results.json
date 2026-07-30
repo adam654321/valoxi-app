@@ -1,0 +1,863 @@
+[
+  {
+    "id": 847,
+    "targetCompanyId": 1881,
+    "stage1EventId": null,
+    "expertType": "deal_structure",
+    "status": "pending",
+    "analysisData": null,
+    "analysisMarkdown": null,
+    "score": null,
+    "confidence": null,
+    "processingTime": null,
+    "usageMetadata": null,
+    "triggeredBy": 89,
+    "dependsOn": [
+      "valuation",
+      "risk",
+      "operational",
+      "qoe"
+    ],
+    "createdAt": "2026-07-30T01:47:36.053Z",
+    "updatedAt": "2026-07-30T01:47:36.053Z"
+  },
+  {
+    "id": 848,
+    "targetCompanyId": 1881,
+    "stage1EventId": null,
+    "expertType": "synthesis",
+    "status": "pending",
+    "analysisData": null,
+    "analysisMarkdown": null,
+    "score": null,
+    "confidence": null,
+    "processingTime": null,
+    "usageMetadata": null,
+    "triggeredBy": 89,
+    "dependsOn": [
+      "financial",
+      "operational",
+      "risk",
+      "qoe",
+      "sector",
+      "valuation",
+      "deal_structure"
+    ],
+    "createdAt": "2026-07-30T01:47:36.058Z",
+    "updatedAt": "2026-07-30T01:47:36.058Z"
+  },
+  {
+    "id": 842,
+    "targetCompanyId": 1881,
+    "stage1EventId": null,
+    "expertType": "operational",
+    "status": "success",
+    "analysisData": {
+      "expert": "operational",
+      "company_name": "[AUDIT-138] Cooper Gibson",
+      "analysis_date": "2024-05-22",
+      "score": 58,
+      "confidence": "medium",
+      "working_capital": {
+        "yearly_metrics": {
+          "2022": {
+            "debtor_days": 52.07,
+            "creditor_days": 2.36,
+            "stock_days": 0,
+            "cash_conversion_cycle_days": 49.71,
+            "net_working_capital": 30045,
+            "working_capital_percent_revenue": 8.17
+          },
+          "2023": {
+            "debtor_days": 24.3,
+            "creditor_days": 4.61,
+            "stock_days": 0,
+            "cash_conversion_cycle_days": 19.69,
+            "net_working_capital": 20683,
+            "working_capital_percent_revenue": 6.57
+          },
+          "2024": {
+            "debtor_days": null,
+            "creditor_days": null,
+            "stock_days": 0,
+            "cash_conversion_cycle_days": null,
+            "net_working_capital": 128875,
+            "working_capital_percent_revenue": 39.5
+          },
+          "2025": {
+            "debtor_days": null,
+            "creditor_days": null,
+            "stock_days": 0,
+            "cash_conversion_cycle_days": null,
+            "net_working_capital": 204995,
+            "working_capital_percent_revenue": 46.48
+          },
+          "2026": {
+            "debtor_days": null,
+            "creditor_days": null,
+            "stock_days": 0,
+            "cash_conversion_cycle_days": null,
+            "net_working_capital": 183083,
+            "working_capital_percent_revenue": 81.95
+          }
+        },
+        "trend": "deteriorating",
+        "working_capital_intensity": "heavy",
+        "observations": [
+          "Working capital as a percentage of revenue has increased significantly from 8.17% in 2022 to 81.95% in 2026, indicating a massive build-up of cash and prepayments relative to turnover.",
+          "Trade debtor and creditor data is missing for the 2024-2026 statutory filings, preventing a full CCC calculation for recent years.",
+          "Sales ledger data from Feb 2026 shows a high concentration risk with Client 1 representing 88.31% of receivables."
+        ]
+      },
+      "capex": {
+        "total_gross_asset_value": null,
+        "total_nbv": 6389.47,
+        "asset_freshness_percent": null,
+        "recent_additions_24m_value": null,
+        "recent_additions_percent": null,
+        "annual_depreciation_charge": 1350,
+        "estimated_maintenance_capex": 1350,
+        "capex_cliff_risk": false,
+        "assets_requiring_replacement": [],
+        "category_breakdown": {
+          "property": {
+            "cost": null,
+            "nbv": null
+          },
+          "plant_machinery": {
+            "cost": null,
+            "nbv": null
+          },
+          "vehicles": {
+            "cost": null,
+            "nbv": null
+          },
+          "it_equipment": {
+            "cost": null,
+            "nbv": 6389.47
+          },
+          "other": {
+            "cost": null,
+            "nbv": 20291.36
+          }
+        },
+        "observations": [
+          "The business is asset-light, typical for professional services, with the primary asset being computer equipment.",
+          "Intangible assets of £20,291.36 appeared in the current position (June 2026) which were not present in previous years.",
+          "Tangible fixed assets increased significantly in 2026 (£17,464) compared to 2025 (£9,142), suggesting recent investment in equipment."
+        ]
+      },
+      "workforce": {
+        "headcount": null,
+        "total_payroll": 121874,
+        "revenue_per_employee": null,
+        "payroll_percent_revenue": 54.55,
+        "average_salary_all": null,
+        "average_salary_excl_directors": null,
+        "director_remuneration_total": 37693,
+        "director_percent_of_payroll": 30.93,
+        "ft_pt_split": {
+          "full_time": null,
+          "part_time": null
+        },
+        "longest_tenured_years": null,
+        "newest_hire_months_ago": null,
+        "observations": [
+          "Staff costs as a percentage of revenue have fluctuated wildly, from 85.7% in 2022 to near zero in 2024/2025, before returning to 54.5% in 2026. This suggests a shift between PAYE staff and subcontractors.",
+          "In 2025, subcontractor costs were £163,671, representing 98.5% of Cost of Sales, indicating a highly flexible but potentially less stable delivery model.",
+          "Director remuneration is a significant portion of the total payroll (30.93% in 2026)."
+        ]
+      },
+      "owner_dependency": {
+        "risk_level": "high",
+        "director_count": 1,
+        "highest_individual_salary": 37693,
+        "highest_individual_percent_of_payroll": 30.93,
+        "critical_function_concentration": "High concentration of management and likely sales functions within the directorship.",
+        "observations": [
+          "The current balance sheet shows 'Amounts owed to directors' of £149,587.37, indicating the business is heavily financed by the owners.",
+          "The shift from staff wages to subcontractor costs suggests the directors manage a flexible pool of talent rather than a fixed internal team."
+        ]
+      },
+      "scalability": {
+        "rating": "medium",
+        "headcount_for_25pct_growth": null,
+        "capex_needed_for_growth": "Low - asset light model.",
+        "working_capital_supports_growth": true,
+        "bottlenecks": [
+          "Extreme customer concentration (88% revenue from one client).",
+          "Reliance on subcontractors for delivery."
+        ],
+        "observations": [
+          "The business model is operationally scalable due to the use of subcontractors, but the revenue base is highly fragile due to client concentration.",
+          "The high cash balance (£195k in Feb 2026) provides a strong buffer for funding growth."
+        ]
+      },
+      "key_findings": [
+        "The business has transitioned from a high-fixed-cost model (PAYE) to a high-variable-cost model (subcontractors).",
+        "Significant cash reserves have been built up, with £195,634 at bank as of Feb 2026.",
+        "Operational efficiency is overshadowed by the risk of 88% revenue concentration in a single client."
+      ],
+      "red_flags": [
+        "88.31% of receivables/revenue tied to 'Client 1'.",
+        "Inconsistent reporting of staff costs vs subcontractor costs across fiscal years.",
+        "Large director loan account (£149k) suggests the business is not yet self-sustaining without owner support or is being used as a tax-efficient vehicle."
+      ],
+      "narrative": "Cooper Gibson exhibits the operational profile of a consultancy that has successfully pivoted to a lean, subcontractor-led model, resulting in improved EBITDA margins. However, the operational stability is entirely dependent on a single client relationship. While the balance sheet is liquid and the asset base is modern, the lack of diversified revenue and the high level of owner financing (via director loans) present significant risks for an acquirer. Scalability is high in theory but limited by the current sales pipeline concentration."
+    },
+    "analysisMarkdown": null,
+    "score": 58,
+    "confidence": "medium",
+    "processingTime": 10276,
+    "usageMetadata": {
+      "promptTokenCount": 10244,
+      "candidatesTokenCount": 2032,
+      "totalTokenCount": 12276
+    },
+    "triggeredBy": 89,
+    "dependsOn": null,
+    "createdAt": "2026-07-30T01:47:36.023Z",
+    "updatedAt": "2026-07-30T01:47:46.380Z"
+  },
+  {
+    "id": 843,
+    "targetCompanyId": 1881,
+    "stage1EventId": null,
+    "expertType": "risk",
+    "status": "success",
+    "analysisData": {
+      "expert": "risk",
+      "company_name": "[AUDIT-138] Cooper Gibson",
+      "analysis_date": "2024-05-22",
+      "score": 45,
+      "confidence": "medium",
+      "customer_concentration": {
+        "risk_level": "critical",
+        "top_customer_percent": 88.31,
+        "top_3_customers_percent": 99.7,
+        "top_5_customers_percent": 100,
+        "hhi_index": 7824,
+        "hhi_classification": "concentrated",
+        "total_customers": 3,
+        "customers_over_15_percent": [
+          "Client 1 (88.31%)"
+        ],
+        "observations": [
+          "Extreme reliance on Client 1, which accounts for over 88% of total invoiced value as of 2026-02-28.",
+          "The customer base is highly fragile; the loss of the primary client would likely result in business failure.",
+          "Revenue is concentrated in a very small number of projects for this single client."
+        ]
+      },
+      "financial_risk": {
+        "risk_level": "moderate",
+        "technically_insolvent": false,
+        "current_ratio_trend": "improving",
+        "creditor_growth_vs_revenue": "Creditors decreased significantly in FY2026 while revenue also fell.",
+        "director_loans_balance": 149587.37,
+        "intercompany_balances": 0,
+        "interest_coverage_adequate": true,
+        "going_concern_indicators": [],
+        "observations": [
+          "The company has a strong cash position of £75,312.48 as of 2026-06-25.",
+          "Current ratio is exceptionally high due to low current liabilities, but this is skewed by a large negative balance in 'amounts owed to directors' (£149,587.37) which acts as a significant liability to be settled.",
+          "Revenue has been volatile, peaking in 2025 (£441,073) before dropping to £223,404 in 2026."
+        ]
+      },
+      "key_person_risk": {
+        "risk_level": "high",
+        "highest_individual_payroll_percent": null,
+        "single_points_of_failure": [
+          "Directors",
+          "Technical/Operations"
+        ],
+        "management_depth": "thin",
+        "average_tenure_years": null,
+        "observations": [
+          "Staff costs dropped from £315,578 in 2022 to just £1,089 in 2025, suggesting a shift to subcontractors or a significant reduction in permanent headcount.",
+          "High reliance on directors' remuneration (£37,693 in 2026) relative to total staff costs suggests the business is owner-operated with little management depth."
+        ]
+      },
+      "revenue_quality": {
+        "risk_level": "high",
+        "revenue_type": "project_based",
+        "customer_trend": "shrinking_base",
+        "seasonality_detected": false,
+        "observations": [
+          "Revenue is project-based and highly lumpy, evidenced by the 49% drop in revenue between FY2025 and FY2026.",
+          "The shift to subcontractor costs (£163,671 in 2025) indicates a variable cost model, which provides some protection but confirms the project-based nature of the work."
+        ]
+      },
+      "balance_sheet_risks": {
+        "director_loans": 149587.37,
+        "connected_company_balances": 0,
+        "deferred_tax": null,
+        "pension_obligations": null,
+        "contingent_liabilities": "unable_to_assess",
+        "observations": [
+          "The 'CURRENT POSITION' as of 2026-06-25 shows £149,587.37 owed to directors. This is a major liability that would likely require settlement or conversion to equity upon acquisition.",
+          "Intangible assets of £20,291.36 appeared in the current position (2026-06-25) which were not present in previous year-ends."
+        ]
+      },
+      "bad_debt": {
+        "total_overdue_90_plus": null,
+        "recommended_provision": 0,
+        "existing_provision": null,
+        "net_profit_impact": 0,
+        "observations": [
+          "Sales ledger lacks aging buckets, making it impossible to quantify 90+ day debt.",
+          "Given the extreme concentration in Client 1, any dispute or delay from this single debtor would be catastrophic for cash flow."
+        ]
+      },
+      "risk_register": [
+        {
+          "risk": "Extreme Customer Concentration",
+          "category": "customer",
+          "severity": "critical",
+          "likelihood": "medium",
+          "financial_impact": 197289,
+          "impact_description": "Loss of Client 1 would result in an 88% loss of revenue.",
+          "mitigation": "Include a significant earn-out period and key customer retention clauses in the SPA."
+        },
+        {
+          "risk": "Director Loan Settlement",
+          "category": "balance_sheet",
+          "severity": "high",
+          "likelihood": "high",
+          "financial_impact": 149587.37,
+          "impact_description": "Cash outflow required to settle director balances on completion.",
+          "mitigation": "Negotiate the loan as part of the enterprise value or require it to be waived/capitalised prior to completion."
+        },
+        {
+          "risk": "Revenue Volatility",
+          "category": "revenue",
+          "severity": "medium",
+          "likelihood": "high",
+          "financial_impact": null,
+          "impact_description": "Inconsistent project pipeline makes forecasting and valuation difficult.",
+          "mitigation": "Use a multi-year average for valuation or a deferred payment structure based on future performance."
+        }
+      ],
+      "deal_breakers": [
+        "88% revenue concentration in a single client.",
+        "Significant director loan liability (£149k) relative to company size."
+      ],
+      "key_findings": [
+        "The company is highly profitable but extremely vulnerable due to its reliance on one client.",
+        "The balance sheet is healthy in terms of cash, but the director loan is a significant encumbrance.",
+        "The business model has shifted from a high-staff-cost model to a subcontractor-led model since 2024."
+      ],
+      "narrative": "Cooper Gibson presents a high-risk profile primarily due to extreme customer concentration, with nearly 90% of revenue derived from a single client. While the company has demonstrated the ability to generate significant profit and maintain a healthy cash balance, the lack of a diversified client base makes the revenue stream highly fragile. Furthermore, the substantial director loan account of £149,587.37 (as of 2026-06-25) represents a major liability that must be addressed in the deal structure. The transition from permanent staff to subcontractors suggests an agile but potentially less stable operational structure. A deal would require heavy protections, including customer retention contingencies and a clear resolution for the director's debt."
+    },
+    "analysisMarkdown": null,
+    "score": 45,
+    "confidence": "medium",
+    "processingTime": 10416,
+    "usageMetadata": {
+      "promptTokenCount": 10200,
+      "candidatesTokenCount": 1787,
+      "totalTokenCount": 11987
+    },
+    "triggeredBy": 89,
+    "dependsOn": null,
+    "createdAt": "2026-07-30T01:47:36.028Z",
+    "updatedAt": "2026-07-30T01:47:46.522Z"
+  },
+  {
+    "id": 841,
+    "targetCompanyId": 1881,
+    "stage1EventId": null,
+    "expertType": "financial",
+    "status": "success",
+    "analysisData": {
+      "expert": "financial",
+      "company_name": "[AUDIT-138] Cooper Gibson",
+      "analysis_date": "2024-05-22",
+      "score": 62,
+      "confidence": "high",
+      "yearly_metrics": {
+        "2022": {
+          "revenue": 367925,
+          "revenue_yoy_growth_percent": null,
+          "cost_of_sales": 0,
+          "gross_profit": 367925,
+          "gross_margin_percent": 100,
+          "administrative_expenses": 365500,
+          "operating_profit": 14064,
+          "operating_margin_percent": 3.82,
+          "depreciation_amortisation": 615,
+          "ebitda": 14679,
+          "interest_payable": 1148,
+          "interest_coverage_ratio": 12.25,
+          "profit_before_tax": 12976,
+          "corporation_tax": 2499,
+          "effective_tax_rate_percent": 19.26,
+          "net_profit": 10477,
+          "net_margin_percent": 2.85
+        },
+        "2023": {
+          "revenue": 314775,
+          "revenue_yoy_growth_percent": -14.45,
+          "cost_of_sales": 0,
+          "gross_profit": 314775,
+          "gross_margin_percent": 100,
+          "administrative_expenses": 297036,
+          "operating_profit": 17739,
+          "operating_margin_percent": 5.64,
+          "depreciation_amortisation": 463,
+          "ebitda": 18202,
+          "interest_payable": 2762,
+          "interest_coverage_ratio": 6.42,
+          "profit_before_tax": 15046,
+          "corporation_tax": 2871,
+          "effective_tax_rate_percent": 19.08,
+          "net_profit": 12175,
+          "net_margin_percent": 3.87
+        },
+        "2024": {
+          "revenue": 326227,
+          "revenue_yoy_growth_percent": 3.64,
+          "cost_of_sales": 4221,
+          "gross_profit": 322006,
+          "gross_margin_percent": 98.71,
+          "administrative_expenses": 204475,
+          "operating_profit": 117531,
+          "operating_margin_percent": 36.03,
+          "depreciation_amortisation": 640,
+          "ebitda": 118171,
+          "interest_payable": 0,
+          "interest_coverage_ratio": null,
+          "profit_before_tax": 118518,
+          "corporation_tax": 27388,
+          "effective_tax_rate_percent": 23.11,
+          "net_profit": 91130,
+          "net_margin_percent": 27.93
+        },
+        "2025": {
+          "revenue": 441073,
+          "revenue_yoy_growth_percent": 35.2,
+          "cost_of_sales": 166054,
+          "gross_profit": 275019,
+          "gross_margin_percent": 62.35,
+          "administrative_expenses": 53647,
+          "operating_profit": 221372,
+          "operating_margin_percent": 50.19,
+          "depreciation_amortisation": 299,
+          "ebitda": 221671,
+          "interest_payable": 0,
+          "interest_coverage_ratio": null,
+          "profit_before_tax": 221372,
+          "corporation_tax": 52207,
+          "effective_tax_rate_percent": 23.58,
+          "net_profit": 169165,
+          "net_margin_percent": 38.35
+        },
+        "2026": {
+          "revenue": 223404,
+          "revenue_yoy_growth_percent": -49.35,
+          "cost_of_sales": 0,
+          "gross_profit": 223404,
+          "gross_margin_percent": 100,
+          "administrative_expenses": 177671,
+          "operating_profit": 49479,
+          "operating_margin_percent": 22.15,
+          "depreciation_amortisation": 7533,
+          "ebitda": 57012,
+          "interest_payable": 0,
+          "interest_coverage_ratio": null,
+          "profit_before_tax": 49479,
+          "corporation_tax": 7819,
+          "effective_tax_rate_percent": 15.8,
+          "net_profit": 41660,
+          "net_margin_percent": 18.65
+        }
+      },
+      "cagr": {
+        "revenue_cagr_percent": -11.7,
+        "gross_profit_cagr_percent": -11.7,
+        "operating_profit_cagr_percent": 36.9,
+        "period_years": 4
+      },
+      "cost_structure": {
+        "cost_of_sales_percent_revenue": 0,
+        "overheads_percent_revenue": 79.53,
+        "staff_costs_percent_revenue": 54.55,
+        "director_costs_percent_revenue": 16.87,
+        "top_5_overheads": [
+          {
+            "category": "Directors Pension",
+            "value": 24000,
+            "percent_of_overheads": 13.51
+          },
+          {
+            "category": "Directors Salaries",
+            "value": 12570,
+            "percent_of_overheads": 7.07
+          },
+          {
+            "category": "Amortisation",
+            "value": 3422,
+            "percent_of_overheads": 1.93
+          },
+          {
+            "category": "Accountancy & Bookkeeping",
+            "value": 2400,
+            "percent_of_overheads": 1.35
+          },
+          {
+            "category": "Telecommunications",
+            "value": 1657,
+            "percent_of_overheads": 0.93
+          }
+        ],
+        "cost_base_classification": "predominantly_fixed"
+      },
+      "earnings_quality": {
+        "net_profit_tracks_operating_profit": true,
+        "exceptional_items_identified": [
+          "Profit on disposal of tangible fixed assets (2025): 1,381",
+          "Loss on disposal of tangible fixed assets (2026): 2,761"
+        ],
+        "tax_rate_consistent": false,
+        "ebitda_latest": 57012,
+        "ebitda_trend": "declining",
+        "limitations": [
+          "Significant volatility in cost of sales classification between 2025 and 2026",
+          "Staff costs in 2024 and 2025 appear understated or reclassified to other overheads"
+        ]
+      },
+      "debt_service": {
+        "latest_interest_coverage": null,
+        "interest_coverage_trend": "improving",
+        "additional_debt_capacity_assessment": "High. The company has eliminated interest-bearing debt as of 2024, with zero interest payable in the last three periods and a strong cash position."
+      },
+      "key_findings": [
+        "Revenue is highly volatile, peaking at 441k in 2025 before dropping 49% in 2026.",
+        "Operating margins show extreme fluctuation, ranging from 3.8% to 50.2%, suggesting inconsistent cost allocation or project-based revenue spikes.",
+        "Significant customer concentration exists, with one client representing over 88% of the sales ledger in 2026.",
+        "The cost structure shifted dramatically in 2025 with a large subcontractor cost (163k) that disappeared in 2026.",
+        "Staff costs and directors' remuneration are the primary drivers of the fixed cost base, though reporting of these figures is inconsistent across years.",
+        "The company has successfully deleveraged, moving from 41k in bank loans in 2022 to zero long-term debt by 2024.",
+        "Cash reserves are healthy but declining, dropping from 295k in 2025 to 195k in 2026."
+      ],
+      "red_flags": [
+        "Extreme revenue volatility with a 49% year-on-year decline in the most recent full year.",
+        "Severe customer concentration risk (88%+ revenue from a single client).",
+        "Inconsistent financial reporting, particularly regarding the classification of staff costs and 'other overheads' which reached 136k in 2024."
+      ],
+      "narrative": "Cooper Gibson presents a financial profile typical of a small, project-based professional services firm, characterized by high volatility and significant concentration risk. While the company achieved a notable performance peak in FY2025 with revenues of £441k and an operating margin of 50.2%, the subsequent FY2026 results show a sharp 49% contraction in revenue and a significant compression of EBITDA. This suggests that the 2025 performance may have been an outlier driven by a specific large-scale contract rather than sustainable organic growth.\n\nThe earnings quality is clouded by inconsistent cost classifications. In FY2024 and FY2025, reported staff costs dropped to negligible levels while 'other overheads' and 'subcontractor costs' spiked, suggesting a shift in delivery model or accounting treatment that complicates year-on-year comparisons. Furthermore, the sales ledger analysis confirms a dangerous reliance on a single client, who accounts for nearly 90% of outstanding receivables. \n\nFrom a buyer's perspective, the primary value lies in the company's debt-free balance sheet and historically strong margins when active. However, the lack of revenue stability and the 'key man' or 'key client' risk must be heavily factored into the valuation. Any acquisition should be structured with a significant earn-out component to mitigate the risk of the primary revenue stream dissipating post-completion.completion."
+    },
+    "analysisMarkdown": null,
+    "score": 62,
+    "confidence": "high",
+    "processingTime": 12759,
+    "usageMetadata": {
+      "promptTokenCount": 9989,
+      "candidatesTokenCount": 2643,
+      "totalTokenCount": 12632
+    },
+    "triggeredBy": 89,
+    "dependsOn": null,
+    "createdAt": "2026-07-30T01:47:36.014Z",
+    "updatedAt": "2026-07-30T01:47:48.846Z"
+  },
+  {
+    "id": 845,
+    "targetCompanyId": 1881,
+    "stage1EventId": null,
+    "expertType": "sector",
+    "status": "success",
+    "analysisData": {
+      "expert": "sector",
+      "company_name": "[AUDIT-138] Cooper Gibson",
+      "sector": "Professional Services",
+      "analysis_date": "2023-10-27",
+      "score": 68,
+      "confidence": "medium",
+      "sector_overview": {
+        "growth_outlook": "stable",
+        "uk_market_size_estimate": "£200bn+ (Total Professional Services)",
+        "key_trends": [
+          "Shift towards value-based pricing over hourly billing",
+          "Increased adoption of AI for document automation and research",
+          "Consolidation of boutique firms by private equity-backed platforms",
+          "Focus on ESG and sustainability advisory services"
+        ],
+        "regulatory_factors": [
+          "IR35 compliance for contractor engagement",
+          "Potential changes to UK audit and corporate governance standards",
+          "GDPR and data privacy requirements for client data"
+        ],
+        "observations": [
+          "The UK professional services sector remains a global leader but faces domestic margin pressure due to wage inflation.",
+          "Business consulting is increasingly bifurcated between high-end strategy and commoditised implementation."
+        ]
+      },
+      "competitive_positioning": {
+        "company_size_classification": "micro",
+        "typical_gross_margin_range": {
+          "low": 40,
+          "high": 60
+        },
+        "typical_operating_margin_range": {
+          "low": 10,
+          "high": 20
+        },
+        "typical_ebitda_margin_range": {
+          "low": 12,
+          "high": 25
+        },
+        "positioning_assessment": "As a boutique advisory firm with no public revenue data, Cooper Gibson likely operates in the micro-to-small segment. These firms typically rely on high-touch partner relationships and niche expertise but face challenges in scalability and owner-dependency."
+      },
+      "comparable_multiples": {
+        "ev_revenue_range": {
+          "low": 0.4,
+          "mid": 0.7,
+          "high": 1
+        },
+        "ev_ebitda_range": {
+          "low": 2,
+          "high": 3.5
+        },
+        "factors_affecting_multiple": [
+          "Quality of recurring revenue vs one-off project fees",
+          "Key person risk (founder dependency)",
+          "Client concentration levels",
+          "Specialisation in high-growth sub-sectors"
+        ],
+        "premium_factors": [
+          "Retainer-based revenue models",
+          "Niche expertise in high-barrier sectors (e.g., Life Sciences, Fintech)",
+          "Strong second-tier management team"
+        ],
+        "discount_factors": [
+          "High dependency on the founder for business development",
+          "Project-based revenue with low visibility",
+          "Small headcount (<10) limiting capacity for growth"
+        ],
+        "data_confidence": "based_on_training_data"
+      },
+      "growth_opportunities": [
+        {
+          "opportunity": "Digital Service Productisation",
+          "effort": "medium",
+          "potential_impact": "high",
+          "timeframe": "medium_term",
+          "description": "Converting bespoke advisory into scalable digital toolkits or subscription-based insights to reduce labour dependency."
+        },
+        {
+          "opportunity": "Strategic Partnerships",
+          "effort": "low",
+          "potential_impact": "medium",
+          "timeframe": "short_term",
+          "description": "Partnering with complementary firms (e.g., accounting or legal) to create a cross-referral ecosystem."
+        }
+      ],
+      "sector_risks": [
+        {
+          "risk": "Talent Attrition",
+          "severity": "high",
+          "timeframe": "immediate",
+          "description": "High competition for skilled consultants leading to wage inflation and margin erosion."
+        },
+        {
+          "risk": "Economic Cyclicality",
+          "severity": "medium",
+          "timeframe": "near_term",
+          "description": "Discretionary consulting spend is often the first budget cut during corporate belt-tightening."
+        }
+      ],
+      "key_findings": [
+        "The business likely falls into the 2.0x - 3.5x EBITDA range typical for UK SME professional services.",
+        "Valuation will be heavily sensitive to the 'stickiness' of the client base and the level of founder involvement.",
+        "M&A activity in this space is currently driven by larger firms seeking niche expertise or 'acqui-hires'."
+      ],
+      "narrative": "Cooper Gibson operates in a mature and highly fragmented UK consulting market. Without specific financial data, the company is assessed as a boutique player. In the UK SME market, such firms are valued conservatively due to high 'key person' risk and the project-based nature of the work. To achieve a multiple at the higher end of the 2.0x-3.5x range, the buyer would need to see evidence of multi-year contracts and a management team capable of operating independently of the current owners."
+    },
+    "analysisMarkdown": null,
+    "score": 68,
+    "confidence": "medium",
+    "processingTime": 6006,
+    "usageMetadata": {
+      "promptTokenCount": 1545,
+      "candidatesTokenCount": 1216,
+      "totalTokenCount": 2761
+    },
+    "triggeredBy": 89,
+    "dependsOn": [
+      "financial"
+    ],
+    "createdAt": "2026-07-30T01:47:36.039Z",
+    "updatedAt": "2026-07-30T01:47:54.971Z"
+  },
+  {
+    "id": 844,
+    "targetCompanyId": 1881,
+    "stage1EventId": null,
+    "expertType": "qoe",
+    "status": "success",
+    "analysisData": {
+      "expert": "quality_of_earnings",
+      "company_name": "[AUDIT-138] Cooper Gibson",
+      "analysis_date": "2024-05-22",
+      "score": 45,
+      "confidence": "medium",
+      "reported_figures": {
+        "operating_profit": 49479,
+        "depreciation": 1350,
+        "amortisation": 3422,
+        "reported_ebitda": 54251,
+        "source_year": "2026"
+      },
+      "add_backs": [
+        {
+          "item": "Loss on disposal of tangible fixed assets",
+          "category": "disposal_loss",
+          "amount": 2761,
+          "recurrence": "one_off",
+          "year": "2026",
+          "justification": "Non-cash accounting loss arising from the disposal of assets, which is non-recurring in nature.",
+          "confidence": "high",
+          "defensibility_score": 10,
+          "case_for_inclusion": "This is a one-off accounting entry that does not represent a recurring cash cost of the business operations.",
+          "case_for_exclusion": "The seller might argue it reflects a lack of historical maintenance or poor asset management, but it remains non-recurring."
+        },
+        {
+          "item": "Directors Pension Contributions",
+          "category": "owner_salary",
+          "amount": 24000,
+          "recurrence": "recurring",
+          "year": "2026",
+          "justification": "Discretionary pension contributions for the owner-director that would not be required for a replacement manager.",
+          "confidence": "high",
+          "defensibility_score": 8,
+          "case_for_inclusion": "Pension contributions are discretionary benefits for the owner and are not part of a standard market-rate salary package for a replacement.",
+          "case_for_exclusion": "The seller may argue this is a standard part of total compensation and should be viewed alongside the base salary."
+        }
+      ],
+      "deductions": [
+        {
+          "item": "Replacement Management Salary Adjustment",
+          "category": "replacement_salary",
+          "amount": 44930,
+          "recurrence": "recurring",
+          "year": "2026",
+          "justification": "Current director salary of £12,570 is significantly below the market rate of £57,500 for an MD of a £223k revenue firm.",
+          "confidence": "medium",
+          "defensibility_score": 7,
+          "case_for_inclusion": "A buyer would need to hire a professional manager to replace the owner's functions, costing significantly more than the current nominal salary.",
+          "case_for_exclusion": "The seller might argue the business is simple enough to be managed part-time or that the current salary is sufficient for the workload."
+        },
+        {
+          "item": "Bad Debt Provision (Client 1 Concentration)",
+          "category": "bad_debt_provision",
+          "amount": 19816,
+          "recurrence": "recurring",
+          "year": "2026",
+          "justification": "88% revenue concentration in a single client warrants a 10% general provision against the primary debtor balance (£198,157).",
+          "confidence": "medium",
+          "defensibility_score": 5,
+          "case_for_inclusion": "The extreme concentration risk makes the earnings highly fragile; a provision reflects the risk of this single point of failure.",
+          "case_for_exclusion": "The seller will argue that Client 1 has a perfect payment history and no provision is required for a performing asset."
+        }
+      ],
+      "total_add_backs": 26761,
+      "total_deductions": 64746,
+      "adjusted_ebitda": {
+        "conservative": -10495,
+        "base": 16266,
+        "optimistic": 36082
+      },
+      "adjustment_summary": {
+        "reported_ebitda": 54251,
+        "plus_add_backs": 26761,
+        "minus_deductions": 64746,
+        "equals_adjusted_ebitda_base": 16266
+      },
+      "director_salary_analysis": {
+        "directors": [
+          {
+            "name": "Owner-Director",
+            "current_salary": 12570,
+            "estimated_market_rate": 57500,
+            "benchmark_range_used": "Revenue £1M-£5M (Adjusted for smaller scale: £45k-£70k range)",
+            "adjustment": 44930,
+            "adjustment_type": "deduction"
+          }
+        ]
+      },
+      "sustainability_assessment": {
+        "sustainable_for_3_years": false,
+        "key_assumptions": [
+          "Retention of Client 1 (88% of revenue)",
+          "Ability to maintain the subcontractor delivery model without margin erosion",
+          "Successful transition of owner-managed relationships to new management"
+        ],
+        "sensitivity_factors": [
+          "Loss of Client 1 would result in immediate insolvency",
+          "Availability of skilled subcontractors at current rates",
+          "Owner's willingness to provide a long-term handover"
+        ],
+        "upside_scenarios": [
+          "Diversification of client base using existing cash reserves (£195k)",
+          "Expansion of services to Client 1"
+        ],
+        "downside_scenarios": [
+          "Client 1 reduces spend or moves to a competitor",
+          "Subcontractor costs spike due to talent shortages"
+        ]
+      },
+      "key_findings": [
+        "Reported EBITDA is heavily inflated by an under-market director salary and discretionary pension payments.",
+        "The business model has shifted from fixed staff costs to a variable subcontractor model, which improved margins but increased delivery risk.",
+        "Revenue is highly volatile, with a 49% decline in the most recent fiscal year (2026).",
+        "The balance sheet is strong with £195k cash, but this is offset by a £149k director loan liability as of June 2026."
+      ],
+      "red_flags": [
+        "88.31% revenue concentration in a single client (Client 1).",
+        "Significant revenue decline of 49% between 2025 and 2026.",
+        "Inconsistent reporting of staff costs vs subcontractor costs across years.",
+        "High owner dependency with a nominal salary that masks true operating costs."
+      ],
+      "narrative": "The Quality of Earnings analysis for Cooper Gibson reveals a business with high operational fragility. While the reported 2026 EBITDA of £54k appears positive, it is largely a product of the owner taking a nominal salary and the business benefiting from a lean subcontractor model. After adjusting for a market-rate replacement manager and accounting for the extreme risk associated with 88% customer concentration, the Base Case Adjusted EBITDA drops to £16,266. The 49% revenue drop in FY2026 suggests the business is in a contraction phase or has lost a major project. A buyer should view the 2025 peak as an outlier and value the business on the much lower, risk-adjusted sustainable earnings, likely requiring a heavy earn-out structure tied to the retention of Client 1."
+    },
+    "analysisMarkdown": null,
+    "score": 45,
+    "confidence": "medium",
+    "processingTime": 9921,
+    "usageMetadata": {
+      "promptTokenCount": 15555,
+      "candidatesTokenCount": 1789,
+      "totalTokenCount": 17344
+    },
+    "triggeredBy": 89,
+    "dependsOn": [
+      "financial",
+      "operational"
+    ],
+    "createdAt": "2026-07-30T01:47:36.033Z",
+    "updatedAt": "2026-07-30T01:48:04.946Z"
+  },
+  {
+    "id": 846,
+    "targetCompanyId": 1881,
+    "stage1EventId": null,
+    "expertType": "valuation",
+    "status": "processing",
+    "analysisData": null,
+    "analysisMarkdown": null,
+    "score": null,
+    "confidence": null,
+    "processingTime": null,
+    "usageMetadata": null,
+    "triggeredBy": 89,
+    "dependsOn": [
+      "financial",
+      "qoe",
+      "sector",
+      "risk",
+      "operational"
+    ],
+    "createdAt": "2026-07-30T01:47:36.044Z",
+    "updatedAt": "2026-07-30T01:48:04.999Z"
+  }
+]

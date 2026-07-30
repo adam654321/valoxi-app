@@ -1,0 +1,145 @@
+{
+  "expert": "operational",
+  "company_name": "[AUDIT-130] Keen As Mustard",
+  "analysis_date": "2025-05-20",
+  "score": 62,
+  "confidence": "medium",
+  "working_capital": {
+    "yearly_metrics": {
+      "2023": {
+        "debtor_days": 55.26,
+        "creditor_days": 5.71,
+        "stock_days": 0,
+        "cash_conversion_cycle_days": 49.55,
+        "net_working_capital": 104557,
+        "working_capital_percent_revenue": 26.36
+      },
+      "2024": {
+        "debtor_days": 78.76,
+        "creditor_days": 1.58,
+        "stock_days": 0,
+        "cash_conversion_cycle_days": 77.18,
+        "net_working_capital": 115778,
+        "working_capital_percent_revenue": 26.54
+      },
+      "2025": {
+        "debtor_days": 365,
+        "creditor_days": null,
+        "stock_days": null,
+        "cash_conversion_cycle_days": null,
+        "net_working_capital": null,
+        "working_capital_percent_revenue": null
+      }
+    },
+    "trend": "deteriorating",
+    "working_capital_intensity": "moderate",
+    "observations": [
+      "Debtor days increased significantly from 55.26 in 2023 to 78.76 in 2024, indicating slowing collections.",
+      "The 2025 management accounts show trade debtors exactly equal to revenue, suggesting a potential data entry anomaly or a 100% uncollected revenue position for the period.",
+      "Creditor days are exceptionally low (under 6 days), suggesting the business pays suppliers almost immediately, which does not optimize cash flow.",
+      "The business is a net consumer of working capital as it grows, with net working capital increasing alongside revenue."
+    ]
+  },
+  "capex": {
+    "total_gross_asset_value": 1053,
+    "total_nbv": 333,
+    "asset_freshness_percent": 31.62,
+    "recent_additions_24m_value": 0,
+    "recent_additions_percent": 0,
+    "annual_depreciation_charge": 111,
+    "estimated_maintenance_capex": 111,
+    "capex_cliff_risk": true,
+    "assets_requiring_replacement": [
+      {
+        "asset": "Plant & Machinery",
+        "cost": 1053,
+        "nbv": 333,
+        "reason": "NBV is 31.6% of cost with no additions since 2020"
+      }
+    ],
+    "category_breakdown": {
+      "property": {
+        "cost": 0,
+        "nbv": 0
+      },
+      "plant_machinery": {
+        "cost": 1053,
+        "nbv": 333
+      },
+      "vehicles": {
+        "cost": 0,
+        "nbv": 0
+      },
+      "it_equipment": {
+        "cost": 0,
+        "nbv": 0
+      },
+      "other": {
+        "cost": 0,
+        "nbv": 0
+      }
+    },
+    "observations": [
+      "The asset base is extremely small and aging; no new assets have been recorded in the register provided.",
+      "The business is asset-light, typical for marketing/creative sectors, but the 'Plant & Machinery' (likely IT/Office equipment) is nearing the end of its useful life.",
+      "Capex cliff risk is flagged because the asset base is depreciating without replenishment, though the absolute values are immaterial to the overall business scale."
+    ]
+  },
+  "workforce": {
+    "headcount": 0,
+    "total_payroll": 18000,
+    "revenue_per_employee": null,
+    "payroll_percent_revenue": 4.13,
+    "average_salary_all": null,
+    "average_salary_excl_directors": null,
+    "director_remuneration_total": 18000,
+    "director_percent_of_payroll": 100,
+    "ft_pt_split": {
+      "full_time": 0,
+      "part_time": 0
+    },
+    "longest_tenured_years": null,
+    "newest_hire_months_ago": null,
+    "observations": [
+      "Staff matrix was empty; however, P&L shows 'Direct Labour' of £70,742 and 'Subcontractor Costs' of £30,021 in 2024.",
+      "The business relies heavily on subcontractors and direct labour categorized within Cost of Sales rather than administrative staff wages.",
+      "Director remuneration is low (£18k), likely supplemented by the significant dividends paid (£126,200 in 2024)."
+    ]
+  },
+  "owner_dependency": {
+    "risk_level": "high",
+    "director_count": 1,
+    "highest_individual_salary": 18000,
+    "highest_individual_percent_of_payroll": 100,
+    "critical_function_concentration": "High concentration in owner/director given the dividend-heavy compensation structure.",
+    "observations": [
+      "The business appears to be an owner-managed micro-entity with high dependency on the principal.",
+      "Significant dividends relative to salary suggest the owner is the primary driver of value."
+    ]
+  },
+  "scalability": {
+    "rating": "medium",
+    "headcount_for_25pct_growth": "Estimated 1-2 additional subcontractors or staff members.",
+    "capex_needed_for_growth": "Minimal; primarily IT equipment refresh.",
+    "working_capital_supports_growth": false,
+    "bottlenecks": [
+      "Increasing debtor days will strain cash flow if growth accelerates.",
+      "High reliance on subcontractors may lead to margin erosion if talent costs rise."
+    ],
+    "observations": [
+      "The business has shown revenue growth (approx 10% from 2023 to 2024) while maintaining high gross margins.",
+      "Scalability is limited by the owner's personal capacity and the ability to manage a larger pool of subcontractors."
+    ]
+  },
+  "key_findings": [
+    "Strong profitability with EBITDA margins exceeding 40% in 2024.",
+    "Asset-light model requires very little maintenance capex.",
+    "Geographic diversification is emerging, with 55% of 2025 revenue originating from the USA."
+  ],
+  "red_flags": [
+    "Deteriorating debtor collection cycle (78 days in 2024).",
+    "Potential data integrity issue in 2025 management accounts where Trade Debtors exactly match Revenue.",
+    "High owner dependency with a compensation structure heavily weighted toward dividends."
+  ],
+  "narrative": "Keen As Mustard is a highly profitable, asset-light creative agency showing good growth momentum. Operationally, the business is efficient but faces a 'growing pain' in its working capital cycle, specifically regarding trade debtor collections which have slowed as revenue increased. The reliance on subcontractors provides flexibility but also creates a dependency on external talent. The primary risk is the high level of owner dependency, as the operational structure suggests the business revolves around a single principal. Future scalability will require formalizing the workforce and professionalizing the credit control function to bring debtor days back under 60."
+}

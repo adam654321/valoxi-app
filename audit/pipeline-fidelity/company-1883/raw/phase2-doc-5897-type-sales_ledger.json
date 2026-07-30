@@ -1,0 +1,38 @@
+{
+  "document": "sales_ledger",
+  "report_date": "2025-03-31",
+  "summary": {
+    "total_trade_debtors": 3165261,
+    "debtor_days": 62.9,
+    "recent_revenue": 18366818,
+    "bad_debt_provision": null,
+    "doubtful_debts": null
+  },
+  "aging": {
+    "current_0_to_30": null,
+    "days_31_to_60": null,
+    "days_61_to_90": null,
+    "days_90_plus": null
+  },
+  "top_debtors": [],
+  "invoice_status_summary": {
+    "Paid": {
+      "count": null,
+      "value": null
+    },
+    "Part Paid": {
+      "count": null,
+      "value": null
+    },
+    "Unpaid": {
+      "count": null,
+      "value": null
+    }
+  },
+  "observations": [
+    "Customer concentration is low with the largest single customer representing less than 10% of turnover.",
+    "Aged debtor breakdown was not provided in the IM; sub-90-day fundability cannot be assessed until the listing is obtained at DD stage.",
+    "AliDeck shows strong customer loyalty with a 91% repeat order rate and a significant secured pipeline of £17.4m."
+  ],
+  "_isIM": true
+}

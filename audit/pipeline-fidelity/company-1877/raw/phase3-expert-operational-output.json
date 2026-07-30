@@ -1,0 +1,151 @@
+{
+  "expert": "operational",
+  "company_name": "[AUDIT-228] Thor-CON",
+  "analysis_date": "2025-09-08",
+  "score": 72,
+  "confidence": "high",
+  "working_capital": {
+    "yearly_metrics": {
+      "2022": {
+        "debtor_days": 37.84,
+        "creditor_days": 79.92,
+        "stock_days": null,
+        "cash_conversion_cycle_days": null,
+        "net_working_capital": 104343,
+        "working_capital_percent_revenue": 9.51
+      },
+      "2023": {
+        "debtor_days": 40.2,
+        "creditor_days": 75.96,
+        "stock_days": null,
+        "cash_conversion_cycle_days": null,
+        "net_working_capital": 168371,
+        "working_capital_percent_revenue": 11.68
+      },
+      "2024": {
+        "debtor_days": 30.21,
+        "creditor_days": 62.45,
+        "stock_days": null,
+        "cash_conversion_cycle_days": null,
+        "net_working_capital": 152719,
+        "working_capital_percent_revenue": 9.01
+      },
+      "2025": {
+        "debtor_days": 42.58,
+        "creditor_days": 4.57,
+        "stock_days": null,
+        "cash_conversion_cycle_days": null,
+        "net_working_capital": 324044.46,
+        "working_capital_percent_revenue": 16.67
+      }
+    },
+    "trend": "deteriorating",
+    "working_capital_intensity": "moderate",
+    "observations": [
+      "Debtor days have increased to 42.58 in the latest management accounts (2025-09-08) from 30.21 in FY2024.",
+      "Creditor days show a sharp decline in 2025, suggesting either a change in supplier payment terms or a timing mismatch in management account reporting.",
+      "Net working capital has significantly increased in 2025, largely driven by 'Amounts owed by connected companies' (£122,038.22) which may not be operationally liquid.",
+      "The business is a net consumer of working capital as it scales, with WC as % of revenue rising from 9% to 16.7%."
+    ]
+  },
+  "capex": {
+    "total_gross_asset_value": 410039.92,
+    "total_nbv": 332463.82,
+    "asset_freshness_percent": 81.08,
+    "recent_additions_24m_value": 283026.69,
+    "recent_additions_percent": 69.02,
+    "annual_depreciation_charge": 51911,
+    "estimated_maintenance_capex": 51911,
+    "capex_cliff_risk": false,
+    "assets_requiring_replacement": [],
+    "category_breakdown": {
+      "property": {
+        "cost": 16761.29,
+        "nbv": 6879.1
+      },
+      "plant_machinery": {
+        "cost": 3765,
+        "nbv": 2008
+      },
+      "vehicles": {
+        "cost": 345776.69,
+        "nbv": 297992.12
+      },
+      "it_equipment": {
+        "cost": 24286.62,
+        "nbv": 12798.44
+      },
+      "other": {
+        "cost": 19450.32,
+        "nbv": 12786.16
+      }
+    },
+    "observations": [
+      "The asset base is exceptionally fresh (81% NBV/Cost) due to a major fleet renewal program in 2023-2024.",
+      "Vehicles represent 89.6% of the total Net Book Value.",
+      "Capex cliff risk is low; only the investment property and showroom fit-out are aged, but these are not critical to core service delivery.",
+      "Maintenance capex is expected to rise as the new fleet begins to age out of warranty periods."
+    ]
+  },
+  "workforce": {
+    "headcount": 18,
+    "total_payroll": 450130,
+    "revenue_per_employee": 108004.39,
+    "payroll_percent_revenue": 23.15,
+    "average_salary_all": 25007.22,
+    "average_salary_excl_directors": 25973.53,
+    "director_remuneration_total": 8580,
+    "director_percent_of_payroll": 1.91,
+    "ft_pt_split": {
+      "full_time": 17,
+      "part_time": 1
+    },
+    "longest_tenured_years": 16.5,
+    "newest_hire_months_ago": 0.2,
+    "observations": [
+      "Revenue per employee of £108k is healthy for the home services sector.",
+      "Significant investment in marketing and SEO (3 dedicated staff) suggests a focus on digital lead generation.",
+      "The use of 3 apprentices (16.6% of headcount) provides a cost-effective talent pipeline but requires senior oversight.",
+      "Payroll as % of revenue has decreased from 31% in FY2024 to 23% in 2025, indicating improved operating leverage."
+    ]
+  },
+  "owner_dependency": {
+    "risk_level": "medium",
+    "director_count": 1,
+    "highest_individual_salary": 55000,
+    "highest_individual_percent_of_payroll": 12.22,
+    "critical_function_concentration": "The General Manager holds significant operational control, while the Director focuses on high-level strategy and likely sales.",
+    "observations": [
+      "Low direct salary for the owner (£8,580) is offset by dividends, a common SME structure.",
+      "The General Manager is the highest-paid individual, suggesting a level of professional management is already in place.",
+      "Dependency is mitigated by a structured office team (FC, Coordinator, Marketing)."
+    ]
+  },
+  "scalability": {
+    "rating": "high",
+    "headcount_for_25pct_growth": 4,
+    "capex_needed_for_growth": "Minimal immediate capex; the current vehicle fleet is under-utilised or recently expanded to accommodate growth.",
+    "working_capital_supports_growth": true,
+    "bottlenecks": [
+      "Availability of qualified Senior Engineers to lead apprentice-heavy teams.",
+      "Collection of trade debtors which has slowed in the most recent period."
+    ],
+    "observations": [
+      "The business has already demonstrated scalability, growing revenue by 77% between 2022 and 2025.",
+      "The high proportion of fixed-cost marketing staff suggests that incremental revenue will have high contribution margins.",
+      "The modern fleet reduces the risk of operational downtime during a growth phase."
+    ]
+  },
+  "key_findings": [
+    "Strong asset freshness (81%) following a 2023/24 fleet refresh.",
+    "Healthy revenue per employee and improving payroll efficiency.",
+    "Significant intercompany loan balance (£122k) impacting the current working capital profile.",
+    "Transition from a small owner-led business to a professionally managed operation is well underway."
+  ],
+  "red_flags": [
+    "Debtor days increasing to 42.5 days with 32% of ledger in the 31-60 day bracket.",
+    "Significant 'Other Long Term Debt' of £319,252 in 2025 balance sheet requires clarification.",
+    "Negative Hire Purchase Long Term balance (-£167,914) in 2025 management accounts suggests a potential accounting misclassification."
+  ],
+  "narrative": "Thor-CON exhibits strong operational fundamentals characterized by a modern, well-maintained asset base and a productive workforce. The company has successfully scaled revenue while improving its payroll-to-revenue ratio. While the working capital cycle has lengthened recently, this is partly due to non-operational intercompany balances. The business is well-positioned for further growth without immediate heavy capital requirements, provided it can stabilize its debtor collection and manage the transition of its apprentice-heavy engineering team into fully productive units."
+}

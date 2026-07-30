@@ -1,0 +1,174 @@
+{
+  "expert": "financial",
+  "company_name": "[AUDIT-89] Innova Design Group Limited",
+  "analysis_date": "2025-05-22",
+  "score": 68,
+  "confidence": "high",
+  "yearly_metrics": {
+    "2021": {
+      "revenue": 4656312,
+      "revenue_yoy_growth_percent": null,
+      "cost_of_sales": 3558769,
+      "gross_profit": 1097543,
+      "gross_margin_percent": 23.57,
+      "administrative_expenses": 960613,
+      "operating_profit": 136930,
+      "operating_margin_percent": 2.94,
+      "depreciation_amortisation": 76175,
+      "ebitda": 213105,
+      "interest_payable": 29920,
+      "interest_coverage_ratio": 4.58,
+      "profit_before_tax": 107010,
+      "corporation_tax": -48949,
+      "effective_tax_rate_percent": -45.74,
+      "net_profit": 155959,
+      "net_margin_percent": 3.35
+    },
+    "2022": {
+      "revenue": 5754293,
+      "revenue_yoy_growth_percent": 23.58,
+      "cost_of_sales": 4437034,
+      "gross_profit": 1317259,
+      "gross_margin_percent": 22.89,
+      "administrative_expenses": 1078058,
+      "operating_profit": 239201,
+      "operating_margin_percent": 4.16,
+      "depreciation_amortisation": 61034,
+      "ebitda": 300235,
+      "interest_payable": 48926,
+      "interest_coverage_ratio": 4.89,
+      "profit_before_tax": 190275,
+      "corporation_tax": -19642,
+      "effective_tax_rate_percent": -10.32,
+      "net_profit": 209917,
+      "net_margin_percent": 3.65
+    },
+    "2023": {
+      "revenue": 4450279,
+      "revenue_yoy_growth_percent": -22.66,
+      "cost_of_sales": 3248360,
+      "gross_profit": 1201919,
+      "gross_margin_percent": 27.01,
+      "administrative_expenses": 1076406,
+      "operating_profit": 125513,
+      "operating_margin_percent": 2.82,
+      "depreciation_amortisation": 54527,
+      "ebitda": 180040,
+      "interest_payable": 15450,
+      "interest_coverage_ratio": 8.12,
+      "profit_before_tax": 110605,
+      "corporation_tax": 22101,
+      "effective_tax_rate_percent": 19.98,
+      "net_profit": 88504,
+      "net_margin_percent": 1.99
+    },
+    "2024": {
+      "revenue": 4956153,
+      "revenue_yoy_growth_percent": 11.37,
+      "cost_of_sales": 3366215,
+      "gross_profit": 1589938,
+      "gross_margin_percent": 32.08,
+      "administrative_expenses": 1198254,
+      "operating_profit": 391684,
+      "operating_margin_percent": 7.9,
+      "depreciation_amortisation": 52606,
+      "ebitda": 444290,
+      "interest_payable": 18842,
+      "interest_coverage_ratio": 20.79,
+      "profit_before_tax": 372842,
+      "corporation_tax": 99882,
+      "effective_tax_rate_percent": 26.79,
+      "net_profit": 272960,
+      "net_margin_percent": 5.51
+    },
+    "2025": {
+      "revenue": 4509086,
+      "revenue_yoy_growth_percent": -9.02,
+      "cost_of_sales": 2979013,
+      "gross_profit": 1530073,
+      "gross_margin_percent": 33.93,
+      "administrative_expenses": 1361040,
+      "operating_profit": 169033,
+      "operating_margin_percent": 3.75,
+      "depreciation_amortisation": 49005,
+      "ebitda": 218038,
+      "interest_payable": 10327,
+      "interest_coverage_ratio": 16.37,
+      "profit_before_tax": 158706,
+      "corporation_tax": 39122,
+      "effective_tax_rate_percent": 24.65,
+      "net_profit": 119584,
+      "net_margin_percent": 2.65
+    }
+  },
+  "cagr": {
+    "revenue_cagr_percent": -0.8,
+    "gross_profit_cagr_percent": 8.66,
+    "operating_profit_cagr_percent": 5.41,
+    "period_years": 4
+  },
+  "cost_structure": {
+    "cost_of_sales_percent_revenue": 66.07,
+    "overheads_percent_revenue": 30.18,
+    "staff_costs_percent_revenue": 15.88,
+    "director_costs_percent_revenue": 0.56,
+    "top_5_overheads": [
+      {
+        "category": "Staff Wages & Salaries",
+        "value": 629176,
+        "percent_of_overheads": 46.23
+      },
+      {
+        "category": "Rent & Rates",
+        "value": 235186,
+        "percent_of_overheads": 17.28
+      },
+      {
+        "category": "Employers National Insurance",
+        "value": 71084,
+        "percent_of_overheads": 5.22
+      },
+      {
+        "category": "Depreciation",
+        "value": 49005,
+        "percent_of_overheads": 3.6
+      },
+      {
+        "category": "Utilities",
+        "value": 43142,
+        "percent_of_overheads": 3.17
+      }
+    ],
+    "cost_base_classification": "mixed"
+  },
+  "earnings_quality": {
+    "net_profit_tracks_operating_profit": true,
+    "exceptional_items_identified": [],
+    "tax_rate_consistent": false,
+    "ebitda_latest": 218038,
+    "ebitda_trend": "stable",
+    "limitations": [
+      "Negative effective tax rates in 2021-2022 suggest prior year adjustments or R&D tax credits not explicitly detailed."
+    ]
+  },
+  "debt_service": {
+    "latest_interest_coverage": 16.37,
+    "interest_coverage_trend": "improving",
+    "additional_debt_capacity_assessment": "Strong. Interest coverage has improved significantly from 4.58x in 2021 to 16.37x in 2025, indicating substantial headroom for acquisition debt."
+  },
+  "key_findings": [
+    "Revenue is volatile, peaking at £5.75m in 2022 before settling at £4.51m in 2025, resulting in a flat 4-year CAGR of -0.80%.",
+    "Gross margins have shown impressive expansion, rising from 23.6% in 2021 to 33.9% in 2025, suggesting better pricing power or procurement efficiency.",
+    "Operating margins remain thin and sensitive to volume, fluctuating between 2.8% and 7.9% over the period.",
+    "Subcontractor costs are a major component of Cost of Sales, though they have reduced from £2.16m (2021) to £1.32m (2025).",
+    "Staff costs as a percentage of revenue increased significantly in 2025 (15.9%) compared to 2024 (11.5%), indicating recent hiring or wage pressure.",
+    "The company maintains a healthy interest coverage ratio, providing comfort regarding debt serviceability.",
+    "Rent and rates have increased by 55% since 2021, suggesting expansion of physical footprint or significant lease escalations."
+  ],
+  "red_flags": [
+    "Revenue volatility: Two years of significant double-digit declines (2023 and 2025) suggest a project-based or cyclical revenue stream.",
+    "High overhead growth: Administrative expenses have grown by 41.7% since 2021 despite revenue being lower in 2025 than in 2021.",
+    "Customer concentration: Sales ledger data indicates a single debtor represents nearly 69% of total trade receivables."
+  ],
+  "narrative": "Innova Design Group Limited presents a financial profile typical of a mature manufacturing entity navigating volatile demand. While the top-line revenue has failed to establish a clear growth trend—ending 2025 slightly below 2021 levels—the underlying profitability metrics tell a more nuanced story. The most significant positive trend is the expansion of the Gross Margin, which has improved by over 1,000 basis points since 2021. This suggests that the management has successfully shifted the mix towards higher-margin work or achieved significant efficiencies in direct material and subcontractor procurement.\n\nHowever, these gains at the gross level are being partially eroded by a rising fixed cost base. Administrative expenses have climbed steadily every year, even when revenue contracted. In 2025, the company saw a notable spike in staff costs and rent, which compressed the operating margin back down to 3.75% from a high of 7.90% in the previous year. This 'sticky' overhead structure makes the bottom line highly sensitive to even minor revenue fluctuations.\n\nFrom an M&A perspective, the earnings quality is generally high, with EBITDA tracking operating cash flow potential and no obvious reliance on exceptional items. The balance sheet appears stable, and the interest coverage ratio of 16.37x provides significant comfort for a leveraged buy-out. The primary risk for a buyer is the lack of organic revenue growth and the high customer concentration noted in the sales ledger. Future valuation should focus on the sustainability of the improved gross margins and the ability to scale revenue without further significant increases in the administrative cost base."
+}

@@ -1,0 +1,263 @@
+{
+  "document": "profit_and_loss",
+  "source": "statutory",
+  "years_covered": [
+    2023,
+    2024,
+    2025
+  ],
+  "period_ends": {
+    "2023": "2023-05-31",
+    "2024": "2024-05-31",
+    "2025": "2025-05-31"
+  },
+  "months_covered": {
+    "2023": 12,
+    "2024": 12,
+    "2025": 12
+  },
+  "report_date": null,
+  "years": {
+    "2023": {
+      "year": 2023,
+      "profit_and_loss": {
+        "revenue": 15388788,
+        "cost_of_sales": 11164982,
+        "gross_profit": 4223806,
+        "administrative_expenses": 3403587,
+        "depreciation_amortisation": 372563,
+        "other_operating_income": null,
+        "operating_profit": 820219,
+        "interest_receivable": null,
+        "interest_payable": 118463,
+        "profit_before_tax": 329193,
+        "corporation_tax": 99241,
+        "net_profit": 229952
+      },
+      "revenue_breakdown": {
+        "by_product": {},
+        "by_segment": {
+          "B2B specification-led": null,
+          "trade distribution": null,
+          "D2C": null
+        }
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": null,
+        "direct_labour": null,
+        "subcontractor_costs": null,
+        "other_direct_costs": null
+      },
+      "overheads_breakdown": {
+        "staff_wages_salaries": null,
+        "directors_salaries": null,
+        "directors_pension": null,
+        "employers_national_insurance": null,
+        "staff_pension_contributions": null,
+        "staff_training_recruitment": null,
+        "use_of_home_as_office": null,
+        "rent_rates": null,
+        "utilities": null,
+        "insurance": null,
+        "accountancy_bookkeeping": null,
+        "professional_fees": null,
+        "software_subscriptions": null,
+        "computer_costs": null,
+        "it_support_hosting": null,
+        "telecommunications": null,
+        "printing_stationery": null,
+        "postage_courier": null,
+        "subscriptions_memberships": null,
+        "bank_charges": null,
+        "advertising_marketing": null,
+        "travel_subsistence": null,
+        "motor_expenses": null,
+        "repairs_maintenance": null,
+        "depreciation": 372563,
+        "amortisation": null,
+        "other_overheads": 3031024
+      },
+      "total_staff_costs": null,
+      "total_directors_remuneration": null,
+      "dividends_paid": null,
+      "exceptional_items": [
+        {
+          "description": "Non-recurring items",
+          "amount": 53232
+        }
+      ],
+      "financial_ratios": {
+        "gross_margin_percent": 27.45,
+        "net_margin_percent": 1.49,
+        "interest_coverage_ratio": 6.92
+      }
+    },
+    "2024": {
+      "year": 2024,
+      "profit_and_loss": {
+        "revenue": 14010534,
+        "cost_of_sales": 8831654,
+        "gross_profit": 5178880,
+        "administrative_expenses": 3552710,
+        "depreciation_amortisation": 303929,
+        "other_operating_income": null,
+        "operating_profit": 1626170,
+        "interest_receivable": null,
+        "interest_payable": 102433,
+        "profit_before_tax": 1237523,
+        "corporation_tax": 618517,
+        "net_profit": 619006
+      },
+      "revenue_breakdown": {
+        "by_product": {},
+        "by_segment": {
+          "B2B specification-led": null,
+          "trade distribution": null,
+          "D2C": null
+        }
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": null,
+        "direct_labour": null,
+        "subcontractor_costs": null,
+        "other_direct_costs": null
+      },
+      "overheads_breakdown": {
+        "staff_wages_salaries": null,
+        "directors_salaries": null,
+        "directors_pension": null,
+        "employers_national_insurance": null,
+        "staff_pension_contributions": null,
+        "staff_training_recruitment": null,
+        "use_of_home_as_office": null,
+        "rent_rates": null,
+        "utilities": null,
+        "insurance": null,
+        "accountancy_bookkeeping": null,
+        "professional_fees": null,
+        "software_subscriptions": null,
+        "computer_costs": null,
+        "it_support_hosting": null,
+        "telecommunications": null,
+        "printing_stationery": null,
+        "postage_courier": null,
+        "subscriptions_memberships": null,
+        "bank_charges": null,
+        "advertising_marketing": null,
+        "travel_subsistence": null,
+        "motor_expenses": null,
+        "repairs_maintenance": null,
+        "depreciation": 303929,
+        "amortisation": null,
+        "other_overheads": 3248781
+      },
+      "total_staff_costs": null,
+      "total_directors_remuneration": null,
+      "dividends_paid": null,
+      "exceptional_items": [
+        {
+          "description": "Non-recurring items",
+          "amount": 284357
+        },
+        {
+          "description": "Extraordinary Items",
+          "amount": 17715
+        }
+      ],
+      "financial_ratios": {
+        "gross_margin_percent": 36.96,
+        "net_margin_percent": 4.42,
+        "interest_coverage_ratio": 15.88
+      }
+    },
+    "2025": {
+      "year": 2025,
+      "profit_and_loss": {
+        "revenue": 18366818,
+        "cost_of_sales": 11416987,
+        "gross_profit": 6949831,
+        "administrative_expenses": 4127104,
+        "depreciation_amortisation": 293618,
+        "other_operating_income": null,
+        "operating_profit": 2822727,
+        "interest_receivable": null,
+        "interest_payable": 62056,
+        "profit_before_tax": 2538075,
+        "corporation_tax": 636375,
+        "net_profit": 1901700
+      },
+      "revenue_breakdown": {
+        "by_product": {},
+        "by_segment": {
+          "B2B specification-led": null,
+          "trade distribution": null,
+          "D2C": null
+        }
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": null,
+        "direct_labour": null,
+        "subcontractor_costs": null,
+        "other_direct_costs": null
+      },
+      "overheads_breakdown": {
+        "staff_wages_salaries": null,
+        "directors_salaries": null,
+        "directors_pension": null,
+        "employers_national_insurance": null,
+        "staff_pension_contributions": null,
+        "staff_training_recruitment": null,
+        "use_of_home_as_office": null,
+        "rent_rates": null,
+        "utilities": null,
+        "insurance": null,
+        "accountancy_bookkeeping": null,
+        "professional_fees": null,
+        "software_subscriptions": null,
+        "computer_costs": null,
+        "it_support_hosting": null,
+        "telecommunications": null,
+        "printing_stationery": null,
+        "postage_courier": null,
+        "subscriptions_memberships": null,
+        "bank_charges": null,
+        "advertising_marketing": null,
+        "travel_subsistence": null,
+        "motor_expenses": null,
+        "repairs_maintenance": null,
+        "depreciation": 293618,
+        "amortisation": null,
+        "other_overheads": 3833486
+      },
+      "total_staff_costs": null,
+      "total_directors_remuneration": null,
+      "dividends_paid": null,
+      "exceptional_items": [
+        {
+          "description": "Non-recurring items",
+          "amount": 141680
+        },
+        {
+          "description": "Extraordinary Items",
+          "amount": 71022
+        }
+      ],
+      "financial_ratios": {
+        "gross_margin_percent": 37.84,
+        "net_margin_percent": 10.35,
+        "interest_coverage_ratio": 45.49
+      }
+    }
+  },
+  "summary_insights": [
+    "Revenue demonstrated strong recovery in FY25, growing 31.1% following a 9% dip in FY24, indicating robust market demand.",
+    "Gross margin improved significantly from 27.4% in FY23 to 37.8% in FY25, driven by the normalisation of raw material prices and internal manufacturing efficiencies.",
+    "Net profit increased substantially from £229,952 to £1.9m over the period, representing a significant expansion in net margin from 1.5% to 10.4%.",
+    "Operating profit (EBITDA) more than tripled between FY23 and FY25, reflecting successful operational scaling and cost control.",
+    "Financial resilience has strengthened remarkably, with the interest coverage ratio improving from 6.9x to 45.5x as debt levels were reduced.",
+    "The business successfully transitioned through a period of heavy investment in FY23, resulting in a leaner and more profitable cost structure in subsequent years.",
+    "A qualified audit opinion regarding inventory verification in FY25 (£2.6m) represents a potential red flag for internal controls and valuation accuracy.",
+    "Adjusted EBITDA, the basis for sale, shows a consistent upward trajectory, reaching nearly £3m by FY25."
+  ],
+  "_isIM": true
+}

@@ -1,0 +1,81 @@
+{
+  "document": "balance_sheet",
+  "source": "management",
+  "years_covered": [
+    2025
+  ],
+  "period_ends": {
+    "2025": "2025-02-28"
+  },
+  "months_covered": {
+    "2025": 12
+  },
+  "report_date": "2025-04-08",
+  "years": {
+    "2025": {
+      "year": 2025,
+      "balance_sheet": {
+        "fixed_assets": {
+          "intangible_assets": null,
+          "tangible_assets": 4658.06,
+          "freehold_property": null,
+          "leasehold_property": null,
+          "plant_machinery": null,
+          "fixtures_fittings": null,
+          "motor_vehicles": null,
+          "computer_equipment": 4658.06
+        },
+        "current_assets": {
+          "stock": null,
+          "trade_debtors": 11610,
+          "prepayments": 2030,
+          "amounts_owed_by_directors": null,
+          "amounts_owed_by_connected_companies": null,
+          "directors_current_account": null,
+          "other_debtors": null,
+          "cash_at_bank": 167600.6,
+          "total": 181240.6
+        },
+        "current_liabilities": {
+          "trade_creditors": 2030,
+          "taxation_social_security": -1567.67,
+          "vat_payable": 13460.64,
+          "corporation_tax": null,
+          "bank_loans_current": null,
+          "hire_purchase_current": null,
+          "accruals": null,
+          "amounts_owed_to_directors": -180194.29,
+          "other_creditors": -11949.85,
+          "total": -180251.17
+        },
+        "long_term_liabilities": {
+          "bank_loans": null,
+          "hire_purchase_long_term": null,
+          "deferred_taxation": null,
+          "other_debt": null,
+          "total": null
+        },
+        "equity": {
+          "share_capital": 2,
+          "retained_earnings": 214970.17,
+          "total": 364119.83
+        }
+      },
+      "financial_ratios": {
+        "current_ratio": -1.005489174444444,
+        "quick_ratio": -0.994227103333333,
+        "net_assets_growth_percent": null,
+        "gearing_ratio_percent": null
+      }
+    }
+  },
+  "summary_insights": [
+    "The company maintains a very strong cash position of £167,600, representing the bulk of the current asset base.",
+    "Net assets stand at £364,119, largely driven by retained earnings of £214,970 and current year profit of £234,147.",
+    "The current liability section is unusual due to a significant negative balance in the Director's Current Account (£180,194), suggesting the company owes substantial funds to the director or has reclassified balances.",
+    "Liquidity ratios are skewed by the negative liability figures; however, the absolute cash-to-trade-creditor coverage is exceptionally high.",
+    "The asset base is light on fixed assets (£4,658), indicating a service-based or asset-light business model.",
+    "A dividend of £85,000 has been recognised, which is well-covered by the period's net income of £234,147."
+  ],
+  "_isIM": false
+}

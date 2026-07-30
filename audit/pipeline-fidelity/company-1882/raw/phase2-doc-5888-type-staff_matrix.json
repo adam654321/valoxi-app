@@ -1,0 +1,174 @@
+{
+  "document": "staff_matrix",
+  "report_date": "2026-07-30",
+  "summary": {
+    "total_headcount": 12,
+    "total_staff_costs": null,
+    "total_gross_salaries": null,
+    "total_employer_ni": null,
+    "total_employer_pension": null,
+    "director_count": 2,
+    "director_remuneration": null,
+    "working_director_count": 2,
+    "non_working_director_count": 0,
+    "employee_count": 10,
+    "employee_costs": null
+  },
+  "staff": [
+    {
+      "name": "JAMES JOHNSON",
+      "position": "Managing Director",
+      "gross_salary": null,
+      "employer_ni": null,
+      "employer_pension": null,
+      "total_cost": null,
+      "is_director": true,
+      "is_owner": null,
+      "employment_type": "Full-Time",
+      "start_date": null
+    },
+    {
+      "name": "IAN LAWTON",
+      "position": "Operations Director",
+      "gross_salary": null,
+      "employer_ni": null,
+      "employer_pension": null,
+      "total_cost": null,
+      "is_director": true,
+      "is_owner": null,
+      "employment_type": "Full-Time",
+      "start_date": null
+    },
+    {
+      "name": null,
+      "position": "INSURANCE CONTRACT MANAGER",
+      "gross_salary": null,
+      "employer_ni": null,
+      "employer_pension": null,
+      "total_cost": null,
+      "is_director": false,
+      "is_owner": null,
+      "employment_type": "Full-Time",
+      "start_date": null
+    },
+    {
+      "name": null,
+      "position": "SOCIAL HOUSING CONTRACTS SUPERVISOR",
+      "gross_salary": null,
+      "employer_ni": null,
+      "employer_pension": null,
+      "total_cost": null,
+      "is_director": false,
+      "is_owner": null,
+      "employment_type": "Full-Time",
+      "start_date": null
+    },
+    {
+      "name": null,
+      "position": "SENIOR ADMINISTRATOR",
+      "gross_salary": null,
+      "employer_ni": null,
+      "employer_pension": null,
+      "total_cost": null,
+      "is_director": false,
+      "is_owner": null,
+      "employment_type": "Full-Time",
+      "start_date": null
+    },
+    {
+      "name": null,
+      "position": "ADMINISTRATOR",
+      "gross_salary": null,
+      "employer_ni": null,
+      "employer_pension": null,
+      "total_cost": null,
+      "is_director": false,
+      "is_owner": null,
+      "employment_type": "Full-Time",
+      "start_date": null
+    },
+    {
+      "name": null,
+      "position": "ADMINISTRATOR",
+      "gross_salary": null,
+      "employer_ni": null,
+      "employer_pension": null,
+      "total_cost": null,
+      "is_director": false,
+      "is_owner": null,
+      "employment_type": "Full-Time",
+      "start_date": null
+    },
+    {
+      "name": null,
+      "position": "DIRECT EMPLOYED OPERATIVES (Plasterer)",
+      "gross_salary": null,
+      "employer_ni": null,
+      "employer_pension": null,
+      "total_cost": null,
+      "is_director": false,
+      "is_owner": null,
+      "employment_type": "Full-Time",
+      "start_date": null
+    },
+    {
+      "name": null,
+      "position": "DIRECT EMPLOYED OPERATIVES (Plasterer)",
+      "gross_salary": null,
+      "employer_ni": null,
+      "employer_pension": null,
+      "total_cost": null,
+      "is_director": false,
+      "is_owner": null,
+      "employment_type": "Full-Time",
+      "start_date": null
+    },
+    {
+      "name": null,
+      "position": "DIRECT EMPLOYED OPERATIVES (Multi-trade joiner)",
+      "gross_salary": null,
+      "employer_ni": null,
+      "employer_pension": null,
+      "total_cost": null,
+      "is_director": false,
+      "is_owner": null,
+      "employment_type": "Full-Time",
+      "start_date": null
+    },
+    {
+      "name": null,
+      "position": "DIRECT EMPLOYED OPERATIVES (Multi-trade joiner)",
+      "gross_salary": null,
+      "employer_ni": null,
+      "employer_pension": null,
+      "total_cost": null,
+      "is_director": false,
+      "is_owner": null,
+      "employment_type": "Full-Time",
+      "start_date": null
+    },
+    {
+      "name": null,
+      "position": "DIRECT EMPLOYED OPERATIVES (Multi-trade joiner)",
+      "gross_salary": null,
+      "employer_ni": null,
+      "employer_pension": null,
+      "total_cost": null,
+      "is_director": false,
+      "is_owner": null,
+      "employment_type": "Full-Time",
+      "start_date": null
+    }
+  ],
+  "employment_type_breakdown": {
+    "Full-Time": 12,
+    "Part-Time": 0
+  },
+  "observations": [
+    "The business has 2 directors (Managing Director and Operations Director).",
+    "The workforce includes 5 direct employed operatives (2x plasterers, 3x multi-trade joiners).",
+    "The organization utilizes approved sub-contractors which are not included in the headcount.",
+    "Administrative support consists of one Senior Administrator and two Administrators."
+  ],
+  "_isIM": false
+}

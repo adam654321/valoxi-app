@@ -1,0 +1,160 @@
+{
+  "expert": "operational",
+  "company_name": "[AUDIT-172] Ideal scaffolding",
+  "analysis_date": "2024-05-22",
+  "score": 58,
+  "confidence": "medium",
+  "working_capital": {
+    "yearly_metrics": {
+      "2022": {
+        "debtor_days": 62.33,
+        "creditor_days": 40.08,
+        "stock_days": 0,
+        "cash_conversion_cycle_days": 22.25,
+        "net_working_capital": 364213,
+        "working_capital_percent_revenue": 17.01
+      },
+      "2023": {
+        "debtor_days": 43.1,
+        "creditor_days": 18.44,
+        "stock_days": 0,
+        "cash_conversion_cycle_days": 24.66,
+        "net_working_capital": 717651,
+        "working_capital_percent_revenue": 35.2
+      },
+      "2024": {
+        "debtor_days": 37.89,
+        "creditor_days": 25.19,
+        "stock_days": 0,
+        "cash_conversion_cycle_days": 12.7,
+        "net_working_capital": 281428,
+        "working_capital_percent_revenue": 17.2
+      },
+      "2025": {
+        "debtor_days": 46.87,
+        "creditor_days": 36.23,
+        "stock_days": 0,
+        "cash_conversion_cycle_days": 10.64,
+        "net_working_capital": 483088,
+        "working_capital_percent_revenue": 27.19
+      }
+    },
+    "trend": "stable",
+    "working_capital_intensity": "moderate",
+    "observations": [
+      "Debtor days have fluctuated between 37 and 62 days, currently sitting at 46.87 as of March 2025.",
+      "The business is a net generator of working capital, maintaining a positive net position across all audited years.",
+      "Cash conversion cycle is relatively short (10.64 days in 2025), suggesting efficient movement from cost outlay to cash receipt.",
+      "Significant amounts owed by connected companies (£212,457 in 2025) represent a non-operational drain on working capital."
+    ]
+  },
+  "capex": {
+    "total_gross_asset_value": 1147436.43,
+    "total_nbv": 150915.69,
+    "asset_freshness_percent": 13.15,
+    "recent_additions_24m_value": 222390,
+    "recent_additions_percent": 19.38,
+    "annual_depreciation_charge": 92854,
+    "estimated_maintenance_capex": 92854,
+    "capex_cliff_risk": true,
+    "assets_requiring_replacement": [
+      {
+        "description": "Plant & Machinery (General)",
+        "cost": 681223.8,
+        "nbv": 33430.18,
+        "condition": "Fully depreciated still in use: £815,343 across all categories"
+      }
+    ],
+    "category_breakdown": {
+      "property": {
+        "cost": 0,
+        "nbv": 0
+      },
+      "plant_machinery": {
+        "cost": 681223.8,
+        "nbv": 33430.18
+      },
+      "vehicles": {
+        "cost": 434883.51,
+        "nbv": 106672
+      },
+      "it_equipment": {
+        "cost": 19516.16,
+        "nbv": 9213.93
+      },
+      "other": {
+        "cost": 11812.96,
+        "nbv": 1599.58
+      }
+    },
+    "observations": [
+      "High Capex Cliff Risk: 71% of the asset base is fully depreciated but remains in use.",
+      "Asset freshness is very low at 13.15%, indicating an aging infrastructure, particularly in scaffolding (Plant & Machinery).",
+      "Recent investment has been heavily weighted toward the vehicle fleet (DAF and Ford Ranger additions in 2025/26).",
+      "Scaffolding inventory is largely written down to zero, which may mask the true replacement cost required to maintain current capacity."
+    ]
+  },
+  "workforce": {
+    "headcount": 10,
+    "total_payroll": 589078,
+    "revenue_per_employee": 177700.1,
+    "payroll_percent_revenue": 33.15,
+    "average_salary_all": 58907.8,
+    "average_salary_excl_directors": 72444.25,
+    "director_remuneration_total": 9524,
+    "director_percent_of_payroll": 1.62,
+    "ft_pt_split": {
+      "full_time": 10,
+      "part_time": 0
+    },
+    "longest_tenured_years": null,
+    "newest_hire_months_ago": null,
+    "observations": [
+      "Revenue per employee of £177k is healthy for the scaffolding sector.",
+      "Payroll as % of revenue increased significantly in 2025 (33%) compared to 2024 (6%), suggesting a shift from subcontractor use to direct labor or a reclassification of costs.",
+      "The workforce includes a mix of management and operational staff (Advanced Scaffolder, Trainees, Yardmen).",
+      "Heavy reliance on external consultancy for HSQE (Health, Safety, Quality, and Environment)."
+    ]
+  },
+  "owner_dependency": {
+    "risk_level": "high",
+    "director_count": 2,
+    "highest_individual_salary": null,
+    "highest_individual_percent_of_payroll": null,
+    "critical_function_concentration": "Managing Director holds Sales, Operations, and Rail Sentinel Co-ordination roles.",
+    "observations": [
+      "Mark Jones holds multiple critical roles including MD, Company Secretary, and Rail Sentinel Co-ordinator.",
+      "Director remuneration appears to fluctuate significantly (from £130k in 2024 to £9.5k in 2025), suggesting income is taken via other means or is highly discretionary.",
+      "The business lacks a dedicated internal Finance Director or HR lead, with these functions likely handled by the MD or Office Manager."
+    ]
+  },
+  "scalability": {
+    "rating": "medium",
+    "headcount_for_25pct_growth": 3,
+    "capex_needed_for_growth": "Significant investment in scaffolding tubes and boards required as current stock is aged/fully depreciated.",
+    "working_capital_supports_growth": true,
+    "bottlenecks": [
+      "Aging scaffolding inventory",
+      "High customer concentration (Equans Regeneration Ltd)",
+      "Key person dependency on the Managing Director"
+    ],
+    "observations": [
+      "The business has demonstrated the ability to handle revenue between £1.6m and £2.1m with similar headcount.",
+      "Growth would likely require a proportional increase in laborers and trainee scaffolders.",
+      "The current vehicle fleet is relatively modern and could likely support a 25% increase in activity."
+    ]
+  },
+  "key_findings": [
+    "The business maintains a healthy cash conversion cycle and positive net working capital.",
+    "There is a significant 'hidden' asset value in fully depreciated scaffolding, but also a looming replacement cost.",
+    "Customer concentration is a major risk, with one debtor representing nearly 30% of the top ledger.",
+    "Operational efficiency is hampered by the concentration of management duties in a single individual."
+  ],
+  "red_flags": [
+    "Capex Cliff: 71% of assets are fully depreciated; maintenance costs likely to spike.",
+    "High Customer Concentration: Top 3 debtors represent over 60% of the ledger.",
+    "Connected Company Loans: £212k tied up in non-trading entities as of March 2025.",
+    "Director Remuneration Volatility: Unstable salary patterns suggest potential tax-driven extraction or cash flow management."
+  ],
+  "narrative": "Ideal Scaffolding is a stable operational entity with a solid foothold in the construction sector, evidenced by consistent revenue and efficient cash collection. However, the business faces a 'capex cliff' due to its aging scaffolding stock, which is almost entirely written down. While the vehicle fleet has been modernized, the core revenue-generating assets (scaffolding) will require investment to sustain growth. Scalability is currently limited by high owner-dependency and a lack of middle-management depth. The financial health is generally good, but the significant inter-company loan balance and customer concentration are risks that must be addressed in any valuation."
+}

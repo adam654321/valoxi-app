@@ -1,0 +1,82 @@
+{
+  "document": "balance_sheet",
+  "source": "statutory",
+  "years_covered": [
+    2024
+  ],
+  "period_ends": {
+    "2024": "2024-05-31"
+  },
+  "months_covered": {
+    "2024": 12
+  },
+  "report_date": "2024-11-27",
+  "years": {
+    "2024": {
+      "year": 2024,
+      "balance_sheet": {
+        "fixed_assets": {
+          "intangible_assets": null,
+          "tangible_assets": 1078975,
+          "freehold_property": null,
+          "leasehold_property": null,
+          "plant_machinery": null,
+          "fixtures_fittings": null,
+          "motor_vehicles": null,
+          "computer_equipment": null
+        },
+        "current_assets": {
+          "stock": 2604930,
+          "trade_debtors": 2015706,
+          "prepayments": null,
+          "amounts_owed_by_directors": null,
+          "amounts_owed_by_connected_companies": null,
+          "directors_current_account": null,
+          "other_debtors": 526653,
+          "cash_at_bank": 2290456,
+          "total": 7437745
+        },
+        "current_liabilities": {
+          "trade_creditors": 1670650,
+          "taxation_social_security": null,
+          "vat_payable": null,
+          "corporation_tax": 618517,
+          "bank_loans_current": 243503,
+          "hire_purchase_current": null,
+          "accruals": null,
+          "amounts_owed_to_directors": null,
+          "other_creditors": 1008546,
+          "total": 2922699
+        },
+        "long_term_liabilities": {
+          "bank_loans": 571715,
+          "hire_purchase_long_term": null,
+          "deferred_taxation": null,
+          "other_debt": null,
+          "total": 571715
+        },
+        "equity": {
+          "share_capital": null,
+          "retained_earnings": null,
+          "total": 5022306
+        }
+      },
+      "financial_ratios": {
+        "current_ratio": 2.5448207290589964,
+        "quick_ratio": 1.4733511729740216,
+        "net_assets_growth_percent": null,
+        "gearing_ratio_percent": 11.38351590109824
+      }
+    }
+  },
+  "summary_insights": [
+    "The company maintains a robust liquidity position with a current ratio of 2.54, well above the standard 1.5 benchmark.",
+    "The quick ratio of 1.47 indicates that the business can meet its short-term obligations using only liquid assets, without relying on inventory sales.",
+    "Net current assets (working capital) are strong at £4.51m, providing significant operational headroom.",
+    "The capital structure is conservative, with a low gearing ratio of 11.4%, suggesting minimal reliance on long-term debt relative to equity.",
+    "Inventory represents the largest component of current assets at £2.6m (35% of total current assets), which warrants monitoring for turnover efficiency.",
+    "The balance sheet is underpinned by a healthy cash reserve of £2.29m, representing 27% of the total asset base.",
+    "Shareholder equity is substantial at over £5m, though a breakdown of retained earnings versus share capital was not explicitly detailed in the summary table."
+  ],
+  "_isIM": false
+}

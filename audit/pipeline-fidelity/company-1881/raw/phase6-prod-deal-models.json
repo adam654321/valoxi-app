@@ -1,0 +1,16 @@
+[
+  {
+    "id": 156,
+    "name": "Deal Model v1",
+    "created_at": "2026-07-18T14:44:05.653Z",
+    "updated_at": "2026-07-28T14:40:44.282Z",
+    "averaging_years": 3,
+    "calculated_ebitda": "48708.666666666664",
+    "adjusted_ebitda": "48708.666666666664",
+    "ebitda_multiple": "3",
+    "offer_driver": "ebitda",
+    "target_offer_price": null,
+    "total_purchase_price": "142757",
+    "is_locked": false
+  }
+]

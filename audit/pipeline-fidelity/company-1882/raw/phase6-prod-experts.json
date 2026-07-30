@@ -1,0 +1,1257 @@
+[
+  {
+    "id": 2621,
+    "expert_type": "data_quality",
+    "status": "success",
+    "score": 78,
+    "confidence": "medium",
+    "created_at": "2026-07-09T16:14:21.090Z",
+    "analysis_data": {
+      "stage": "data_quality",
+      "company_name": "MANOR BUILDING SOLUTIONS (UK) LTD",
+      "assessment_date": "2024-05-22",
+      "overall_completeness_score": 78,
+      "overall_completeness_rating": "medium",
+      "confidence_for_analysis": "medium",
+      "data_sources": {
+        "company_accounts": {
+          "status": "complete",
+          "years_available": 4,
+          "years_list": [
+            2023,
+            2024,
+            2025,
+            2026
+          ],
+          "most_recent_period_end": "2026-03-31",
+          "data_staleness_months": 2,
+          "consecutive_years": true,
+          "key_fields_populated": [
+            "revenue",
+            "gross_profit",
+            "operating_profit",
+            "net_profit"
+          ],
+          "key_fields_missing": []
+        },
+        "profit_and_loss": {
+          "status": "complete",
+          "key_fields_populated": [
+            "revenue",
+            "cost_of_sales",
+            "gross_profit",
+            "administrative_expenses",
+            "operating_profit",
+            "net_profit"
+          ],
+          "key_fields_missing": [],
+          "has_overheads_breakdown": true,
+          "has_cost_of_sales_breakdown": true
+        },
+        "balance_sheet": {
+          "status": "complete",
+          "key_fields_populated": [
+            "fixed_assets",
+            "current_assets.total",
+            "current_liabilities.total",
+            "equity.total"
+          ],
+          "key_fields_missing": [],
+          "has_detailed_breakdown": true
+        },
+        "asset_register": {
+          "status": "missing",
+          "asset_count": 0,
+          "has_category_breakdown": false,
+          "has_individual_assets": false
+        },
+        "sales_ledger": {
+          "status": "missing",
+          "has_aging_breakdown": false,
+          "has_customer_breakdown": false,
+          "customer_count": 0
+        },
+        "staff_matrix": {
+          "status": "partial",
+          "headcount_reported": 12,
+          "has_individual_records": true,
+          "has_director_identification": true
+        }
+      },
+      "consistency_checks": {
+        "pl_revenue_vs_accounts": {
+          "result": "consistent",
+          "pl_value": 2388764,
+          "accounts_value": 2388764,
+          "variance_percent": 0
+        },
+        "bs_net_assets_vs_accounts": {
+          "result": "consistent",
+          "bs_value": 717070,
+          "accounts_value": 717070,
+          "variance_percent": 0
+        },
+        "staff_costs_vs_pl": {
+          "result": "unable_to_check",
+          "matrix_value": null,
+          "pl_value": 290788,
+          "variance_percent": null
+        },
+        "assets_nbv_vs_bs": {
+          "result": "unable_to_check",
+          "register_value": null,
+          "bs_value": 46717,
+          "variance_percent": null
+        },
+        "debtors_vs_bs": {
+          "result": "unable_to_check",
+          "ledger_value": null,
+          "bs_value": 358723,
+          "variance_percent": null
+        }
+      },
+      "red_flags": [
+        "Asset register not provided",
+        "Sales ledger (receivables aging) not provided",
+        "Staff matrix missing financial data (salaries/costs)",
+        "Significant overdrawn directors' current accounts (£159,863 in 2026)"
+      ],
+      "gaps_requiring_seller_action": [
+        "Provide detailed Fixed Asset Register with gross book value and depreciation breakdown",
+        "Provide Sales Ledger Aging Report (Current, 30, 60, 90+ days)",
+        "Update Staff Matrix to include individual gross salaries and total employer costs",
+        "Clarify the nature and repayment terms of the overdrawn Directors' Current Accounts"
+      ],
+      "analysis_limitations": [
+        "Cannot verify the recoverability of trade debtors without an aging breakdown",
+        "Cannot verify the physical existence or condition of assets without a register",
+        "Staff cost analysis is limited to P&L aggregates as individual salary data is missing"
+      ]
+    }
+  },
+  {
+    "id": 3083,
+    "expert_type": "deal_structure",
+    "status": "success",
+    "score": 42,
+    "confidence": "medium",
+    "created_at": "2026-07-27T13:15:51.470Z",
+    "analysis_data": {
+      "expert": "deal_structure",
+      "company_name": "MANOR BUILDING SOLUTIONS (UK) LTD",
+      "analysis_date": "2024-05-22",
+      "score": 42,
+      "confidence": "medium",
+      "structures": [
+        {
+          "name": "Conservative Approach",
+          "strategy": "Asset-backed protection with heavy contingency on revenue recovery and debt collection.",
+          "risk_to_buyer": "low",
+          "suitable_when": "The 90.7% revenue collapse is suspected to be a permanent loss of major contracts and the 'Other Debtors' are deemed high-risk.",
+          "consideration": {
+            "total_headline": 634327.5,
+            "upfront_cash": 190298.25,
+            "upfront_percent": 30,
+            "deferred": 190298.25,
+            "earnout_maximum": 253731,
+            "earnout_metric": "Revenue Stabilization and EBITDA Floor",
+            "earnout_period_months": 24,
+            "earnout_rationale": "Trigger 2 (Revenue decline) and Trigger 4 (Uncertain QoE). The 90% revenue drop in 2026 makes any upfront payment risky; the earnout ensures the business returns to a sustainable level before full value is paid.",
+            "retention_escrow": 159863
+          },
+          "key_conditions": [
+            "Full settlement of Director Loan Account (£159,863) prior to or at completion",
+            "12-month mandatory handover period for both directors",
+            "Specific indemnity for the recoverability of 'Other Debtors' (£165,485)"
+          ],
+          "notes": "Seller obligations: 12-month handover followed by 24-month non-compete. Key warranties: Specific indemnity for 'Other Debtors' and tax liabilities (£239k). Warranty cap at 50% of consideration with a 1% basket. Completion mechanism: Completion accounts with a working capital peg based on normalized 2025 levels. Risk to buyer is low due to the high earnout component and escrow covering the director loans."
+        },
+        {
+          "name": "Balanced Approach",
+          "strategy": "Standard SME structure with value split between upfront cash and performance-linked milestones.",
+          "risk_to_buyer": "medium",
+          "suitable_when": "Due diligence suggests the 2026 revenue drop is a reporting timing issue rather than a total loss of the customer base.",
+          "consideration": {
+            "total_headline": 634327.5,
+            "upfront_cash": 317163.75,
+            "upfront_percent": 50,
+            "deferred": 158581.88,
+            "earnout_maximum": 158581.87,
+            "earnout_metric": "Gross Margin Maintenance and Client Retention",
+            "earnout_period_months": 18,
+            "earnout_rationale": "Trigger 3 (Key person dependency). The earnout is tied to the successful transition of subcontractor and client relationships during the directors' exit.",
+            "retention_escrow": 82742.5
+          },
+          "key_conditions": [
+            "Retention of top 3 subcontractors on existing terms",
+            "6-month full-time handover followed by 6-month consultancy",
+            "Evidence of 2026 revenue recovery to at least 75% of 2025 run-rate"
+          ],
+          "notes": "Seller obligations: 6-month handover plus 6-month consultancy. Non-compete for 3 years. Key warranties: Standard commercial warranties with a 100% cap on upfront cash. Completion mechanism: Locked box based on the latest audited balance sheet. Risk to buyer is medium, primarily centered on the sustainability of the subcontractor-led model without the original directors."
+        },
+        {
+          "name": "Competitive Approach",
+          "strategy": "High upfront cash offer to bridge the gap between asset value and seller expectations, while retaining a small performance buffer.",
+          "risk_to_buyer": "high",
+          "suitable_when": "The buyer has a strategic need for the company's cash reserves and subcontractor network, and is confident in their own sales pipeline to replace lost revenue.",
+          "consideration": {
+            "total_headline": 717070,
+            "upfront_cash": 501949,
+            "upfront_percent": 70,
+            "deferred": 107560.5,
+            "earnout_maximum": 107560.5,
+            "earnout_metric": "EBITDA Performance",
+            "earnout_period_months": 12,
+            "earnout_rationale": "Trigger 4 (Unverified add-backs). Even in a competitive bid, the negative adjusted EBITDA requires a portion of the price to be contingent on the business proving it can operate profitably under market-rate management.",
+            "retention_escrow": 50000
+          },
+          "key_conditions": [
+            "Immediate appointment of a new Managing Director post-completion",
+            "3-month intensive handover period",
+            "Clean title to all vehicles and plant currently under Hire Purchase"
+          ],
+          "notes": "Seller obligations: Short 3-month handover. Non-compete for 2 years. Key warranties: Fundamental warranties only (Title, Capacity, Tax). Warranty cap at 25% of total consideration. Completion mechanism: Completion accounts. Risk to buyer is high due to the significant upfront cash payment for a business with currently negative adjusted earnings and a massive recent revenue decline."
+        }
+      ],
+      "recommended_structure": "Conservative Approach",
+      "recommendation_rationale": "The 90.7% revenue collapse in the 2026 period is a catastrophic risk that cannot be ignored. Furthermore, the Quality of Earnings analysis shows that the business is not profitable once market-rate salaries are applied. An asset-based valuation is the only defensible path, and the Conservative Approach protects the buyer by making a significant portion of the value contingent on the business proving it is still a 'going concern' rather than just a collection of cash and debtors.",
+      "negotiation_priorities": [
+        "Clarification of the 2026 revenue decline (is it a reporting error or loss of contracts?)",
+        "Verification of the 'Other Debtors' balance of £165,485",
+        "Agreement on the settlement of the £159,863 Director Loan Account",
+        "Benchmarking of subcontractor costs to ensure margins are sustainable"
+      ],
+      "deal_breaker_terms": [
+        "Refusal to provide a specific indemnity for 'Other Debtors'",
+        "Inability to explain the 90% revenue drop",
+        "Refusal of directors to commit to a minimum 12-month handover"
+      ],
+      "key_findings": [
+        "The business is currently worth more for its assets than its earnings.",
+        "There is a significant 'hidden' cost of management (approx. £105k per annum).",
+        "The balance sheet is strong in cash but weakened by non-trade debtors and director loans.",
+        "The subcontractor-led model provides scalability but lacks defensive moats if directors exit."
+      ],
+      "narrative": "Manor Building Solutions presents a classic 'tale of two years.' The 2025 performance suggests a healthy, cash-generative SME, while the 2026 data suggests a business in crisis. Because the adjusted EBITDA is negative, the deal must be structured around the Net Asset Value. The primary challenge for a buyer is ensuring that the 'Assets' (specifically Debtors and Director Loans) are actually collectible. The recommended Conservative Approach uses a high earnout and specific indemnities to bridge the massive valuation gap and protect against the very real possibility that the business has lost its primary revenue drivers."
+    }
+  },
+  {
+    "id": 3077,
+    "expert_type": "financial",
+    "status": "success",
+    "score": 55,
+    "confidence": "medium",
+    "created_at": "2026-07-27T13:15:51.071Z",
+    "analysis_data": {
+      "expert": "financial",
+      "company_name": "MANOR BUILDING SOLUTIONS (UK) LTD",
+      "analysis_date": "2024-05-22",
+      "score": 55,
+      "confidence": "medium",
+      "yearly_metrics": {
+        "2025": {
+          "revenue": 2084318,
+          "revenue_yoy_growth_percent": null,
+          "cost_of_sales": 1107778,
+          "gross_profit": 976540,
+          "gross_margin_percent": 46.85,
+          "administrative_expenses": 511869,
+          "operating_profit": 464671,
+          "operating_margin_percent": 22.29,
+          "depreciation_amortisation": 24718,
+          "ebitda": 489389,
+          "interest_payable": 3042,
+          "interest_coverage_ratio": 152.75,
+          "profit_before_tax": 464206,
+          "corporation_tax": 118952,
+          "effective_tax_rate_percent": 25.62,
+          "net_profit": 345254,
+          "net_margin_percent": 16.56
+        },
+        "2026": {
+          "revenue": 193264.39,
+          "revenue_yoy_growth_percent": -90.73,
+          "cost_of_sales": 108801.27,
+          "gross_profit": 84463.12,
+          "gross_margin_percent": 43.7,
+          "administrative_expenses": 55260.74,
+          "operating_profit": 29202.38,
+          "operating_margin_percent": 15.11,
+          "depreciation_amortisation": 1473.11,
+          "ebitda": 30675.49,
+          "interest_payable": 297.69,
+          "interest_coverage_ratio": 98.09,
+          "profit_before_tax": 29073.54,
+          "corporation_tax": 0,
+          "effective_tax_rate_percent": 0,
+          "net_profit": 29073.54,
+          "net_margin_percent": 15.04
+        }
+      },
+      "cagr": {
+        "revenue_cagr_percent": null,
+        "gross_profit_cagr_percent": null,
+        "operating_profit_cagr_percent": null,
+        "period_years": 1
+      },
+      "cost_structure": {
+        "cost_of_sales_percent_revenue": 53.15,
+        "overheads_percent_revenue": 24.56,
+        "staff_costs_percent_revenue": 10.56,
+        "director_costs_percent_revenue": 1.21,
+        "top_5_overheads": [
+          {
+            "category": "Professional Fees",
+            "value": 94154,
+            "percent_of_overheads": 18.39
+          },
+          {
+            "category": "Staff Pension Contributions",
+            "value": 66086,
+            "percent_of_overheads": 12.91
+          },
+          {
+            "category": "Motor Expenses",
+            "value": 59326,
+            "percent_of_overheads": 11.59
+          },
+          {
+            "category": "Insurance",
+            "value": 28345,
+            "percent_of_overheads": 5.54
+          },
+          {
+            "category": "Depreciation",
+            "value": 24718,
+            "percent_of_overheads": 4.83
+          }
+        ],
+        "cost_base_classification": "predominantly_variable"
+      },
+      "earnings_quality": {
+        "net_profit_tracks_operating_profit": true,
+        "exceptional_items_identified": [],
+        "tax_rate_consistent": false,
+        "ebitda_latest": 30675.49,
+        "ebitda_trend": "declining",
+        "limitations": [
+          "2026 data appears to be a partial year or interim period given the 90% revenue drop",
+          "Corporation tax for 2026 is not yet recorded"
+        ]
+      },
+      "debt_service": {
+        "latest_interest_coverage": 98.09,
+        "interest_coverage_trend": "deteriorating",
+        "additional_debt_capacity_assessment": "Strong coverage ratios suggest capacity for debt, but the sharp decline in absolute EBITDA in the latest period is a significant risk factor."
+      },
+      "key_findings": [
+        "Revenue shows a severe decline from £2.08m in FY2025 to £193k in the FY2026 period, suggesting either a loss of major contracts or incomplete reporting.",
+        "Gross margins remain relatively healthy between 43% and 47%, indicating stable pricing power on the work actually delivered.",
+        "Subcontractor costs are the primary driver of Cost of Sales, representing 62% of total COS in FY2025, indicating a flexible but margin-sensitive delivery model.",
+        "Operating margins have contracted from 22.3% to 15.1%, suggesting that fixed overheads are not being scaled down as quickly as revenue is falling.",
+        "The company maintains a high interest coverage ratio, though absolute interest costs are negligible relative to historical earnings.",
+        "Staff costs (including pensions) are a significant overhead, though director remuneration is kept notably low at approximately £25k per annum.",
+        "Professional fees were unusually high in FY2025 (£94k), which may suggest one-off legal or consultancy costs not present in the following period."
+      ],
+      "red_flags": [
+        "90.7% year-on-year revenue collapse in the 2026 reporting period.",
+        "Significant increase in 'Amounts Owed by Directors' from £81k in 2025 to £159k in 2026, indicating potential cash extraction outside of payroll.",
+        "Operating profit has fallen by 93.7% in absolute terms between the two periods provided."
+      ],
+      "narrative": "Manor Building Solutions (UK) Ltd presents a bifurcated financial profile. The FY2025 results demonstrate a robust, profitable construction business with £2.08m in revenue and a strong 22.3% operating margin. However, the FY2026 data shows a catastrophic decline in activity, with revenue falling to just £193k. While gross margins have remained relatively stable (43.7%), the business is struggling to support its overhead base on this reduced volume, leading to a sharp contraction in operating margins. The cost structure is heavily reliant on subcontractors, which provides some variable cost protection, but the fixed elements of the staff and motor expenses are now weighing more heavily on the bottom line. From an M&A perspective, the primary concern is the sustainability of the revenue stream; the current trajectory suggests a business in significant contraction or one that has undergone a fundamental change in its operating model. Furthermore, the increasing director loan account (£159k) suggests that liquidity is being utilised for non-operational purposes. Unless the 2026 figures represent a very short interim period, the valuation would be severely impacted by the lack of earnings momentum."
+    }
+  },
+  {
+    "id": 3078,
+    "expert_type": "operational",
+    "status": "success",
+    "score": 68,
+    "confidence": "high",
+    "created_at": "2026-07-27T13:15:51.139Z",
+    "analysis_data": {
+      "expert": "operational",
+      "company_name": "MANOR BUILDING SOLUTIONS (UK) LTD",
+      "analysis_date": "2024-05-22",
+      "score": 68,
+      "confidence": "high",
+      "working_capital": {
+        "yearly_metrics": {
+          "2025": {
+            "debtor_days": 50.2,
+            "creditor_days": 31.2,
+            "stock_days": 25.7,
+            "cash_conversion_cycle_days": 44.7,
+            "net_working_capital": 462003,
+            "working_capital_percent_revenue": 22.16
+          },
+          "2026": {
+            "debtor_days": 677.4,
+            "creditor_days": 273.9,
+            "stock_days": 295.9,
+            "cash_conversion_cycle_days": 699.4,
+            "net_working_capital": 702731,
+            "working_capital_percent_revenue": 363.61
+          }
+        },
+        "trend": "deteriorating",
+        "working_capital_intensity": "heavy",
+        "observations": [
+          "Debtor days in 2025 (50.2 days) were within acceptable sector norms, but the 2026 metrics are skewed by partial-year revenue reporting against full-year balance sheet positions.",
+          "Net working capital has increased significantly from £462,003 (2025-03-31) to £702,731 (2026-03-31).",
+          "The business is a net generator of cash but maintains a high level of 'Other Debtors' (£165,485) and 'Amounts Owed by Directors' (£159,863) as of 2026-03-31, which ties up liquidity."
+        ]
+      },
+      "capex": {
+        "total_gross_asset_value": null,
+        "total_nbv": 46717,
+        "asset_freshness_percent": null,
+        "recent_additions_24m_value": null,
+        "recent_additions_percent": null,
+        "annual_depreciation_charge": 24718,
+        "estimated_maintenance_capex": 24718,
+        "capex_cliff_risk": false,
+        "assets_requiring_replacement": [],
+        "category_breakdown": {
+          "property": {
+            "cost": null,
+            "nbv": 0
+          },
+          "plant_machinery": {
+            "cost": null,
+            "nbv": 3840
+          },
+          "vehicles": {
+            "cost": null,
+            "nbv": 10815
+          },
+          "it_equipment": {
+            "cost": null,
+            "nbv": 106
+          },
+          "other": {
+            "cost": null,
+            "nbv": 31956
+          }
+        },
+        "observations": [
+          "Tangible fixed assets have decreased from £61,921 (2024-03-31) to £46,717 (2026-03-31), suggesting a period of sweating existing assets rather than aggressive reinvestment.",
+          "The company relies on Hire Purchase for vehicle and equipment financing, with £38,581 in total HP liabilities as of 2026-03-31.",
+          "Freehold property was disposed of or reclassified between 2025 and 2026, moving from £12,718 to £0."
+        ]
+      },
+      "workforce": {
+        "headcount": 12,
+        "total_payroll": 220155,
+        "revenue_per_employee": 173693,
+        "payroll_percent_revenue": 10.56,
+        "average_salary_all": 18346,
+        "average_salary_excl_directors": 19501,
+        "director_remuneration_total": 25140,
+        "director_percent_of_payroll": 11.42,
+        "ft_pt_split": {
+          "full_time": 12,
+          "part_time": 0
+        },
+        "longest_tenured_years": null,
+        "newest_hire_months_ago": null,
+        "observations": [
+          "Revenue per employee of £173,693 (based on 2025 full-year data) is healthy for a construction SME utilizing subcontractors.",
+          "Heavy reliance on subcontractors (£688,451 in 2025) allows for a leaner permanent headcount of 12.",
+          "Staff costs include a high proportion of pension contributions (£66,086 in 2025), representing 30% of total staff costs."
+        ]
+      },
+      "owner_dependency": {
+        "risk_level": "medium",
+        "director_count": 2,
+        "highest_individual_salary": null,
+        "highest_individual_percent_of_payroll": null,
+        "critical_function_concentration": "Concentrated in Managing Director and Operations Director roles.",
+        "observations": [
+          "Significant financial dependency on directors is evidenced by the 'Amounts Owed by Directors' reaching £159,863 as of 2026-03-31.",
+          "The two directors (James Johnson and Ian Lawton) hold the primary leadership and operational roles, creating key-person risk if not supported by the middle management layer (Contract Managers)."
+        ]
+      },
+      "scalability": {
+        "rating": "medium",
+        "headcount_for_25pct_growth": 3,
+        "capex_needed_for_growth": "Low immediate requirement; model relies on subcontractors.",
+        "working_capital_supports_growth": true,
+        "bottlenecks": [
+          "Subcontractor availability",
+          "Director-level project oversight",
+          "Working capital tied up in director loans"
+        ],
+        "observations": [
+          "The business model is highly scalable due to the high use of subcontractors (62% of COS in 2025), which limits the need for fixed payroll expansion.",
+          "Current cash reserves of £460,160 (as of 2026-03-31) provide a strong buffer for funding larger contract mobilizations."
+        ]
+      },
+      "key_findings": [
+        "Strong cash position with £460,160 at bank as of 2026-03-31.",
+        "Efficient use of subcontractors allows for high revenue throughput with a modest permanent staff base.",
+        "Working capital is currently impacted by significant non-trade debtors, specifically director loan accounts."
+      ],
+      "red_flags": [
+        "Director loan account (Asset) has increased from £35,406 (2023) to £159,863 (2026), indicating significant extraction of value or non-business related spending.",
+        "Sharp increase in 'Other Debtors' to £165,485 in 2026 requires investigation to ensure recoverability."
+      ],
+      "narrative": "Manor Building Solutions (UK) Ltd demonstrates a flexible operational model typical of successful construction SMEs, leveraging a core team of 12 staff with a large subcontractor tail. This allows for high scalability without the burden of fixed labor costs. While the balance sheet is liquid with substantial cash reserves, the growing director loan account and 'other debtors' suggest that working capital efficiency is being diluted by non-operational activities. Asset freshness is moderate, and the reliance on hire purchase for vehicles is standard for the sector. The primary operational risk is the concentration of management authority within the two directors and the potential for subcontractor cost inflation to squeeze margins."
+    }
+  },
+  {
+    "id": 3080,
+    "expert_type": "qoe",
+    "status": "success",
+    "score": 45,
+    "confidence": "medium",
+    "created_at": "2026-07-27T13:15:51.271Z",
+    "analysis_data": {
+      "expert": "quality_of_earnings",
+      "company_name": "MANOR BUILDING SOLUTIONS (UK) LTD",
+      "analysis_date": "2024-05-22",
+      "score": 45,
+      "confidence": "medium",
+      "reported_figures": {
+        "operating_profit": 29202.38,
+        "depreciation": 1473.11,
+        "amortisation": 0,
+        "reported_ebitda": 30675.49,
+        "source_year": "2026"
+      },
+      "add_backs": [
+        {
+          "item": "Exceptional Professional Fees",
+          "category": "one_off_cost",
+          "amount": 94154,
+          "recurrence": "one_off",
+          "year": "2025",
+          "justification": "Professional fees in 2025 were £94,154 compared to just £103.83 in 2026, suggesting significant non-recurring legal or consultancy work in the prior year.",
+          "confidence": "high",
+          "defensibility_score": 8,
+          "case_for_inclusion": "These fees are clearly non-operational and do not repeat in the subsequent reporting period, inflating the cost base artificially.",
+          "case_for_exclusion": "The seller may argue these fees relate to ongoing compliance or contract negotiations necessary for the business model."
+        }
+      ],
+      "deductions": [
+        {
+          "item": "Director Salary Market Rate Adjustment",
+          "category": "replacement_salary",
+          "amount": 105360,
+          "recurrence": "recurring",
+          "year": "2025",
+          "justification": "Two working directors (MD and Ops Director) were paid a combined £25,140 in 2025. Market rate for these roles in a £2m revenue business is £130,500 (£65,250 each).",
+          "confidence": "high",
+          "defensibility_score": 9,
+          "case_for_inclusion": "The current salaries are significantly below market rates; a buyer would need to pay commercial salaries to replace the current management team.",
+          "case_for_exclusion": "The seller might argue that the directors' roles are less intensive or that the current structure is sustainable without higher pay."
+        },
+        {
+          "item": "Bad Debt Provision (Other Debtors)",
+          "category": "bad_debt_provision",
+          "amount": 82742.5,
+          "recurrence": "one_off",
+          "year": "2026",
+          "justification": "Other Debtors increased from £0 in 2024 to £165,485 in 2026. Given the lack of detail, a 50% provision is prudent for non-trade balances.",
+          "confidence": "medium",
+          "defensibility_score": 5,
+          "case_for_inclusion": "The rapid accumulation of non-trade debtors suggests potential recoverability issues that should be de-risked.",
+          "case_for_exclusion": "The seller may provide evidence that these balances are fully recoverable or relate to specific timing differences."
+        }
+      ],
+      "total_add_backs": 94154,
+      "total_deductions": 188102.5,
+      "adjusted_ebitda": {
+        "conservative": -157427.01,
+        "base": -63273.01,
+        "optimistic": 30880.99
+      },
+      "adjustment_summary": {
+        "reported_ebitda": 30675.49,
+        "plus_add_backs": 94154,
+        "minus_deductions": 188102.5,
+        "equals_adjusted_ebitda_base": -63273.01
+      },
+      "director_salary_analysis": {
+        "directors": [
+          {
+            "name": "JAMES JOHNSON",
+            "current_salary": 12570,
+            "estimated_market_rate": 65250,
+            "benchmark_range_used": "Revenue £1M-£5M: Working MD (£45k-£70k) + Ops Director (£35k-£50k)",
+            "adjustment": 52680,
+            "adjustment_type": "deduction"
+          },
+          {
+            "name": "IAN LAWTON",
+            "current_salary": 12570,
+            "estimated_market_rate": 65250,
+            "benchmark_range_used": "Revenue £1M-£5M: Working MD (£45k-£70k) + Ops Director (£35k-£50k)",
+            "adjustment": 52680,
+            "adjustment_type": "deduction"
+          }
+        ]
+      },
+      "sustainability_assessment": {
+        "sustainable_for_3_years": false,
+        "key_assumptions": [
+          "The 2026 revenue drop is a reporting anomaly or interim period rather than a permanent loss of 90% of business.",
+          "Subcontractor availability remains stable to support the flexible delivery model.",
+          "Director loan accounts (£159k) are not indicative of underlying liquidity distress."
+        ],
+        "sensitivity_factors": [
+          "Revenue recovery to 2025 levels (£2m+).",
+          "Management of subcontractor margin squeeze.",
+          "Recoverability of 'Other Debtors' (£165k)."
+        ],
+        "upside_scenarios": [
+          "Normalization of professional fees and overheads.",
+          "Successful transition to a salaried management team without loss of client relationships."
+        ],
+        "downside_scenarios": [
+          "The 2026 revenue decline is permanent, rendering the overhead base unsustainable.",
+          "Inability to recover director loans or other debtors impacting cash flow."
+        ]
+      },
+      "key_findings": [
+        "Reported EBITDA is heavily distorted by sub-market director salaries and high one-off professional fees.",
+        "The 2026 reporting period shows a catastrophic revenue decline that must be clarified before any valuation is finalized.",
+        "Working capital is increasingly tied up in non-operational assets, specifically director loans and 'other debtors'.",
+        "The business model is highly scalable but currently lacks a commercial management cost structure."
+      ],
+      "red_flags": [
+        "90.7% revenue collapse in the 2026 period.",
+        "Director loan account increased by 96% in one year to £159,863.",
+        "Other Debtors balance appeared from zero to £165,485 without explanation.",
+        "Significant under-market remuneration for key directors suggests 'hidden' costs of at least £100k per annum."
+      ],
+      "narrative": "The Quality of Earnings analysis for Manor Building Solutions (UK) Ltd reveals a business that, while appearing profitable on a reported basis in 2025, has significant underlying sustainability issues. The primary concern is the 'market-rate' adjustment for management; the directors are currently extracting value via loan accounts rather than commercial salaries. When adjusted for a replacement management team, the 2026 EBITDA (based on provided figures) turns deeply negative. Furthermore, the 90% drop in revenue in 2026 suggests either a business in terminal decline or a highly irregular reporting period. A buyer should not apply a multiple to the reported 2025 EBITDA without accounting for the £105k management salary deficit and investigating the recoverability of £325k in non-trade/director debtors."
+    }
+  },
+  {
+    "id": 3079,
+    "expert_type": "risk",
+    "status": "success",
+    "score": 68,
+    "confidence": "medium",
+    "created_at": "2026-07-27T13:15:51.206Z",
+    "analysis_data": {
+      "expert": "risk",
+      "company_name": "MANOR BUILDING SOLUTIONS (UK) LTD",
+      "analysis_date": "2024-05-22",
+      "score": 68,
+      "confidence": "medium",
+      "customer_concentration": {
+        "risk_level": "unknown",
+        "top_customer_percent": null,
+        "top_3_customers_percent": null,
+        "top_5_customers_percent": null,
+        "hhi_index": null,
+        "hhi_classification": "diversified",
+        "total_customers": null,
+        "customers_over_15_percent": [],
+        "observations": [
+          "Sales ledger data was empty; unable to calculate specific customer concentration or HHI.",
+          "Revenue for FY2025 was £2,084,318, but dropped significantly in the partial FY2026 data provided (£193,264).",
+          "Subcontractor costs represent 62% of Cost of Sales in FY2025, suggesting a delivery model reliant on external parties."
+        ]
+      },
+      "financial_risk": {
+        "risk_level": "moderate",
+        "technically_insolvent": false,
+        "current_ratio_trend": "improving",
+        "creditor_growth_vs_revenue": "Creditors decreased from £94,707 (2025-03-31) to £81,585 (2026-03-31) while revenue also declined.",
+        "director_loans_balance": 159863,
+        "intercompany_balances": 0,
+        "interest_coverage_adequate": true,
+        "going_concern_indicators": [],
+        "observations": [
+          "Current ratio as at 2026-03-31 is 2.90, up from 2.06 as at 2025-03-31, indicating strong liquidity.",
+          "Net assets (Total Equity) increased from £478,229 (2025-03-31) to £717,070 (2026-03-31).",
+          "Interest coverage is high; FY2025 Operating Profit of £464,671 vs Interest Payable of £3,042."
+        ]
+      },
+      "key_person_risk": {
+        "risk_level": "high",
+        "highest_individual_payroll_percent": null,
+        "single_points_of_failure": [
+          "Managing Director",
+          "Operations Director"
+        ],
+        "management_depth": "thin",
+        "average_tenure_years": null,
+        "observations": [
+          "The business is heavily reliant on two directors for management and operations.",
+          "Staff matrix shows only 12 headcount, with 5 being direct operatives, suggesting the directors handle most commercial/technical functions.",
+          "No specific salary data per person was provided to calculate payroll concentration."
+        ]
+      },
+      "revenue_quality": {
+        "risk_level": "moderate",
+        "revenue_type": "project_based",
+        "customer_trend": "unknown",
+        "seasonality_detected": false,
+        "observations": [
+          "High reliance on subcontractors (£688,451 in FY2025) is typical for project-based construction firms.",
+          "Revenue breakdown for FY2026 shows 100% of sales attributed to 'Sales Type A', suggesting potential lack of service diversification."
+        ]
+      },
+      "balance_sheet_risks": {
+        "director_loans": 159863,
+        "connected_company_balances": 0,
+        "deferred_tax": 9454,
+        "pension_obligations": null,
+        "contingent_liabilities": "unable_to_assess",
+        "observations": [
+          "Amounts owed BY directors (Asset) increased significantly from £81,267 (2025-03-31) to £159,863 (2026-03-31).",
+          "Other Debtors of £165,485 as at 2026-03-31 requires further investigation to ensure recoverability.",
+          "Deferred taxation liability of £9,454 as at 2026-03-31."
+        ]
+      },
+      "bad_debt": {
+        "total_overdue_90_plus": null,
+        "recommended_provision": null,
+        "existing_provision": null,
+        "net_profit_impact": null,
+        "observations": [
+          "Sales ledger was empty; unable to perform aged debt analysis or recommend specific provisions.",
+          "Trade debtors are significant at £358,723 as at 2026-03-31."
+        ]
+      },
+      "risk_register": [
+        {
+          "risk": "Director Loan Recoverability",
+          "category": "balance_sheet",
+          "severity": "medium",
+          "likelihood": "medium",
+          "financial_impact": 159863,
+          "impact_description": "Directors owe the company £159,863 as at 2026-03-31; this is an asset that may not be liquid or collectible upon exit.",
+          "mitigation": "Settlement of the loan account should be a condition of completion or adjusted in the final purchase price."
+        },
+        {
+          "risk": "Key Person Dependency",
+          "category": "people",
+          "severity": "high",
+          "likelihood": "high",
+          "financial_impact": null,
+          "impact_description": "Loss of the Managing or Operations Director could lead to loss of client relationships and operational knowledge.",
+          "mitigation": "Implement earn-outs or retention contracts for key directors; ensure a handover period is mandated."
+        },
+        {
+          "risk": "Subcontractor Reliance",
+          "category": "operational",
+          "severity": "medium",
+          "likelihood": "medium",
+          "financial_impact": null,
+          "impact_description": "High use of subcontractors (£688k in FY2025) exposes the company to margin squeeze and quality control risks.",
+          "mitigation": "Review subcontractor agreements and ensure robust quality management systems are in place."
+        },
+        {
+          "risk": "Taxation Liabilities",
+          "category": "financial",
+          "severity": "medium",
+          "likelihood": "low",
+          "financial_impact": 239617,
+          "impact_description": "Taxation and Social Security creditors are high at £239,617 as at 2026-03-31.",
+          "mitigation": "Verify that all VAT and Corporation Tax payments are up to date and no penalties are pending."
+        }
+      ],
+      "deal_breakers": [],
+      "key_findings": [
+        "The company maintains a strong liquidity position with a current ratio of 2.90 as at 2026-03-31.",
+        "There is a significant and growing Director Loan Account (Asset) of £159,863.",
+        "The business model is heavily reliant on subcontractors for project delivery.",
+        "Management depth is limited to the two primary directors."
+      ],
+      "narrative": "MANOR BUILDING SOLUTIONS (UK) LTD presents a stable financial profile with strong net assets and liquidity. However, the risk profile is elevated by significant key person dependency and a large director loan balance that has doubled in the last fiscal year. The lack of detailed sales ledger data prevents a full assessment of customer concentration, but the high reliance on subcontractors suggests a flexible but potentially lower-margin operational model. The primary focus for due diligence should be the recoverability of the director loans and the sustainability of the revenue base following a change in ownership."
+    }
+  },
+  {
+    "id": 2622,
+    "expert_type": "screening",
+    "status": "success",
+    "score": null,
+    "confidence": null,
+    "created_at": "2026-07-09T16:14:29.289Z",
+    "analysis_data": {
+      "stage": "screening",
+      "company_name": "MANOR BUILDING SOLUTIONS (UK) LTD",
+      "sector": "Construction & Building",
+      "analysis_date": "2024-05-22",
+      "data_quality_score": 78,
+      "analysis_period": {
+        "earliest_year": 2023,
+        "latest_year": 2026,
+        "years_of_data": 4
+      },
+      "dimensions": {
+        "earnings_trajectory": {
+          "rag": "GREEN",
+          "score": 92,
+          "revenue_cagr_percent": 54.2,
+          "latest_revenue": 2388764,
+          "latest_gross_margin_percent": 43.7,
+          "latest_operating_margin_percent": 19,
+          "latest_net_margin_percent": 14,
+          "margin_direction": "stable",
+          "explanation": "Exceptional revenue growth from 651,586 in 2023 to 2.39m in 2026. While gross margins compressed during initial scaling, net margins have expanded significantly due to strong operational gearing."
+        },
+        "balance_sheet_health": {
+          "rag": "GREEN",
+          "score": 88,
+          "latest_current_ratio": 2.9,
+          "latest_net_assets": 717070,
+          "net_asset_growth_percent": 49.9,
+          "long_term_debt": 32378,
+          "explanation": "The balance sheet is robust with a current ratio of 2.9 and minimal long-term gearing (4.5%). Net assets have grown consistently, more than tripling since 2023."
+        },
+        "cash_reality": {
+          "rag": "GREEN",
+          "score": 85,
+          "latest_cash_at_bank": 460160,
+          "cash_trend": "growing",
+          "cash_vs_profit_alignment": "aligned",
+          "explanation": "Cash reserves have grown from 132,907 to 460,160, demonstrating that reported profits are converting effectively into liquidity. The company maintains a significant cash buffer relative to its size."
+        },
+        "customer_risk": {
+          "rag": "AMBER",
+          "score": 55,
+          "top_customer_concentration_percent": null,
+          "aged_debt_90_plus_percent": null,
+          "total_customers": null,
+          "explanation": "Data Unavailable for specific ledger aging or concentration. However, IM notes indicate 78% of turnover is derived from insurance panel relationships, suggesting high sector concentration risk."
+        },
+        "asset_quality": {
+          "rag": "AMBER",
+          "score": 60,
+          "nbv_to_cost_percent": null,
+          "recent_additions_percent": null,
+          "total_nbv": 46717,
+          "explanation": "The asset base is relatively small and transitioning toward a light-asset model. While plant and machinery values are declining, the business relies heavily on subcontractors, reducing capex risk."
+        },
+        "people_capability": {
+          "rag": "GREEN",
+          "score": 82,
+          "headcount": 12,
+          "revenue_per_employee": 199063,
+          "payroll_to_revenue_percent": 12.2,
+          "director_cost_percent_of_payroll": 8.6,
+          "explanation": "High revenue per head and low director cost as a percentage of total payroll (8.6%) indicate a scalable, professionalised structure rather than owner-dependency."
+        }
+      },
+      "overall_score": 81,
+      "recommendation": "PROCEED",
+      "recommendation_justification": "The company exhibits exceptional financial health with high growth, strong margins, and a robust cash position. All primary financial dimensions (1-3) are Green.",
+      "key_strengths": [
+        "Exceptional revenue CAGR of 54.2% over a four-year period with expanding net profitability.",
+        "Strong liquidity position with a current ratio of 2.9 and substantial cash reserves of 460,160.",
+        "Low financial risk profile with minimal long-term debt and an interest coverage ratio exceeding 90x."
+      ],
+      "key_concerns": [
+        "Significant overdrawn directors' current accounts totalling 159,863 represent a potential extraction risk.",
+        "High concentration in the insurance reinstatement sector (78% of turnover) creates dependency on panel renewals.",
+        "Gross margin compression from 56.7% to 43.7% suggests rising subcontractor or material costs."
+      ],
+      "questions_for_seller": [
+        "What is the repayment plan for the 159,863 overdrawn directors' current account?",
+        "Can you provide a breakdown of the top 5 insurance panels and the expiry dates of those contracts?",
+        "What caused the significant gross margin compression between 2023 and 2024?",
+        "How much of the 358,723 trade debtors is currently aged over 60 days?"
+      ],
+      "comparable_context": "The company's net margin (14.0%) and revenue per employee (199k) are significantly above the UK SME construction sector averages, which typically see net margins of 3-6%.",
+      "executive_summary": "MANOR BUILDING SOLUTIONS (UK) LTD is a high-performing construction firm specialising in insurance reinstatement. The company has successfully scaled from a 650k turnover business to a 2.4m turnover operation in just four years, while simultaneously improving net margins to 14.0%. The recommendation is to PROCEED with an immediate focus on the quality of the insurance panel contracts and the directors' loan account balances. Financially, the business is in the top decile for its sector, maintaining a current ratio of 2.9 and a gearing ratio of only 4.5%. The primary risks are external (sector concentration) and internal (director withdrawals), rather than operational or liquidity-based. The high cash balance of 460k provides significant protection against short-term market volatility."
+    }
+  },
+  {
+    "id": 3081,
+    "expert_type": "sector",
+    "status": "success",
+    "score": 52,
+    "confidence": "medium",
+    "created_at": "2026-07-27T13:15:51.338Z",
+    "analysis_data": {
+      "expert": "sector",
+      "company_name": "MANOR BUILDING SOLUTIONS (UK) LTD",
+      "sector": "Construction & Building",
+      "analysis_date": "2023-10-27",
+      "score": 52,
+      "confidence": "medium",
+      "sector_overview": {
+        "growth_outlook": "mixed",
+        "uk_market_size_estimate": "£110bn - £120bn (UK Construction Output)",
+        "key_trends": [
+          "Increased focus on retrofitting and energy efficiency (ESG)",
+          "Adoption of Modern Methods of Construction (MMC)",
+          "Digitalization of site management and BIM compliance",
+          "Shift toward commercial-to-residential conversions"
+        ],
+        "regulatory_factors": [
+          "Building Safety Act 2022 compliance requirements",
+          "Net Zero 2050 targets impacting material choices",
+          "IR35 tax compliance for sub-contractor labor",
+          "Stricter health and safety (HSE) enforcement"
+        ],
+        "observations": "The UK construction sector is currently navigating a period of high interest rates and material cost inflation, leading to a slowdown in new-build starts but a resilient market for maintenance and specialized commercial fit-outs."
+      },
+      "competitive_positioning": {
+        "company_size_classification": "small",
+        "typical_gross_margin_range": {
+          "low": 15,
+          "high": 25
+        },
+        "typical_operating_margin_range": {
+          "low": 3,
+          "high": 8
+        },
+        "typical_ebitda_margin_range": {
+          "low": 5,
+          "high": 10
+        },
+        "positioning_assessment": "With revenue of £2.4M and a headcount of 9, the company is a typical small-scale regional contractor. It likely operates as a main contractor for small projects or a specialist sub-contractor for larger ones, relying heavily on a flexible sub-contractor labor pool."
+      },
+      "comparable_multiples": {
+        "ev_revenue_range": {
+          "low": 0.25,
+          "mid": 0.4,
+          "high": 0.6
+        },
+        "ev_ebitda_range": {
+          "low": 2,
+          "mid": 2.75,
+          "high": 3.5
+        },
+        "factors_affecting_multiple": [
+          "Project-based revenue vs. maintenance contracts",
+          "Key person dependency on the founder/owner",
+          "Geographic concentration of the client base",
+          "Quality of the order book and pipeline visibility"
+        ],
+        "premium_factors": [
+          "Niche specialization in high-barrier commercial sectors",
+          "Strong framework agreements with blue-chip clients",
+          "Consistent revenue growth above 10% CAGR"
+        ],
+        "discount_factors": [
+          "Small team size (9 employees) suggests high owner dependency",
+          "Project-based revenue lacks recurring stability",
+          "Low barriers to entry for general commercial construction",
+          "Revenue under £5M limits the pool of institutional buyers"
+        ],
+        "data_confidence": "based_on_training_data"
+      },
+      "growth_opportunities": [
+        {
+          "opportunity": "Public Sector Frameworks",
+          "effort": "high",
+          "potential_impact": "high",
+          "timeframe": "medium_term",
+          "description": "Securing spots on local authority or NHS maintenance frameworks to provide stable, multi-year revenue streams."
+        },
+        {
+          "opportunity": "Energy Efficiency Retrofitting",
+          "effort": "medium",
+          "potential_impact": "medium",
+          "timeframe": "short_term",
+          "description": "Upskilling the workforce to offer decarbonization services for commercial buildings, such as insulation and HVAC upgrades."
+        },
+        {
+          "opportunity": "Geographic Expansion",
+          "effort": "medium",
+          "potential_impact": "medium",
+          "timeframe": "medium_term",
+          "description": "Leveraging the current 9-person core team to manage satellite projects in adjacent UK regions using local sub-contractors."
+        }
+      ],
+      "sector_risks": [
+        {
+          "risk": "Material Price Volatility",
+          "severity": "high",
+          "timeframe": "immediate",
+          "description": "Fluctuations in the cost of steel, timber, and concrete can erode fixed-price contract margins."
+        },
+        {
+          "risk": "Labor Shortages",
+          "severity": "medium",
+          "timeframe": "near_term",
+          "description": "Scarcity of skilled tradespeople in the UK drives up wage costs and delays project delivery."
+        },
+        {
+          "risk": "Economic Cyclicality",
+          "severity": "high",
+          "timeframe": "medium_term",
+          "description": "Commercial construction is highly sensitive to UK GDP growth and corporate capital expenditure budgets."
+        }
+      ],
+      "key_findings": [
+        "The company is a small UK SME in a highly fragmented and competitive sector.",
+        "Valuation is likely constrained by the project-based nature of the work and small headcount.",
+        "A multiple of 2.0x - 3.0x EBITDA is the most probable range for a trade sale.",
+        "Growth is dependent on moving away from one-off projects toward recurring maintenance or framework contracts."
+      ],
+      "narrative": "Manor Building Solutions (UK) Ltd operates in a challenging but essential segment of the UK economy. At £2.4M revenue, it has surpassed the 'micro' stage but remains a 'small' business with significant owner-dependency risks. While the sector faces headwinds from inflation and interest rates, the company's small size allows for agility. An acquirer would likely look to integrate this business into a larger regional group to achieve economies of scale in procurement and back-office functions. Valuation will be heavily influenced by the 'stickiness' of the current client base and the visibility of the 12-month forward order book."
+    }
+  },
+  {
+    "id": 3084,
+    "expert_type": "synthesis",
+    "status": "success",
+    "score": null,
+    "confidence": null,
+    "created_at": "2026-07-27T13:15:51.536Z",
+    "analysis_data": {
+      "stage": "synthesis",
+      "company_name": "MANOR BUILDING SOLUTIONS (UK) LTD",
+      "sector": "Construction & Building",
+      "analysis_date": "2024-05-22",
+      "overall_score": 56,
+      "recommendation": "PROCEED_WITH_CAUTION",
+      "scores_dashboard": {
+        "financial": {
+          "score": 55,
+          "confidence": "medium"
+        },
+        "operational": {
+          "score": 68,
+          "confidence": "high"
+        },
+        "risk": {
+          "score": 68,
+          "confidence": "medium"
+        },
+        "quality_of_earnings": {
+          "score": 45,
+          "confidence": "medium"
+        },
+        "sector": {
+          "score": 52,
+          "confidence": "medium"
+        },
+        "valuation": {
+          "score": 45,
+          "confidence": "medium"
+        },
+        "deal_structure": {
+          "score": 42,
+          "confidence": "medium"
+        }
+      },
+      "executive_summary": "Manor Building Solutions (UK) Ltd presents a high-risk, asset-backed acquisition opportunity. While FY2025 showed a robust £2.08m revenue and 22.3% operating margin, the FY2026 interim data reveals a catastrophic 90.7% revenue collapse to £193k. The business is currently worth more for its cash reserves (£460k) and net assets (£717k) than its earnings, which turn negative when adjusted for market-rate management salaries. Verdict: Proceed only if the 2026 revenue drop is proven to be a reporting anomaly and the deal is structured as an asset-based purchase with heavy performance contingencies. Key Metrics: FY2025 Revenue £2.08m, EBITDA £489k; Adjusted EBITDA (Base) -£63k. Valuation: £498k - £717k. Top Reasons to Proceed: Strong cash position, scalable subcontractor model, and healthy historical gross margins. Top Reasons for Caution: Unexplained 90% revenue decline, significant director loan extraction (£160k), and high key-person dependency. Recommended Structure: Conservative asset-based approach with a £634k headline price, 30% upfront, and 70% contingent on revenue recovery and debt collection.",
+      "expert_consensus": {
+        "agreements": [
+          "The business model is highly scalable due to its reliance on subcontractors (62% of COS).",
+          "The balance sheet is liquid with a strong cash position of £460k.",
+          "The current directors are significantly underpaid relative to market rates, masking true operating costs.",
+          "The 2026 revenue decline is the primary deal-breaker/risk factor requiring immediate clarification."
+        ],
+        "contradictions": [
+          {
+            "topic": "Valuation Methodology",
+            "expert_a": "Financial",
+            "expert_a_view": "Focuses on the historical profitability and strong margins of 2025.",
+            "expert_b": "Valuation",
+            "expert_b_view": "Argues EBITDA multiples are irrelevant due to negative adjusted earnings and revenue collapse.",
+            "resolution": "The Lead Advisor adopts the Valuation expert's view: the deal must be priced on an Adjusted Net Asset Value basis as the earnings-based 'going concern' value is currently unproven."
+          }
+        ]
+      },
+      "devils_advocate": {
+        "worst_case_scenario": "The 90% revenue drop reflects the loss of the company's only two major clients. Post-acquisition, the 'Other Debtors' (£165k) and Director Loans (£160k) prove uncollectible, and the remaining 12 staff resign as the directors exit, leaving the buyer with an empty shell, a lease on vehicles, and £240k in tax liabilities.",
+        "weakest_assumptions": [
+          "That the 2026 revenue decline is a 'reporting anomaly' rather than a terminal loss of contracts.",
+          "That the 'Other Debtors' balance of £165k represents recoverable business value.",
+          "That the subcontractor network will remain loyal to a new owner without the original directors' relationships."
+        ],
+        "underweighted_risks": [
+          "Taxation risk: The £239k in Tax/Social Security creditors is very high relative to current revenue levels.",
+          "Director Loan Account: This is an asset on the balance sheet but a personal liability for the sellers; their ability/willingness to 'repay' this during a sale is often overestimated."
+        ],
+        "post_mortem_predictions": [
+          "The buyer will find that the 'Sales Type A' revenue was entirely dependent on a single relationship held personally by James Johnson.",
+          "The 'Other Debtors' will be revealed as non-business related expenses that cannot be recovered."
+        ]
+      },
+      "investment_thesis": {
+        "positive_case": "If the 2026 revenue drop is a timing issue, the buyer acquires a high-margin, cash-rich construction firm with a flexible cost base that can be integrated into a larger group to provide immediate regional scale and a platform for public sector frameworks.",
+        "conditions_for_success": [
+          "Verification that 2026 revenue is an interim snapshot and the pipeline remains >£1.5m.",
+          "Successful transfer of the 'Director Loan' value into the purchase price adjustment.",
+          "Retention of the two directors for a minimum 12-month handover to transition subcontractor relationships."
+        ],
+        "integration_priorities_100_days": [
+          "Appoint a commercial MD to replace the 'underpaid' founders.",
+          "Audit the 'Other Debtors' and initiate collection.",
+          "Formalize subcontractor agreements to move away from 'handshake' deals.",
+          "Implement a CRM to track the sales pipeline and reduce reliance on director-led business development."
+        ]
+      },
+      "information_requests": {
+        "critical": [
+          {
+            "request": "Full Management Accounts for the period April 2025 to present.",
+            "source_expert": "Financial",
+            "rationale": "To determine if the 90% revenue drop is a reporting error or a loss of business."
+          },
+          {
+            "request": "Breakdown and aging of 'Other Debtors' (£165,485).",
+            "source_expert": "Quality of Earnings",
+            "rationale": "To assess recoverability and ensure these are not hidden losses."
+          }
+        ],
+        "important": [
+          {
+            "request": "Customer Concentration Report / Sales Ledger.",
+            "source_expert": "Risk",
+            "rationale": "To identify if the business relies on a single client (HHI risk)."
+          },
+          {
+            "request": "Subcontractor Agreements and Top 5 Subcontractor spend.",
+            "source_expert": "Operational",
+            "rationale": "To verify the stability of the delivery model."
+          }
+        ],
+        "nice_to_have": [
+          {
+            "request": "Details of professional fees (£94k) in 2025.",
+            "source_expert": "Quality of Earnings",
+            "rationale": "To confirm these are truly one-off and not recurring legal issues."
+          }
+        ]
+      },
+      "valuation_summary": {
+        "equity_value_range": {
+          "low": 498699.5,
+          "mid": 634327.5,
+          "high": 717070
+        },
+        "recommended_offer": 634327.5,
+        "recommended_structure": "Conservative Approach: 30% Upfront, 30% Deferred (12m), 40% Earnout (24m) based on Revenue recovery. Full offset of Director Loans against completion payment."
+      },
+      "narrative_report": "INVESTMENT MEMORANDUM: MANOR BUILDING SOLUTIONS (UK) LTD\n\nINTRODUCTION\nManor Building Solutions (UK) Ltd ('Manor') is a specialist construction SME with a flexible, subcontractor-led delivery model. The company demonstrated exceptional performance in FY2025, achieving £2.08m in revenue with a 22.3% operating margin. However, recent data from FY2026 indicates a severe contraction in activity. This memorandum outlines the case for a highly structured, asset-backed acquisition.\n\nFINANCIAL OVERVIEW & QUALITY OF EARNINGS\nThe financial profile is currently contradictory. While historical margins are strong (43-47% Gross Margin), the Quality of Earnings (QoE) analysis reveals significant adjustments. The directors are currently paid £12.5k each—well below the market rate of £65k. When adjusted for a commercial management team, the business's EBITDA is significantly reduced. Furthermore, the 90.7% drop in revenue in the latest reporting period suggests either a fundamental failure in the business's sales pipeline or a significant reporting lag. Until this is clarified, the business cannot be valued on an earnings multiple.\n\nOPERATIONAL MODEL\nManor operates a 'lean' model with 12 permanent staff and a high reliance on subcontractors (62% of COS). This provides excellent scalability and protects the business during downturns, as seen by the maintenance of gross margins despite falling volumes. However, the model is heavily dependent on the two founding directors for project oversight and commercial relationships. The increasing 'Director Loan Account' (£160k) and 'Other Debtors' (£165k) suggest that the company's liquidity is being diverted to non-operational uses, which must be addressed in the deal structure.\n\nRISK ASSESSMENT\nThe primary risks are (1) Revenue Sustainability: the 2026 decline is a potential deal-breaker; (2) Key Person Dependency: the loss of the two directors could destabilize the subcontractor network; and (3) Balance Sheet Integrity: the recoverability of £325k in non-trade debtors is unverified. Additionally, the company carries £239k in tax liabilities which requires a full indemnity.\n\nVALUATION & DEAL STRUCTURE\nGiven the negative adjusted EBITDA and revenue uncertainty, we recommend an asset-based valuation. The Adjusted Net Asset Value of £634k serves as our valuation anchor. We propose a 'Conservative Approach' to mitigate the extreme risks identified. This includes a 30% upfront payment, with the remainder contingent on the verification of the 2026 revenue and the successful collection of outstanding debtors. The Director Loan Account must be settled as a condition of completion.\n\nCONCLUSION\nManor Building Solutions is a 'distressed' valuation opportunity for a healthy historical business. If the revenue decline is temporary, the buyer acquires a high-margin platform at a significant discount to its 2025 value. If the decline is permanent, the proposed structure protects the buyer's downside by linking 70% of the consideration to future performance and asset recovery."
+    }
+  },
+  {
+    "id": 3082,
+    "expert_type": "valuation",
+    "status": "success",
+    "score": 45,
+    "confidence": "medium",
+    "created_at": "2026-07-27T13:15:51.403Z",
+    "analysis_data": {
+      "expert": "valuation",
+      "company_name": "MANOR BUILDING SOLUTIONS (UK) LTD",
+      "analysis_date": "2024-05-22",
+      "score": 45,
+      "confidence": "medium",
+      "ebitda_multiple_valuation": {
+        "adjusted_ebitda_base": -63273.01,
+        "sector_multiple_range": {
+          "low": 2,
+          "mid": 2.75,
+          "high": 3.5
+        },
+        "selected_multiple": 2.25,
+        "multiple_justification": "A multiple at the lower end of the sector range is applied due to the severe revenue decline in the 2026 period and high owner dependency. While 2025 margins were strong, the lack of recurring revenue and the small scale of the business (under £5M) limits the multiple.",
+        "premium_factors_applied": [
+          "Healthy historical gross margins (43-47%)",
+          "Flexible subcontractor-led cost model"
+        ],
+        "discount_factors_applied": [
+          "90.7% revenue collapse in latest reporting period",
+          "High key person dependency on two directors",
+          "Small business size (Revenue < £5M)",
+          "Project-based revenue lacks recurring stability"
+        ],
+        "enterprise_value_range": {
+          "conservative": 0,
+          "base": 0,
+          "optimistic": 108083.47
+        }
+      },
+      "ev_to_equity_bridge": {
+        "enterprise_value_base": 0,
+        "plus_cash": 460160,
+        "minus_long_term_debt": 38581,
+        "minus_director_loans": -159863,
+        "minus_bad_debt_provision": 82742.5,
+        "minus_working_capital_adjustment": 0,
+        "equity_value": {
+          "conservative": 338836.5,
+          "base": 498699.5,
+          "optimistic": 606782.97
+        }
+      },
+      "asset_based_valuation": {
+        "net_asset_value": 717070,
+        "property_adjustment": 0,
+        "bad_debt_adjustment": 82742.5,
+        "adjusted_nav": 634327.5,
+        "nav_as_floor": true
+      },
+      "revenue_multiple_crosscheck": {
+        "latest_revenue": 193264.39,
+        "revenue_multiple_range": {
+          "low": 0.25,
+          "high": 0.6
+        },
+        "implied_ev_range": {
+          "low": 48316.1,
+          "high": 115958.63
+        }
+      },
+      "valuation_summary": {
+        "recommended_range": {
+          "equity_value_low": 498699.5,
+          "equity_value_mid": 634327.5,
+          "equity_value_high": 717070
+        },
+        "primary_methodology": "asset_based",
+        "cross_check_alignment": "weak"
+      },
+      "sensitivity": {
+        "ebitda_plus_10pct": {
+          "enterprise_value": 0,
+          "equity_value": 498699.5
+        },
+        "ebitda_minus_10pct": {
+          "enterprise_value": 0,
+          "equity_value": 498699.5
+        },
+        "multiple_plus_half": {
+          "enterprise_value": 0,
+          "equity_value": 498699.5
+        },
+        "multiple_minus_half": {
+          "enterprise_value": 0,
+          "equity_value": 498699.5
+        },
+        "key_customer_loss_impact": "High risk; lack of sales ledger data prevents quantification but 90% revenue drop suggests loss of major accounts.",
+        "director_replacement_impact": -105360
+      },
+      "seller_expectations": {
+        "likely_seller_expectation_range": {
+          "low": 1000000,
+          "high": 1500000
+        },
+        "seller_anchor_points": [
+          "2025 Revenue of £2.08M",
+          "2025 Reported EBITDA of £489k",
+          "Current Net Asset position of £717k"
+        ],
+        "negotiation_gap_assessment": "Significant. The seller will likely anchor on the strong 2025 performance and the cash-rich balance sheet. However, the buyer will focus on the 2026 revenue collapse and the £105k EBITDA drag from market-rate salary adjustments. The gap is likely to be bridged only if the 2026 figures are proven to be a reporting anomaly."
+      },
+      "key_findings": [
+        "The business is currently worth more for its assets than its earnings due to the adjusted EBITDA being negative.",
+        "The 2026 revenue decline of 90.7% creates a valuation 'black hole' that makes earnings-based multiples unreliable.",
+        "Directors are significantly underpaid relative to market rates, masking the true cost of operations.",
+        "The balance sheet is strong with £460k in cash, but liquidity is being diluted by £159k in director loans.",
+        "The Adjusted Net Asset Value of £634k provides the most realistic floor for a transaction."
+      ],
+      "red_flags": [
+        "90.7% year-on-year revenue collapse in 2026.",
+        "Director loan account increased by 96% to £159,863.",
+        "Other Debtors balance of £165,485 appeared without explanation.",
+        "Negative adjusted EBITDA when accounting for market-rate management salaries."
+      ],
+      "narrative": "Valuing Manor Building Solutions (UK) Ltd is challenging due to the extreme divergence between 2025 and 2026 performance. On a 2025 basis, the business appears to be a high-performing SME; however, the 2026 data shows a catastrophic revenue decline. Furthermore, the Quality of Earnings analysis reveals that once directors' salaries are adjusted to market rates (£130k total), the business struggles to generate positive EBITDA on its current trajectory. Consequently, the EBITDA multiple method yields a zero Enterprise Value in the base case. The valuation therefore shifts to an asset-based approach. The company has a strong cash position and significant net assets, but these are offset by a large director loan account (which acts as an asset to the company but a liability to the sellers) and a recommended bad debt provision for unexplained 'Other Debtors'. The recommended valuation range is anchored between the Adjusted Equity Value and the reported Net Asset Value, assuming the cash and director loans are settled at completion."
+    }
+  }
+]

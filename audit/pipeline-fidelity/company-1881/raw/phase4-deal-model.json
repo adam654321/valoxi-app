@@ -1,0 +1,816 @@
+{
+  "model": {
+    "id": 490,
+    "targetCompanyId": 1881,
+    "createdBy": 89,
+    "name": "Audit Model — TC 138",
+    "status": "draft",
+    "version": 1,
+    "transactionType": "share_sale",
+    "parentModelId": null,
+    "isLocked": false,
+    "averagingYears": 3,
+    "ebitdaMultiple": "2",
+    "offerDriver": "ebitda",
+    "targetOfferPrice": null,
+    "multipleLow": "2",
+    "multipleHigh": "3.5",
+    "propertyValue": "0",
+    "cashValue": "0",
+    "otherAssets": "0",
+    "calculatedEbitda": null,
+    "adjustedEbitda": "-5526",
+    "enterpriseValue": null,
+    "plusExcessCash": "195634",
+    "minusPrimaryDebt": "0",
+    "minusOtherDebt": "149587.37",
+    "minusCorpTaxDue": "87.81",
+    "minusWorkingCapitalAdj": "10107",
+    "workingCapitalMonths": 3,
+    "workingCapitalMonthlyAmount": "3369",
+    "totalPurchasePrice": null,
+    "totalFundingAvailable": null,
+    "equityRequired": null,
+    "upfrontCash": "57281",
+    "deferredAmount": "28641",
+    "deferredTerms": null,
+    "earnoutMaximum": "28641",
+    "earnoutMetric": "Client 1 Revenue Retention",
+    "earnoutPeriodMonths": 12,
+    "retentionEscrow": "15000",
+    "feeLegalDdAmount": "25000",
+    "feeAccountingDdAmount": "15000",
+    "feeLoanArrangementAmount": "0",
+    "feeDealMakerAmount": "0",
+    "customFees": [],
+    "expertDataSnapshot": {
+      "qoe": {
+        "expert": "quality_of_earnings",
+        "company_name": "[AUDIT-138] Cooper Gibson",
+        "analysis_date": "2024-05-22",
+        "score": 45,
+        "confidence": "medium",
+        "reported_figures": {
+          "operating_profit": 49479,
+          "depreciation": 1350,
+          "amortisation": 3422,
+          "reported_ebitda": 57012,
+          "source_year": "2026"
+        },
+        "add_backs": [
+          {
+            "item": "Loss on disposal of tangible fixed assets",
+            "category": "disposal_loss",
+            "amount": 2761,
+            "recurrence": "one_off",
+            "year": "2026",
+            "justification": "Non-cash accounting loss arising from the disposal of assets, which is non-recurring in nature.",
+            "confidence": "high",
+            "defensibility_score": 10,
+            "case_for_inclusion": "This is a one-off accounting entry that does not represent a recurring cash cost of the business operations.",
+            "case_for_exclusion": "The seller might argue it reflects a regular cycle of asset replacement, though the amount is clearly identified as exceptional."
+          },
+          {
+            "item": "Directors Pension Contributions",
+            "category": "owner_salary",
+            "amount": 24000,
+            "recurrence": "recurring",
+            "year": "2026",
+            "justification": "Discretionary pension contributions for the owner-director which would not be required for a replacement manager.",
+            "confidence": "high",
+            "defensibility_score": 9,
+            "case_for_inclusion": "Pension contributions for owners are discretionary profit extractions rather than a market-rate cost of employment.",
+            "case_for_exclusion": "The seller may argue this is part of a total competitive compensation package for a high-level executive."
+          },
+          {
+            "item": "Use of Home as Office",
+            "category": "personal_expense",
+            "amount": 312,
+            "recurrence": "recurring",
+            "year": "2026",
+            "justification": "Standard tax-deductible personal expense reimbursement for the director.",
+            "confidence": "high",
+            "defensibility_score": 8,
+            "case_for_inclusion": "This is a personal benefit to the owner that a commercial buyer would not incur.",
+            "case_for_exclusion": "The amount is immaterial and the seller may argue it is a legitimate business overhead for a remote-working model."
+          }
+        ],
+        "deductions": [
+          {
+            "item": "Replacement Management Salary Adjustment",
+            "category": "replacement_salary",
+            "amount": 44930,
+            "recurrence": "recurring",
+            "year": "2026",
+            "justification": "The current director salary (£12,570) is significantly below the UK SME benchmark for a working MD (£57,500 mid-point for <£1M revenue).",
+            "confidence": "high",
+            "defensibility_score": 8,
+            "case_for_inclusion": "A buyer must account for the true market cost of replacing the owner-manager to maintain operations.",
+            "case_for_exclusion": "The seller may argue that the business can be managed part-time or that existing staff can absorb the duties."
+          },
+          {
+            "item": "Revenue Concentration Risk Adjustment",
+            "category": "unsustainable_revenue",
+            "amount": 44681,
+            "recurrence": "recurring",
+            "year": "2026",
+            "justification": "20% precautionary deduction on the 88.31% revenue concentration from Client 1 (£223,404 * 0.8831 * 0.20).",
+            "confidence": "medium",
+            "defensibility_score": 5,
+            "case_for_inclusion": "The extreme reliance on a single client makes nearly 90% of the earnings highly fragile and potentially unsustainable.",
+            "case_for_exclusion": "The seller will argue the relationship is long-standing and secure, and that no actual revenue loss has occurred."
+          }
+        ],
+        "total_add_backs": 27073,
+        "total_deductions": 89611,
+        "adjusted_ebitda": {
+          "conservative": -5529,
+          "base": -5526,
+          "optimistic": 39154
+        },
+        "adjustment_summary": {
+          "reported_ebitda": 57012,
+          "plus_add_backs": 27073,
+          "minus_deductions": 89611,
+          "equals_adjusted_ebitda_base": -5526
+        },
+        "director_salary_analysis": {
+          "directors": [
+            {
+              "name": "Owner-Director",
+              "current_salary": 12570,
+              "estimated_market_rate": 57500,
+              "benchmark_range_used": "Revenue <£1M: Working MD/Owner-Director (£45,000–£70,000)",
+              "adjustment": 44930,
+              "adjustment_type": "deduction"
+            }
+          ]
+        },
+        "sustainability_assessment": {
+          "sustainable_for_3_years": false,
+          "key_assumptions": [
+            "Client 1 remains the primary revenue driver.",
+            "The shift to a subcontractor model remains viable without increasing fixed costs.",
+            "The owner-director's personal relationships are not the sole reason for contract retention."
+          ],
+          "sensitivity_factors": [
+            "Loss of Client 1 would result in an immediate 88% drop in revenue.",
+            "Availability and pricing of skilled subcontractors."
+          ],
+          "upside_scenarios": [
+            "Successful diversification of the client base using current cash reserves.",
+            "Expansion of services to the existing primary client."
+          ],
+          "downside_scenarios": [
+            "Client 1 terminates the contract post-acquisition.",
+            "Key subcontractors leave or increase rates significantly."
+          ]
+        },
+        "key_findings": [
+          "Reported EBITDA is heavily inflated by under-market director salaries and discretionary pension contributions.",
+          "The business has extreme customer concentration, with one client representing 88.31% of the sales ledger as of Feb 2026.",
+          "Revenue is highly volatile, having dropped 49% between 2025 and 2026.",
+          "The business is heavily reliant on owner financing, with £149,587 owed to directors as of June 2026."
+        ],
+        "red_flags": [
+          "88.31% revenue concentration in a single client.",
+          "49% year-on-year revenue decline in the most recent fiscal year.",
+          "Significant director loan account (£149k) indicates the business may not be self-sustaining.",
+          "Inconsistent reporting of staff costs vs subcontractor costs suggests potential accounting irregularities."
+        ],
+        "narrative": "The Quality of Earnings analysis for Cooper Gibson reveals a business with significant structural risks. While the reported EBITDA for 2026 is £57,012, this figure is not representative of a standalone commercial operation. Once the owner's salary is adjusted to a market rate for a replacement manager and discretionary pension contributions are normalized, the 'Base Case' adjusted EBITDA falls into negative territory. The most critical risk is the 88% revenue concentration in a single client, which, combined with a 49% revenue decline in the last year, suggests the earnings are highly fragile. A buyer should view the current earnings as unsustainable without significant diversification and should likely structure any deal as an asset purchase or with a heavy earn-out tied to the retention of the primary client."
+      },
+      "valuation": {
+        "expert": "valuation",
+        "company_name": "[AUDIT-138] Cooper Gibson",
+        "analysis_date": "2024-05-22",
+        "score": 42,
+        "confidence": "low",
+        "ebitda_multiple_valuation": {
+          "adjusted_ebitda_base": -5526,
+          "sector_multiple_range": {
+            "low": 2,
+            "mid": 2.75,
+            "high": 3.5
+          },
+          "selected_multiple": 2,
+          "multiple_justification": "The lowest end of the sector range is applied due to extreme customer concentration (88%), a 49% revenue decline in the most recent year, and the fact that adjusted EBITDA is negative when accounting for market-rate management costs.",
+          "premium_factors_applied": [
+            "Debt-free balance sheet",
+            "High historical margins during peak project years"
+          ],
+          "discount_factors_applied": [
+            "Extreme customer concentration (88.31% from one client)",
+            "Significant revenue volatility (-49% YoY)",
+            "High owner dependency",
+            "Negative adjusted EBITDA base case",
+            "Small micro-business scale"
+          ],
+          "enterprise_value_range": {
+            "conservative": 0,
+            "base": 0,
+            "optimistic": 78308
+          }
+        },
+        "ev_to_equity_bridge": {
+          "enterprise_value_base": 0,
+          "plus_cash": 195634,
+          "minus_long_term_debt": 0,
+          "minus_director_loans": 149587.37,
+          "minus_bad_debt_provision": 0,
+          "minus_working_capital_adjustment": 0,
+          "equity_value": {
+            "conservative": 46046.63,
+            "base": 46046.63,
+            "optimistic": 124354.63
+          }
+        },
+        "asset_based_valuation": {
+          "net_asset_value": 183083,
+          "property_adjustment": 0,
+          "bad_debt_adjustment": 0,
+          "adjusted_nav": 183083,
+          "nav_as_floor": true
+        },
+        "revenue_multiple_crosscheck": {
+          "latest_revenue": 223404,
+          "revenue_multiple_range": {
+            "low": 0.4,
+            "high": 0.7
+          },
+          "implied_ev_range": {
+            "low": 89361.6,
+            "high": 156382.8
+          }
+        },
+        "valuation_summary": {
+          "recommended_range": {
+            "equity_value_low": 46046.63,
+            "equity_value_mid": 114563.32,
+            "equity_value_high": 183083
+          },
+          "primary_methodology": "asset_based",
+          "cross_check_alignment": "weak"
+        },
+        "sensitivity": {
+          "ebitda_plus_10pct": {
+            "enterprise_value": 0,
+            "equity_value": 46046.63
+          },
+          "ebitda_minus_10pct": {
+            "enterprise_value": 0,
+            "equity_value": 46046.63
+          },
+          "multiple_plus_half": {
+            "enterprise_value": 0,
+            "equity_value": 46046.63
+          },
+          "multiple_minus_half": {
+            "enterprise_value": 0,
+            "equity_value": 46046.63
+          },
+          "key_customer_loss_impact": "Loss of Client 1 would result in an 88% revenue drop, rendering the business insolvent and reducing value to net cash after liquidation costs.",
+          "director_replacement_impact": -44930
+        },
+        "seller_expectations": {
+          "likely_seller_expectation_range": {
+            "low": 250000,
+            "high": 450000
+          },
+          "seller_anchor_points": [
+            "Peak 2025 revenue of £441k",
+            "Healthy cash balance of £195k",
+            "Historical high margins (50% operating margin in 2025)"
+          ],
+          "negotiation_gap_assessment": "Significant. The seller will likely anchor on the 2025 'outlier' year and the cash balance, whereas a buyer will focus on the negative adjusted EBITDA and the 88% client concentration risk."
+        },
+        "key_findings": [
+          "The business is technically worth more as a collection of assets (cash) than as a going concern due to negative adjusted EBITDA.",
+          "Adjusted EBITDA is negative (£-5,526) once a market-rate salary for a replacement manager is factored in.",
+          "The 88.31% revenue concentration in a single client makes the earnings stream highly speculative.",
+          "The company has a strong cash position of £195,634 (from 2026 Operational Assessment) but owes £149,587.37 to directors.",
+          "Revenue volatility is extreme, with a 49% decline in the most recent year."
+        ],
+        "red_flags": [
+          "88.31% revenue concentration in one client.",
+          "Negative adjusted EBITDA base case.",
+          "Significant director loan liability (£149k) to be settled.",
+          "49% year-on-year revenue decline."
+        ],
+        "narrative": "Valuing Cooper Gibson as a going concern using an EBITDA multiple is problematic because the 'Base Case' adjusted EBITDA is negative (£-5,526) after normalizing director compensation. While the company reported a 2026 EBITDA of £57,012, this relies on an under-market director salary of £12,570. A commercial buyer must account for the £44,930 cost to replace the owner-manager. Consequently, the Enterprise Value is effectively zero under standard earnings methodologies. The primary value of the business lies in its Net Assets, specifically the cash balance of £195,634 (as cited in the 2026 Operational Assessment). However, this is offset by a substantial liability of £149,587.37 owed to directors (Risk Expert, 2026-06-25). The resulting Equity Value is heavily dependent on whether the buyer views the remaining client relationship as sustainable. Given the 88% concentration risk, any deal should be structured with a low upfront payment and a significant earn-out. The Net Asset Value of £183,083 serves as the absolute ceiling for valuation, though a buyer is unlikely to pay full NAV for a business with negative adjusted earnings and extreme concentration risk."
+      },
+      "deal_structure": {
+        "expert": "deal_structure",
+        "company_name": "[AUDIT-138] Cooper Gibson",
+        "analysis_date": "2024-05-22",
+        "score": 35,
+        "confidence": "high",
+        "structures": [
+          {
+            "name": "Conservative Approach",
+            "strategy": "Asset-based valuation with heavy contingencies to protect against the 88% customer concentration and negative adjusted EBITDA.",
+            "risk_to_buyer": "low",
+            "suitable_when": "The buyer prioritizes capital preservation and is unwilling to pay for 'goodwill' that may vanish if the primary client leaves.",
+            "consideration": {
+              "total_headline": 46046,
+              "upfront_cash": 11511,
+              "upfront_percent": 25,
+              "deferred": 11511,
+              "earnout_maximum": 23024,
+              "earnout_metric": "Retention of Client 1 and Revenue Floor",
+              "earnout_period_months": 24,
+              "earnout_rationale": "Addresses extreme customer concentration (88.31% from Client 1) and revenue decline (-49% YoY) as identified by Risk and Valuation experts.",
+              "retention_escrow": 10000
+            },
+            "key_conditions": [
+              "Full waiver or settlement of £149,587 director loan from the cash on balance sheet prior to completion",
+              "Minimum 12-month handover from the owner-director",
+              "Specific indemnity for any loss of Client 1 within 6 months of completion"
+            ],
+            "notes": "Seller obligations: 12-month handover, 36-month non-compete covering professional services sector. Key warranties: Specific indemnity for Client 1 contract validity, 100% warranty cap, 24-month period, £5k de minimis. Completion mechanism: Completion accounts with a cash-free/debt-free adjustment. Risk to buyer: High, due to the binary nature of the primary client relationship and negative adjusted earnings."
+          },
+          {
+            "name": "Balanced Approach",
+            "strategy": "A middle-ground structure using the mid-point valuation, splitting the risk of client retention between buyer and seller.",
+            "risk_to_buyer": "medium",
+            "suitable_when": "The buyer has verified the stability of the Client 1 relationship during due diligence but still requires protection against volatility.",
+            "consideration": {
+              "total_headline": 114563,
+              "upfront_cash": 57281,
+              "upfront_percent": 50,
+              "deferred": 28641,
+              "earnout_maximum": 28641,
+              "earnout_metric": "Client 1 Revenue Retention",
+              "earnout_period_months": 12,
+              "earnout_rationale": "Addresses customer concentration (Trigger 1) and owner dependency (Trigger 3) identified by Risk and Operational experts.",
+              "retention_escrow": 15000
+            },
+            "key_conditions": [
+              "Director loan must be cleared using company cash; purchase price is for equity value after this settlement",
+              "6-month full-time handover followed by 6-month consultancy",
+              "Verification of subcontractor contracts and pricing stability"
+            ],
+            "notes": "Seller obligations: 6-month handover + 6-month consultancy, 24-month non-compete. Key warranties: Standard professional services warranties, 50% warranty cap, 18-month period. Completion mechanism: Locked box based on the most recent balance sheet. Risk to buyer: High, as the business is not self-sustaining without the owner or the primary client."
+          },
+          {
+            "name": "Competitive Approach",
+            "strategy": "Anchored to the Net Asset Value (NAV) to satisfy seller expectations while still using an earnout to mitigate the most extreme risk.",
+            "risk_to_buyer": "high",
+            "suitable_when": "A strategic buyer sees high value in the subcontractor network or the specific niche and is willing to pay NAV to secure the deal.",
+            "consideration": {
+              "total_headline": 183083,
+              "upfront_cash": 128158,
+              "upfront_percent": 70,
+              "deferred": 18308,
+              "earnout_maximum": 36617,
+              "earnout_metric": "Gross Revenue Stability",
+              "earnout_period_months": 12,
+              "earnout_rationale": "Addresses revenue volatility (Trigger 2) and customer concentration (Trigger 1) identified by Valuation and QoE experts.",
+              "retention_escrow": 20000
+            },
+            "key_conditions": [
+              "Upfront payment includes the settlement of the director loan account",
+              "3-month intensive handover",
+              "Non-solicitation of subcontractors for 3 years"
+            ],
+            "notes": "Seller obligations: 3-month handover, 24-month non-compete. Key warranties: Fundamental warranties only, 25% warranty cap, 12-month period. Completion mechanism: Completion accounts. Risk to buyer: Very High, paying NAV for a business with negative adjusted EBITDA and 88% concentration is highly speculative."
+          }
+        ],
+        "recommended_structure": "Conservative Approach",
+        "recommendation_rationale": "The business has negative adjusted EBITDA (-£5,526) once a market-rate manager is factored in, meaning it has no value as a going concern beyond its net assets. Furthermore, the 88% revenue concentration in one client is a 'cliff-edge' risk. The Conservative Approach protects the buyer by only paying for the business if the primary client remains and the cash position is secured.",
+        "negotiation_priorities": [
+          "Settlement of the £149,587 director loan account within the headline price",
+          "Securing a long-term handover from the owner to transition the Client 1 relationship",
+          "Confirming the legal status and 'stickiness' of the Client 1 contract"
+        ],
+        "deal_breaker_terms": [
+          "Any notice of termination or significant volume reduction from Client 1 during DD",
+          "Refusal by the director to waive or settle the loan account from existing cash reserves",
+          "Discovery of undisclosed liabilities that exceed the current cash balance"
+        ],
+        "key_findings": [
+          "The business is technically worth more in liquidation than as a going concern due to negative adjusted earnings.",
+          "The £195k cash balance is largely offset by a £149k director loan, leaving limited 'free' cash.",
+          "The shift to subcontractors makes the business agile but increases the risk of the owner taking the 'talent' and 'client' elsewhere.",
+          "Revenue has halved in 12 months, indicating significant instability."
+        ],
+        "narrative": "Cooper Gibson is a classic 'lifestyle' consultancy that has become highly profitable but extremely fragile. The valuation is problematic because the reported profits rely on the owner taking a below-market salary. When normalized, the business loses money. The primary value is the cash on the balance sheet, but this is encumbered by a large director loan. Any deal must be structured to ensure the buyer is not simply 'buying the cash' while taking on the risk of a failing client relationship. A heavy earnout and a clear resolution of the director's loan are non-negotiable for a prudent buyer."
+      },
+      "financial": {
+        "expert": "financial",
+        "company_name": "[AUDIT-138] Cooper Gibson",
+        "analysis_date": "2024-05-22",
+        "score": 62,
+        "confidence": "high",
+        "yearly_metrics": {
+          "2022": {
+            "revenue": 367925,
+            "revenue_yoy_growth_percent": null,
+            "cost_of_sales": 0,
+            "gross_profit": 367925,
+            "gross_margin_percent": 100,
+            "administrative_expenses": 365500,
+            "operating_profit": 14064,
+            "operating_margin_percent": 3.82,
+            "depreciation_amortisation": 615,
+            "ebitda": 14679,
+            "interest_payable": 1148,
+            "interest_coverage_ratio": 12.25,
+            "profit_before_tax": 12976,
+            "corporation_tax": 2499,
+            "effective_tax_rate_percent": 19.26,
+            "net_profit": 10477,
+            "net_margin_percent": 2.85
+          },
+          "2023": {
+            "revenue": 314775,
+            "revenue_yoy_growth_percent": -14.45,
+            "cost_of_sales": 0,
+            "gross_profit": 314775,
+            "gross_margin_percent": 100,
+            "administrative_expenses": 297036,
+            "operating_profit": 17739,
+            "operating_margin_percent": 5.64,
+            "depreciation_amortisation": 463,
+            "ebitda": 18202,
+            "interest_payable": 2762,
+            "interest_coverage_ratio": 6.42,
+            "profit_before_tax": 15046,
+            "corporation_tax": 2871,
+            "effective_tax_rate_percent": 19.08,
+            "net_profit": 12175,
+            "net_margin_percent": 3.87
+          },
+          "2024": {
+            "revenue": 326227,
+            "revenue_yoy_growth_percent": 3.64,
+            "cost_of_sales": 4221,
+            "gross_profit": 322006,
+            "gross_margin_percent": 98.71,
+            "administrative_expenses": 204475,
+            "operating_profit": 117531,
+            "operating_margin_percent": 36.03,
+            "depreciation_amortisation": 640,
+            "ebitda": 118171,
+            "interest_payable": 0,
+            "interest_coverage_ratio": null,
+            "profit_before_tax": 118518,
+            "corporation_tax": 27388,
+            "effective_tax_rate_percent": 23.11,
+            "net_profit": 91130,
+            "net_margin_percent": 27.93
+          },
+          "2025": {
+            "revenue": 441073,
+            "revenue_yoy_growth_percent": 35.2,
+            "cost_of_sales": 166054,
+            "gross_profit": 275019,
+            "gross_margin_percent": 62.35,
+            "administrative_expenses": 53647,
+            "operating_profit": 221372,
+            "operating_margin_percent": 50.19,
+            "depreciation_amortisation": 299,
+            "ebitda": 221671,
+            "interest_payable": 0,
+            "interest_coverage_ratio": null,
+            "profit_before_tax": 221372,
+            "corporation_tax": 52207,
+            "effective_tax_rate_percent": 23.58,
+            "net_profit": 169165,
+            "net_margin_percent": 38.35
+          },
+          "2026": {
+            "revenue": 223404,
+            "revenue_yoy_growth_percent": -49.35,
+            "cost_of_sales": 0,
+            "gross_profit": 223404,
+            "gross_margin_percent": 100,
+            "administrative_expenses": 177671,
+            "operating_profit": 49479,
+            "operating_margin_percent": 22.15,
+            "depreciation_amortisation": 7533,
+            "ebitda": 57012,
+            "interest_payable": 0,
+            "interest_coverage_ratio": null,
+            "profit_before_tax": 49479,
+            "corporation_tax": 7819,
+            "effective_tax_rate_percent": 15.8,
+            "net_profit": 41660,
+            "net_margin_percent": 18.65
+          }
+        },
+        "cagr": {
+          "revenue_cagr_percent": -11.7,
+          "gross_profit_cagr_percent": -11.7,
+          "operating_profit_cagr_percent": 36.9,
+          "period_years": 4
+        },
+        "cost_structure": {
+          "cost_of_sales_percent_revenue": 0,
+          "overheads_percent_revenue": 79.53,
+          "staff_costs_percent_revenue": 54.55,
+          "director_costs_percent_revenue": 16.87,
+          "top_5_overheads": [
+            {
+              "category": "Directors Pension",
+              "value": 24000,
+              "percent_of_overheads": 13.51
+            },
+            {
+              "category": "Directors Salaries",
+              "value": 12570,
+              "percent_of_overheads": 7.07
+            },
+            {
+              "category": "Amortisation",
+              "value": 3422,
+              "percent_of_overheads": 1.93
+            },
+            {
+              "category": "Accountancy & Bookkeeping",
+              "value": 2400,
+              "percent_of_overheads": 1.35
+            },
+            {
+              "category": "Telecommunications",
+              "value": 1657,
+              "percent_of_overheads": 0.93
+            }
+          ],
+          "cost_base_classification": "predominantly_fixed"
+        },
+        "earnings_quality": {
+          "net_profit_tracks_operating_profit": true,
+          "exceptional_items_identified": [
+            "Profit on disposal of tangible fixed assets (2025): 1,381",
+            "Loss on disposal of tangible fixed assets (2026): 2,761"
+          ],
+          "tax_rate_consistent": false,
+          "ebitda_latest": 57012,
+          "ebitda_trend": "declining",
+          "limitations": [
+            "Significant volatility in cost of sales classification between 2025 and 2026",
+            "Staff costs in 2024 and 2025 appear understated or reclassified to other overheads"
+          ]
+        },
+        "debt_service": {
+          "latest_interest_coverage": null,
+          "interest_coverage_trend": "improving",
+          "additional_debt_capacity_assessment": "High. The company has eliminated interest-bearing debt as of 2024, with zero interest payable in the last three periods and a strong cash position."
+        },
+        "key_findings": [
+          "Revenue is highly volatile, peaking at 441k in 2025 before dropping 49% in 2026.",
+          "Operating margins show extreme fluctuation, ranging from 3.8% to 50.2%, suggesting inconsistent cost allocation or project-based revenue spikes.",
+          "Significant customer concentration exists, with one client representing over 88% of the sales ledger in 2026.",
+          "The cost structure shifted dramatically in 2025 with a large subcontractor cost (163k) that disappeared in 2026.",
+          "Staff costs and directors' remuneration are the primary drivers of the fixed cost base, though reporting of these figures is inconsistent across years.",
+          "The company has successfully deleveraged, moving from 41k in bank loans in 2022 to zero long-term debt by 2024.",
+          "Cash reserves are healthy but declining, dropping from 295k in 2025 to 195k in 2026."
+        ],
+        "red_flags": [
+          "Extreme revenue volatility with a 49% year-on-year decline in the most recent full year.",
+          "Severe customer concentration risk (88%+ revenue from a single client).",
+          "Inconsistent financial reporting, particularly regarding the classification of staff costs and 'other overheads' which reached 136k in 2024."
+        ],
+        "narrative": "Cooper Gibson presents a financial profile typical of a small, project-based professional services firm, characterized by high volatility and significant concentration risk. While the company achieved a notable performance peak in FY2025 with revenues of £441k and an operating margin of 50.2%, the subsequent FY2026 results show a sharp 49% contraction in revenue and a significant compression of EBITDA. This suggests that the 2025 performance may have been an outlier driven by a specific large-scale contract rather than sustainable organic growth.\n\nThe earnings quality is clouded by inconsistent cost classifications. In FY2024 and FY2025, reported staff costs dropped to negligible levels while 'other overheads' and 'subcontractor costs' spiked, suggesting a shift in delivery model or accounting treatment that complicates year-on-year comparisons. Furthermore, the sales ledger analysis confirms a dangerous reliance on a single client, who accounts for nearly 90% of outstanding receivables. \n\nFrom a buyer's perspective, the primary value lies in the company's debt-free balance sheet and historically strong margins when active. However, the lack of revenue stability and the 'key man' or 'key client' risk must be heavily factored into the valuation. Any acquisition should be structured with a significant earn-out component to mitigate the risk of the primary revenue stream dissipating post-completion.completion."
+      }
+    },
+    "financialDataSnapshot": {
+      "balanceSheet": {
+        "id": 4901,
+        "financialPeriodId": 7998,
+        "targetCompanyId": 1881,
+        "intangibleAssets": "20291.36",
+        "tangibleFixedAssets": "6389.47",
+        "freeholdProperty": null,
+        "leaseholdProperty": null,
+        "plantMachinery": null,
+        "fixturesFittings": "0",
+        "motorVehicles": null,
+        "computerEquipment": "6389.47",
+        "stockInventory": null,
+        "tradeDebtors": null,
+        "prepayments": "7616.93",
+        "amountsOwedByDirectors": null,
+        "amountsOwedByConnectedCompanies": "0",
+        "directorsCurrentAccount": null,
+        "otherDebtors": "32171.51",
+        "cashAtBank": "75312.48",
+        "totalCurrentAssets": "115100.92",
+        "tradeCreditors": "8960",
+        "taxationSocialSecurity": "-1399.37",
+        "vatPayable": "7379.09",
+        "corporationTaxDue": "87.81",
+        "bankLoansOverdraftCurrent": null,
+        "hirePurchaseCurrent": null,
+        "accruals": "0",
+        "amountsOwedToDirectors": "-149587.37",
+        "otherCreditors": "-16633.34",
+        "totalCurrentLiabilities": "-151193.18",
+        "bankLoansLongTerm": null,
+        "hirePurchaseLongTerm": null,
+        "deferredTaxation": null,
+        "otherLongTermDebt": null,
+        "totalLongTermLiabilities": "0",
+        "shareCapital": "2",
+        "retainedEarnings": "377972.93",
+        "totalEquity": "292974.93",
+        "debtorsList": null,
+        "creditorsList": null,
+        "fixedAssetsDetail": null,
+        "sourceDocumentId": 5880,
+        "createdAt": "2026-07-30T01:35:09.488Z",
+        "updatedAt": "2026-07-30T01:35:17.081Z",
+        "fiscalYear": "2026",
+        "periodEnd": "2026-06-25",
+        "sourceTier": "information_memorandum",
+        "_label": "CURRENT POSITION"
+      },
+      "fixedAssets": null
+    },
+    "notes": null,
+    "createdAt": "2026-07-30T01:42:13.196Z",
+    "updatedAt": "2026-07-30T01:42:13.196Z",
+    "adjustments": [
+      {
+        "id": 2047,
+        "dealModelId": 490,
+        "sourceExpertResultId": 828,
+        "adjustmentType": "add_back",
+        "category": "one_off_cost",
+        "description": "Loss on disposal of tangible fixed assets",
+        "amount": "2761",
+        "amountsByYear": {
+          "2022": 0,
+          "2023": 0,
+          "2024": 0,
+          "2025": 0,
+          "2026": 2761
+        },
+        "sourceExpert": "qoe",
+        "reasoning": "Non-cash accounting loss arising from the disposal of assets, which is non-recurring in nature.",
+        "confidence": "high",
+        "defensibilityScore": 10,
+        "caseForInclusion": "This is a one-off accounting entry that does not represent a recurring cash cost of the business operations.",
+        "caseForExclusion": "The seller might argue it reflects a regular cycle of asset replacement, though the amount is clearly identified as exceptional.",
+        "status": "suggested",
+        "isAccepted": false,
+        "isManual": false,
+        "sortOrder": 0,
+        "createdAt": "2026-07-30T01:42:13.208Z",
+        "updatedAt": "2026-07-30T01:42:13.208Z"
+      },
+      {
+        "id": 2048,
+        "dealModelId": 490,
+        "sourceExpertResultId": 828,
+        "adjustmentType": "add_back",
+        "category": "owner_salary_excess",
+        "description": "Directors Pension Contributions",
+        "amount": "24000",
+        "amountsByYear": null,
+        "sourceExpert": "qoe",
+        "reasoning": "Discretionary pension contributions for the owner-director which would not be required for a replacement manager.",
+        "confidence": "high",
+        "defensibilityScore": 9,
+        "caseForInclusion": "Pension contributions for owners are discretionary profit extractions rather than a market-rate cost of employment.",
+        "caseForExclusion": "The seller may argue this is part of a total competitive compensation package for a high-level executive.",
+        "status": "suggested",
+        "isAccepted": false,
+        "isManual": false,
+        "sortOrder": 1,
+        "createdAt": "2026-07-30T01:42:13.213Z",
+        "updatedAt": "2026-07-30T01:42:13.213Z"
+      },
+      {
+        "id": 2049,
+        "dealModelId": 490,
+        "sourceExpertResultId": 828,
+        "adjustmentType": "add_back",
+        "category": "personal_expense",
+        "description": "Use of Home as Office",
+        "amount": "312",
+        "amountsByYear": null,
+        "sourceExpert": "qoe",
+        "reasoning": "Standard tax-deductible personal expense reimbursement for the director.",
+        "confidence": "high",
+        "defensibilityScore": 8,
+        "caseForInclusion": "This is a personal benefit to the owner that a commercial buyer would not incur.",
+        "caseForExclusion": "The amount is immaterial and the seller may argue it is a legitimate business overhead for a remote-working model.",
+        "status": "suggested",
+        "isAccepted": false,
+        "isManual": false,
+        "sortOrder": 2,
+        "createdAt": "2026-07-30T01:42:13.218Z",
+        "updatedAt": "2026-07-30T01:42:13.218Z"
+      },
+      {
+        "id": 2050,
+        "dealModelId": 490,
+        "sourceExpertResultId": 828,
+        "adjustmentType": "deduction",
+        "category": "replacement_salary",
+        "description": "Replacement Management Salary Adjustment",
+        "amount": "44930",
+        "amountsByYear": null,
+        "sourceExpert": "qoe",
+        "reasoning": "The current director salary (£12,570) is significantly below the UK SME benchmark for a working MD (£57,500 mid-point for <£1M revenue).",
+        "confidence": "high",
+        "defensibilityScore": 8,
+        "caseForInclusion": "A buyer must account for the true market cost of replacing the owner-manager to maintain operations.",
+        "caseForExclusion": "The seller may argue that the business can be managed part-time or that existing staff can absorb the duties.",
+        "status": "suggested",
+        "isAccepted": false,
+        "isManual": false,
+        "sortOrder": 3,
+        "createdAt": "2026-07-30T01:42:13.223Z",
+        "updatedAt": "2026-07-30T01:42:13.223Z"
+      },
+      {
+        "id": 2051,
+        "dealModelId": 490,
+        "sourceExpertResultId": 828,
+        "adjustmentType": "deduction",
+        "category": "unsustainable_revenue",
+        "description": "Revenue Concentration Risk Adjustment",
+        "amount": "44681",
+        "amountsByYear": null,
+        "sourceExpert": "qoe",
+        "reasoning": "20% precautionary deduction on the 88.31% revenue concentration from Client 1 (£223,404 * 0.8831 * 0.20).",
+        "confidence": "medium",
+        "defensibilityScore": 5,
+        "caseForInclusion": "The extreme reliance on a single client makes nearly 90% of the earnings highly fragile and potentially unsustainable.",
+        "caseForExclusion": "The seller will argue the relationship is long-standing and secure, and that no actual revenue loss has occurred.",
+        "status": "suggested",
+        "isAccepted": false,
+        "isManual": false,
+        "sortOrder": 4,
+        "createdAt": "2026-07-30T01:42:13.227Z",
+        "updatedAt": "2026-07-30T01:42:13.227Z"
+      }
+    ],
+    "fundingLines": [
+      {
+        "id": 1377,
+        "dealModelId": 490,
+        "fundingType": "cash_equity",
+        "label": "Cash Equity (Cash to Introduce)",
+        "assetBaseValue": null,
+        "ltvPercent": null,
+        "availableAmount": null,
+        "amountUsed": "0",
+        "interestRate": null,
+        "arrangementFeePercent": null,
+        "termMonths": null,
+        "monthlyRepayment": null,
+        "isDebt": false,
+        "repaymentStructure": "amortizing",
+        "isActive": true,
+        "notes": null,
+        "sortOrder": 0,
+        "createdAt": "2026-07-30T01:42:13.232Z",
+        "updatedAt": "2026-07-30T01:42:13.232Z"
+      }
+    ],
+    "sellerPayments": [],
+    "contingentConsideration": []
+  },
+  "calculations": {
+    "adjustedEbitdaByYear": {
+      "2022": 14679,
+      "2023": 18202,
+      "2024": 118171,
+      "2025": 221671,
+      "2026": 57012
+    },
+    "averageAdjustedEbitda": 132284.66666666666,
+    "enterpriseValue": 264569.3333333333,
+    "offerPrice": 300421.1533333333,
+    "impliedMultiple": null,
+    "feeLegalDd": 25000,
+    "feeAccountingDd": 15000,
+    "feeLoanArrangement": 0,
+    "feeDealMaker": 0,
+    "customFeeAmounts": [],
+    "totalFees": 40000,
+    "totalFundingRequired": 340421.1533333333,
+    "fundingLines": [
+      {
+        "availableAmount": 0,
+        "monthlyRepayment": 0,
+        "annualRepayment": 0,
+        "arrangementFee": 0
+      }
+    ],
+    "totalFunded": 0,
+    "fundingGap": 300421.15,
+    "totalAnnualDebtService": 0,
+    "sellerAnnualDebtService": 0,
+    "earnoutAnnualDebtService": 0,
+    "revolvingInterestAnnual": 0,
+    "receivablesInterestAnnual": 0,
+    "valuationEbitda": 132284.66666666666,
+    "paymentCoverRatio": null,
+    "paymentCoverRating": "no_debt"
+  }
+}

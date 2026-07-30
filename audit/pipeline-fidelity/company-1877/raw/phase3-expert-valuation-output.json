@@ -1,0 +1,118 @@
+{
+  "expert": "valuation",
+  "company_name": "[AUDIT-228] Thor-CON",
+  "analysis_date": "2025-09-08",
+  "score": 75,
+  "confidence": "high",
+  "ebitda_multiple_valuation": {
+    "adjusted_ebitda_base": 181319.08,
+    "sector_multiple_range": {
+      "low": 1.5,
+      "mid": 2.25,
+      "high": 3
+    },
+    "selected_multiple": 2.5,
+    "multiple_justification": "A multiple of 2.5x is selected, which is above the sector midpoint but below the high end. This reflects the company's strong revenue CAGR (21%) and modern asset base, balanced against its micro-SME status and high reliance on installation revenue over recurring maintenance.",
+    "premium_factors_applied": [
+      "Strong revenue CAGR of 21% over 3 years",
+      "Modern vehicle fleet (81% freshness)",
+      "Highly diversified customer base (HHI 112)",
+      "Successful pivot to high-demand AC installation segment"
+    ],
+    "discount_factors_applied": [
+      "Micro-SME scale (under £2M revenue)",
+      "Low proportion of recurring maintenance revenue (12.7%)",
+      "Key-man risk associated with the General Manager",
+      "High marketing dependency for lead generation"
+    ],
+    "enterprise_value_range": {
+      "conservative": 315574.34,
+      "base": 453297.7,
+      "optimistic": 543957.24
+    }
+  },
+  "ev_to_equity_bridge": {
+    "enterprise_value_base": 453297.7,
+    "plus_cash": 0,
+    "minus_long_term_debt": 319252.04,
+    "minus_director_loans": 16056.67,
+    "minus_bad_debt_provision": 2269.82,
+    "minus_working_capital_adjustment": 0,
+    "equity_value": {
+      "conservative": -22004.19,
+      "base": 115719.17,
+      "optimistic": 206378.71
+    }
+  },
+  "asset_based_valuation": {
+    "net_asset_value": 332463.82,
+    "property_adjustment": 0,
+    "bad_debt_adjustment": 2269.82,
+    "adjusted_nav": 330194,
+    "nav_as_floor": true
+  },
+  "revenue_multiple_crosscheck": {
+    "latest_revenue": 1944079,
+    "revenue_multiple_range": {
+      "low": 0.3,
+      "high": 0.7
+    },
+    "implied_ev_range": {
+      "low": 583223.7,
+      "high": 1360855.3
+    }
+  },
+  "valuation_summary": {
+    "recommended_range": {
+      "equity_value_low": 115719.17,
+      "equity_value_mid": 222971.59,
+      "equity_value_high": 330194
+    },
+    "primary_methodology": "ebitda_multiple",
+    "cross_check_alignment": "weak"
+  },
+  "sensitivity": {
+    "ebitda_plus_10pct": {
+      "enterprise_value": 498627.47,
+      "equity_value": 161048.94
+    },
+    "ebitda_minus_10pct": {
+      "enterprise_value": 407967.93,
+      "equity_value": 70389.4
+    },
+    "multiple_plus_half": {
+      "enterprise_value": 543957.24,
+      "equity_value": 206378.71
+    },
+    "multiple_minus_half": {
+      "enterprise_value": 362638.16,
+      "equity_value": 25059.63
+    },
+    "key_customer_loss_impact": 9927.22,
+    "director_replacement_impact": 48404
+  },
+  "seller_expectations": {
+    "likely_seller_expectation_range": {
+      "low": 500000,
+      "high": 1000000
+    },
+    "seller_anchor_points": [
+      "Recent revenue growth to £1.94M",
+      "Reported management EBITDA of £278k",
+      "High asset value of the modern fleet"
+    ],
+    "negotiation_gap_assessment": "Significant. The seller is likely to anchor on the unadjusted EBITDA of £278k and the high revenue growth. However, the high debt load (£319k) and the need for a market-rate MD salary significantly compress the equity value. The gap between the EBITDA-based equity value and the Adjusted NAV suggests the seller may prefer an asset-plus-goodwill approach."
+  },
+  "key_findings": [
+    "The business has strong operational momentum but is heavily leveraged with £319k in long-term debt (primarily HP on vehicles).",
+    "Adjusted EBITDA of £181k is the most reliable basis for valuation, accounting for a market-rate MD salary and depreciation.",
+    "The asset-based valuation (Adjusted NAV of £330k) provides a higher floor than the EBITDA-based equity value due to the high debt-to-equity ratio.",
+    "Customer concentration is exceptionally low, providing high security for future revenue streams."
+  ],
+  "red_flags": [
+    "Negative Hire Purchase Long Term balance (-£167,914) suggests accounting errors that could impact debt calculations.",
+    "Intercompany loan of £122k is included in working capital but its recoverability is unverified.",
+    "High debt levels relative to equity value create a sensitive bridge; small changes in EV significantly impact the final share price."
+  ],
+  "narrative": "Thor-CON is a high-growth micro-SME that has successfully professionalized its operations and modernized its fleet. While the Enterprise Value is robust at £453k (based on a 2.5x multiple of adjusted EBITDA), the Equity Value is significantly impacted by £319k of long-term debt and the absence of reported cash in the provided accounts. The bridge from EV to Equity is the most contentious part of this valuation; if the £122k intercompany loan is deemed non-recoverable, the equity value could approach zero in a conservative scenario. However, the Adjusted Net Asset Value of £330k provides a strong floor. A buyer is likely to pay a premium over the EBITDA-derived equity value to reflect the 'freshness' of the assets and the scalability of the platform, likely landing in a range between £115k and £330k depending on the treatment of intercompany balances and debt."
+}

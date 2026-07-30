@@ -1,0 +1,166 @@
+{
+  "expert": "operational",
+  "company_name": "[AUDIT-89] Innova Design Group Limited",
+  "analysis_date": "2024-05-22",
+  "score": 68,
+  "confidence": "medium",
+  "working_capital": {
+    "yearly_metrics": {
+      "2021": {
+        "debtor_days": 46.94,
+        "creditor_days": null,
+        "stock_days": 84.07,
+        "cash_conversion_cycle_days": null,
+        "net_working_capital": 181308,
+        "working_capital_percent_revenue": 3.89
+      },
+      "2022": {
+        "debtor_days": 56,
+        "creditor_days": null,
+        "stock_days": 51.08,
+        "cash_conversion_cycle_days": null,
+        "net_working_capital": 279901,
+        "working_capital_percent_revenue": 4.86
+      },
+      "2024": {
+        "debtor_days": 48.87,
+        "creditor_days": 32.09,
+        "stock_days": 18.1,
+        "cash_conversion_cycle_days": 34.88,
+        "net_working_capital": 519246,
+        "working_capital_percent_revenue": 10.48
+      },
+      "2025": {
+        "debtor_days": 34.75,
+        "creditor_days": 42.53,
+        "stock_days": 33.66,
+        "cash_conversion_cycle_days": 25.88,
+        "net_working_capital": 519280,
+        "working_capital_percent_revenue": 11.52
+      }
+    },
+    "trend": "stable",
+    "working_capital_intensity": "moderate",
+    "observations": [
+      "Net working capital has increased significantly from £181k in 2021 to £519k in 2025.",
+      "Debtor days improved from 56.0 in 2022 to 34.75 in 2025, though the sales ledger shows 19.7% of debt is now 90+ days overdue.",
+      "Stock days are volatile, peaking at 84 days in 2021 and dropping to 33.6 days in 2025.",
+      "Creditor days are relatively low (42.5 in 2025), suggesting prompt payment to suppliers."
+    ]
+  },
+  "capex": {
+    "total_gross_asset_value": 849608.84,
+    "total_nbv": 284665.58,
+    "asset_freshness_percent": 33.5,
+    "recent_additions_24m_value": 192350.04,
+    "recent_additions_percent": 22.64,
+    "annual_depreciation_charge": 49005,
+    "estimated_maintenance_capex": 49005,
+    "capex_cliff_risk": true,
+    "assets_requiring_replacement": [
+      {
+        "description": "Biesse Rover B - Praetura 102364",
+        "cost": 126000,
+        "nbv": 19377.68
+      },
+      {
+        "description": "Biesse Rover A (Nestor)",
+        "cost": 40936.04,
+        "nbv": 6295.6
+      },
+      {
+        "description": "2013 Biesse Skipper 130",
+        "cost": 40936.04,
+        "nbv": 6295.6
+      }
+    ],
+    "category_breakdown": {
+      "property": {
+        "cost": 0,
+        "nbv": 0
+      },
+      "plant_machinery": {
+        "cost": 803748.05,
+        "nbv": 262792.56
+      },
+      "vehicles": {
+        "cost": 0,
+        "nbv": 0
+      },
+      "it_equipment": {
+        "cost": 45860.79,
+        "nbv": 21873.02
+      },
+      "other": {
+        "cost": null,
+        "nbv": null
+      }
+    },
+    "observations": [
+      "Asset base is aging; 66.5% of the original cost has been depreciated.",
+      "Significant recent investment in 2026 (£92k Beamsaw) indicates a move to modernize.",
+      "High concentration of Biesse machinery from 2012-2013 suggests a replacement cycle is imminent for core production units.",
+      "Maintenance capex (proxied by depreciation) is approximately £50k per annum."
+    ]
+  },
+  "workforce": {
+    "headcount": null,
+    "total_payroll": 716147,
+    "revenue_per_employee": null,
+    "payroll_percent_revenue": 15.88,
+    "average_salary_all": null,
+    "average_salary_excl_directors": null,
+    "director_remuneration_total": 25140,
+    "director_percent_of_payroll": 3.51,
+    "ft_pt_split": {
+      "full_time": null,
+      "part_time": null
+    },
+    "longest_tenured_years": null,
+    "newest_hire_months_ago": null,
+    "observations": [
+      "Staff costs as a % of revenue have increased from 10.1% in 2021 to 15.9% in 2025.",
+      "Direct labour costs in COS (£348k in 2025) suggest a significant production workforce not fully detailed in the staff matrix.",
+      "Subcontractor costs are a major component of COS (£1.32m in 2025), indicating a flexible but potentially lower-margin labor model."
+    ]
+  },
+  "owner_dependency": {
+    "risk_level": "low",
+    "director_count": 1,
+    "highest_individual_salary": 25140,
+    "highest_individual_percent_of_payroll": 3.51,
+    "critical_function_concentration": "Low based on salary data; however, the single director's role in sales/operations is not fully disclosed.",
+    "observations": [
+      "Director remuneration is exceptionally low relative to company turnover, suggesting value is taken via dividends (£60k-£90k historically).",
+      "The business relies heavily on subcontractors, which reduces internal management complexity but increases external dependency."
+    ]
+  },
+  "scalability": {
+    "rating": "medium",
+    "headcount_for_25pct_growth": null,
+    "capex_needed_for_growth": "High - core CNC and Beamsaw units are at the end of their book life.",
+    "working_capital_supports_growth": true,
+    "bottlenecks": [
+      "Aging Biesse machinery fleet",
+      "High customer concentration (68% of debtors from one client)",
+      "Heavy reliance on subcontractors for delivery"
+    ],
+    "observations": [
+      "The business has demonstrated the ability to handle revenue between £4.4m and £5.7m with similar overhead structures.",
+      "Growth would likely require a step-change in capex to replace 10+ year old machinery.",
+      "Working capital is currently positive and could fund modest growth, but a 25% jump would strain the current aging asset base."
+    ]
+  },
+  "key_findings": [
+    "The business maintains a healthy net working capital position of £519k as of Oct 2025.",
+    "Recent 2026 capex (£92k) shows commitment to modernization, but the core fleet remains old.",
+    "Customer concentration is a significant operational risk, with one debtor representing 68% of the ledger.",
+    "The use of subcontractors (£1.3m) provides operational flexibility but limits direct control over the value chain."
+  ],
+  "red_flags": [
+    "Capex Cliff: Over 30% of the asset base consists of machinery over 10 years old with NBV < 15% of cost.",
+    "Debtor Aging: 19.7% of trade debtors are over 90 days overdue, with specific mentions of 'client not happy' and 'retention' issues.",
+    "High customer concentration in the sales ledger."
+  ],
+  "narrative": "Innova Design Group operates a flexible manufacturing model with a heavy reliance on subcontractors, which has allowed it to maintain relatively low fixed staff costs (15.9% of revenue). While the business is currently profitable and generates sufficient working capital, it faces a looming 'capex cliff' as its primary production machinery (Biesse units from 2012/13) reaches the end of its operational life. Operational efficiency is hampered by significant debtor aging issues and extreme customer concentration. Scalability is possible but will require a structured capital investment plan to replace aging assets and a diversification of the customer base to mitigate credit risk."
+}

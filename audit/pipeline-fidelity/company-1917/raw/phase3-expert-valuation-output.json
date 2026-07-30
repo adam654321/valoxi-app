@@ -1,0 +1,118 @@
+{
+  "expert": "valuation",
+  "company_name": "[AUDIT-190] Spruce Pools",
+  "analysis_date": "2024-05-22",
+  "score": 65,
+  "confidence": "medium",
+  "ebitda_multiple_valuation": {
+    "adjusted_ebitda_base": 312262,
+    "sector_multiple_range": {
+      "low": 2,
+      "mid": 2.75,
+      "high": 3.5
+    },
+    "selected_multiple": 2.5,
+    "multiple_justification": "A multiple of 2.5x is selected, which is slightly below the sector midpoint. While the business benefits from a high proportion of recurring maintenance revenue (approx. 43% of 2025 revenue), which usually commands a premium, this is offset by significant gross margin erosion (falling from 35% to 29%) and a declining operating profit trend. The small size and owner dependency further constrain the multiple.",
+    "premium_factors_applied": [
+      "High proportion of recurring service/maintenance revenue (>40%)",
+      "Strong liquidity and debt-free status",
+      "Efficient working capital management (negative cash conversion cycle)"
+    ],
+    "discount_factors_applied": [
+      "Significant gross margin contraction (600 bps over 3 years)",
+      "Operating profit declining at a CAGR of -21.08%",
+      "High owner dependency (directors' pension and salary structure)",
+      "Accounting discrepancies in asset register and labor classification"
+    ],
+    "enterprise_value_range": {
+      "conservative": 624524,
+      "base": 780655,
+      "optimistic": 1092917
+    }
+  },
+  "ev_to_equity_bridge": {
+    "enterprise_value_base": 780655,
+    "plus_cash": 795164.52,
+    "minus_long_term_debt": 0,
+    "minus_director_loans": 0,
+    "minus_bad_debt_provision": 0,
+    "minus_working_capital_adjustment": 0,
+    "equity_value": {
+      "conservative": 1419688.52,
+      "base": 1575819.52,
+      "optimistic": 1888081.52
+    }
+  },
+  "asset_based_valuation": {
+    "net_asset_value": 1035444.36,
+    "property_adjustment": 0,
+    "bad_debt_adjustment": 0,
+    "adjusted_nav": 1035444.36,
+    "nav_as_floor": true
+  },
+  "revenue_multiple_crosscheck": {
+    "latest_revenue": 2313955,
+    "revenue_multiple_range": {
+      "low": 0.4,
+      "high": 0.8
+    },
+    "implied_ev_range": {
+      "low": 925582,
+      "high": 1851164
+    }
+  },
+  "valuation_summary": {
+    "recommended_range": {
+      "equity_value_low": 1419688.52,
+      "equity_value_mid": 1575819.52,
+      "equity_value_high": 1888081.52
+    },
+    "primary_methodology": "ebitda_multiple",
+    "cross_check_alignment": "moderate"
+  },
+  "sensitivity": {
+    "ebitda_plus_10pct": {
+      "enterprise_value": 858720.5,
+      "equity_value": 1653885.02
+    },
+    "ebitda_minus_10pct": {
+      "enterprise_value": 702589.5,
+      "equity_value": 1497754.02
+    },
+    "multiple_plus_half": {
+      "enterprise_value": 936786,
+      "equity_value": 1731950.52
+    },
+    "multiple_minus_half": {
+      "enterprise_value": 624524,
+      "equity_value": 1419688.52
+    },
+    "key_customer_loss_impact": "Moderate. While specific customer data is missing, the high proportion of maintenance contracts suggests a diversified base, but loss of a major renovation project could impact annual revenue by 10-15%.",
+    "director_replacement_impact": 48400
+  },
+  "seller_expectations": {
+    "likely_seller_expectation_range": {
+      "low": 2000000,
+      "high": 2500000
+    },
+    "seller_anchor_points": [
+      "High cash balance of £795k",
+      "Revenue recovery to £2.3m in 2025",
+      "Emotional value of the 'Spruce Pools' brand"
+    ],
+    "negotiation_gap_assessment": "A significant gap is expected. The seller will likely anchor on the high cash balance and total assets, potentially seeking a 'Cash + Multiple' deal that ignores the fact that some cash is required for working capital. The buyer will focus on the declining margin profile and the need for a replacement manager."
+  },
+  "key_findings": [
+    "The business is exceptionally liquid with £795,164.52 in cash as of 31 May 2026, which significantly inflates the equity value relative to the enterprise value.",
+    "Adjusted EBITDA of £312,262 accounts for discretionary pension contributions and a market-rate salary for a replacement manager.",
+    "The core value driver is the £1m+ recurring maintenance revenue, providing stability against the more volatile construction segment.",
+    "Gross margin erosion from 35% to 29% is a critical concern that must be addressed post-acquisition."
+  ],
+  "red_flags": [
+    "Asset register discrepancy of £286,935.20 between ledger and sub-ledger.",
+    "Inconsistent labor cost classification between 2024 and 2025.",
+    "Goodwill of £138k listed in asset register but not on the statutory balance sheet.",
+    "Negative 'Other Creditors' balance of -£39,394.62 requires investigation."
+  ],
+  "narrative": "The valuation of Spruce Pools is heavily influenced by its 'fortress' balance sheet. Using an EBITDA multiple approach, the Enterprise Value is calculated at £780,655 based on a 2.5x multiple of the £312,262 Adjusted EBITDA. The bridge to Equity Value adds the full cash balance of £795,164.52 (as of 31 May 2026), resulting in a base Equity Value of approximately £1.57m. This high cash-to-EV ratio suggests the business is over-capitalized. While the recurring revenue from maintenance contracts provides a solid floor, the downward trend in gross and operating margins prevents the application of a premium sector multiple. The asset-based valuation of £1.03m (Net Assets as of 31 May 2026) serves as a firm floor, but the EBITDA-based approach is more appropriate for a going concern. A buyer should prioritize due diligence on the asset register discrepancies and the 2024 labor cost spike before finalizing the offer."
+}

@@ -1,0 +1,98 @@
+{
+  "expert": "deal_structure",
+  "company_name": "[AUDIT-220] Canoports UK Limited",
+  "analysis_date": "2025-07-24",
+  "score": 78,
+  "confidence": "high",
+  "structures": [
+    {
+      "name": "Conservative Approach",
+      "strategy": "Minimize upfront risk by tying a significant portion of the consideration to the verification of non-recurring add-backs and the successful transition of the Wood family.",
+      "risk_to_buyer": "low",
+      "suitable_when": "Due diligence reveals ambiguity in the £302k add-backs or if the buyer is concerned about the 'heavy' working capital requirements.",
+      "consideration": {
+        "total_headline": 12250000,
+        "upfront_cash": 7350000,
+        "upfront_percent": 60,
+        "deferred": 2450000,
+        "earnout_maximum": 2450000,
+        "earnout_metric": "Adjusted EBITDA",
+        "earnout_period_months": 24,
+        "earnout_rationale": "Trigger 4 (Unverified add-backs): The £302k in non-recurring items represents 16% of the adjusted EBITDA. This earnout ensures the business maintains the normalized earnings level claimed by the seller. Trigger 3 (Owner dependency): Ensures the Wood family provides a comprehensive handover to the CEO.",
+        "retention_escrow": 1225000
+      },
+      "key_conditions": [
+        "Verification of £302k non-recurring add-backs during DD",
+        "Working capital peg set at £7.07m (Current Position)",
+        "Full tax indemnity regarding the 50% effective tax rate anomaly"
+      ],
+      "notes": "Seller obligations: 12-month handover for Mark and Louisa Wood, followed by a 36-month non-compete. Key warranties: Specific indemnity for the FY24 tax rate and a 20% warranty cap. Completion mechanism: Completion accounts with a strict working capital peg of £7.07m. Risk to buyer: Low, as the structure protects against earnings volatility and working capital leakage."
+    },
+    {
+      "name": "Balanced Approach",
+      "strategy": "A fair split that recognizes the strong £17.4m pipeline while protecting the buyer from the immediate cash drain of the heavy working capital cycle.",
+      "risk_to_buyer": "medium",
+      "suitable_when": "The buyer is confident in the CEO's ability to lead but wants to ensure the pipeline converts to actual EBITDA.",
+      "consideration": {
+        "total_headline": 12250000,
+        "upfront_cash": 9187500,
+        "upfront_percent": 75,
+        "deferred": 1837500,
+        "earnout_maximum": 1225000,
+        "earnout_metric": "EBITDA and Pipeline Conversion",
+        "earnout_period_months": 12,
+        "earnout_rationale": "Trigger 4 (Unverified add-backs): Tying the earnout to EBITDA confirms the £1.86m base is sustainable. Trigger 6 (Forecasted growth): While based on historic EBITDA, the valuation multiple of 5.0x is justified by the £17.4m pipeline; the earnout ensures this pipeline is not just 'secured' but 'delivered'.",
+        "retention_escrow": 612500
+      },
+      "key_conditions": [
+        "CEO (Richard) signs a new 3-year service agreement",
+        "Normalized working capital target based on 12-month average",
+        "Clean title to all £1.3m powder coating assets"
+      ],
+      "notes": "Seller obligations: 6-month consultancy for owners and 24-month non-compete. Key warranties: Standard manufacturing warranties with a 15% cap and £50k basket. Completion mechanism: Locked box based on May 2026 accounts if DD is completed quickly. Risk to buyer: Medium, primarily centered on the cash conversion cycle and stock obsolescence risk."
+    },
+    {
+      "name": "Competitive Approach",
+      "strategy": "Maximize upfront cash to win the deal against other institutional bidders, relying on the strong cash position and secured pipeline as collateral.",
+      "risk_to_buyer": "high",
+      "suitable_when": "In a competitive auction where the target's £2.95m cash and £17.4m pipeline are seen as highly de-risking factors.",
+      "consideration": {
+        "total_headline": 12250000,
+        "upfront_cash": 10412500,
+        "upfront_percent": 85,
+        "deferred": 1837500,
+        "earnout_maximum": 0,
+        "earnout_metric": "N/A",
+        "earnout_period_months": 0,
+        "earnout_rationale": "No earnout included to maximize competitiveness. The high repeat order rate (91%) and massive pipeline provide sufficient comfort to move to a fixed deferred structure.",
+        "retention_escrow": 300000
+      },
+      "key_conditions": [
+        "Key customer (Top 10%) retention letters",
+        "Satisfactory explanation of the 50% tax rate",
+        "Debt-free/Cash-free completion"
+      ],
+      "notes": "Seller obligations: 3-month handover and 24-month non-compete. Key warranties: Fundamental warranties only, with a 10% cap. Completion mechanism: Completion accounts with a 'Cash-Free/Debt-Free' adjustment. Risk to buyer: High, as there is no contingent protection if the £302k add-backs prove to be operational costs or if the pipeline stalls."
+    }
+  ],
+  "recommended_structure": "Balanced Approach",
+  "recommendation_rationale": "The Balanced Approach is recommended because it addresses the two primary risks identified by the experts: the verification of significant non-recurring add-backs (£302k) and the heavy working capital requirement (£7.07m). While the business is high-quality, the extension of debtor days and the 27% increase in stock suggest that a portion of the price should be deferred to ensure the balance sheet is as liquid as presented at completion.",
+  "negotiation_priorities": [
+    "Working Capital Peg: Establishing a high peg to account for the £7m NWC is critical to avoid the buyer funding the seller's inventory growth.",
+    "Add-back Substantiation: Detailed audit of the £284k 'non-recurring items' to ensure they are truly one-off.",
+    "Tax Due Diligence: Investigating the 50% effective tax rate to ensure no hidden liabilities or structural tax issues.",
+    "CEO Retention: Securing Richard's long-term commitment as the primary successor."
+  ],
+  "deal_breaker_terms": [
+    "Significant stock obsolescence within the £3.3m inventory",
+    "Failure to provide a clear breakdown of the 90+ day aged debtors",
+    "Any change in the 'secured' status of the £17.4m pipeline"
+  ],
+  "key_findings": [
+    "The business is effectively debt-free with £2.95m in cash, significantly enhancing equity value.",
+    "Adjusted EBITDA of £1.86m is the correct valuation base, but requires verification of £302k in add-backs.",
+    "Working capital intensity is the primary operational challenge, with £7m tied up in the cycle.",
+    "The CEO provides excellent continuity, mitigating the exit of the Wood family."
+  ],
+  "narrative": "Canoports UK Limited is a premium manufacturing target. The deal structure must balance the company's excellent visibility (via the £17.4m pipeline) against its heavy capital requirements. A 5.0x multiple is fair, but the buyer must be disciplined regarding the working capital adjustment. By using a Balanced Approach with a 75% upfront payment, the buyer remains competitive while retaining enough leverage to ensure the 'normalized' earnings and 'secured' pipeline actually materialize post-completion. The primary focus of the SPA should be a robust working capital mechanism and a clear tax indemnity."
+}

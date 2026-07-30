@@ -1,0 +1,92 @@
+{
+  "document": "profit_and_loss",
+  "source": "management",
+  "years_covered": [
+    2025
+  ],
+  "period_ends": {
+    "2025": "2025-02-28"
+  },
+  "months_covered": {
+    "2025": 12
+  },
+  "report_date": "2025-04-08",
+  "years": {
+    "2025": {
+      "year": 2025,
+      "profit_and_loss": {
+        "revenue": 441072.5,
+        "cost_of_sales": 166074,
+        "gross_profit": 274998.5,
+        "administrative_expenses": 41676.33,
+        "depreciation_amortisation": null,
+        "other_operating_income": null,
+        "operating_profit": 233322.17,
+        "interest_receivable": 805.49,
+        "interest_payable": null,
+        "profit_before_tax": 234147.66,
+        "corporation_tax": null,
+        "net_profit": 234147.66
+      },
+      "revenue_breakdown": {
+        "by_product": {
+          "Sales": 441072.5
+        },
+        "by_segment": {}
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": null,
+        "direct_labour": null,
+        "subcontractor_costs": 163671,
+        "other_direct_costs": 2403
+      },
+      "overheads_breakdown": {
+        "staff_wages_salaries": null,
+        "directors_salaries": null,
+        "directors_pension": 24000,
+        "employers_national_insurance": null,
+        "staff_pension_contributions": null,
+        "staff_training_recruitment": null,
+        "use_of_home_as_office": null,
+        "rent_rates": null,
+        "utilities": null,
+        "insurance": null,
+        "accountancy_bookkeeping": 1623,
+        "professional_fees": 4682.55,
+        "software_subscriptions": 1258.63,
+        "computer_costs": 2259.55,
+        "it_support_hosting": 60,
+        "telecommunications": 1223.15,
+        "printing_stationery": 5.35,
+        "postage_courier": null,
+        "subscriptions_memberships": null,
+        "bank_charges": null,
+        "advertising_marketing": 2702.5,
+        "travel_subsistence": 1001.19,
+        "motor_expenses": null,
+        "repairs_maintenance": 702.54,
+        "depreciation": null,
+        "amortisation": null,
+        "other_overheads": 2157.87
+      },
+      "total_staff_costs": 0,
+      "total_directors_remuneration": 24000,
+      "dividends_paid": 85000,
+      "exceptional_items": [],
+      "financial_ratios": {
+        "gross_margin_percent": 62.35,
+        "net_margin_percent": 53.09,
+        "interest_coverage_ratio": null
+      }
+    }
+  },
+  "summary_insights": [
+    "The company achieved a strong gross margin of 62.4%, driven by a lean cost of sales structure primarily composed of subcontractor costs.",
+    "Net profitability is exceptionally high at 53.1%, reflecting very low administrative overheads relative to total revenue.",
+    "Directors' remuneration is currently focused on pension contributions (£24,000) rather than high salaries, which may be tax-efficient for the owners.",
+    "The business maintains high liquidity with £167,600 in cash at bank, providing a significant buffer for operational needs.",
+    "A dividend of £85,000 was paid during the period, representing a 36.3% payout ratio of the net profit for the year.",
+    "Subcontractor costs represent 98.5% of the total cost of sales, indicating a highly outsourced operational model with low direct asset intensity."
+  ],
+  "_isIM": false
+}

@@ -1,0 +1,81 @@
+{
+  "document": "balance_sheet",
+  "source": "management",
+  "years_covered": [
+    2026
+  ],
+  "period_ends": {
+    "2026": "2026-03-12"
+  },
+  "months_covered": {
+    "2026": 12
+  },
+  "report_date": "2026-05-21",
+  "years": {
+    "2026": {
+      "year": 2026,
+      "balance_sheet": {
+        "fixed_assets": {
+          "intangible_assets": null,
+          "tangible_assets": 225179.38,
+          "freehold_property": null,
+          "leasehold_property": null,
+          "plant_machinery": 48267,
+          "fixtures_fittings": null,
+          "motor_vehicles": 163396,
+          "computer_equipment": 13516.38
+        },
+        "current_assets": {
+          "stock": null,
+          "trade_debtors": 250591.03,
+          "prepayments": null,
+          "amounts_owed_by_directors": null,
+          "amounts_owed_by_connected_companies": null,
+          "directors_current_account": null,
+          "other_debtors": 21230.63,
+          "cash_at_bank": 101055.65,
+          "total": 372877.31
+        },
+        "current_liabilities": {
+          "trade_creditors": 90607.95,
+          "taxation_social_security": 13648.41,
+          "vat_payable": 0,
+          "corporation_tax": null,
+          "bank_loans_current": 0,
+          "hire_purchase_current": null,
+          "accruals": null,
+          "amounts_owed_to_directors": null,
+          "other_creditors": 11667.28,
+          "total": 115923.64
+        },
+        "long_term_liabilities": {
+          "bank_loans": null,
+          "hire_purchase_long_term": null,
+          "deferred_taxation": null,
+          "other_debt": 7347.64,
+          "total": 7347.64
+        },
+        "equity": {
+          "share_capital": 200,
+          "retained_earnings": 474494.31,
+          "total": 474785.41
+        }
+      },
+      "financial_ratios": {
+        "current_ratio": 3.21657696,
+        "quick_ratio": 3.0334336,
+        "net_assets_growth_percent": null,
+        "gearing_ratio_percent": 1.5475707
+      }
+    }
+  },
+  "summary_insights": [
+    "The company maintains a strong liquidity position with a current ratio of 3.22 and a quick ratio of 3.03, indicating robust short-term debt coverage.",
+    "The asset base is heavily weighted towards tangible fixed assets (£225k), primarily driven by a significant investment in motor vehicles (£163k).",
+    "Net current assets (working capital) are healthy at £256,953, providing substantial operational flexibility.",
+    "The capital structure is highly conservative with a very low gearing ratio of 1.55%, suggesting minimal reliance on long-term debt.",
+    "Shareholder value is primarily represented by retained earnings of over £474k, indicating a history of profitable operations and capital retention.",
+    "Trade debtors represent a significant portion of current assets (£250k), suggesting that cash flow is highly dependent on efficient credit control and collections."
+  ],
+  "_isIM": false
+}

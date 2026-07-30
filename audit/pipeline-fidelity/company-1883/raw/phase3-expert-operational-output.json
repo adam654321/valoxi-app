@@ -1,0 +1,128 @@
+{
+  "expert": "operational",
+  "company_name": "[AUDIT-220] Canoports UK Limited",
+  "analysis_date": "2025-05-22",
+  "score": 72,
+  "confidence": "medium",
+  "working_capital": {
+    "yearly_metrics": {
+      "2024": {
+        "debtor_days": 52.52,
+        "creditor_days": 69.05,
+        "stock_days": 107.67,
+        "cash_conversion_cycle_days": 91.14,
+        "net_working_capital": 4515046,
+        "working_capital_percent_revenue": 32.23
+      }
+    },
+    "trend": "deteriorating",
+    "working_capital_intensity": "heavy",
+    "observations": [
+      "Debtor days based on 2025 sales ledger data (62.9 days) show an extension compared to the FY24 calculated rate (52.5 days), suggesting slowing collections.",
+      "Stock levels have increased significantly from £2.6m in FY24 to £3.3m in the CURRENT POSITION (2026-05-31), indicating a higher capital tie-up in inventory.",
+      "The business maintains a healthy current ratio, but the cash conversion cycle is relatively long at over 90 days, driven primarily by high stockholding requirements.",
+      "Net working capital has grown from £4.5m in FY24 to £7.07m in the CURRENT POSITION (2026-05-31)."
+    ]
+  },
+  "capex": {
+    "total_gross_asset_value": 1300000,
+    "total_nbv": 807981,
+    "asset_freshness_percent": 62.15,
+    "recent_additions_24m_value": 1300000,
+    "recent_additions_percent": 100,
+    "annual_depreciation_charge": 303929,
+    "estimated_maintenance_capex": 303929,
+    "capex_cliff_risk": false,
+    "assets_requiring_replacement": [],
+    "category_breakdown": {
+      "property": {
+        "cost": null,
+        "nbv": null
+      },
+      "plant_machinery": {
+        "cost": 1300000,
+        "nbv": 807981
+      },
+      "vehicles": {
+        "cost": null,
+        "nbv": null
+      },
+      "it_equipment": {
+        "cost": null,
+        "nbv": null
+      },
+      "other": {
+        "cost": null,
+        "nbv": null
+      }
+    },
+    "observations": [
+      "The asset base is relatively modern following a £1.3m investment in a powder coating line in 2022.",
+      "The business operates an 'asset-light' model where tangible fixed assets represent only 4.9% of turnover.",
+      "All property is leasehold, which limits the ability to secure debt against property but provides operational flexibility.",
+      "Current NBV of £807,981 (CURRENT POSITION, 2026-05-31) is well-covered by the estimated refinanceable value of £1.3m."
+    ]
+  },
+  "workforce": {
+    "headcount": 92,
+    "total_payroll": 3949165,
+    "revenue_per_employee": 152288.41,
+    "payroll_percent_revenue": 28.19,
+    "average_salary_all": 31087.66,
+    "average_salary_excl_directors": 30217.67,
+    "director_remuneration_total": 140475,
+    "director_percent_of_payroll": 3.56,
+    "ft_pt_split": {
+      "full_time": 92,
+      "part_time": 0
+    },
+    "longest_tenured_years": 15,
+    "newest_hire_months_ago": null,
+    "observations": [
+      "Revenue per employee is calculated using FY24 revenue and current headcount; actual productivity may be higher if FY25/26 revenue has grown as suggested by the IM.",
+      "The CEO (Richard) has a 15-year tenure, providing significant operational stability during the planned owner exit.",
+      "Director remuneration is noted as being below market rates, which may require a post-deal adjustment to reflect commercial salaries.",
+      "The workforce is entirely full-time, suggesting a stable but potentially less flexible cost base."
+    ]
+  },
+  "owner_dependency": {
+    "risk_level": "medium",
+    "director_count": 2,
+    "highest_individual_salary": null,
+    "highest_individual_percent_of_payroll": null,
+    "critical_function_concentration": "Concentrated in the Wood family (Owners) and the CEO (Richard).",
+    "observations": [
+      "While the owners are directors, a clear succession plan is in place with the long-tenured CEO (Richard) set to lead post-transaction.",
+      "Director remuneration is only 3.56% of total payroll, which is low and suggests the business is not overly burdened by owner-salary costs, though dividends are not disclosed.",
+      "The reliance on a single CEO for the 'AliDeck' division represents a key person risk that should be mitigated through a wider management incentive plan."
+    ]
+  },
+  "scalability": {
+    "rating": "medium",
+    "headcount_for_25pct_growth": 23,
+    "capex_needed_for_growth": "Low immediate requirement due to recent investment in powder coating line.",
+    "working_capital_supports_growth": false,
+    "bottlenecks": [
+      "Inventory management",
+      "Debtor collection cycles",
+      "Leasehold capacity limits"
+    ],
+    "observations": [
+      "The business is a net consumer of working capital; a 25% growth in revenue would likely require an additional £1.1m - £1.5m in working capital funding.",
+      "The recent investment in the powder coating line provides some headroom for manufacturing growth without immediate major capex.",
+      "High repeat order rates (91%) and a strong pipeline (£17.4m) suggest revenue scalability is high, provided working capital is managed."
+    ]
+  },
+  "key_findings": [
+    "The business has a modern manufacturing asset base following recent £1.3m investment.",
+    "Strong management continuity exists via the CEO who has 15 years of tenure.",
+    "Working capital intensity is high, with significant funds tied up in stock and debtors.",
+    "The business is highly liquid with £2.95m cash at bank (CURRENT POSITION, 2026-05-31)."
+  ],
+  "red_flags": [
+    "Debtor days are extending (62.9 days per sales ledger vs 52.5 days in FY24).",
+    "Stock levels have increased by 27% between FY24 and the 2026 current position, outpacing historical revenue growth.",
+    "Director remuneration is below market, masking true operating overheads."
+  ],
+  "narrative": "Canoports UK Limited exhibits a stable operational profile with a modern, asset-light manufacturing model. The primary operational risk lies in the working capital cycle, specifically the increasing trend in stockholding and debtor days which may constrain cash flow during rapid growth. However, the business is well-capitalised with significant cash reserves and a proven management successor in the current CEO. Scalability is supported by recent capital expenditure, though further growth will require tighter controls on the cash conversion cycle to avoid excessive capital absorption."
+}

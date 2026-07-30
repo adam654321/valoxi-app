@@ -1,0 +1,387 @@
+{
+  "document": "profit_and_loss",
+  "source": "statutory_and_management",
+  "years_covered": [
+    2021,
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "period_ends": {
+    "2021": "2021-03-31",
+    "2022": "2022-03-31",
+    "2023": "2023-03-31",
+    "2024": "2024-03-31",
+    "2025": "2025-03-31"
+  },
+  "months_covered": {
+    "2021": 12,
+    "2022": 12,
+    "2023": 12,
+    "2024": 12,
+    "2025": 12
+  },
+  "report_date": null,
+  "years": {
+    "2021": {
+      "year": 2021,
+      "profit_and_loss": {
+        "revenue": 443962,
+        "cost_of_sales": 127439,
+        "gross_profit": 316523,
+        "administrative_expenses": 432058,
+        "depreciation_amortisation": 25307,
+        "other_operating_income": 113335,
+        "operating_profit": -2200,
+        "interest_receivable": null,
+        "interest_payable": null,
+        "profit_before_tax": -2200,
+        "corporation_tax": null,
+        "net_profit": -2200
+      },
+      "revenue_breakdown": {
+        "by_product": {},
+        "by_segment": {}
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": null,
+        "direct_labour": null,
+        "subcontractor_costs": null,
+        "other_direct_costs": null
+      },
+      "overheads_breakdown": {
+        "staff_wages_salaries": null,
+        "directors_salaries": 8628,
+        "directors_pension": null,
+        "employers_national_insurance": null,
+        "staff_pension_contributions": null,
+        "staff_training_recruitment": null,
+        "use_of_home_as_office": null,
+        "rent_rates": null,
+        "utilities": null,
+        "insurance": null,
+        "accountancy_bookkeeping": null,
+        "professional_fees": null,
+        "software_subscriptions": null,
+        "computer_costs": null,
+        "it_support_hosting": null,
+        "telecommunications": null,
+        "printing_stationery": null,
+        "postage_courier": null,
+        "subscriptions_memberships": null,
+        "bank_charges": null,
+        "advertising_marketing": null,
+        "travel_subsistence": null,
+        "motor_expenses": null,
+        "repairs_maintenance": null,
+        "depreciation": 25307,
+        "amortisation": null,
+        "other_overheads": null
+      },
+      "total_staff_costs": null,
+      "total_directors_remuneration": 8628,
+      "dividends_paid": null,
+      "exceptional_items": [],
+      "financial_ratios": {
+        "gross_margin_percent": 71.29,
+        "net_margin_percent": -0.5,
+        "interest_coverage_ratio": null
+      }
+    },
+    "2022": {
+      "year": 2022,
+      "profit_and_loss": {
+        "revenue": 1097307,
+        "cost_of_sales": 440662,
+        "gross_profit": 656645,
+        "administrative_expenses": 554473,
+        "depreciation_amortisation": 10962,
+        "other_operating_income": 24607,
+        "operating_profit": 126779,
+        "interest_receivable": null,
+        "interest_payable": null,
+        "profit_before_tax": 126779,
+        "corporation_tax": null,
+        "net_profit": 126779
+      },
+      "revenue_breakdown": {
+        "by_product": {},
+        "by_segment": {}
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": null,
+        "direct_labour": null,
+        "subcontractor_costs": null,
+        "other_direct_costs": null
+      },
+      "overheads_breakdown": {
+        "staff_wages_salaries": null,
+        "directors_salaries": 8628,
+        "directors_pension": null,
+        "employers_national_insurance": null,
+        "staff_pension_contributions": null,
+        "staff_training_recruitment": null,
+        "use_of_home_as_office": null,
+        "rent_rates": null,
+        "utilities": null,
+        "insurance": null,
+        "accountancy_bookkeeping": null,
+        "professional_fees": null,
+        "software_subscriptions": null,
+        "computer_costs": null,
+        "it_support_hosting": null,
+        "telecommunications": null,
+        "printing_stationery": null,
+        "postage_courier": null,
+        "subscriptions_memberships": null,
+        "bank_charges": null,
+        "advertising_marketing": null,
+        "travel_subsistence": null,
+        "motor_expenses": null,
+        "repairs_maintenance": null,
+        "depreciation": 10962,
+        "amortisation": null,
+        "other_overheads": null
+      },
+      "total_staff_costs": null,
+      "total_directors_remuneration": 8628,
+      "dividends_paid": null,
+      "exceptional_items": [
+        {
+          "description": "Bad Debts",
+          "value": 2102
+        }
+      ],
+      "financial_ratios": {
+        "gross_margin_percent": 59.84,
+        "net_margin_percent": 11.55,
+        "interest_coverage_ratio": null
+      }
+    },
+    "2023": {
+      "year": 2023,
+      "profit_and_loss": {
+        "revenue": 1441671,
+        "cost_of_sales": 538883,
+        "gross_profit": 902788,
+        "administrative_expenses": 730019,
+        "depreciation_amortisation": 10824,
+        "other_operating_income": 0,
+        "operating_profit": 172769,
+        "interest_receivable": null,
+        "interest_payable": null,
+        "profit_before_tax": 172769,
+        "corporation_tax": null,
+        "net_profit": 172769
+      },
+      "revenue_breakdown": {
+        "by_product": {},
+        "by_segment": {}
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": null,
+        "direct_labour": null,
+        "subcontractor_costs": null,
+        "other_direct_costs": null
+      },
+      "overheads_breakdown": {
+        "staff_wages_salaries": null,
+        "directors_salaries": 9211,
+        "directors_pension": null,
+        "employers_national_insurance": null,
+        "staff_pension_contributions": null,
+        "staff_training_recruitment": null,
+        "use_of_home_as_office": null,
+        "rent_rates": null,
+        "utilities": null,
+        "insurance": null,
+        "accountancy_bookkeeping": null,
+        "professional_fees": null,
+        "software_subscriptions": null,
+        "computer_costs": null,
+        "it_support_hosting": null,
+        "telecommunications": null,
+        "printing_stationery": null,
+        "postage_courier": null,
+        "subscriptions_memberships": null,
+        "bank_charges": null,
+        "advertising_marketing": null,
+        "travel_subsistence": null,
+        "motor_expenses": null,
+        "repairs_maintenance": null,
+        "depreciation": 10824,
+        "amortisation": null,
+        "other_overheads": null
+      },
+      "total_staff_costs": null,
+      "total_directors_remuneration": 9211,
+      "dividends_paid": null,
+      "exceptional_items": [
+        {
+          "description": "Bad Debts",
+          "value": 1102
+        }
+      ],
+      "financial_ratios": {
+        "gross_margin_percent": 62.62,
+        "net_margin_percent": 11.98,
+        "interest_coverage_ratio": null
+      }
+    },
+    "2024": {
+      "year": 2024,
+      "profit_and_loss": {
+        "revenue": 1695203,
+        "cost_of_sales": 632814,
+        "gross_profit": 1062389,
+        "administrative_expenses": 985102,
+        "depreciation_amortisation": 51911,
+        "other_operating_income": 0,
+        "operating_profit": 77287,
+        "interest_receivable": null,
+        "interest_payable": null,
+        "profit_before_tax": 77287,
+        "corporation_tax": null,
+        "net_profit": 77287
+      },
+      "revenue_breakdown": {
+        "by_product": {},
+        "by_segment": {}
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": null,
+        "direct_labour": null,
+        "subcontractor_costs": null,
+        "other_direct_costs": null
+      },
+      "overheads_breakdown": {
+        "staff_wages_salaries": null,
+        "directors_salaries": 9096,
+        "directors_pension": null,
+        "employers_national_insurance": null,
+        "staff_pension_contributions": null,
+        "staff_training_recruitment": null,
+        "use_of_home_as_office": null,
+        "rent_rates": null,
+        "utilities": null,
+        "insurance": null,
+        "accountancy_bookkeeping": null,
+        "professional_fees": null,
+        "software_subscriptions": null,
+        "computer_costs": null,
+        "it_support_hosting": null,
+        "telecommunications": null,
+        "printing_stationery": null,
+        "postage_courier": null,
+        "subscriptions_memberships": null,
+        "bank_charges": null,
+        "advertising_marketing": null,
+        "travel_subsistence": null,
+        "motor_expenses": null,
+        "repairs_maintenance": null,
+        "depreciation": 51911,
+        "amortisation": null,
+        "other_overheads": null
+      },
+      "total_staff_costs": null,
+      "total_directors_remuneration": 15096,
+      "dividends_paid": null,
+      "exceptional_items": [
+        {
+          "description": "Bad Debts",
+          "value": 7534
+        },
+        {
+          "description": "Director's Costs",
+          "value": 6000
+        }
+      ],
+      "financial_ratios": {
+        "gross_margin_percent": 62.67,
+        "net_margin_percent": 4.56,
+        "interest_coverage_ratio": null
+      }
+    },
+    "2025": {
+      "year": 2025,
+      "profit_and_loss": {
+        "revenue": 1944079,
+        "cost_of_sales": 1127175,
+        "gross_profit": 816904,
+        "administrative_expenses": 538500,
+        "depreciation_amortisation": 0,
+        "other_operating_income": 0,
+        "operating_profit": 278404,
+        "interest_receivable": null,
+        "interest_payable": null,
+        "profit_before_tax": 278404,
+        "corporation_tax": null,
+        "net_profit": 278404
+      },
+      "revenue_breakdown": {
+        "by_product": {},
+        "by_segment": {}
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": null,
+        "direct_labour": null,
+        "subcontractor_costs": null,
+        "other_direct_costs": null
+      },
+      "overheads_breakdown": {
+        "staff_wages_salaries": null,
+        "directors_salaries": 9096,
+        "directors_pension": null,
+        "employers_national_insurance": null,
+        "staff_pension_contributions": null,
+        "staff_training_recruitment": null,
+        "use_of_home_as_office": null,
+        "rent_rates": null,
+        "utilities": null,
+        "insurance": null,
+        "accountancy_bookkeeping": null,
+        "professional_fees": null,
+        "software_subscriptions": null,
+        "computer_costs": null,
+        "it_support_hosting": null,
+        "telecommunications": null,
+        "printing_stationery": null,
+        "postage_courier": null,
+        "subscriptions_memberships": null,
+        "bank_charges": null,
+        "advertising_marketing": null,
+        "travel_subsistence": null,
+        "motor_expenses": null,
+        "repairs_maintenance": null,
+        "depreciation": 0,
+        "amortisation": null,
+        "other_overheads": null
+      },
+      "total_staff_costs": null,
+      "total_directors_remuneration": 9096,
+      "dividends_paid": null,
+      "exceptional_items": [
+        {
+          "description": "Bad Debts",
+          "value": 2270
+        }
+      ],
+      "financial_ratios": {
+        "gross_margin_percent": 42.02,
+        "net_margin_percent": 14.32,
+        "interest_coverage_ratio": null
+      }
+    }
+  },
+  "summary_insights": [
+    "Revenue has demonstrated consistent and aggressive growth, increasing by 338% from YE21 (£444k) to YE25 Mgt (£1.94m).",
+    "Gross profit margin experienced a significant compression in YE25, falling to 42% from a stable 60-63% in previous years, likely due to a shift in product mix or increased direct costs.",
+    "Adjusted EBITDA shows a strong upward trajectory, reaching a projected £290k in YE25, representing a 91% increase over the YE24 statutory figure.",
+    "The company successfully transitioned from a marginal operating loss in YE21 to robust profitability, with net margins peaking at 14.3% in the YE25 management accounts.",
+    "Administrative expenses were significantly reduced in the YE25 management figures (£538k) compared to YE24 (£985k), contributing to the sharp rise in operating profit.",
+    "Shareholder funds have grown substantially, from £33k in YE21 to £166k in YE24, indicating strong capital retention and balance sheet strengthening.",
+    "The business has diversified its revenue streams into high-growth sectors including EV charging and solar, which supports the observed top-line expansion."
+  ],
+  "_isIM": true
+}

@@ -1,0 +1,132 @@
+{
+  "expert": "risk",
+  "company_name": "[AUDIT-190] Spruce Pools",
+  "analysis_date": "2024-05-22",
+  "score": 72,
+  "confidence": "medium",
+  "customer_concentration": {
+    "risk_level": "unknown",
+    "top_customer_percent": null,
+    "top_3_customers_percent": null,
+    "top_5_customers_percent": null,
+    "hhi_index": null,
+    "hhi_classification": "diversified",
+    "total_customers": null,
+    "customers_over_15_percent": [],
+    "observations": [
+      "Sales ledger data was not provided; unable to calculate specific customer concentration or HHI.",
+      "Revenue breakdown by product suggests a healthy mix between Service/Maintenance (approx 43% in 2025) and Renovation/New Build (approx 31% in 2025)."
+    ]
+  },
+  "financial_risk": {
+    "risk_level": "low",
+    "technically_insolvent": false,
+    "current_ratio_trend": "improving",
+    "creditor_growth_vs_revenue": "Creditors grew 31% in 2025 while revenue grew 16.7%.",
+    "director_loans_balance": 0,
+    "intercompany_balances": 0,
+    "interest_coverage_adequate": true,
+    "going_concern_indicators": [
+      "Strong cash position of 795,164.52 as at 2026-05-31.",
+      "Positive net assets of 1,035,444.36 as at 2026-05-31."
+    ],
+    "observations": [
+      "The company has zero interest-bearing debt (interest payable is 0 across all years).",
+      "Current ratio as at 2026-05-31 is 4.40, indicating very strong liquidity.",
+      "Dividends paid (162,000 in 2025) are consistently covered by net profit and retained earnings."
+    ]
+  },
+  "key_person_risk": {
+    "risk_level": "moderate",
+    "highest_individual_payroll_percent": null,
+    "single_points_of_failure": [
+      "Directors",
+      "Technical Operations"
+    ],
+    "management_depth": "thin",
+    "average_tenure_years": null,
+    "observations": [
+      "Staff matrix not provided; however, directors' remuneration (69,100 in 2025) and pension contributions (60,000 in 2025) suggest significant reliance on key leadership.",
+      "Staff costs increased significantly in 2024 (523,209) before normalizing in 2025 (236,078), which requires investigation."
+    ]
+  },
+  "revenue_quality": {
+    "risk_level": "moderate",
+    "revenue_type": "mixed",
+    "customer_trend": "unknown",
+    "seasonality_detected": true,
+    "observations": [
+      "Revenue is a mix of recurring 'Service and maintenance' (43.5%) and project-based 'Renovation and new build' (31.7%).",
+      "Revenue dipped in 2023 and 2024 before recovering in 2025, suggesting cyclicality or project timing sensitivity.",
+      "High reliance on 'Chemicals and products' (24.7%) which may have lower margins than services."
+    ]
+  },
+  "balance_sheet_risks": {
+    "director_loans": 0,
+    "connected_company_balances": 0,
+    "deferred_tax": null,
+    "pension_obligations": null,
+    "contingent_liabilities": "unable_to_assess",
+    "observations": [
+      "Asset register shows a discrepancy of 286,935.20 between the general ledger and sub-ledger.",
+      "Intangible assets (Goodwill) are valued at 0 in the balance sheet but listed at 138,792.23 in the asset register; this suggests potential impairment or accounting misalignment.",
+      "Other Creditors shows a negative balance of -39,394.62 as at 2026-05-31, which is irregular and requires clarification."
+    ]
+  },
+  "bad_debt": {
+    "total_overdue_90_plus": null,
+    "recommended_provision": null,
+    "existing_provision": null,
+    "net_profit_impact": null,
+    "observations": [
+      "Sales ledger not provided; unable to perform aged debt analysis.",
+      "Trade debtors decreased from 104,474 (2022-12-31) to 83,058.26 (2026-05-31) despite higher revenue, suggesting efficient collections."
+    ]
+  },
+  "risk_register": [
+    {
+      "risk": "Asset Reconciliation Discrepancy",
+      "category": "balance_sheet",
+      "severity": "medium",
+      "likelihood": "high",
+      "financial_impact": 286935.2,
+      "impact_description": "Discrepancy between asset register and balance sheet totals may lead to overstatement of tangible assets.",
+      "mitigation": "Full physical asset audit and reconciliation of the fixed asset register to the general ledger prior to completion."
+    },
+    {
+      "risk": "Goodwill Valuation Ambiguity",
+      "category": "balance_sheet",
+      "severity": "medium",
+      "likelihood": "medium",
+      "financial_impact": 138792.23,
+      "impact_description": "Asset register lists significant goodwill from multiple acquisitions not reflected as intangibles on the statutory balance sheet.",
+      "mitigation": "Review historical acquisition documents and verify the accounting treatment of goodwill and its amortisation status."
+    },
+    {
+      "risk": "Revenue Volatility",
+      "category": "revenue",
+      "severity": "medium",
+      "likelihood": "medium",
+      "financial_impact": null,
+      "impact_description": "Revenue fluctuated by ~15% between 2022 and 2024, indicating sensitivity to project cycles.",
+      "mitigation": "Implement a deal structure with an earn-out component based on future maintenance contract retention."
+    },
+    {
+      "risk": "Key Person Dependency",
+      "category": "people",
+      "severity": "high",
+      "likelihood": "medium",
+      "financial_impact": null,
+      "impact_description": "High director pension and salary costs suggest the business is heavily reliant on the current owners for operations.",
+      "mitigation": "Ensure long-term tie-ins or consultancy agreements for directors post-acquisition."
+    }
+  ],
+  "deal_breakers": [],
+  "key_findings": [
+    "The company maintains an exceptionally strong cash position (795k) and zero debt, providing a high safety margin.",
+    "There is a significant accounting discrepancy regarding fixed assets and goodwill that must be resolved.",
+    "Revenue is well-balanced between recurring maintenance and one-off projects, though the project side introduces volatility.",
+    "The negative 'Other Creditors' balance in the latest position (2026-05-31) suggests a potential debtor misclassification or overpayment."
+  ],
+  "narrative": "Spruce Pools presents a low-to-moderate risk profile characterized by excellent liquidity and a debt-free balance sheet. The primary risks are operational and accounting-based rather than fundamental financial distress. The lack of a detailed sales ledger prevents a full concentration analysis, but the product mix suggests a diversified revenue stream. The most urgent due diligence item is the reconciliation of the asset register, specifically the treatment of goodwill and the 286k discrepancy in tangible assets. Provided these accounting anomalies are clarified and key staff are retained, the business appears fundamentally sound."
+}

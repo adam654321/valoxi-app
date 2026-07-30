@@ -1,0 +1,81 @@
+{
+  "document": "balance_sheet",
+  "source": "management",
+  "years_covered": [
+    2024
+  ],
+  "period_ends": {
+    "2024": "2024-02-29"
+  },
+  "months_covered": {
+    "2024": 12
+  },
+  "report_date": "2024-03-05",
+  "years": {
+    "2024": {
+      "year": 2024,
+      "balance_sheet": {
+        "fixed_assets": {
+          "intangible_assets": null,
+          "tangible_assets": null,
+          "freehold_property": null,
+          "leasehold_property": null,
+          "plant_machinery": null,
+          "fixtures_fittings": null,
+          "motor_vehicles": null,
+          "computer_equipment": null
+        },
+        "current_assets": {
+          "stock": null,
+          "trade_debtors": null,
+          "prepayments": null,
+          "amounts_owed_by_directors": null,
+          "amounts_owed_by_connected_companies": null,
+          "directors_current_account": null,
+          "other_debtors": null,
+          "cash_at_bank": null,
+          "total": null
+        },
+        "current_liabilities": {
+          "trade_creditors": null,
+          "taxation_social_security": null,
+          "vat_payable": null,
+          "corporation_tax": null,
+          "bank_loans_current": null,
+          "hire_purchase_current": null,
+          "accruals": null,
+          "amounts_owed_to_directors": null,
+          "other_creditors": null,
+          "total": null
+        },
+        "long_term_liabilities": {
+          "bank_loans": null,
+          "hire_purchase_long_term": null,
+          "deferred_taxation": null,
+          "other_debt": null,
+          "total": null
+        },
+        "equity": {
+          "share_capital": null,
+          "retained_earnings": 85008.6,
+          "total": 85008.6
+        }
+      },
+      "financial_ratios": {
+        "current_ratio": null,
+        "quick_ratio": null,
+        "net_assets_growth_percent": null,
+        "gearing_ratio_percent": null
+      }
+    }
+  },
+  "summary_insights": [
+    "The provided document is a Profit and Loss statement rather than a full Balance Sheet, limiting visibility into the company's asset and liability structure.",
+    "The company reported a Net Income of £85,008.60 for the 12-month period ending February 2024, which contributes positively to shareholder equity.",
+    "Operating profitability is healthy, with a Gross Profit margin of approximately 57.3% on total income of £326,227.25.",
+    "Net Operating Income stands at £121,539.01, though this is offset by significant 'Other Expenses' related to VAT (£37,270.08).",
+    "The absence of a balance sheet prevents an assessment of liquidity (current/quick ratios) or the company's overall solvency and debt obligations.",
+    "Directors' pension costs of £41,000 represent a significant portion of total expenses (approx. 62.7% of operating expenses), suggesting a strategy of extracting value via pension contributions."
+  ],
+  "_isIM": false
+}

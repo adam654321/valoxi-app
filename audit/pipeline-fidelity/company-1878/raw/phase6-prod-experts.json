@@ -1,0 +1,1321 @@
+[
+  {
+    "id": 2746,
+    "expert_type": "data_quality",
+    "status": "success",
+    "score": 56,
+    "confidence": "medium",
+    "created_at": "2026-07-16T18:30:25.477Z",
+    "analysis_data": {
+      "stage": "data_quality",
+      "company_name": "Compassion Home Care Limited",
+      "assessment_date": "2024-05-22",
+      "overall_completeness_score": 56,
+      "overall_completeness_rating": "medium",
+      "confidence_for_analysis": "medium",
+      "data_sources": {
+        "company_accounts": {
+          "status": "complete",
+          "years_available": 4,
+          "years_list": [
+            2023,
+            2024,
+            2025,
+            2026
+          ],
+          "most_recent_period_end": "2026-02-28",
+          "data_staleness_months": 0,
+          "consecutive_years": true,
+          "key_fields_populated": [
+            "revenue",
+            "gross_profit",
+            "operating_profit",
+            "net_profit"
+          ],
+          "key_fields_missing": []
+        },
+        "profit_and_loss": {
+          "status": "complete",
+          "key_fields_populated": [
+            "revenue",
+            "cost_of_sales",
+            "gross_profit",
+            "administrative_expenses",
+            "operating_profit",
+            "net_profit"
+          ],
+          "key_fields_missing": [],
+          "has_overheads_breakdown": true,
+          "has_cost_of_sales_breakdown": true
+        },
+        "balance_sheet": {
+          "status": "complete",
+          "key_fields_populated": [
+            "fixed_assets",
+            "current_assets.total",
+            "current_liabilities.total",
+            "equity.total"
+          ],
+          "key_fields_missing": [],
+          "has_detailed_breakdown": true
+        },
+        "asset_register": {
+          "status": "missing",
+          "asset_count": 0,
+          "has_category_breakdown": false,
+          "has_individual_assets": false
+        },
+        "sales_ledger": {
+          "status": "missing",
+          "has_aging_breakdown": false,
+          "has_customer_breakdown": false,
+          "customer_count": 0
+        },
+        "staff_matrix": {
+          "status": "partial",
+          "headcount_reported": 26,
+          "has_individual_records": true,
+          "has_director_identification": true
+        }
+      },
+      "consistency_checks": {
+        "pl_revenue_vs_accounts": {
+          "result": "consistent",
+          "pl_value": 818060,
+          "accounts_value": 818060,
+          "variance_percent": 0
+        },
+        "bs_net_assets_vs_accounts": {
+          "result": "consistent",
+          "bs_value": 116782,
+          "accounts_value": 116782,
+          "variance_percent": 0
+        },
+        "staff_costs_vs_pl": {
+          "result": "unable_to_check",
+          "matrix_value": null,
+          "pl_value": 535130,
+          "variance_percent": null
+        },
+        "assets_nbv_vs_bs": {
+          "result": "unable_to_check",
+          "register_value": null,
+          "bs_value": 6383,
+          "variance_percent": null
+        },
+        "debtors_vs_bs": {
+          "result": "unable_to_check",
+          "ledger_value": null,
+          "bs_value": 98020,
+          "variance_percent": null
+        }
+      },
+      "red_flags": [
+        "Asset register is missing",
+        "Sales ledger is missing",
+        "Staff matrix missing all salary and cost data",
+        "Registered Manager and Director not remaining post-sale"
+      ],
+      "gaps_requiring_seller_action": [
+        "Provide full Asset Register with gross book value and depreciation breakdown",
+        "Provide Sales Ledger with aging (current, 30, 60, 90+ days) and top customer list",
+        "Update Staff Matrix to include gross salaries, NI, and pension contributions to verify P&L overheads"
+      ],
+      "analysis_limitations": [
+        "Cannot verify trade debtor recoverability without sales ledger aging",
+        "Cannot verify accuracy of staff costs in P&L without matrix salary data",
+        "Fixed asset verification limited to balance sheet totals only"
+      ]
+    }
+  },
+  {
+    "id": 2754,
+    "expert_type": "deal_structure",
+    "status": "success",
+    "score": 55,
+    "confidence": "high",
+    "created_at": "2026-07-16T18:31:09.921Z",
+    "analysis_data": {
+      "expert": "deal_structure",
+      "company_name": "Compassion Home Care Limited",
+      "analysis_date": "2024-05-22",
+      "score": 55,
+      "confidence": "high",
+      "structures": [
+        {
+          "name": "Conservative Approach",
+          "strategy": "Minimize upfront risk by tying a significant portion of the consideration to the recovery of the suspicious debtor balance and the successful transition of the CQC Registered Manager role.",
+          "risk_to_buyer": "low",
+          "suitable_when": "The buyer is highly concerned about the 'Capex Cliff' and the potential for the £98k debtor spike to be uncollectible or related to disputed local authority contracts.",
+          "consideration": {
+            "total_headline": 270000,
+            "upfront_cash": 108000,
+            "upfront_percent": 40,
+            "deferred": 81000,
+            "earnout_maximum": 81000,
+            "earnout_metric": "Debtor Collection & EBITDA Stability",
+            "earnout_period_months": 24,
+            "earnout_rationale": "Trigger 3 (Key Person Dependency) and Trigger 4 (Unverified Add-backs/Debtors). The earnout is split: 50% tied to the collection of the £98k debtor balance within 6 months, and 50% tied to maintaining adjusted EBITDA of £89k post-RM hire.",
+            "retention_escrow": 50000
+          },
+          "key_conditions": [
+            "Successful recruitment and CQC approval of a new Registered Manager prior to second payment.",
+            "Pound-for-pound reduction in purchase price for any of the £98k debtor balance not collected within 180 days.",
+            "6-month handover period from the outgoing Director."
+          ],
+          "notes": "Seller must provide a 6-month handover. Non-compete for 3 years within a 20-mile radius. Specific indemnity for any CQC fines or service suspensions resulting from the RM vacancy. Completion accounts mechanism with a working capital peg of £112k. Risk is low due to heavy deferment and debtor protection."
+        },
+        {
+          "name": "Balanced Approach",
+          "strategy": "A middle-ground structure that provides the seller with more immediate liquidity while protecting the buyer against the immediate leadership vacuum.",
+          "risk_to_buyer": "medium",
+          "suitable_when": "The buyer has a potential Registered Manager candidate in their network and feels the debtor spike is likely a timing issue rather than bad debt.",
+          "consideration": {
+            "total_headline": 270000,
+            "upfront_cash": 162000,
+            "upfront_percent": 60,
+            "deferred": 54000,
+            "earnout_maximum": 54000,
+            "earnout_metric": "EBITDA Maintenance",
+            "earnout_period_months": 12,
+            "earnout_rationale": "Trigger 3 (Key Person Dependency). The earnout is tied to the business achieving £89k EBITDA in Year 1, ensuring the new Registered Manager's salary does not erode the bottom line more than projected.",
+            "retention_escrow": 25000
+          },
+          "key_conditions": [
+            "3-month handover period from the outgoing Director.",
+            "Retention released only upon the successful 6-month tenure of a new CQC Registered Manager.",
+            "Standard warranties on the sales ledger accuracy."
+          ],
+          "notes": "Seller obligations include a 3-month consultancy. Warranty cap at 50% of consideration. De minimis threshold of £2,500. Locked-box mechanism could be used if the completion date is near the 2026 accounts date. Risk is medium due to the critical RM vacancy."
+        },
+        {
+          "name": "Competitive Approach",
+          "strategy": "Maximize upfront cash to appeal to a seller likely anchored on higher historical earnings, while using a retention to manage the most critical regulatory risk.",
+          "risk_to_buyer": "high",
+          "suitable_when": "A competitive bidding environment where the buyer needs to bridge the gap between their £270k valuation and the seller's £400k+ expectation.",
+          "consideration": {
+            "total_headline": 310000,
+            "upfront_cash": 248000,
+            "upfront_percent": 80,
+            "deferred": 31000,
+            "earnout_maximum": 31000,
+            "earnout_metric": "Regulatory Continuity",
+            "earnout_period_months": 6,
+            "earnout_rationale": "Trigger 3 (Key Person Dependency). A small earnout/bonus tied specifically to the successful handover and CQC registration of a successor manager.",
+            "retention_escrow": 15000
+          },
+          "key_conditions": [
+            "1-month intensive handover.",
+            "No earnout for financial performance, only for regulatory compliance.",
+            "Lighter warranty package to facilitate a quick close."
+          ],
+          "notes": "Minimal seller handover. Warranty cap at 25% of consideration. This structure is high risk because it pays a premium (above base valuation) with very little protection against the debtor spike or the capex cliff. Only recommended if the buyer has existing infrastructure to absorb the management void."
+        }
+      ],
+      "recommended_structure": "Conservative Approach",
+      "recommendation_rationale": "The combination of a critical leadership void (both Director and RM leaving) and a 413% spike in debtors makes this a high-risk profile. The Conservative Approach protects the buyer's capital by making the seller 'guarantee' the quality of the debtors and the transition of the regulatory license.",
+      "negotiation_priorities": [
+        "Verification of the £98k trade debtor balance via an aged debt report.",
+        "Securing a commitment for a long handover from the outgoing Registered Manager.",
+        "Adjusting the purchase price for the 'Capex Cliff' (immediate IT/vehicle needs).",
+        "Bridging the gap between the seller's £135k EBITDA anchor and the buyer's £89k adjusted reality."
+      ],
+      "deal_breaker_terms": [
+        "Failure to provide an aged debt report explaining the 2026 spike.",
+        "The Registered Manager leaving before a successor is identified or a transition plan is CQC-approved.",
+        "Discovery of significant undisclosed liabilities in the 'Other Debtors' that disappeared in 2026."
+      ],
+      "key_findings": [
+        "The business is a 'cash cow' that has been under-invested in (77% depreciation).",
+        "Reported earnings are inflated by the lack of a market-rate manager salary.",
+        "Liquidity is the business's greatest strength, providing a buffer for the transition.",
+        "The debtor trend is the most significant financial red flag."
+      ],
+      "narrative": "Compassion Home Care Limited is a classic 'owner-operated' micro-cap business that looks excellent on paper but carries high execution risk during a transition. The seller is likely to be emotionally attached and anchored to a valuation that ignores the cost of their own replacement. To make this deal work, the structure must shift the risk of the leadership vacuum and the sudden debtor spike back onto the seller. A deal at £270k with 40-50% deferred/contingent is fair, providing the seller with a clean exit while ensuring the buyer doesn't inherit a business that loses its license or its cash flow within the first 90 days."
+    }
+  },
+  {
+    "id": 2748,
+    "expert_type": "financial",
+    "status": "success",
+    "score": 72,
+    "confidence": "high",
+    "created_at": "2026-07-16T18:31:09.726Z",
+    "analysis_data": {
+      "expert": "financial",
+      "company_name": "Compassion Home Care Limited",
+      "analysis_date": "2024-05-22",
+      "score": 72,
+      "confidence": "high",
+      "yearly_metrics": {
+        "2023": {
+          "revenue": 769931,
+          "revenue_yoy_growth_percent": null,
+          "cost_of_sales": 500774,
+          "gross_profit": 269157,
+          "gross_margin_percent": 34.96,
+          "administrative_expenses": 176070,
+          "operating_profit": 94104,
+          "operating_margin_percent": 12.22,
+          "depreciation_amortisation": 5775,
+          "ebitda": 99879,
+          "interest_payable": 840,
+          "interest_coverage_ratio": 112.03,
+          "profit_before_tax": 93264,
+          "corporation_tax": 17442,
+          "effective_tax_rate_percent": 18.7,
+          "net_profit": 75822,
+          "net_margin_percent": 9.85
+        },
+        "2024": {
+          "revenue": 836440,
+          "revenue_yoy_growth_percent": 8.64,
+          "cost_of_sales": 554581,
+          "gross_profit": 281859,
+          "gross_margin_percent": 33.7,
+          "administrative_expenses": 151105,
+          "operating_profit": 130754,
+          "operating_margin_percent": 15.63,
+          "depreciation_amortisation": 4377,
+          "ebitda": 135131,
+          "interest_payable": 641,
+          "interest_coverage_ratio": 203.98,
+          "profit_before_tax": 130228,
+          "corporation_tax": 30475,
+          "effective_tax_rate_percent": 23.4,
+          "net_profit": 99753,
+          "net_margin_percent": 11.93
+        },
+        "2025": {
+          "revenue": 778150,
+          "revenue_yoy_growth_percent": -6.97,
+          "cost_of_sales": 533540,
+          "gross_profit": 244610,
+          "gross_margin_percent": 31.43,
+          "administrative_expenses": 126231,
+          "operating_profit": 118379,
+          "operating_margin_percent": 15.21,
+          "depreciation_amortisation": 3047,
+          "ebitda": 121426,
+          "interest_payable": 446,
+          "interest_coverage_ratio": 265.42,
+          "profit_before_tax": 117818,
+          "corporation_tax": 27641,
+          "effective_tax_rate_percent": 23.46,
+          "net_profit": 90177,
+          "net_margin_percent": 11.59
+        },
+        "2026": {
+          "revenue": 818060,
+          "revenue_yoy_growth_percent": 5.13,
+          "cost_of_sales": 545454,
+          "gross_profit": 272606,
+          "gross_margin_percent": 33.32,
+          "administrative_expenses": 140179,
+          "operating_profit": 132427,
+          "operating_margin_percent": 16.19,
+          "depreciation_amortisation": 2649,
+          "ebitda": 135076,
+          "interest_payable": 242,
+          "interest_coverage_ratio": 547.22,
+          "profit_before_tax": 132530,
+          "corporation_tax": 31425,
+          "effective_tax_rate_percent": 23.71,
+          "net_profit": 101105,
+          "net_margin_percent": 12.36
+        }
+      },
+      "cagr": {
+        "revenue_cagr_percent": 2.04,
+        "gross_profit_cagr_percent": 0.43,
+        "operating_profit_cagr_percent": 12.06,
+        "period_years": 3
+      },
+      "cost_structure": {
+        "cost_of_sales_percent_revenue": 66.68,
+        "overheads_percent_revenue": 17.14,
+        "staff_costs_percent_revenue": 65.41,
+        "director_costs_percent_revenue": 9.96,
+        "top_5_overheads": [
+          {
+            "category": "Directors Salaries",
+            "value": 62470,
+            "percent_of_overheads": 44.56
+          },
+          {
+            "category": "Directors Pension",
+            "value": 11232,
+            "percent_of_overheads": 8.01
+          },
+          {
+            "category": "Rent & Rates",
+            "value": 11098,
+            "percent_of_overheads": 7.92
+          },
+          {
+            "category": "Professional Fees",
+            "value": 8710,
+            "percent_of_overheads": 6.21
+          },
+          {
+            "category": "Employers NI",
+            "value": 7811,
+            "percent_of_overheads": 5.57
+          }
+        ],
+        "cost_base_classification": "predominantly_variable"
+      },
+      "earnings_quality": {
+        "net_profit_tracks_operating_profit": true,
+        "exceptional_items_identified": [
+          "Profit on sale of tangible fixed assets (2024): 2003"
+        ],
+        "tax_rate_consistent": true,
+        "ebitda_latest": 135076,
+        "ebitda_trend": "growing",
+        "limitations": [
+          "Amortisation not separately disclosed from depreciation in summary P&L"
+        ]
+      },
+      "debt_service": {
+        "latest_interest_coverage": 547.22,
+        "interest_coverage_trend": "improving",
+        "additional_debt_capacity_assessment": "Exceptional. The company has virtually no debt service burden and high interest coverage, suggesting significant capacity for acquisition financing."
+      },
+      "key_findings": [
+        "Revenue shows a volatile but slightly upward trajectory with a 3-year CAGR of 2.04%.",
+        "Operating margins have improved from 12.2% in 2023 to 16.2% in 2026, indicating effective overhead management.",
+        "Direct labour is the primary cost driver, consistently representing over 58% of total revenue.",
+        "The company maintains a very strong liquidity position with a current ratio of 2.25 and zero bank debt as of 2026.",
+        "Dividend payments in 2024 and 2025 exceeded net profit, suggesting a policy of full capital extraction by the current owners.",
+        "Directors' remuneration, including a significant pension spike in 2026, represents a major portion of administrative expenses.",
+        "The business model is highly cash-generative with a low fixed-asset requirement."
+      ],
+      "red_flags": [
+        "Revenue volatility: A 7% decline in 2025 followed by a recovery in 2026 suggests potential client concentration or contract sensitivity.",
+        "Aggressive dividend policy: Historical distributions exceeding net profit have previously led to net asset contraction.",
+        "Leadership transition risk: Both the Director and Registered Manager are noted as not remaining post-sale."
+      ],
+      "narrative": "Compassion Home Care Limited presents a stable financial profile characterised by healthy margins and exceptional liquidity. Over the four-year period analysed, the company has demonstrated an ability to maintain net margins between 10-12% despite fluctuations in top-line revenue. The 2025 revenue dip of 7% was successfully mitigated by a reduction in administrative overheads, showcasing a flexible cost base. Gross margins have remained relatively tight within the 31-35% range, typical for the care sector where direct labour costs are the primary constraint. \n\nFrom an earnings quality perspective, the profits are 'clean' with minimal exceptional items and a consistent effective tax rate. The EBITDA trend is positive, recovering to £135k in 2026. The balance sheet is a significant strength; the company has systematically de-leveraged, moving from a gearing ratio of 28% in 2023 to effectively zero bank debt in 2026. This provides a 'blank canvas' for a buyer to introduce acquisition debt. \n\nHowever, the buyer should note the aggressive historical dividend policy which has seen the current owners extract more than 100% of annual earnings in certain years. Furthermore, the reliance on 'Other Debtors' in earlier years warrants a deep-dive audit to ensure these were not non-commercial loans. Overall, the financial performance is robust, but the acquisition's success will depend on stabilising the revenue trajectory and managing the transition of key personnel who are currently integral to the cost-management process."
+    }
+  },
+  {
+    "id": 2749,
+    "expert_type": "operational",
+    "status": "success",
+    "score": 68,
+    "confidence": "high",
+    "created_at": "2026-07-16T18:31:09.757Z",
+    "analysis_data": {
+      "expert": "operational",
+      "company_name": "Compassion Home Care Limited",
+      "analysis_date": "2026-07-14",
+      "score": 68,
+      "confidence": "high",
+      "working_capital": {
+        "yearly_metrics": {
+          "2024": {
+            "debtor_days": 10.2,
+            "creditor_days": 0.02,
+            "stock_days": 0,
+            "cash_conversion_cycle_days": 10.18,
+            "net_working_capital": 89706,
+            "working_capital_percent_revenue": 10.7
+          },
+          "2025": {
+            "debtor_days": 8.96,
+            "creditor_days": 0.3,
+            "stock_days": 0,
+            "cash_conversion_cycle_days": 8.66,
+            "net_working_capital": 78658,
+            "working_capital_percent_revenue": 10.1
+          },
+          "2026": {
+            "debtor_days": 43.75,
+            "creditor_days": 0,
+            "stock_days": 0,
+            "cash_conversion_cycle_cycle_days": 43.75,
+            "net_working_capital": 111995,
+            "working_capital_percent_revenue": 13.7
+          }
+        },
+        "trend": "deteriorating",
+        "working_capital_intensity": "light",
+        "observations": [
+          "Debtor days spiked significantly in 2026 to 43.75 days from a historical average of ~10 days, suggesting potential collection issues or a change in billing terms.",
+          "The business operates with virtually no trade credit (creditor days < 1), meaning it pays suppliers/staff immediately while waiting for client payments.",
+          "Net working capital is growing in absolute terms, but the efficiency of the cycle is slowing down due to the debtor increase."
+        ]
+      },
+      "capex": {
+        "total_gross_asset_value": 28331,
+        "total_nbv": 6383,
+        "asset_freshness_percent": 22.5,
+        "recent_additions_24m_value": 0,
+        "recent_additions_percent": 0,
+        "annual_depreciation_charge": 2649,
+        "estimated_maintenance_capex": 2649,
+        "capex_cliff_risk": true,
+        "assets_requiring_replacement": [
+          "Computer Equipment",
+          "Motor Vehicles",
+          "Fixtures & Fittings"
+        ],
+        "category_breakdown": {
+          "property": {
+            "cost": 0,
+            "nbv": 0
+          },
+          "plant_machinery": {
+            "cost": 0,
+            "nbv": 0
+          },
+          "vehicles": {
+            "cost": 526,
+            "nbv": 0
+          },
+          "it_equipment": {
+            "cost": 19451,
+            "nbv": 4414
+          },
+          "other": {
+            "cost": 8354,
+            "nbv": 1969
+          }
+        },
+        "observations": [
+          "Asset freshness is very low at 22.5%, indicating an aging infrastructure.",
+          "There has been zero material capex in the last 24 months; the business is 'sweating' its existing assets.",
+          "Motor vehicles have been fully depreciated or disposed of, yet the business continues to operate, suggesting staff use personal vehicles or the asset base is no longer fit for purpose.",
+          "Capex cliff risk is flagged as NBV is < 25% of original cost across the entire base."
+        ]
+      },
+      "workforce": {
+        "headcount": 26,
+        "total_payroll": 535130,
+        "revenue_per_employee": 31463,
+        "payroll_percent_revenue": 65.4,
+        "average_salary_all": 20581,
+        "average_salary_excl_directors": 18144,
+        "director_remuneration_total": 81513,
+        "director_percent_of_payroll": 15.2,
+        "ft_pt_split": {
+          "full_time": 4,
+          "part_time": 22
+        },
+        "longest_tenured_years": 12,
+        "newest_hire_months_ago": 8,
+        "observations": [
+          "High reliance on part-time/zero-hours staff (85% of workforce), which provides high operational flexibility but potential retention risk.",
+          "Revenue per employee is relatively low at £31.4k, typical for high-contact social care but limits margin expansion.",
+          "Payroll as % of revenue is stable at ~65%, showing good control over direct labour costs relative to billings."
+        ]
+      },
+      "owner_dependency": {
+        "risk_level": "critical",
+        "director_count": 1,
+        "highest_individual_salary": 62470,
+        "highest_individual_percent_of_payroll": 11.7,
+        "critical_function_concentration": "High: Single Business Director and Registered Manager both not remaining post-sale.",
+        "observations": [
+          "The exit of both the Business Director and the Registered Manager creates a significant regulatory and operational void.",
+          "The Registered Manager is a statutory requirement for care providers; failure to replace immediately could halt operations."
+        ]
+      },
+      "scalability": {
+        "rating": "medium",
+        "headcount_for_25pct_growth": 6,
+        "capex_needed_for_growth": "Moderate: Immediate IT and office equipment refresh required.",
+        "working_capital_supports_growth": true,
+        "bottlenecks": [
+          "Recruitment of qualified carers in a tight labour market",
+          "Regulatory compliance during leadership transition",
+          "Aging IT infrastructure"
+        ],
+        "observations": [
+          "The business model is scalable due to the high use of variable-cost (part-time) labour.",
+          "Growth of 25% would require approximately 6-7 new staff members and a corresponding increase in working capital of ~£28k.",
+          "The current cash buffer (£103k) is sufficient to fund this growth."
+        ]
+      },
+      "key_findings": [
+        "Strong liquidity with a current ratio of 2.25 and no significant debt.",
+        "Operational flexibility provided by a large pool of part-time staff.",
+        "Consistent profitability with net margins exceeding 11%.",
+        "Aging asset base requires a refresh cycle within the next 12-24 months."
+      ],
+      "red_flags": [
+        "Critical leadership transition risk: Both Director and Registered Manager departing.",
+        "Significant deterioration in Debtor Days (10 to 44 days) in the latest year.",
+        "Capex cliff: Asset base is 77% depreciated with no recent reinvestment."
+      ],
+      "narrative": "Compassion Home Care Limited is an operationally lean business with a flexible workforce and strong cash reserves. However, it faces a 'perfect storm' of transition risks: the departure of key regulatory leadership, an aging asset base that has seen no investment in two years, and a sudden slowdown in debt collection. While the business is scalable and profitable, a buyer must budget for immediate capex and prioritize the recruitment of a new Registered Manager to maintain the license to operate."
+    }
+  },
+  {
+    "id": 2751,
+    "expert_type": "qoe",
+    "status": "success",
+    "score": 65,
+    "confidence": "high",
+    "created_at": "2026-07-16T18:31:09.823Z",
+    "analysis_data": {
+      "expert": "quality_of_earnings",
+      "company_name": "Compassion Home Care Limited",
+      "analysis_date": "2024-05-22",
+      "score": 65,
+      "confidence": "high",
+      "reported_figures": {
+        "operating_profit": 132427,
+        "depreciation": 2649,
+        "amortisation": 0,
+        "reported_ebitda": 135076,
+        "source_year": 2026
+      },
+      "add_backs": [
+        {
+          "item": "Excess Director Pension Contribution",
+          "category": "owner_salary",
+          "amount": 7632,
+          "recurrence": "one_off",
+          "year": 2026,
+          "justification": "Director pension contributions spiked from £2,250 in 2025 to £11,232 in 2026. Normalizing to the average of the previous two years (£3,600) identifies an excess extraction.",
+          "confidence": "high",
+          "defensibility_score": 8,
+          "case_for_inclusion": "This represents a discretionary capital extraction by the owner rather than a necessary operating expense for the business.",
+          "case_for_exclusion": "The seller may argue this is a standard part of a competitive remuneration package for a senior executive in the UK care sector."
+        },
+        {
+          "item": "Non-Recurring Professional Fees",
+          "category": "one_off_cost",
+          "amount": 6353,
+          "recurrence": "one_off",
+          "year": 2026,
+          "justification": "Professional fees rose from £2,357 in 2025 to £8,710 in 2026. The Operational Expert notes legal/professional fees related to transition prep.",
+          "confidence": "medium",
+          "defensibility_score": 6,
+          "case_for_inclusion": "These fees appear to be related to the sale process or one-off legal restructuring that will not persist under new ownership.",
+          "case_for_exclusion": "The seller might claim these are recurring compliance or regulatory costs associated with the CQC Registered Manager transition."
+        }
+      ],
+      "deductions": [
+        {
+          "item": "Registered Manager Replacement Salary",
+          "category": "replacement_salary",
+          "amount": 42500,
+          "recurrence": "recurring",
+          "year": 2026,
+          "justification": "The Registered Manager is departing and is a statutory requirement. Current salary is not disclosed but market rate for a Care Manager in this revenue band is £35k-£50k.",
+          "confidence": "high",
+          "defensibility_score": 9,
+          "case_for_inclusion": "A new Registered Manager must be hired to maintain the license to operate; this is a mandatory cost the buyer will inherit.",
+          "case_for_exclusion": "The seller may argue the cost is already partially reflected in the existing 'Staff Wages' line, though the operational data suggests a total void."
+        },
+        {
+          "item": "Deferred Maintenance / IT Refresh",
+          "category": "deferred_maintenance",
+          "amount": 5000,
+          "recurrence": "recurring",
+          "year": 2026,
+          "justification": "Operational expert flags a 'Capex Cliff' with assets 77% depreciated and zero investment in 24 months. Annualized catch-up for IT/Office equipment is required.",
+          "confidence": "medium",
+          "defensibility_score": 7,
+          "case_for_inclusion": "The business has been 'sweating' assets to inflate cash flow; a buyer must reinstate a realistic maintenance budget to sustain operations.",
+          "case_for_exclusion": "The seller could argue that the current lean asset model is sufficient and that IT upgrades are discretionary growth capex, not maintenance."
+        },
+        {
+          "item": "Bad Debt Provision (Debtor Spike)",
+          "category": "bad_debt_provision",
+          "amount": 12270,
+          "recurrence": "one_off",
+          "year": 2026,
+          "justification": "Debtor days spiked from 10 to 44 days in 2026. A 12.5% provision on the £98,020 trade debtors is prudent given the sudden deterioration in collection efficiency.",
+          "confidence": "medium",
+          "defensibility_score": 5,
+          "case_for_inclusion": "The sudden increase in debtor days suggests potential uncollectible revenue or disputes that should be provisioned against current earnings.",
+          "case_for_exclusion": "The seller may argue the spike is due to a timing issue with a specific local authority contract and that all funds are fully recoverable."
+        }
+      ],
+      "total_add_backs": 13985,
+      "total_deductions": 59770,
+      "adjusted_ebitda": {
+        "conservative": 81306,
+        "base": 89291,
+        "optimistic": 103276
+      },
+      "adjustment_summary": {
+        "reported_ebitda": 135076,
+        "plus_add_backs": 13985,
+        "minus_deductions": 59770,
+        "equals_adjusted_ebitda_base": 89291
+      },
+      "director_salary_analysis": {
+        "directors": [
+          {
+            "name": "Business Director",
+            "current_salary": 62470,
+            "estimated_market_rate": 57500,
+            "benchmark_range_used": "Revenue £1M-£5M: Working MD (£45k-£70k)",
+            "adjustment": 0,
+            "adjustment_type": "none"
+          }
+        ]
+      },
+      "sustainability_assessment": {
+        "sustainable_for_3_years": false,
+        "key_assumptions": [
+          "Successful recruitment of a CQC-approved Registered Manager within 3 months",
+          "Stabilization of the debtor collection cycle back to <15 days",
+          "Retention of the 85% part-time workforce during the ownership transition"
+        ],
+        "sensitivity_factors": [
+          "Regulatory risk: CQC intervention if the Registered Manager role remains vacant",
+          "Wage inflation: Direct labour is 65% of revenue; small NMW increases impact margins significantly"
+        ],
+        "upside_scenarios": [
+          "Introduction of digital care management software to improve operational efficiency",
+          "Expansion into higher-margin private pay segments to reduce local authority dependency"
+        ],
+        "downside_scenarios": [
+          "Loss of key local authority contracts due to leadership transition",
+          "Significant bad debt write-off from the 2026 debtor spike"
+        ]
+      },
+      "key_findings": [
+        "Reported EBITDA is inflated by under-investment in assets and the absence of a sustainable management structure.",
+        "The business is currently 'owner-operated' to a degree that makes the current cost base untransferable without significant management hires.",
+        "Liquidity is excellent, but the 2026 debtor trend is a major concern for cash flow quality."
+      ],
+      "red_flags": [
+        "Critical Leadership Void: Both the Director and Registered Manager are leaving, creating a statutory compliance risk.",
+        "Debtor Deterioration: Debtor days increased 340% in a single year without a corresponding revenue surge.",
+        "Capex Cliff: The asset base is nearly fully depreciated, necessitating immediate capital outflow post-completion."
+      ],
+      "narrative": "Compassion Home Care Limited shows a healthy reported EBITDA of £135k, but this figure is not representative of the costs a buyer will incur. The most significant adjustment is the requirement to hire a new Registered Manager, which is a non-negotiable statutory cost. Furthermore, the business has ceased investing in its IT and equipment, effectively 'sweating' assets to maintain margins. When normalized for a market-rate management team and a realistic maintenance budget, the sustainable EBITDA drops to approximately £89k. The buyer should also be wary of the 2026 debtor spike, which suggests that the 'earnings' recorded in the final year may not fully convert to cash."
+    }
+  },
+  {
+    "id": 2750,
+    "expert_type": "risk",
+    "status": "success",
+    "score": 68,
+    "confidence": "medium",
+    "created_at": "2026-07-16T18:31:09.790Z",
+    "analysis_data": {
+      "expert": "risk",
+      "company_name": "Compassion Home Care Limited",
+      "analysis_date": "2024-05-22",
+      "score": 68,
+      "confidence": "medium",
+      "customer_concentration": {
+        "risk_level": "unknown",
+        "top_customer_percent": null,
+        "top_3_customers_percent": null,
+        "top_5_customers_percent": null,
+        "hhi_index": null,
+        "hhi_classification": "diversified",
+        "total_customers": null,
+        "customers_over_15_percent": [],
+        "observations": [
+          "Sales ledger data was not provided in the input, preventing a granular concentration analysis.",
+          "Revenue is derived from 'care staff placement', which typically involves a mix of local authority and private clients.",
+          "Trade debtors increased from £19,102 in 2025 to £98,020 in 2026, suggesting either a significant new contract or a slowdown in collections."
+        ]
+      },
+      "financial_risk": {
+        "risk_level": "low",
+        "technically_insolvent": false,
+        "current_ratio_trend": "improving",
+        "creditor_growth_vs_revenue": "Creditors grew by 5.5% while revenue grew by 5.1% (2025-2026), showing stable alignment.",
+        "director_loans_balance": 0,
+        "intercompany_balances": 0,
+        "interest_coverage_adequate": true,
+        "going_concern_indicators": [],
+        "observations": [
+          "Current ratio improved from 1.93 to 2.25 in the most recent year.",
+          "Interest coverage is exceptionally high at 547.2x, indicating negligible debt service risk.",
+          "Historical dividend payments (e.g., £104k in 2024) have occasionally exceeded net profit, though retained earnings remain positive."
+        ]
+      },
+      "key_person_risk": {
+        "risk_level": "critical",
+        "highest_individual_payroll_percent": null,
+        "single_points_of_failure": [
+          "Business Director",
+          "Registered Manager"
+        ],
+        "management_depth": "critical",
+        "average_tenure_years": 5.8,
+        "observations": [
+          "Both the Business Director and the Registered Manager are identified as not remaining post-sale.",
+          "The loss of a Registered Manager in a regulated care setting is a significant operational and compliance risk.",
+          "The business relies heavily on a part-time/zero-hours workforce (22 out of 26 staff), which increases turnover risk."
+        ]
+      },
+      "revenue_quality": {
+        "risk_level": "moderate",
+        "revenue_type": "recurring",
+        "customer_trend": "unknown",
+        "seasonality_detected": false,
+        "observations": [
+          "Revenue is recurring in nature (care services), but showed a 7% decline between 2024 and 2025 before recovering in 2026.",
+          "The business model is highly sensitive to direct labour costs, which represent the bulk of the cost of sales."
+        ]
+      },
+      "balance_sheet_risks": {
+        "director_loans": 0,
+        "connected_company_balances": 0,
+        "deferred_tax": 1596,
+        "pension_obligations": null,
+        "contingent_liabilities": "unable_to_assess",
+        "observations": [
+          "Significant reliance on 'Other Debtors' in 2024/2025 (£66k-£76k) which disappeared in the 2026 accounts; needs verification of what these were.",
+          "Tangible assets are minimal and declining, indicating a light-asset service model."
+        ]
+      },
+      "bad_debt": {
+        "total_overdue_90_plus": null,
+        "recommended_provision": 9802,
+        "existing_provision": 0,
+        "net_profit_impact": 9802,
+        "observations": [
+          "Trade debtors spiked by 413% in the final year (£19k to £98k). Without an aged debt report, this is a high-risk area for potential bad debt.",
+          "A 10% general provision is recommended for the sudden increase in debtors until further audit."
+        ]
+      },
+      "risk_register": [
+        {
+          "risk": "Leadership Vacuum",
+          "category": "people",
+          "severity": "critical",
+          "likelihood": "high",
+          "financial_impact": null,
+          "impact_description": "Loss of CQC Registered Manager can lead to suspension of services.",
+          "mitigation": "Make the deal contingent on the recruitment of a new Registered Manager or a transition period for the incumbent."
+        },
+        {
+          "risk": "Debtor Recoverability",
+          "category": "bad_debt",
+          "severity": "high",
+          "likelihood": "medium",
+          "financial_impact": 98020,
+          "impact_description": "The 413% increase in trade debtors may represent uncollectible revenue or disputed invoices.",
+          "mitigation": "Implement a debt recovery escrow or a pound-for-pound reduction in purchase price for debts over 90 days."
+        },
+        {
+          "risk": "Labour Cost Inflation",
+          "category": "operational",
+          "severity": "medium",
+          "likelihood": "high",
+          "financial_impact": null,
+          "impact_description": "Rising minimum wage or agency costs could compress the 33% gross margin.",
+          "mitigation": "Review client contracts for inflationary uplift clauses."
+        }
+      ],
+      "deal_breakers": [
+        "Departure of the Registered Manager without a qualified successor in place.",
+        "Inability to verify the sudden spike in Trade Debtors (£98k) in the 2026 balance sheet."
+      ],
+      "key_findings": [
+        "The company is financially stable with strong liquidity and no significant debt.",
+        "There is a critical succession risk with both top leaders departing.",
+        "The workforce is largely flexible (zero-hours), which is a double-edged sword for scalability vs. stability.",
+        "Profitability is healthy (12% net margin), but highly dependent on managing direct labour costs."
+      ],
+      "narrative": "Compassion Home Care Limited presents as a financially robust but operationally fragile acquisition. From a balance sheet perspective, the company is in excellent health with a current ratio of 2.25 and virtually no gearing. However, the 'Key Person Risk' is at a critical level; the simultaneous departure of the Business Director and the Registered Manager (a regulatory requirement) poses an immediate threat to the continuity of the business. Furthermore, the dramatic increase in trade debtors in the most recent period requires urgent investigation to ensure revenue is not being 'padded' or that a major client is not defaulting on payments. The deal is viable but requires heavy protections around leadership transition and debtor verification."
+    }
+  },
+  {
+    "id": 2747,
+    "expert_type": "screening",
+    "status": "success",
+    "score": null,
+    "confidence": null,
+    "created_at": "2026-07-16T18:30:31.530Z",
+    "analysis_data": {
+      "stage": "screening",
+      "company_name": "Compassion Home Care Limited",
+      "sector": "Care & Social Services",
+      "analysis_date": "2024-05-22",
+      "data_quality_score": 56,
+      "analysis_period": {
+        "earliest_year": 2023,
+        "latest_year": 2026,
+        "years_of_data": 4
+      },
+      "dimensions": {
+        "earnings_trajectory": {
+          "rag": "AMBER",
+          "score": 55,
+          "revenue_cagr_percent": 2,
+          "latest_revenue": 818060,
+          "latest_gross_margin_percent": 33.3,
+          "latest_operating_margin_percent": 16.2,
+          "latest_net_margin_percent": 12.4,
+          "margin_direction": "stable",
+          "explanation": "Revenue has fluctuated between 770k and 836k over four years, resulting in a low CAGR. However, net margins have remained resilient and slightly expanded in the most recent period."
+        },
+        "balance_sheet_health": {
+          "rag": "GREEN",
+          "score": 85,
+          "latest_current_ratio": 2.3,
+          "latest_net_assets": 116782,
+          "net_asset_growth_percent": 46.6,
+          "long_term_debt": 1596,
+          "explanation": "The balance sheet is highly liquid with a current ratio of 2.3 and minimal long-term debt. Net assets grew significantly in the latest year as the company retained more profit."
+        },
+        "cash_reality": {
+          "rag": "GREEN",
+          "score": 80,
+          "latest_cash_at_bank": 103302,
+          "cash_trend": "growing",
+          "cash_vs_profit_alignment": "aligned",
+          "explanation": "Cash at bank has increased from 81k to 103k over the last two years, closely tracking reported net profits. The company maintains a strong cash buffer relative to its size."
+        },
+        "customer_risk": {
+          "rag": "RED",
+          "score": 0,
+          "top_customer_concentration_percent": null,
+          "aged_debt_90_plus_percent": null,
+          "total_customers": null,
+          "explanation": "Data Unavailable. The absence of sales ledger data prevents any assessment of customer concentration or payment performance, which is a critical risk in the care sector."
+        },
+        "asset_quality": {
+          "rag": "AMBER",
+          "score": 45,
+          "nbv_to_cost_percent": 39.5,
+          "recent_additions_percent": 0,
+          "total_nbv": 6383,
+          "explanation": "The tangible asset base is small and declining, with NBV falling from 16k to 6k over four years. There is a lack of recent investment, though the business model appears asset-light."
+        },
+        "people_capability": {
+          "rag": "AMBER",
+          "score": 50,
+          "headcount": 26,
+          "revenue_per_employee": 31464,
+          "payroll_to_revenue_percent": 65.4,
+          "director_cost_percent_of_payroll": 15.2,
+          "explanation": "Revenue per head is low at 31k, typical for the sector. While director costs are moderate, the planned exit of both the Director and Registered Manager creates significant transition risk."
+        }
+      },
+      "overall_score": 62,
+      "recommendation": "PROCEED_WITH_CAUTION",
+      "recommendation_justification": "The company is financially stable with strong liquidity and consistent profitability. However, the lack of customer data and the simultaneous exit of key leadership warrant a cautious approach.",
+      "key_strengths": [
+        "Strong liquidity position with a current ratio of 2.3 and growing cash reserves.",
+        "Minimal long-term debt and high interest coverage, indicating very low financial distress risk.",
+        "Resilient net profit margins maintained at 11-12% despite revenue fluctuations."
+      ],
+      "key_concerns": [
+        "Significant leadership risk as both the Business Director and Registered Manager are not remaining post-sale.",
+        "Total lack of visibility regarding customer concentration and aged debt profile.",
+        "Stagnant revenue growth over a four-year period suggests limited organic momentum."
+      ],
+      "questions_for_seller": [
+        "Can you provide a full aged debtors listing and identify the top 5 customers by annual spend?",
+        "What is the succession plan for the Registered Manager role, given its importance for CQC compliance?",
+        "Why did revenue decline by 7% in 2025 before recovering in 2026?",
+        "What is the nature of the 'Other Debtors' (£66k-£76k) seen in the 2024-2025 balance sheets?"
+      ],
+      "comparable_context": "The 33% gross margin and 12% net margin are healthy for the UK domiciliary care sector. Revenue per employee is on the lower end, likely reflecting the high proportion of part-time/zero-hours staff.",
+      "executive_summary": "Compassion Home Care Limited is a financially sound but stagnant domiciliary care provider. The recommendation is to PROCEED WITH CAUTION. The company's primary strength lies in its balance sheet; it is debt-free, highly liquid, and consistently profitable, with a cash position of 103,302. However, the business has failed to achieve meaningful growth over the last four years, with revenue effectively flatlining. The most significant risks are operational: the lack of data on customer concentration and the fact that both the owner-director and the Registered Manager intend to exit post-acquisition. In a regulated sector, the loss of a Registered Manager without a clear successor is a 'red flag' for continuity. Further investigation must focus on the sales ledger and the stability of the middle-management layer."
+    }
+  },
+  {
+    "id": 2752,
+    "expert_type": "sector",
+    "status": "success",
+    "score": 68,
+    "confidence": "high",
+    "created_at": "2026-07-16T18:31:09.855Z",
+    "analysis_data": {
+      "expert": "sector",
+      "company_name": "Compassion Home Care Limited",
+      "sector": "Care & Social Services",
+      "analysis_date": "2023-10-27",
+      "score": 68,
+      "confidence": "high",
+      "sector_overview": {
+        "growth_outlook": "growing",
+        "uk_market_size_estimate": "£20bn+ (UK Domiciliary Care)",
+        "key_trends": [
+          "Aging population driving demand for 'aging in place' services",
+          "Shift from residential care to home-based care models",
+          "Increasing integration of health and social care (Integrated Care Systems)",
+          "Rising use of assistive technology and remote monitoring"
+        ],
+        "regulatory_factors": [
+          "CQC (Care Quality Commission) inspection ratings are critical for valuation",
+          "National Living Wage (NLW) increases impacting margins",
+          "Strict compliance requirements for staff training and safeguarding",
+          "Potential for future reform in social care funding models"
+        ],
+        "observations": "The sector is characterized by high demand but significant operational pressure due to labor shortages and funding constraints in local authority contracts."
+      },
+      "competitive_positioning": {
+        "company_size_classification": "micro",
+        "typical_gross_margin_range": {
+          "low": 30,
+          "high": 45
+        },
+        "typical_operating_margin_range": {
+          "low": 5,
+          "high": 12
+        },
+        "typical_ebitda_margin_range": {
+          "low": 8,
+          "high": 15
+        },
+        "positioning_assessment": "With revenue under £1M and 23 employees, the company is a micro-provider likely serving a localized catchment area. It lacks the scale of national franchises but may benefit from strong local reputation and personalized service."
+      },
+      "comparable_multiples": {
+        "ev_revenue_range": {
+          "low": 0.3,
+          "mid": 0.5,
+          "high": 0.7
+        },
+        "ev_ebitda_range": {
+          "low": 1.5,
+          "mid": 2.25,
+          "high": 3
+        },
+        "factors_affecting_multiple": [
+          "CQC Rating (Outstanding/Good vs Requires Improvement)",
+          "Ratio of private-pay vs local authority funded clients",
+          "Staff retention rates and recruitment pipeline",
+          "Geographic density of care packages"
+        ],
+        "premium_factors": [
+          "High percentage of private-pay clients (>50%)",
+          "CQC 'Outstanding' rating",
+          "Strong local brand with high referral rates"
+        ],
+        "discount_factors": [
+          "Revenue under £2M threshold",
+          "High dependency on the owner for daily operations",
+          "Heavy reliance on local authority contracts with fixed low rates",
+          "Small headcount (23) creates key-person risk"
+        ],
+        "data_confidence": "based_on_training_data"
+      },
+      "growth_opportunities": [
+        {
+          "opportunity": "Private Pay Expansion",
+          "effort": "medium",
+          "potential_impact": "high",
+          "timeframe": "medium_term",
+          "description": "Targeting self-funding clients to improve margins compared to local authority rates."
+        },
+        {
+          "opportunity": "Digital Care Planning",
+          "effort": "low",
+          "potential_impact": "medium",
+          "timeframe": "short_term",
+          "description": "Implementing digital rostering and care notes to reduce administrative overhead and improve compliance."
+        },
+        {
+          "opportunity": "Specialist Care Services",
+          "effort": "high",
+          "potential_impact": "high",
+          "timeframe": "long_term",
+          "description": "Expanding into complex care (dementia, end-of-life) which commands higher hourly rates."
+        }
+      ],
+      "sector_risks": [
+        {
+          "risk": "Labor Shortages",
+          "severity": "high",
+          "timeframe": "immediate",
+          "description": "Difficulty in recruiting and retaining qualified carers in a competitive low-wage market."
+        },
+        {
+          "risk": "Regulatory Compliance",
+          "severity": "high",
+          "timeframe": "immediate",
+          "description": "An 'Inadequate' CQC rating can lead to contract termination and business closure."
+        },
+        {
+          "risk": "Wage Inflation",
+          "severity": "medium",
+          "timeframe": "near_term",
+          "description": "Increases in National Living Wage may outpace the ability to raise prices for clients."
+        }
+      ],
+      "key_findings": [
+        "The business is a micro-cap entity in a highly fragmented but essential sector.",
+        "Valuation is heavily constrained by the sub-£1M revenue and likely owner-dependency.",
+        "Sector tailwinds are strong due to demographics, but operational risks (labor/regulation) are high.",
+        "A 1.5x - 3.0x EBITDA multiple is the standard range for a business of this scale."
+      ],
+      "narrative": "Compassion Home Care Limited operates in a sector with robust structural demand driven by the UK's aging population. However, as a micro-provider with revenue under £800k, it faces significant scale-related challenges. Valuation will be primarily driven by its CQC rating and the mix of its client base; a high proportion of private-pay clients would justify a multiple toward the 3.0x EBITDA mark, whereas a reliance on local authority funding and high owner-involvement would pull the multiple toward 1.5x-2.0x. The primary value for a buyer would be as a 'bolt-on' for a larger regional provider looking to increase density in a specific geography."
+    }
+  },
+  {
+    "id": 2755,
+    "expert_type": "synthesis",
+    "status": "success",
+    "score": null,
+    "confidence": null,
+    "created_at": "2026-07-16T18:31:09.953Z",
+    "analysis_data": {
+      "stage": "synthesis",
+      "company_name": "Compassion Home Care Limited",
+      "sector": "Care & Social Services",
+      "analysis_date": "2024-05-22",
+      "overall_score": 67,
+      "recommendation": "PROCEED_WITH_CAUTION",
+      "scores_dashboard": {
+        "financial": {
+          "score": 72,
+          "confidence": "high"
+        },
+        "operational": {
+          "score": 68,
+          "confidence": "high"
+        },
+        "risk": {
+          "score": 68,
+          "confidence": "medium"
+        },
+        "quality_of_earnings": {
+          "score": 65,
+          "confidence": "high"
+        },
+        "sector": {
+          "score": 68,
+          "confidence": "high"
+        },
+        "valuation": {
+          "score": 75,
+          "confidence": "high"
+        },
+        "deal_structure": {
+          "score": 55,
+          "confidence": "high"
+        }
+      },
+      "executive_summary": "Compassion Home Care Limited is a robust but operationally fragile micro-provider in the domiciliary care sector. Verdict: A viable acquisition only if structured to mitigate a critical leadership vacuum and a suspicious late-stage debtor spike. Financials show 2026 Revenue of £818k and a reported EBITDA of £135k (16.5% margin). However, Quality of Earnings (QoE) analysis reveals an Adjusted EBITDA of £89k after accounting for the mandatory replacement of the departing Registered Manager and deferred maintenance. The valuation range for equity is £215k–£350k. Top reasons to proceed: 1) Exceptional liquidity with £103k cash and zero debt; 2) High-demand sector with recurring revenue; 3) Flexible cost base with 85% part-time staff. Top reasons for caution: 1) Critical key-person risk with both the Director and Registered Manager departing; 2) A 413% spike in trade debtors in 2026 suggesting collection or revenue recognition issues; 3) A 'Capex Cliff' due to years of under-investment in IT and equipment. Recommended structure: A 'Conservative' £270k headline price with only 40% upfront, tying the remainder to debtor recovery and the successful CQC registration of a new manager.",
+      "expert_consensus": {
+        "agreements": [
+          "The business is currently 'owner-operated' and lacks a sustainable middle-management layer.",
+          "The balance sheet is exceptionally strong with high liquidity and no bank debt.",
+          "Reported EBITDA is significantly inflated by the absence of a market-rate Registered Manager salary.",
+          "The 2026 spike in trade debtors is a primary financial risk requiring immediate audit."
+        ],
+        "contradictions": [
+          {
+            "topic": "Revenue Stability",
+            "expert_a": "Financial",
+            "expert_a_view": "Views revenue as showing a 'slightly upward trajectory' despite a 2025 dip.",
+            "expert_b": "Risk",
+            "expert_b_view": "Flags the 2025 decline as a potential sign of contract sensitivity or client concentration.",
+            "resolution": "The 2025 dip likely reflects the loss of a specific care package or contract; the 2026 recovery must be verified against the debtor spike to ensure it is not 'paper growth'."
+          }
+        ]
+      },
+      "devils_advocate": {
+        "worst_case_scenario": "The Registered Manager departs on completion, and the CQC suspends the provider's license due to the lack of a qualified successor. Simultaneously, the £98k in trade debtors is revealed to be disputed local authority billings that are uncollectible, wiping out the company's cash reserves and leading to technical insolvency within 90 days.",
+        "weakest_assumptions": [
+          "That a qualified Registered Manager can be recruited for £42.5k in a hyper-competitive labour market.",
+          "That the 85% part-time workforce will remain loyal during a total change in leadership.",
+          "That the 2026 revenue growth is 'real' and not a result of aggressive billing practices to inflate the sale price."
+        ],
+        "underweighted_risks": [
+          "CQC Regulatory Drift: Without the original owners, the 'Good' rating may be at risk during the next inspection.",
+          "Labour Inflation: A 5-10% increase in the National Living Wage would disproportionately impact this business given staff costs are 65% of revenue."
+        ],
+        "post_mortem_predictions": [
+          "The buyer will regret not having an escrow for the £98k debtors.",
+          "The buyer will find the IT systems are obsolete and require £15k+ immediate investment, not the £5k estimated."
+        ]
+      },
+      "investment_thesis": {
+        "positive_case": "This is a 'clean' platform acquisition with a debt-free balance sheet. By professionalising the management and upgrading the technology, a buyer can use this as a hub to acquire smaller, less efficient providers in the same geography, leveraging the existing high margins.",
+        "conditions_for_success": [
+          "Successful recruitment of a CQC-approved Registered Manager prior to or at completion.",
+          "Verification that the £98k debtor balance is current and collectible.",
+          "Retention of the core carer group through the transition."
+        ],
+        "integration_priorities_100_days": [
+          "Secure CQC Registered Manager status for the new hire.",
+          "Implement digital care planning and rostering software.",
+          "Execute an intensive debt collection drive to normalise the sales ledger.",
+          "Refresh IT hardware and office infrastructure."
+        ]
+      },
+      "information_requests": {
+        "critical": [
+          {
+            "request": "Aged Debtors Report as of latest month-end",
+            "source_expert": "Risk/Financial",
+            "rationale": "To investigate the 413% spike in trade debtors."
+          },
+          {
+            "request": "CQC Inspection History and latest rating report",
+            "source_expert": "Sector",
+            "rationale": "To confirm the regulatory standing of the business."
+          },
+          {
+            "request": "Details of 'Other Debtors' (£66k-£76k) in 2024/25",
+            "source_expert": "Financial",
+            "rationale": "To ensure these were not non-commercial loans or hidden liabilities."
+          }
+        ],
+        "important": [
+          {
+            "request": "Staff turnover rates for the last 24 months",
+            "source_expert": "Operational",
+            "rationale": "To assess the stability of the 85% part-time workforce."
+          },
+          {
+            "request": "Client concentration: Top 5 clients by revenue",
+            "source_expert": "Risk",
+            "rationale": "To identify reliance on specific local authority contracts."
+          }
+        ],
+        "nice_to_have": [
+          {
+            "request": "Schedule of IT assets and purchase dates",
+            "source_expert": "Operational",
+            "rationale": "To refine the capex refresh budget."
+          }
+        ]
+      },
+      "valuation_summary": {
+        "equity_value_range": {
+          "low": 215000,
+          "mid": 270000,
+          "high": 350000
+        },
+        "recommended_offer": 270000,
+        "recommended_structure": "Conservative Approach: 40% upfront (£108k), 30% deferred over 12 months, 30% earnout tied to debtor collection and EBITDA stability."
+      },
+      "narrative_report": "INVESTMENT MEMORANDUM: COMPASSION HOME CARE LIMITED\n\n1. INTRODUCTION\nCompassion Home Care Limited ('the Company') is a micro-cap domiciliary care provider with a four-year track record of profitability. The business is currently owner-operated and presents a classic 'bolt-on' opportunity for a regional player or a stable entry point for a private investor. While the financial headlines are attractive, the business is at a critical crossroads due to the planned exit of its entire leadership team.\n\n2. FINANCIAL PERFORMANCE & QUALITY OF EARNINGS\nThe Company reported a 2026 EBITDA of £135,076 on revenue of £818,060. While the 16.5% EBITDA margin is impressive for the sector, it is artificially inflated. The current owners have 'sweated' the assets, with zero material capex in 24 months, leaving the IT and equipment 77% depreciated. More critically, the reported profit does not account for the cost of a Registered Manager, a statutory requirement. Normalising for a market-rate manager (£42.5k) and a realistic maintenance budget reduces the maintainable EBITDA to £89,291. \n\n3. BALANCE SHEET & LIQUIDITY\nThe Company’s greatest strength is its balance sheet. With £103k in cash and zero bank debt, the business is highly liquid. However, a significant red flag has emerged in the 2026 accounts: Trade Debtors spiked from £19k to £98k (a 413% increase) while revenue only grew 5%. This suggests either a major new contract with extended terms or, more likely, a significant breakdown in the collection cycle. This must be audited before any funds are committed.\n\n4. OPERATIONAL RISK & LEADERSHIP VACUUM\nThe acquisition faces a 'Level 1' key-person risk. Both the Business Director and the Registered Manager are departing. In the UK care sector, the Registered Manager is the legal linchpin of the CQC registration. Their absence is not merely an operational inconvenience but a regulatory deal-breaker. The workforce is 85% part-time/zero-hours; while this provides flexibility, it also increases the risk of staff flight during a period of leadership instability.\n\n5. VALUATION & DEAL STRUCTURE\nBased on an adjusted EBITDA of £89k and a sector-appropriate multiple of 2.0x (reflecting the micro-cap discount and transition risks), the Enterprise Value is estimated at £178k. Adding the surplus cash and adjusting for a 12.5% bad debt provision on the debtor spike results in a base Equity Value of £270k. \n\nWe recommend a Conservative Deal Structure. The seller is likely anchored to the reported £135k EBITDA and may expect a valuation exceeding £400k. To bridge this gap while protecting the buyer, we propose a 40% upfront payment, with the remaining 60% contingent on two factors: the successful collection of the £98k debtor balance and the recruitment/CQC registration of a new Registered Manager. This shifts the 'transition risk' back to the seller.\n\n6. CONCLUSION\nCompassion Home Care Limited is a profitable, cash-rich business that has been managed for maximum short-term extraction. It offers a solid foundation for growth but requires immediate professionalisation and capital reinvestment. The deal is recommended only if the buyer can secure the leadership transition and verify the integrity of the sales ledger."
+    }
+  },
+  {
+    "id": 2753,
+    "expert_type": "valuation",
+    "status": "success",
+    "score": 75,
+    "confidence": "high",
+    "created_at": "2026-07-16T18:31:09.888Z",
+    "analysis_data": {
+      "expert": "valuation",
+      "company_name": "Compassion Home Care Limited",
+      "analysis_date": "2024-05-22",
+      "score": 75,
+      "confidence": "high",
+      "ebitda_multiple_valuation": {
+        "adjusted_ebitda_base": 89291,
+        "sector_multiple_range": {
+          "low": 1.5,
+          "mid": 2.25,
+          "high": 3
+        },
+        "selected_multiple": 2,
+        "multiple_justification": "A multiple of 2.0x is selected, which is slightly below the sector midpoint. While the company has strong margins and liquidity, it is heavily discounted due to its micro-cap size (revenue <£1M), critical key-person risk with both the Director and Registered Manager departing, and a significant 'capex cliff' requiring immediate reinvestment.",
+        "premium_factors_applied": [
+          "Strong net margins (11-12%)",
+          "Exceptional liquidity and zero bank debt",
+          "Recurring revenue model in a high-demand sector"
+        ],
+        "discount_factors_applied": [
+          "Micro-cap size (Revenue <£1M)",
+          "Critical leadership void (Director and Registered Manager leaving)",
+          "Significant deterioration in debtor days (10 to 44 days)",
+          "Aging asset base (77% depreciated) requiring immediate capex"
+        ],
+        "enterprise_value_range": {
+          "conservative": 121959,
+          "base": 178582,
+          "optimistic": 258190
+        }
+      },
+      "ev_to_equity_bridge": {
+        "enterprise_value_base": 178582,
+        "plus_cash": 103285,
+        "minus_long_term_debt": 0,
+        "minus_director_loans": 0,
+        "minus_bad_debt_provision": 12270,
+        "minus_working_capital_adjustment": 0,
+        "equity_value": {
+          "conservative": 212974,
+          "base": 269597,
+          "optimistic": 349205
+        }
+      },
+      "asset_based_valuation": {
+        "net_asset_value": 118378,
+        "property_adjustment": 0,
+        "bad_debt_adjustment": -12270,
+        "adjusted_nav": 106108,
+        "nav_as_floor": true
+      },
+      "revenue_multiple_crosscheck": {
+        "latest_revenue": 818060,
+        "revenue_multiple_range": {
+          "low": 0.3,
+          "high": 0.5
+        },
+        "implied_ev_range": {
+          "low": 245418,
+          "high": 409030
+        }
+      },
+      "valuation_summary": {
+        "recommended_range": {
+          "equity_value_low": 215000,
+          "equity_value_mid": 270000,
+          "equity_value_high": 350000
+        },
+        "primary_methodology": "ebitda_multiple",
+        "cross_check_alignment": "moderate"
+      },
+      "sensitivity": {
+        "ebitda_plus_10pct": {
+          "enterprise_value": 196440,
+          "equity_value": 287455
+        },
+        "ebitda_minus_10pct": {
+          "enterprise_value": 160724,
+          "equity_value": 251739
+        },
+        "multiple_plus_half": {
+          "enterprise_value": 223228,
+          "equity_value": 314243
+        },
+        "multiple_minus_half": {
+          "enterprise_value": 133937,
+          "equity_value": 224952
+        },
+        "key_customer_loss_impact": "High risk due to potential client concentration implied by the 2026 debtor spike; loss of a major local authority contract could reduce EBITDA by 20-30%.",
+        "director_replacement_impact": -42500
+      },
+      "seller_expectations": {
+        "likely_seller_expectation_range": {
+          "low": 400000,
+          "high": 800000
+        },
+        "seller_anchor_points": [
+          "Reported EBITDA of £135k (ignoring replacement salary costs)",
+          "Historical revenue growth and high cash balance",
+          "Emotional value of a long-tenured workforce"
+        ],
+        "negotiation_gap_assessment": "Significant. The seller is likely to anchor on the reported EBITDA of £135k and a 4-5x multiple, or a 1x revenue multiple (£818k). The buyer's valuation is heavily impacted by the £42.5k Registered Manager replacement cost and the debtor spike, which the seller will likely view as 'one-off' or 'manageable' issues."
+      },
+      "key_findings": [
+        "The business is highly profitable but currently 'owner-operated' to a degree that inflates reported earnings.",
+        "Adjusted EBITDA (Base: £89k) is the most realistic measure of maintainable earnings for a buyer.",
+        "The balance sheet is strong with £103k cash and no debt, providing a significant buffer for the transition.",
+        "The 2026 debtor spike from 10 to 44 days is a major red flag for earnings quality and cash conversion."
+      ],
+      "red_flags": [
+        "Statutory compliance risk: Departure of the Registered Manager without a successor.",
+        "Capex Cliff: Asset base is 77% depreciated with zero investment in 24 months.",
+        "Debtor Deterioration: 413% increase in trade debtors in the final year."
+      ],
+      "narrative": "Compassion Home Care Limited is a robust micro-provider that has been 'sweated' for maximum cash extraction by the current owners. While the reported EBITDA of £135k is attractive, it is unsustainable for a buyer who must immediately hire a Registered Manager and refresh the IT infrastructure. The valuation is further tempered by a sudden deterioration in debtor collection. A fair equity value sits between £215k and £350k, with the base case of £270k reflecting a 2.0x multiple on normalized earnings plus the surplus cash. Success for a buyer depends entirely on securing a new CQC-approved manager and stabilizing the sales ledger."
+    }
+  }
+]

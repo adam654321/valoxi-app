@@ -1,0 +1,67 @@
+{
+  "document": "staff_matrix",
+  "report_date": "2026-07-30",
+  "summary": {
+    "total_headcount": 92,
+    "total_staff_costs": 3949165,
+    "total_gross_salaries": 2860065,
+    "total_employer_ni": 386509,
+    "total_employer_pension": 51987,
+    "director_count": 2,
+    "director_remuneration": 140475,
+    "working_director_count": 2,
+    "non_working_director_count": 0,
+    "employee_count": 90,
+    "employee_costs": 3808690
+  },
+  "staff": [
+    {
+      "name": "Mark Wood",
+      "position": "Director / Shareholder",
+      "gross_salary": null,
+      "employer_ni": null,
+      "employer_pension": null,
+      "total_cost": null,
+      "is_director": true,
+      "is_owner": true,
+      "employment_type": "Full-Time",
+      "start_date": null
+    },
+    {
+      "name": "Louisa Wood",
+      "position": "Director / Shareholder",
+      "gross_salary": null,
+      "employer_ni": null,
+      "employer_pension": null,
+      "total_cost": null,
+      "is_director": true,
+      "is_owner": true,
+      "employment_type": "Full-Time",
+      "start_date": null
+    },
+    {
+      "name": "Richard",
+      "position": "Chief Executive Officer / MD — AliDeck",
+      "gross_salary": null,
+      "employer_ni": null,
+      "employer_pension": null,
+      "total_cost": null,
+      "is_director": true,
+      "is_owner": false,
+      "employment_type": "Full-Time",
+      "start_date": "2011-07-30"
+    }
+  ],
+  "employment_type_breakdown": {
+    "Full-Time": 92,
+    "Part-Time": 0
+  },
+  "observations": [
+    "The business has 2 directors (Mark and Louisa Wood) with total remuneration and pension of £140,475.",
+    "Total fully-loaded staff cost of £3,949,165 equates to approximately 21.1% of FY25 turnover.",
+    "The CEO, Richard, has a 15-year tenure and is planned as the succession CEO post-transaction.",
+    "A small variance exists between the staff matrix and the P&L due to the combination of AliDeck FY26 and Milwood FY25 actuals.",
+    "Director remuneration is noted as being materially below market-rate for a business of this scale."
+  ],
+  "_isIM": true
+}

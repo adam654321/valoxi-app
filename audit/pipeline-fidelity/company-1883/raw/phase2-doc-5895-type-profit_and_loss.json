@@ -1,0 +1,97 @@
+{
+  "document": "profit_and_loss",
+  "source": "statutory",
+  "years_covered": [
+    2023
+  ],
+  "period_ends": {
+    "2023": "2023-05-31"
+  },
+  "months_covered": {
+    "2023": 12
+  },
+  "report_date": "2024-02-19",
+  "years": {
+    "2023": {
+      "year": 2023,
+      "profit_and_loss": {
+        "revenue": 15388788,
+        "cost_of_sales": 11164982,
+        "gross_profit": 4223806,
+        "administrative_expenses": 3403587,
+        "depreciation_amortisation": 372563,
+        "other_operating_income": null,
+        "operating_profit": 447656,
+        "interest_receivable": null,
+        "interest_payable": 118463,
+        "profit_before_tax": 329193,
+        "corporation_tax": 99241,
+        "net_profit": 229952
+      },
+      "revenue_breakdown": {
+        "by_product": {},
+        "by_segment": {}
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": null,
+        "direct_labour": null,
+        "subcontractor_costs": null,
+        "other_direct_costs": null
+      },
+      "overheads_breakdown": {
+        "staff_wages_salaries": null,
+        "directors_salaries": null,
+        "directors_pension": null,
+        "employers_national_insurance": null,
+        "staff_pension_contributions": null,
+        "staff_training_recruitment": null,
+        "use_of_home_as_office": null,
+        "rent_rates": null,
+        "utilities": null,
+        "insurance": null,
+        "accountancy_bookkeeping": null,
+        "professional_fees": null,
+        "software_subscriptions": null,
+        "computer_costs": null,
+        "it_support_hosting": null,
+        "telecommunications": null,
+        "printing_stationery": null,
+        "postage_courier": null,
+        "subscriptions_memberships": null,
+        "bank_charges": null,
+        "advertising_marketing": null,
+        "travel_subsistence": null,
+        "motor_expenses": null,
+        "repairs_maintenance": null,
+        "depreciation": 372563,
+        "amortisation": null,
+        "other_overheads": null
+      },
+      "total_staff_costs": null,
+      "total_directors_remuneration": null,
+      "dividends_paid": null,
+      "exceptional_items": [
+        {
+          "description": "Non-recurring items",
+          "amount": 53232
+        }
+      ],
+      "financial_ratios": {
+        "gross_margin_percent": 27.45,
+        "net_margin_percent": 1.49,
+        "interest_coverage_ratio": 3.78
+      }
+    }
+  },
+  "summary_insights": [
+    "The company achieved a turnover of £15.4m for FY23, maintaining a gross margin of 27.4%.",
+    "Profitability was impacted by significant raw material price volatility and commissioning costs for a new powder coating line.",
+    "The EBITDA margin of 5.3% (statutory) is noted as the lowest in the historical series, indicating recent margin compression.",
+    "Net profit margin is thin at 1.5%, reflecting high operating expenses and interest costs relative to revenue.",
+    "Interest coverage is moderate at 3.78x, suggesting the company can meet its debt obligations but has limited headroom.",
+    "There is a material working capital tie-up in inventory, which stands at £3.16m or 20.5% of annual turnover.",
+    "The balance sheet shows elevated financial debt of £1.34m, split between short-term and long-term liabilities.",
+    "A new fixed charge was created in April 2022, indicating ongoing reliance on external financing for operations or capital expenditure."
+  ],
+  "_isIM": true
+}

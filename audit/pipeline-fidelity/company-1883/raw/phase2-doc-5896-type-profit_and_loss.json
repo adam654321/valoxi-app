@@ -1,0 +1,96 @@
+{
+  "document": "profit_and_loss",
+  "source": "management",
+  "years_covered": [
+    2022
+  ],
+  "period_ends": {
+    "2022": "2022-05-31"
+  },
+  "months_covered": {
+    "2022": 12
+  },
+  "report_date": null,
+  "years": {
+    "2022": {
+      "year": 2022,
+      "profit_and_loss": {
+        "revenue": 14930000,
+        "cost_of_sales": 9650000,
+        "gross_profit": 5280000,
+        "administrative_expenses": 2764000,
+        "depreciation_amortisation": 262000,
+        "other_operating_income": null,
+        "operating_profit": 2516000,
+        "interest_receivable": null,
+        "interest_payable": null,
+        "profit_before_tax": null,
+        "corporation_tax": null,
+        "net_profit": null
+      },
+      "revenue_breakdown": {
+        "by_product": {},
+        "by_segment": {}
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": null,
+        "direct_labour": null,
+        "subcontractor_costs": null,
+        "other_direct_costs": null
+      },
+      "overheads_breakdown": {
+        "staff_wages_salaries": null,
+        "directors_salaries": null,
+        "directors_pension": null,
+        "employers_national_insurance": null,
+        "staff_pension_contributions": null,
+        "staff_training_recruitment": null,
+        "use_of_home_as_office": null,
+        "rent_rates": null,
+        "utilities": null,
+        "insurance": null,
+        "accountancy_bookkeeping": null,
+        "professional_fees": null,
+        "software_subscriptions": null,
+        "computer_costs": null,
+        "it_support_hosting": null,
+        "telecommunications": null,
+        "printing_stationery": null,
+        "postage_courier": null,
+        "subscriptions_memberships": null,
+        "bank_charges": null,
+        "advertising_marketing": null,
+        "travel_subsistence": null,
+        "motor_expenses": null,
+        "repairs_maintenance": null,
+        "depreciation": 262000,
+        "amortisation": null,
+        "other_overheads": 2502000
+      },
+      "total_staff_costs": null,
+      "total_directors_remuneration": null,
+      "dividends_paid": null,
+      "exceptional_items": [
+        {
+          "description": "non-recurring items",
+          "value": 37000
+        }
+      ],
+      "financial_ratios": {
+        "gross_margin_percent": 35.37,
+        "net_margin_percent": null,
+        "interest_coverage_ratio": null
+      }
+    }
+  },
+  "summary_insights": [
+    "The group achieved a turnover of £14.93m for the financial year ended 31 May 2022.",
+    "Gross profit stands at £5.28m, representing a healthy gross margin of 35.4%.",
+    "Operating profit (EBIT) of £2.52m demonstrates strong core profitability before non-cash items.",
+    "Adjusted EBITDA reached £2.82m, which the company notes is the highest margin (18.9%) in its historical series.",
+    "The figures represent a group aggregate including AliDeck and The Milwood Group, which is significantly higher than the standalone statutory turnover for Canoports UK Limited.",
+    "Overheads are well-managed at 18.5% of turnover, contributing to the robust EBITDA performance.",
+    "A small volume of non-recurring items (£37k) was added back to reach the adjusted EBITDA figure."
+  ],
+  "_isIM": true
+}

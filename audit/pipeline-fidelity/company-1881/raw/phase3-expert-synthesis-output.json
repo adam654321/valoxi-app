@@ -1,0 +1,135 @@
+{
+  "stage": "synthesis",
+  "company_name": "[AUDIT-138] Cooper Gibson",
+  "sector": "Professional Services",
+  "analysis_date": "2024-05-22",
+  "overall_score": 51,
+  "recommendation": "PROCEED_WITH_CAUTION",
+  "scores_dashboard": {
+    "financial": {
+      "score": 62,
+      "confidence": "high"
+    },
+    "operational": {
+      "score": 58,
+      "confidence": "medium"
+    },
+    "risk": {
+      "score": 45,
+      "confidence": "medium"
+    },
+    "quality_of_earnings": {
+      "score": 45,
+      "confidence": "medium"
+    },
+    "sector": {
+      "score": 68,
+      "confidence": "medium"
+    },
+    "valuation": {
+      "score": 42,
+      "confidence": "low"
+    },
+    "deal_structure": {
+      "score": 35,
+      "confidence": "high"
+    }
+  },
+  "executive_summary": "Cooper Gibson is a micro-consultancy that has transitioned to a lean, subcontractor-led model, but currently faces a 'cliff-edge' risk profile. VERDICT: A high-risk acquisition that is only viable if structured as an asset-backed purchase with a heavy earn-out to mitigate extreme client concentration. FINANCIALS: FY2026 Revenue of £223k (down 49% YoY), Reported EBITDA of £57k, but Adjusted EBITDA is -£5.5k after normalizing for market-rate management salaries. VALUATION: Equity value range of £46k to £183k, with the floor set by net cash. TOP 3 REASONS TO PROCEED: 1) Debt-free balance sheet with a strong cash position (£195k); 2) Proven ability to generate 50%+ operating margins during peak project cycles; 3) Scalable, low-asset delivery model using a flexible subcontractor pool. TOP 3 REASONS FOR CAUTION: 1) Critical customer concentration with 88.3% of revenue from a single client; 2) Negative adjusted earnings once the owner's 'lifestyle' salary is corrected to market rates; 3) Significant revenue volatility, including a recent 49% contraction. RECOMMENDED DEAL: Conservative Approach at £46,046 headline price, with only 25% upfront and the remainder contingent on the retention of the primary client and settlement of the £149k director loan.",
+  "expert_consensus": {
+    "agreements": [
+      "The business suffers from extreme customer concentration (88%+ from Client 1).",
+      "Reported profits are inflated by below-market director remuneration.",
+      "The company has successfully deleveraged and maintains a healthy cash balance.",
+      "The shift to a subcontractor model provides operational flexibility but increases key-person/key-partner risk."
+    ],
+    "contradictions": [
+      {
+        "topic": "Valuation Methodology",
+        "expert_a": "Sector",
+        "expert_a_view": "Suggests a 2.0x - 3.5x EBITDA multiple is standard for the sector.",
+        "expert_b": "Valuation",
+        "expert_b_view": "Argues EBITDA multiples are irrelevant because adjusted EBITDA is negative.",
+        "resolution": "The Valuation expert's view prevails; sector multiples apply to 'market-ready' firms, whereas this is a lifestyle business where the owner is the primary value-driver and cost-saver. Asset-based valuation is the only logical floor."
+      },
+      {
+        "topic": "Operational Scalability",
+        "expert_a": "Operational",
+        "expert_b": "Risk",
+        "expert_a_view": "Scalability is high due to the subcontractor model.",
+        "expert_b_view": "Scalability is low because the sales pipeline is non-existent outside of one client.",
+        "resolution": "The business is 'operationally' scalable but 'commercially' stagnant. Growth requires a complete overhaul of the business development function."
+      }
+    ]
+  },
+  "devils_advocate": {
+    "worst_case_scenario": "The primary client (Client 1) terminates their contract within 90 days of completion. Because the owner-director has already exited and the subcontractors have no loyalty to the new buyer, revenue drops by 88% instantly. The buyer is left with a shell company, a lease or overheads, and a negative cash flow, while the £149k director loan has already been paid out, leaving no recourse.",
+    "weakest_assumptions": [
+      "That the 'Client 1' relationship is transferable to a new owner without the current director.",
+      "That the subcontractors will continue to work at current rates for a new, unknown entity.",
+      "That the 2025 revenue peak was a growth signal rather than a non-repeatable anomaly."
+    ],
+    "underweighted_risks": [
+      "The legal status of subcontractors: If HMRC reclassifies these as employees, the historical and future tax liabilities would wipe out the cash reserves.",
+      "Intellectual Property: There is no mention of who owns the work product or tools used by subcontractors."
+    ],
+    "post_mortem_predictions": "If this fails, the post-mortem will show that the buyer 'bought a job, not a business' and paid for a cash balance that was immediately drained by the settlement of the director's loan and the loss of the only meaningful client."
+  },
+  "investment_thesis": {
+    "positive_case": "The acquisition provides a debt-free, high-margin vehicle with a proven (if narrow) service offering. By acquiring the cash and the existing client relationship at a low entry price, a strategic buyer can use the infrastructure to cross-sell to their own client base while professionalizing the management.",
+    "conditions_for_success": [
+      "Client 1 must sign a contract extension or provide a written 'comfort letter' regarding the change of control.",
+      "The owner-director must agree to a minimum 12-month transition period with an earn-out tied to client retention.",
+      "The director loan must be settled/waived as part of the headline equity price."
+    ],
+    "integration_priorities_100_days": [
+      "Direct relationship handover with the lead contact at Client 1.",
+      "Audit and formalize all subcontractor agreements with non-compete and IP assignment clauses.",
+      "Implement a CRM and basic sales pipeline to begin diversifying away from the 88% concentration.",
+      "Standardize financial reporting to eliminate 'other overhead' ambiguity."
+    ]
+  },
+  "information_requests": {
+    "critical": [
+      {
+        "request": "Copy of the contract with 'Client 1' including termination and change-of-control clauses.",
+        "source_expert": "Risk",
+        "rationale": "To assess the legal stability of 88% of the revenue."
+      },
+      {
+        "request": "Breakdown of the £149,587 'Amounts owed to directors'.",
+        "source_expert": "Financial",
+        "rationale": "To determine if this is a simple loan or deferred compensation/tax-related balance."
+      }
+    ],
+    "important": [
+      {
+        "request": "Details of the £163k subcontractor costs in 2025 vs 2026.",
+        "source_expert": "Quality of Earnings",
+        "rationale": "To understand why costs vanished and if this indicates a loss of delivery capacity."
+      },
+      {
+        "request": "List of top 5 subcontractors and their tenure with the firm.",
+        "source_expert": "Operational",
+        "rationale": "To assess the risk of the delivery team dispersing post-sale."
+      }
+    ],
+    "nice_to_have": [
+      {
+        "request": "Explanation of the £20k intangible assets appearing in June 2026.",
+        "source_expert": "Valuation",
+        "rationale": "To see if there is any proprietary IP that could justify a higher multiple."
+      }
+    ]
+  },
+  "valuation_summary": {
+    "equity_value_range": {
+      "low": 46046,
+      "mid": 114563,
+      "high": 183083
+    },
+    "recommended_offer": 46046,
+    "recommended_structure": "Conservative Approach: 25% Upfront, 25% Deferred (12m), 50% Earn-out (24m) tied to Client 1 retention."
+  },
+  "narrative_report": "### Investment Memorandum: [AUDIT-138] Cooper Gibson\n\n**1. Introduction**\nCooper Gibson is a boutique professional services firm that has demonstrated an ability to generate high margins through a lean, subcontractor-led delivery model. However, the firm currently presents as a 'lifestyle' business with significant structural vulnerabilities that must be addressed through a rigorous deal structure. This memorandum outlines the case for a highly contingent acquisition.\n\n**2. Financial Performance & Quality of Earnings**\nOn the surface, Cooper Gibson appears profitable, with a 2026 EBITDA of £57,012. However, the Quality of Earnings (QoE) analysis reveals that this profit is largely artificial. The current director draws a salary of only £12,570, which is approximately £45,000 below the market rate for a replacement Managing Director. When normalized for commercial management costs, the business generates a 'Base Case' Adjusted EBITDA of -£5,526. \n\nFurthermore, revenue is highly volatile. After peaking at £441k in 2025, turnover plummeted by 49% to £223k in 2026. This suggests the business is entirely project-dependent with no recurring revenue base. The shift from a high-staff-cost model in 2022 to a subcontractor model in 2025/26 has improved flexibility but has not stabilized the top line.\n\n**3. Risk Assessment: The Concentration Cliff**\nThe most significant risk is the extreme customer concentration. As of February 2026, a single client ('Client 1') accounts for 88.31% of the sales ledger. The loss of this relationship would be catastrophic, effectively ending the business as a going concern. This risk is compounded by 'Key Person' dependency; the relationship with Client 1 likely resides personally with the owner-director. \n\nAdditionally, the balance sheet contains a £149,587 liability in the form of a director loan. While the company holds £195k in cash, nearly 77% of this cash is effectively 'owed' back to the seller, leaving very little working capital for a buyer to reinvest in growth without further capital injection.\n\n**4. Operational Profile**\nOperationally, the business is asset-light and modern. The transition to subcontractors allows for a variable cost base, which protected the company during the 2026 revenue decline. However, the lack of internal management depth means a buyer must either be an owner-operator or have an existing management platform into which this firm can be integrated. There is no 'middle management' to ensure continuity.\n\n**5. Valuation & Deal Structure**\nTraditional EBITDA multiple valuations fail here due to the negative adjusted earnings. The Enterprise Value is effectively zero. The value resides in the Net Assets (primarily cash), but this must be adjusted for the director loan and the extreme risk of the revenue stream. \n\nWe recommend a 'Conservative Approach' with a headline equity price of £46,046. This is calculated as the Net Asset Value minus the settlement of the director loan, with a further discount for the fragility of the earnings. To protect the buyer, we propose only 25% (£11,511) be paid upfront. The remaining 75% should be split between deferred payments and an earn-out specifically tied to the retention of Client 1 over a 24-month period.\n\n**6. Conclusion**\nCooper Gibson is not a standalone investment. It is a 'bolt-on' opportunity for a buyer who can provide their own management and business development engine. The acquisition is only recommended if the seller accepts a structure that shifts the majority of the 'concentration risk' onto the earn-out period. Without these protections, the risk of overpaying for a vanishing revenue stream is unacceptably high."
+}

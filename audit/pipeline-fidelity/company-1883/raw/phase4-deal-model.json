@@ -1,0 +1,746 @@
+{
+  "model": {
+    "id": 492,
+    "targetCompanyId": 1883,
+    "createdBy": 89,
+    "name": "Audit Model — TC 220",
+    "status": "draft",
+    "version": 1,
+    "transactionType": "share_sale",
+    "parentModelId": null,
+    "isLocked": false,
+    "averagingYears": 3,
+    "ebitdaMultiple": "5",
+    "offerDriver": "ebitda",
+    "targetOfferPrice": null,
+    "multipleLow": "3.5",
+    "multipleHigh": "6",
+    "propertyValue": "0",
+    "cashValue": "0",
+    "otherAssets": "0",
+    "calculatedEbitda": null,
+    "adjustedEbitda": "1863717",
+    "enterpriseValue": "9318585",
+    "plusExcessCash": "2951434",
+    "minusPrimaryDebt": "3867",
+    "minusOtherDebt": "0",
+    "minusCorpTaxDue": "381336",
+    "minusWorkingCapitalAdj": "0",
+    "workingCapitalMonths": 3,
+    "workingCapitalMonthlyAmount": null,
+    "totalPurchasePrice": null,
+    "totalFundingAvailable": null,
+    "equityRequired": null,
+    "upfrontCash": "9187500",
+    "deferredAmount": "1837500",
+    "deferredTerms": null,
+    "earnoutMaximum": "1225000",
+    "earnoutMetric": "EBITDA and Pipeline Conversion",
+    "earnoutPeriodMonths": 12,
+    "retentionEscrow": "612500",
+    "feeLegalDdAmount": "25000",
+    "feeAccountingDdAmount": "15000",
+    "feeLoanArrangementAmount": "0",
+    "feeDealMakerAmount": "0",
+    "customFees": [],
+    "expertDataSnapshot": {
+      "qoe": {
+        "expert": "quality_of_earnings",
+        "company_name": "[AUDIT-220] Canoports UK Limited",
+        "analysis_date": "2025-07-24",
+        "score": 75,
+        "confidence": "high",
+        "reported_figures": {
+          "operating_profit": 1322241,
+          "depreciation": 303929,
+          "amortisation": 0,
+          "reported_ebitda": 1626170,
+          "source_year": "2024"
+        },
+        "add_backs": [
+          {
+            "item": "Non-recurring items",
+            "category": "one_off_cost",
+            "amount": 284357,
+            "recurrence": "one_off",
+            "year": "2024",
+            "justification": "Identified in RECONCILED_FINANCIALS as non-recurring items impacting the 2024 P&L.",
+            "confidence": "high",
+            "defensibility_score": 9,
+            "case_for_inclusion": "These are explicitly flagged as non-recurring in the reconciled accounting records and should be added back to reflect sustainable earnings.",
+            "case_for_exclusion": "The seller must provide a detailed breakdown to prove these are truly non-operational and will not recur under new ownership."
+          },
+          {
+            "item": "Extraordinary Items",
+            "category": "one_off_cost",
+            "amount": 17715,
+            "recurrence": "one_off",
+            "year": "2024",
+            "justification": "Identified in RECONCILED_FINANCIALS as extraordinary items impacting the 2024 P&L.",
+            "confidence": "high",
+            "defensibility_score": 9,
+            "case_for_inclusion": "Extraordinary items are by definition outside the ordinary course of business and distort the underlying EBITDA.",
+            "case_for_exclusion": "The amount is relatively immaterial and may relate to minor operational adjustments the seller argues are part of normal business volatility."
+          }
+        ],
+        "deductions": [
+          {
+            "item": "Director Salary Market Rate Adjustment",
+            "category": "replacement_salary",
+            "amount": 64525,
+            "recurrence": "recurring",
+            "year": "2024",
+            "justification": "Current director remuneration for two directors is £140,475. For a £14m revenue business, the benchmark for two working directors is £205,000 (£102,500 each).",
+            "confidence": "medium",
+            "defensibility_score": 7,
+            "case_for_inclusion": "The current owners are underpaid relative to market rates for a business of this scale; a buyer would need to budget for commercial salaries to replace them.",
+            "case_for_exclusion": "The seller may argue that the existing CEO (Richard) already handles the majority of operations, reducing the need for two high-salary directors."
+          }
+        ],
+        "total_add_backs": 302072,
+        "total_deductions": 64525,
+        "adjusted_ebitda": {
+          "conservative": 1863717,
+          "base": 1863717,
+          "optimistic": 1928242
+        },
+        "adjustment_summary": {
+          "reported_ebitda": 1626170,
+          "plus_add_backs": 302072,
+          "minus_deductions": 64525,
+          "equals_adjusted_ebitda_base": 1863717
+        },
+        "director_salary_analysis": {
+          "directors": [
+            {
+              "name": "Mark & Louisa Wood (Combined)",
+              "current_salary": 140475,
+              "estimated_market_rate": 205000,
+              "benchmark_range_used": "Revenue £10M-£20M: Working MD/Owner-Director (£85,000–£120,000)",
+              "adjustment": 64525,
+              "adjustment_type": "deduction"
+            }
+          ]
+        },
+        "sustainability_assessment": {
+          "sustainable_for_3_years": true,
+          "key_assumptions": [
+            "The 37% gross margin is maintainable despite inflationary pressures in manufacturing.",
+            "The £17.4m secured pipeline converts to revenue at historical conversion rates.",
+            "The CEO (Richard) remains with the business to ensure operational continuity."
+          ],
+          "sensitivity_factors": [
+            "Working capital intensity: Increasing stock and debtor days could squeeze cash flow if not managed.",
+            "Customer concentration: While currently low, the loss of any top-tier client would impact the high-margin revenue base."
+          ],
+          "upside_scenarios": [
+            "Internalisation of powder coating via the new £1.3m line improves margins further.",
+            "Implementation of tighter credit control reduces debtor days to the 45-50 day range."
+          ],
+          "downside_scenarios": [
+            "Raw material price volatility (aluminum/steel) erodes the 37% gross margin.",
+            "Failure to manage the high stock levels (£3.3m) leads to obsolescence or liquidity constraints."
+          ]
+        },
+        "key_findings": [
+          "Adjusted EBITDA of £1.86m is significantly higher than reported EBITDA due to £302k of non-recurring items identified in the 2024 accounts.",
+          "The business is highly liquid with £2.95m cash at bank as of May 2026 and negligible long-term debt.",
+          "Director remuneration is currently below market rates, requiring a £64.5k downward adjustment to EBITDA to reflect commercial replacement costs.",
+          "The effective tax rate of 50% in FY24 is an anomaly that does not impact EBITDA but significantly affects net cash flow and requires tax due diligence."
+        ],
+        "red_flags": [
+          "Stock levels have increased to £3.3m (May 2026) from £2.6m (May 2024), suggesting potential overstocking or slowing turnover.",
+          "Debtor days are trending upwards (62.9 days per latest ledger vs 52.5 days in FY24).",
+          "The lack of multi-year P&L data in the reconciled set limits the ability to verify the stability of the 37% gross margin."
+        ],
+        "narrative": "Canoports UK Limited presents a high-quality earnings profile characterized by strong margins and robust cash generation. The primary adjustment to earnings is the add-back of £302k in non-recurring and extraordinary items, which appear well-evidenced in the reconciled financials. While reported EBITDA is £1.63m, the normalized 'Base Case' EBITDA is £1.86m after accounting for these items and adjusting for under-market director salaries. The business has successfully deleveraged, with bank debt almost entirely cleared by May 2026, leaving a clean balance sheet for acquisition. However, the buyer should focus on the 'heavy' working capital requirement; with £7m tied up in NWC and increasing stock levels, any post-acquisition growth will require significant cash injection or a radical improvement in the cash conversion cycle."
+      },
+      "valuation": {
+        "expert": "valuation",
+        "company_name": "[AUDIT-220] Canoports UK Limited",
+        "analysis_date": "2025-07-24",
+        "score": 82,
+        "confidence": "high",
+        "ebitda_multiple_valuation": {
+          "adjusted_ebitda_base": 1863717,
+          "sector_multiple_range": {
+            "low": 3.5,
+            "mid": 4.75,
+            "high": 6
+          },
+          "selected_multiple": 5,
+          "multiple_justification": "A multiple of 5.0x is selected, placing the company in the upper-mid quartile of the sector range. This is justified by the company's revenue scale (£14m+), which exceeds the £10m institutional interest threshold, its robust 11.6% EBITDA margin, and the significant £17.4m secured pipeline which provides high revenue visibility. The 91% repeat order rate in the AliDeck division further supports a premium over general fabrication shops.",
+          "premium_factors_applied": [
+            "Revenue scale > £10m threshold",
+            "High repeat order rate (91%)",
+            "Substantial secured pipeline of £17.4m",
+            "Modern asset base following £1.3m powder coating investment",
+            "Strong management continuity with 15-year tenure CEO"
+          ],
+          "discount_factors_applied": [
+            "Heavy working capital intensity",
+            "Exposure to cyclical construction/home improvement markets",
+            "Leasehold property dependency"
+          ],
+          "enterprise_value_range": {
+            "conservative": 7454868,
+            "base": 9318585,
+            "optimistic": 11182302
+          }
+        },
+        "ev_to_equity_bridge": {
+          "enterprise_value_base": 9318585,
+          "plus_cash": 2951434,
+          "minus_long_term_debt": 3867,
+          "minus_director_loans": 0,
+          "minus_bad_debt_provision": 0,
+          "minus_working_capital_adjustment": 0,
+          "equity_value": {
+            "conservative": 10402435,
+            "base": 12266152,
+            "optimistic": 14129869
+          }
+        },
+        "asset_based_valuation": {
+          "net_asset_value": 7873818,
+          "property_adjustment": 0,
+          "bad_debt_adjustment": 0,
+          "adjusted_nav": 7873818,
+          "nav_as_floor": true
+        },
+        "revenue_multiple_crosscheck": {
+          "latest_revenue": 14010534,
+          "revenue_multiple_range": {
+            "low": 0.5,
+            "high": 0.9
+          },
+          "implied_ev_range": {
+            "low": 7005267,
+            "high": 12609480
+          }
+        },
+        "valuation_summary": {
+          "recommended_range": {
+            "equity_value_low": 10400000,
+            "equity_value_mid": 12250000,
+            "equity_value_high": 14150000
+          },
+          "primary_methodology": "ebitda_multiple",
+          "cross_check_alignment": "strong"
+        },
+        "sensitivity": {
+          "ebitda_plus_10pct": {
+            "enterprise_value": 10250443,
+            "equity_value": 13198010
+          },
+          "ebitda_minus_10pct": {
+            "enterprise_value": 8386726,
+            "equity_value": 11334293
+          },
+          "multiple_plus_half": {
+            "enterprise_value": 10250443,
+            "equity_value": 13198010
+          },
+          "multiple_minus_half": {
+            "enterprise_value": 8386726,
+            "equity_value": 11334293
+          },
+          "key_customer_loss_impact": "Low risk; top customer is <10% of turnover. A 10% revenue loss at 37% gross margin would impact EBITDA by approx £518k, reducing EV by £2.59m.",
+          "director_replacement_impact": "Already accounted for in Adjusted EBITDA via a £64,525 deduction to reflect market rates."
+        },
+        "seller_expectations": {
+          "likely_seller_expectation_range": {
+            "low": 15000000,
+            "high": 20000000
+          },
+          "seller_anchor_points": [
+            "Secured pipeline of £17.4m",
+            "Strong cash position of £2.95m",
+            "Recent £1.3m capital investment",
+            "Emotional value of building a 92-staff operation"
+          ],
+          "negotiation_gap_assessment": "The gap is likely significant. Sellers of £10m+ revenue businesses often anchor on turnover multiples (e.g., 1x-1.5x revenue) or optimistic future earnings from the pipeline. A buyer will focus on the heavy working capital requirement (£7m NWC) and the need to normalize director pay, likely landing the deal between £11.5m and £13m."
+        },
+        "key_findings": [
+          "Adjusted EBITDA of £1.86m provides a robust valuation base, significantly higher than reported figures due to non-recurring items.",
+          "The company is effectively debt-free with only £3.8k in long-term bank loans remaining as of May 2026.",
+          "Cash at bank of £2,951,434 (from 2026 current position) provides a significant boost to equity value.",
+          "The business is highly liquid but capital intensive, with £7.07m tied up in net working capital.",
+          "The £17.4m secured pipeline is a critical value driver that justifies a multiple at the higher end of the sector range."
+        ],
+        "red_flags": [
+          "Effective tax rate of 50% in FY24 requires investigation as it impacts net cash flow, though not EBITDA.",
+          "Stock levels have increased to £3.3m, suggesting potential obsolescence or capital inefficiency.",
+          "Debtor days are extending (62.9 days), which may require a working capital price adjustment at completion."
+        ],
+        "narrative": "Canoports UK Limited is a high-quality manufacturing target with a clean balance sheet and strong market positioning. The valuation is primarily driven by an Adjusted EBITDA of £1.86m, which accounts for £302k in non-recurring add-backs and a £64.5k deduction for market-rate director salaries. Using a 5.0x multiple—justified by the company's scale, modern assets, and impressive £17.4m pipeline—we arrive at a Base Enterprise Value of £9.3m. The equity value is significantly enhanced by the company's successful deleveraging strategy, which has left nearly £3m in cash and negligible debt. The resulting Base Equity Value of £12.26m is well-supported by an asset-based floor of £7.87m and aligns with revenue-multiple cross-checks. The primary negotiation point will be the 'heavy' working capital profile; while the business is cash-rich, the £7m tied up in NWC suggests that a 'cash-free/debt-free' deal with a normalized working capital target will be essential for the buyer."
+      },
+      "deal_structure": {
+        "expert": "deal_structure",
+        "company_name": "[AUDIT-220] Canoports UK Limited",
+        "analysis_date": "2025-07-24",
+        "score": 78,
+        "confidence": "high",
+        "structures": [
+          {
+            "name": "Conservative Approach",
+            "strategy": "Minimize upfront risk by tying a significant portion of the consideration to the verification of non-recurring add-backs and the successful transition of the Wood family.",
+            "risk_to_buyer": "low",
+            "suitable_when": "Due diligence reveals ambiguity in the £302k add-backs or if the buyer is concerned about the 'heavy' working capital requirements.",
+            "consideration": {
+              "total_headline": 12250000,
+              "upfront_cash": 7350000,
+              "upfront_percent": 60,
+              "deferred": 2450000,
+              "earnout_maximum": 2450000,
+              "earnout_metric": "Adjusted EBITDA",
+              "earnout_period_months": 24,
+              "earnout_rationale": "Trigger 4 (Unverified add-backs): The £302k in non-recurring items represents 16% of the adjusted EBITDA. This earnout ensures the business maintains the normalized earnings level claimed by the seller. Trigger 3 (Owner dependency): Ensures the Wood family provides a comprehensive handover to the CEO.",
+              "retention_escrow": 1225000
+            },
+            "key_conditions": [
+              "Verification of £302k non-recurring add-backs during DD",
+              "Working capital peg set at £7.07m (Current Position)",
+              "Full tax indemnity regarding the 50% effective tax rate anomaly"
+            ],
+            "notes": "Seller obligations: 12-month handover for Mark and Louisa Wood, followed by a 36-month non-compete. Key warranties: Specific indemnity for the FY24 tax rate and a 20% warranty cap. Completion mechanism: Completion accounts with a strict working capital peg of £7.07m. Risk to buyer: Low, as the structure protects against earnings volatility and working capital leakage."
+          },
+          {
+            "name": "Balanced Approach",
+            "strategy": "A fair split that recognizes the strong £17.4m pipeline while protecting the buyer from the immediate cash drain of the heavy working capital cycle.",
+            "risk_to_buyer": "medium",
+            "suitable_when": "The buyer is confident in the CEO's ability to lead but wants to ensure the pipeline converts to actual EBITDA.",
+            "consideration": {
+              "total_headline": 12250000,
+              "upfront_cash": 9187500,
+              "upfront_percent": 75,
+              "deferred": 1837500,
+              "earnout_maximum": 1225000,
+              "earnout_metric": "EBITDA and Pipeline Conversion",
+              "earnout_period_months": 12,
+              "earnout_rationale": "Trigger 4 (Unverified add-backs): Tying the earnout to EBITDA confirms the £1.86m base is sustainable. Trigger 6 (Forecasted growth): While based on historic EBITDA, the valuation multiple of 5.0x is justified by the £17.4m pipeline; the earnout ensures this pipeline is not just 'secured' but 'delivered'.",
+              "retention_escrow": 612500
+            },
+            "key_conditions": [
+              "CEO (Richard) signs a new 3-year service agreement",
+              "Normalized working capital target based on 12-month average",
+              "Clean title to all £1.3m powder coating assets"
+            ],
+            "notes": "Seller obligations: 6-month consultancy for owners and 24-month non-compete. Key warranties: Standard manufacturing warranties with a 15% cap and £50k basket. Completion mechanism: Locked box based on May 2026 accounts if DD is completed quickly. Risk to buyer: Medium, primarily centered on the cash conversion cycle and stock obsolescence risk."
+          },
+          {
+            "name": "Competitive Approach",
+            "strategy": "Maximize upfront cash to win the deal against other institutional bidders, relying on the strong cash position and secured pipeline as collateral.",
+            "risk_to_buyer": "high",
+            "suitable_when": "In a competitive auction where the target's £2.95m cash and £17.4m pipeline are seen as highly de-risking factors.",
+            "consideration": {
+              "total_headline": 12250000,
+              "upfront_cash": 10412500,
+              "upfront_percent": 85,
+              "deferred": 1837500,
+              "earnout_maximum": 0,
+              "earnout_metric": "N/A",
+              "earnout_period_months": 0,
+              "earnout_rationale": "No earnout included to maximize competitiveness. The high repeat order rate (91%) and massive pipeline provide sufficient comfort to move to a fixed deferred structure.",
+              "retention_escrow": 300000
+            },
+            "key_conditions": [
+              "Key customer (Top 10%) retention letters",
+              "Satisfactory explanation of the 50% tax rate",
+              "Debt-free/Cash-free completion"
+            ],
+            "notes": "Seller obligations: 3-month handover and 24-month non-compete. Key warranties: Fundamental warranties only, with a 10% cap. Completion mechanism: Completion accounts with a 'Cash-Free/Debt-Free' adjustment. Risk to buyer: High, as there is no contingent protection if the £302k add-backs prove to be operational costs or if the pipeline stalls."
+          }
+        ],
+        "recommended_structure": "Balanced Approach",
+        "recommendation_rationale": "The Balanced Approach is recommended because it addresses the two primary risks identified by the experts: the verification of significant non-recurring add-backs (£302k) and the heavy working capital requirement (£7.07m). While the business is high-quality, the extension of debtor days and the 27% increase in stock suggest that a portion of the price should be deferred to ensure the balance sheet is as liquid as presented at completion.",
+        "negotiation_priorities": [
+          "Working Capital Peg: Establishing a high peg to account for the £7m NWC is critical to avoid the buyer funding the seller's inventory growth.",
+          "Add-back Substantiation: Detailed audit of the £284k 'non-recurring items' to ensure they are truly one-off.",
+          "Tax Due Diligence: Investigating the 50% effective tax rate to ensure no hidden liabilities or structural tax issues.",
+          "CEO Retention: Securing Richard's long-term commitment as the primary successor."
+        ],
+        "deal_breaker_terms": [
+          "Significant stock obsolescence within the £3.3m inventory",
+          "Failure to provide a clear breakdown of the 90+ day aged debtors",
+          "Any change in the 'secured' status of the £17.4m pipeline"
+        ],
+        "key_findings": [
+          "The business is effectively debt-free with £2.95m in cash, significantly enhancing equity value.",
+          "Adjusted EBITDA of £1.86m is the correct valuation base, but requires verification of £302k in add-backs.",
+          "Working capital intensity is the primary operational challenge, with £7m tied up in the cycle.",
+          "The CEO provides excellent continuity, mitigating the exit of the Wood family."
+        ],
+        "narrative": "Canoports UK Limited is a premium manufacturing target. The deal structure must balance the company's excellent visibility (via the £17.4m pipeline) against its heavy capital requirements. A 5.0x multiple is fair, but the buyer must be disciplined regarding the working capital adjustment. By using a Balanced Approach with a 75% upfront payment, the buyer remains competitive while retaining enough leverage to ensure the 'normalized' earnings and 'secured' pipeline actually materialize post-completion. The primary focus of the SPA should be a robust working capital mechanism and a clear tax indemnity."
+      },
+      "financial": {
+        "expert": "financial",
+        "company_name": "[AUDIT-220] Canoports UK Limited",
+        "analysis_date": "2025-07-24",
+        "score": 72,
+        "confidence": "medium",
+        "yearly_metrics": {
+          "2024": {
+            "revenue": 14010534,
+            "revenue_yoy_growth_percent": null,
+            "cost_of_sales": 8831654,
+            "gross_profit": 5178880,
+            "gross_margin_percent": 36.96,
+            "administrative_expenses": 3552710,
+            "operating_profit": 1322241,
+            "operating_margin_percent": 9.44,
+            "depreciation_amortisation": 303929,
+            "ebitda": 1626170,
+            "interest_payable": 102433,
+            "interest_coverage_ratio": 12.91,
+            "profit_before_tax": 1237523,
+            "corporation_tax": 618517,
+            "effective_tax_rate_percent": 49.98,
+            "net_profit": 619006,
+            "net_margin_percent": 4.42
+          }
+        },
+        "cagr": {
+          "revenue_cagr_percent": null,
+          "gross_profit_cagr_percent": null,
+          "operating_profit_cagr_percent": null,
+          "period_years": 1
+        },
+        "cost_structure": {
+          "cost_of_sales_percent_revenue": 63.04,
+          "overheads_percent_revenue": 25.36,
+          "staff_costs_percent_revenue": 21.1,
+          "director_costs_percent_revenue": 0.75,
+          "top_5_overheads": [
+            {
+              "category": "Depreciation",
+              "value": 303929,
+              "percent_of_overheads": 8.55
+            }
+          ],
+          "cost_base_classification": "mixed"
+        },
+        "earnings_quality": {
+          "net_profit_tracks_operating_profit": false,
+          "exceptional_items_identified": [
+            {
+              "amount": 284357,
+              "description": "Non-recurring items"
+            },
+            {
+              "amount": 17715,
+              "description": "Extraordinary Items"
+            }
+          ],
+          "tax_rate_consistent": null,
+          "ebitda_latest": 1626170,
+          "ebitda_trend": "stable",
+          "limitations": [
+            "Only one full year of P&L data provided in RECONCILED_FINANCIALS",
+            "Staff cost breakdown not available in P&L but cited in staff matrix",
+            "Effective tax rate appears unusually high (49.98%) suggesting potential prior year adjustments or non-deductible items"
+          ]
+        },
+        "debt_service": {
+          "latest_interest_coverage": 12.91,
+          "interest_coverage_trend": "stable",
+          "additional_debt_capacity_assessment": "Strong. An interest coverage ratio of 12.9x suggests significant headroom to service additional acquisition debt, particularly as bank loans are being rapidly amortised."
+        },
+        "key_findings": [
+          "The company maintains a healthy gross margin of 36.96%, indicating a solid value proposition in the manufacturing sector.",
+          "EBITDA of £1.63m (11.6% margin) provides a strong foundation for valuation, though net profit is impacted by high tax charges.",
+          "The business is transitioning to an asset-light model, with tangible fixed assets representing a decreasing portion of the balance sheet.",
+          "Significant liquidity is evident, with cash at bank increasing from £1.33m in 2023 to £2.95m in the 2026 current position.",
+          "Debt levels are low and declining; total long-term bank loans have reduced from £934k in 2023 to just £3.8k in the latest snapshot.",
+          "Director remuneration is noted as being below market rates, suggesting a potential requirement for upward adjustment post-acquisition.",
+          "The presence of £302k in non-recurring/extraordinary items in 2024 suggests underlying earnings may be higher than the statutory net profit."
+        ],
+        "red_flags": [
+          "Effective tax rate of nearly 50% in FY24 requires urgent investigation to understand the variance from the UK statutory rate.",
+          "Lack of multi-year P&L data in the reconciled set prevents definitive trend analysis of margins and cost growth.",
+          "High stock levels (£3.3m in 2026) relative to revenue suggest potential capital tie-up or obsolescence risk."
+        ],
+        "narrative": "Canoports UK Limited (trading as AliDeck and Milwood) demonstrates the financial profile of a mature, cash-generative manufacturing entity. Based on the FY24 reconciled data, the company achieved a revenue of £14.01m with a robust gross profit of £5.18m. The operating margin of 9.44% is respectable for the sector, and the EBITDA margin of 11.6% suggests healthy underlying cash profitability. \n\nA key strength of the acquisition target is its balance sheet evolution. Between May 2023 and May 2026, the company has effectively deleveraged, reducing long-term bank debt to negligible levels while simultaneously more than doubling its cash reserves to £2.95m. This provides a clean structure for an incoming buyer and suggests the business can self-fund its working capital requirements. The current ratio is exceptionally strong at 4.4x, driven by high stock levels and a growing cash pile.\n\nHowever, from an earnings quality perspective, there are nuances that require further due diligence. The FY24 net profit was significantly suppressed by a corporation tax charge of £618k, resulting in an effective tax rate of 49.98%. This is likely due to non-deductible expenses or the reversal of prior-year deferred tax assets, and it masks the true distributable earnings of the business. Furthermore, the identification of £302k in non-recurring items suggests that 'Adjusted EBITDA' is likely the more relevant metric for valuation. \n\nThe cost structure is relatively well-managed, with staff costs at 21.1% of turnover. While the business is described as asset-light, the recent £1.3m investment in a powder coating line provides a competitive moat and explains the £303k depreciation charge. For a buyer, the primary attraction lies in the strong interest coverage (12.9x) and the clear evidence of organic cash accumulation, though the lack of historical P&L granularity in the current data set makes it difficult to confirm if the 37% gross margin is stable or under pressure from rising material costs."
+      }
+    },
+    "financialDataSnapshot": {
+      "balanceSheet": {
+        "id": 4912,
+        "financialPeriodId": 8014,
+        "targetCompanyId": 1883,
+        "intangibleAssets": null,
+        "tangibleFixedAssets": "807981",
+        "freeholdProperty": null,
+        "leaseholdProperty": null,
+        "plantMachinery": null,
+        "fixturesFittings": null,
+        "motorVehicles": null,
+        "computerEquipment": null,
+        "stockInventory": "3323651",
+        "tradeDebtors": "2257001",
+        "prepayments": null,
+        "amountsOwedByDirectors": null,
+        "amountsOwedByConnectedCompanies": null,
+        "directorsCurrentAccount": null,
+        "otherDebtors": "591620",
+        "cashAtBank": "2949661",
+        "totalCurrentAssets": "9121934",
+        "tradeCreditors": "997095",
+        "taxationSocialSecurity": null,
+        "vatPayable": null,
+        "corporationTaxDue": "381336",
+        "bankLoansOverdraftCurrent": "12000",
+        "hirePurchaseCurrent": null,
+        "accruals": null,
+        "amountsOwedToDirectors": null,
+        "otherCreditors": "1043132",
+        "totalCurrentLiabilities": "2052227",
+        "bankLoansLongTerm": "3867",
+        "hirePurchaseLongTerm": null,
+        "deferredTaxation": null,
+        "otherLongTermDebt": null,
+        "totalLongTermLiabilities": "3867",
+        "shareCapital": null,
+        "retainedEarnings": null,
+        "totalEquity": "7873818",
+        "debtorsList": null,
+        "creditorsList": null,
+        "fixedAssetsDetail": null,
+        "sourceDocumentId": 5892,
+        "createdAt": "2026-07-30T01:45:03.865Z",
+        "updatedAt": "2026-07-30T01:46:17.847Z",
+        "fiscalYear": "2026",
+        "periodEnd": "2026-05-31",
+        "sourceTier": "information_memorandum",
+        "_label": "CURRENT POSITION"
+      },
+      "fixedAssets": {
+        "id": 29,
+        "targetCompanyId": 1883,
+        "reportDate": "2025-05-31",
+        "totalGrossBookValue": null,
+        "totalAccumulatedDepreciation": null,
+        "totalNetBookValue": "898600",
+        "propertyGrossValue": null,
+        "propertyNetBookValue": null,
+        "plantMachineryGrossValue": null,
+        "plantMachineryNetBookValue": null,
+        "vehiclesGrossValue": null,
+        "vehiclesNetBookValue": null,
+        "itEquipmentGrossValue": null,
+        "itEquipmentNetBookValue": null,
+        "otherAssetsGrossValue": null,
+        "otherAssetsNetBookValue": null,
+        "refinanceableAssetsValue": "1300000",
+        "fullyDepreciatedStillInUse": null,
+        "assetItems": [
+          {
+            "description": "QualiCoat-accredited powder coating line",
+            "category": "Plant & Machinery",
+            "purchase_date": "2022-07-01",
+            "cost": 1300000,
+            "accumulated_depreciation": null,
+            "net_book_value": null,
+            "depreciation_rate": null,
+            "depreciation_method": null,
+            "location": "Europa & Jenner House, Rochester",
+            "condition": null
+          }
+        ],
+        "propertyDetails": [
+          {
+            "address": "Europa & Jenner House, Rochester (AliDeck)",
+            "tenure": "Leasehold",
+            "purchase_price": null,
+            "market_value": null,
+            "net_book_value": null
+          },
+          {
+            "address": "Hinckley site (Milwood)",
+            "tenure": "Leasehold",
+            "purchase_price": null,
+            "market_value": null,
+            "net_book_value": null
+          }
+        ],
+        "vehicleDetails": [],
+        "sourceDocumentId": 5898,
+        "createdAt": "2026-07-30T01:45:58.584Z",
+        "updatedAt": "2026-07-30T01:45:58.584Z"
+      }
+    },
+    "notes": null,
+    "createdAt": "2026-07-30T01:56:00.239Z",
+    "updatedAt": "2026-07-30T01:56:00.239Z",
+    "adjustments": [
+      {
+        "id": 2056,
+        "dealModelId": 492,
+        "sourceExpertResultId": 877,
+        "adjustmentType": "add_back",
+        "category": "one_off_cost",
+        "description": "Non-recurring items",
+        "amount": "284357",
+        "amountsByYear": {
+          "2022": 0,
+          "2023": 0,
+          "2024": 284357,
+          "2025": 0,
+          "2026": 0,
+          "2027": 0,
+          "2028": 0
+        },
+        "sourceExpert": "qoe",
+        "reasoning": "Identified in RECONCILED_FINANCIALS as non-recurring items impacting the 2024 P&L.",
+        "confidence": "high",
+        "defensibilityScore": 9,
+        "caseForInclusion": "These are explicitly flagged as non-recurring in the reconciled accounting records and should be added back to reflect sustainable earnings.",
+        "caseForExclusion": "The seller must provide a detailed breakdown to prove these are truly non-operational and will not recur under new ownership.",
+        "status": "suggested",
+        "isAccepted": false,
+        "isManual": false,
+        "sortOrder": 0,
+        "createdAt": "2026-07-30T01:56:00.355Z",
+        "updatedAt": "2026-07-30T01:56:00.355Z"
+      },
+      {
+        "id": 2057,
+        "dealModelId": 492,
+        "sourceExpertResultId": 877,
+        "adjustmentType": "add_back",
+        "category": "one_off_cost",
+        "description": "Extraordinary Items",
+        "amount": "17715",
+        "amountsByYear": {
+          "2022": 0,
+          "2023": 0,
+          "2024": 17715,
+          "2025": 0,
+          "2026": 0,
+          "2027": 0,
+          "2028": 0
+        },
+        "sourceExpert": "qoe",
+        "reasoning": "Identified in RECONCILED_FINANCIALS as extraordinary items impacting the 2024 P&L.",
+        "confidence": "high",
+        "defensibilityScore": 9,
+        "caseForInclusion": "Extraordinary items are by definition outside the ordinary course of business and distort the underlying EBITDA.",
+        "caseForExclusion": "The amount is relatively immaterial and may relate to minor operational adjustments the seller argues are part of normal business volatility.",
+        "status": "suggested",
+        "isAccepted": false,
+        "isManual": false,
+        "sortOrder": 1,
+        "createdAt": "2026-07-30T01:56:00.358Z",
+        "updatedAt": "2026-07-30T01:56:00.358Z"
+      },
+      {
+        "id": 2058,
+        "dealModelId": 492,
+        "sourceExpertResultId": 877,
+        "adjustmentType": "deduction",
+        "category": "replacement_salary",
+        "description": "Director Salary Market Rate Adjustment",
+        "amount": "64525",
+        "amountsByYear": null,
+        "sourceExpert": "qoe",
+        "reasoning": "Current director remuneration for two directors is £140,475. For a £14m revenue business, the benchmark for two working directors is £205,000 (£102,500 each).",
+        "confidence": "medium",
+        "defensibilityScore": 7,
+        "caseForInclusion": "The current owners are underpaid relative to market rates for a business of this scale; a buyer would need to budget for commercial salaries to replace them.",
+        "caseForExclusion": "The seller may argue that the existing CEO (Richard) already handles the majority of operations, reducing the need for two high-salary directors.",
+        "status": "suggested",
+        "isAccepted": false,
+        "isManual": false,
+        "sortOrder": 2,
+        "createdAt": "2026-07-30T01:56:00.363Z",
+        "updatedAt": "2026-07-30T01:56:00.363Z"
+      }
+    ],
+    "fundingLines": [
+      {
+        "id": 1382,
+        "dealModelId": 492,
+        "fundingType": "receivables_finance",
+        "label": "Receivables Finance (Invoice Factoring)",
+        "assetBaseValue": "2257001",
+        "ltvPercent": "80",
+        "availableAmount": "1805601",
+        "amountUsed": "0",
+        "interestRate": "4.5",
+        "arrangementFeePercent": null,
+        "termMonths": 0,
+        "monthlyRepayment": null,
+        "isDebt": true,
+        "repaymentStructure": "amortizing",
+        "isActive": false,
+        "notes": null,
+        "sortOrder": 0,
+        "createdAt": "2026-07-30T01:56:00.368Z",
+        "updatedAt": "2026-07-30T01:56:00.368Z"
+      },
+      {
+        "id": 1383,
+        "dealModelId": 492,
+        "fundingType": "cash_equity",
+        "label": "Cash Equity (Cash to Introduce)",
+        "assetBaseValue": null,
+        "ltvPercent": null,
+        "availableAmount": null,
+        "amountUsed": "0",
+        "interestRate": null,
+        "arrangementFeePercent": null,
+        "termMonths": null,
+        "monthlyRepayment": null,
+        "isDebt": false,
+        "repaymentStructure": "amortizing",
+        "isActive": true,
+        "notes": null,
+        "sortOrder": 1,
+        "createdAt": "2026-07-30T01:56:00.373Z",
+        "updatedAt": "2026-07-30T01:56:00.373Z"
+      }
+    ],
+    "sellerPayments": [],
+    "contingentConsideration": []
+  },
+  "calculations": {
+    "adjustedEbitdaByYear": {
+      "2024": 1626170
+    },
+    "averageAdjustedEbitda": 1626170,
+    "enterpriseValue": 8130850,
+    "offerPrice": 10697081,
+    "impliedMultiple": null,
+    "feeLegalDd": 25000,
+    "feeAccountingDd": 15000,
+    "feeLoanArrangement": 0,
+    "feeDealMaker": 0,
+    "customFeeAmounts": [],
+    "totalFees": 40000,
+    "totalFundingRequired": 10737081,
+    "fundingLines": [
+      {
+        "availableAmount": 0,
+        "monthlyRepayment": 0,
+        "annualRepayment": 0,
+        "arrangementFee": 0
+      },
+      {
+        "availableAmount": 0,
+        "monthlyRepayment": 0,
+        "annualRepayment": 0,
+        "arrangementFee": 0
+      }
+    ],
+    "totalFunded": 0,
+    "fundingGap": 10697081,
+    "totalAnnualDebtService": 0,
+    "sellerAnnualDebtService": 0,
+    "earnoutAnnualDebtService": 0,
+    "revolvingInterestAnnual": 0,
+    "receivablesInterestAnnual": 0,
+    "valuationEbitda": 1626170,
+    "paymentCoverRatio": null,
+    "paymentCoverRating": "no_debt"
+  }
+}

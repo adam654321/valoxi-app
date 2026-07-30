@@ -1,0 +1,122 @@
+{
+  "expert": "risk",
+  "company_name": "[AUDIT-228] Thor-CON",
+  "analysis_date": "2025-09-08",
+  "score": 68,
+  "confidence": "high",
+  "customer_concentration": {
+    "risk_level": "low",
+    "top_customer_percent": 2.19,
+    "top_3_customers_percent": 6.18,
+    "top_5_customers_percent": 7.76,
+    "hhi_index": 112,
+    "hhi_classification": "diversified",
+    "total_customers": 315,
+    "customers_over_15_percent": [],
+    "observations": [
+      "The customer base is highly diversified with no single customer representing more than 2.2% of recent revenue.",
+      "Top 3 debtors (Customer 278, 290, 292) represent 27.38% of the current trade debtors balance, but this is a snapshot of invoicing rather than long-term revenue concentration.",
+      "Payment behavior is generally healthy with 65.95% of receivables within 0-30 days."
+    ]
+  },
+  "financial_risk": {
+    "risk_level": "moderate",
+    "technically_insolvent": false,
+    "current_ratio_trend": "improving",
+    "creditor_growth_vs_revenue": "Creditors decreased significantly in 2025 management accounts while revenue grew.",
+    "director_loans_balance": 16056.67,
+    "intercompany_balances": 122038.22,
+    "interest_coverage_adequate": true,
+    "going_concern_indicators": [],
+    "observations": [
+      "Current ratio has improved from 1.52 (FY2024, 2024-03-31) to 4.38 (Current, 2025-09-08).",
+      "Interest coverage is strong at 85.5x based on 2025 operating profit of £278,403.90.",
+      "Significant intercompany balance of £122,038.22 (Current, 2025-09-08) requires investigation into recoverability."
+    ]
+  },
+  "key_person_risk": {
+    "risk_level": "moderate",
+    "highest_individual_payroll_percent": 12.22,
+    "single_points_of_failure": [
+      "General Manager",
+      "Financial Controller"
+    ],
+    "management_depth": "adequate",
+    "average_tenure_years": 4.2,
+    "observations": [
+      "The General Manager is a key operational pillar with a salary of £55,000 (12.2% of payroll).",
+      "The Director's low salary (£8,580) is offset by dividends, but their 16-year tenure suggests high reliance for strategic relationships.",
+      "Recent hiring of 3 engineers in 2025 indicates growth but also a reliance on new, unproven staff."
+    ]
+  },
+  "revenue_quality": {
+    "risk_level": "moderate",
+    "revenue_type": "mixed",
+    "customer_trend": "growing_base",
+    "seasonality_detected": false,
+    "observations": [
+      "Revenue is heavily weighted towards Air Conditioning installations (74.4% of 2025 revenue).",
+      "Maintenance revenue provides a recurring base but only accounts for 12.7% of the 2025 mix.",
+      "Revenue has grown consistently from £1.09m (FY2022) to £1.94m (FY2025)."
+    ]
+  },
+  "balance_sheet_risks": {
+    "director_loans": 16056.67,
+    "connected_company_balances": 122038.22,
+    "deferred_tax": 46935,
+    "pension_obligations": null,
+    "contingent_liabilities": "unable_to_assess",
+    "observations": [
+      "The company is owed £122,038.22 by connected companies as of 2025-09-08.",
+      "The company owes the Director £16,056.67 as of 2025-09-08.",
+      "Deferred taxation of £46,935.00 (Current, 2025-09-08) relates to accelerated capital allowances on the vehicle fleet."
+    ]
+  },
+  "bad_debt": {
+    "total_overdue_90_plus": 4825.82,
+    "recommended_provision": 2269.82,
+    "existing_provision": 0,
+    "net_profit_impact": 2269.82,
+    "observations": [
+      "Invoice INV-8412 (£2,269.82) is over 180 days overdue and in dispute; 100% provision recommended.",
+      "Total 90+ day debt is low at 2.06% of total trade debtors."
+    ]
+  },
+  "risk_register": [
+    {
+      "risk": "Intercompany Balance Recoverability",
+      "category": "financial",
+      "severity": "high",
+      "likelihood": "medium",
+      "financial_impact": 122038.22,
+      "impact_description": "Potential write-off if connected companies cannot repay the balance.",
+      "mitigation": "Perform due diligence on the connected entities or settle the balance as a condition of completion."
+    },
+    {
+      "risk": "High Installation Weighting",
+      "category": "revenue",
+      "severity": "medium",
+      "likelihood": "medium",
+      "financial_impact": null,
+      "impact_description": "Revenue is sensitive to construction/refurbishment cycles rather than recurring maintenance.",
+      "mitigation": "Implement post-acquisition strategy to convert installation customers to long-term maintenance contracts."
+    },
+    {
+      "risk": "Vehicle Fleet Leverage",
+      "category": "balance_sheet",
+      "severity": "medium",
+      "likelihood": "low",
+      "financial_impact": 319252.04,
+      "impact_description": "High long-term debt associated with vehicle hire purchase agreements.",
+      "mitigation": "Ensure all HP agreements are transferable and verify the condition of the fleet."
+    }
+  ],
+  "deal_breakers": [],
+  "key_findings": [
+    "The company shows strong revenue growth and healthy diversification of customers.",
+    "The balance sheet is complicated by significant intercompany lending (£122k) and director balances.",
+    "Operational risk is concentrated in the General Manager role, though the engineering team has decent scale.",
+    "The 2025 management accounts show a significant jump in profitability that requires verification against bank statements."
+  ],
+  "narrative": "Thor-CON presents a solid acquisition target with a well-diversified customer base and strong growth trajectory. The primary risks are financial and structural rather than operational. The intercompany debt and director loan accounts need to be cleared or restructured pre-completion. While the reliance on installation revenue (vs maintenance) introduces some cyclicality, the low customer concentration (HHI 112) provides a significant safety buffer against the loss of any single client."
+}

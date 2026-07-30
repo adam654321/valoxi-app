@@ -1,0 +1,89 @@
+{
+  "document": "sales_ledger",
+  "report_date": "2026-05-21",
+  "summary": {
+    "total_trade_debtors": 79406.28,
+    "debtor_days": 32.07,
+    "recent_revenue": 903601.58,
+    "bad_debt_provision": null,
+    "doubtful_debts": null
+  },
+  "aging": {
+    "current_0_to_30": 71748.28,
+    "days_31_to_60": 7578,
+    "days_61_to_90": 0,
+    "days_90_plus": 80
+  },
+  "top_debtors": [
+    {
+      "name": "Charter Property Repairs Ltd",
+      "amount": 24333.88,
+      "days_bucket": "0-30"
+    },
+    {
+      "name": "Dodd Group (Eastern) Ltd",
+      "amount": 13560,
+      "days_bucket": "0-30"
+    },
+    {
+      "name": "DMD Installations Ltd",
+      "amount": 12242,
+      "days_bucket": "0-30"
+    },
+    {
+      "name": "Gasway Services Limited",
+      "amount": 8682,
+      "days_bucket": "0-30"
+    },
+    {
+      "name": "Global Rail Construction Ltd",
+      "amount": 4320,
+      "days_bucket": "31-60"
+    },
+    {
+      "name": "Doors Plus Limited",
+      "amount": 3794,
+      "days_bucket": "0-30"
+    },
+    {
+      "name": "MSI Defence Systems Ltd",
+      "amount": 3258,
+      "days_bucket": "31-60"
+    },
+    {
+      "name": "Asset Fineline",
+      "amount": 2950,
+      "days_bucket": "0-30"
+    },
+    {
+      "name": "Norwich Glass Company",
+      "amount": 1860,
+      "days_bucket": "0-30"
+    },
+    {
+      "name": "Ashford Commercials",
+      "amount": 1395,
+      "days_bucket": "0-30"
+    }
+  ],
+  "invoice_status_summary": {
+    "Paid": {
+      "count": null,
+      "value": null
+    },
+    "Part Paid": {
+      "count": null,
+      "value": null
+    },
+    "Unpaid": {
+      "count": null,
+      "value": null
+    }
+  },
+  "observations": [
+    "90.36% of receivables are current (0-30 days), indicating a very healthy collection cycle and low immediate credit risk.",
+    "The top 3 debtors (Charter Property, Dodd Group, and DMD Installations) represent 63.14% of the total ledger, indicating high customer concentration risk.",
+    "Only £80.00 (0.1%) is overdue by 90+ days, suggesting excellent credit control and minimal requirement for bad debt provisioning at this stage."
+  ],
+  "_isIM": false
+}

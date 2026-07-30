@@ -1,0 +1,1338 @@
+[
+  {
+    "id": 2489,
+    "expert_type": "data_quality",
+    "status": "success",
+    "score": 78,
+    "confidence": "medium",
+    "created_at": "2026-07-04T08:19:16.921Z",
+    "analysis_data": {
+      "stage": "data_quality",
+      "company_name": "Innova Design Group Limited",
+      "assessment_date": "2024-05-22",
+      "overall_completeness_score": 78,
+      "overall_completeness_rating": "medium",
+      "confidence_for_analysis": "medium",
+      "data_sources": {
+        "company_accounts": {
+          "status": "complete",
+          "years_available": 4,
+          "years_list": [
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "most_recent_period_end": "2025-10-31",
+          "data_staleness_months": 7,
+          "consecutive_years": true,
+          "key_fields_populated": [
+            "revenue",
+            "gross_profit",
+            "operating_profit",
+            "net_profit"
+          ],
+          "key_fields_missing": []
+        },
+        "profit_and_loss": {
+          "status": "complete",
+          "key_fields_populated": [
+            "revenue",
+            "cost_of_sales",
+            "gross_profit",
+            "administrative_expenses",
+            "operating_profit",
+            "net_profit"
+          ],
+          "key_fields_missing": [],
+          "has_overheads_breakdown": true,
+          "has_cost_of_sales_breakdown": true
+        },
+        "balance_sheet": {
+          "status": "complete",
+          "key_fields_populated": [
+            "fixed_assets",
+            "current_assets.total",
+            "current_liabilities.total",
+            "equity.total"
+          ],
+          "key_fields_missing": [],
+          "has_detailed_breakdown": true
+        },
+        "asset_register": {
+          "status": "complete",
+          "asset_count": 53,
+          "has_category_breakdown": true,
+          "has_individual_assets": true
+        },
+        "sales_ledger": {
+          "status": "missing",
+          "has_aging_breakdown": false,
+          "has_customer_breakdown": false,
+          "customer_count": 0
+        },
+        "staff_matrix": {
+          "status": "partial",
+          "headcount_reported": 26,
+          "has_individual_records": true,
+          "has_director_identification": true
+        }
+      },
+      "consistency_checks": {
+        "pl_revenue_vs_accounts": {
+          "result": "consistent",
+          "pl_value": 4509086,
+          "accounts_value": 4509086,
+          "variance_percent": 0
+        },
+        "bs_net_assets_vs_accounts": {
+          "result": "consistent",
+          "bs_value": 673237,
+          "accounts_value": 673237,
+          "variance_percent": 0
+        },
+        "staff_costs_vs_pl": {
+          "result": "unable_to_check",
+          "matrix_value": null,
+          "pl_value": 716147,
+          "variance_percent": null
+        },
+        "assets_nbv_vs_bs": {
+          "result": "major_discrepancy",
+          "register_value": 284665.58,
+          "bs_value": 269921,
+          "variance_percent": 5.46
+        },
+        "debtors_vs_bs": {
+          "result": "unable_to_check",
+          "ledger_value": null,
+          "bs_value": 480236,
+          "variance_percent": null
+        }
+      },
+      "red_flags": [
+        "Sales ledger is missing entirely from the data pack.",
+        "Staff matrix is missing all financial data (salaries, NI, pensions).",
+        "Management accounts (P&L) show significant net losses in 2025 and 2026 compared to statutory profits.",
+        "Asset register NBV does not align with the most recent balance sheet provided."
+      ],
+      "gaps_requiring_seller_action": [
+        "Provide full Sales Ledger with aging and customer breakdown.",
+        "Update Staff Matrix to include gross salaries and total employer costs.",
+        "Reconcile the Fixed Asset Register NBV (£284k) to the May 2026 Balance Sheet (£269k).",
+        "Explain the transition from statutory profit in Oct 2025 to significant management losses in the following periods."
+      ],
+      "analysis_limitations": [
+        "Cannot verify debtor quality or concentration due to missing Sales Ledger.",
+        "Cannot verify payroll accuracy or run-rate due to missing salary data in Staff Matrix.",
+        "Management accounts provided are for a different period-end (May) than statutory accounts (October), complicating direct comparison."
+      ]
+    }
+  },
+  {
+    "id": 2497,
+    "expert_type": "deal_structure",
+    "status": "success",
+    "score": 42,
+    "confidence": "high",
+    "created_at": "2026-07-04T08:19:45.229Z",
+    "analysis_data": {
+      "expert": "deal_structure",
+      "company_name": "Innova Design Group Limited",
+      "analysis_date": "2024-05-22",
+      "score": 42,
+      "confidence": "high",
+      "structures": [
+        {
+          "name": "Conservative Approach",
+          "strategy": "Asset-backed protection with heavy contingency on earnings normalization.",
+          "risk_to_buyer": "low",
+          "suitable_when": "The buyer prioritizes downside protection against the negative normalized EBITDA and the looming capex cliff.",
+          "consideration": {
+            "total_headline": 500000,
+            "upfront_cash": 200000,
+            "upfront_percent": 40,
+            "deferred": 100000,
+            "earnout_maximum": 200000,
+            "earnout_metric": "Normalized EBITDA",
+            "earnout_period_months": 24,
+            "earnout_rationale": "Trigger 4 (Unverified add-backs): The QoE expert identified a £254k accounting anomaly and nominal director salaries. This earnout ensures the buyer only pays for proven, sustainable earnings.",
+            "retention_escrow": 75000
+          },
+          "key_conditions": [
+            "Full forensic reconciliation of the £254k 'Other Direct Costs' credit",
+            "Minimum 12-month handover for at least 3 of the 5 directors",
+            "Retention release contingent on no major CNC machine failure within 12 months"
+          ],
+          "notes": "Seller obligations: 12-month handover followed by 36-month non-compete. Key warranties: Specific indemnity for the £254k accounting anomaly and tax treatment of director loans; warranty cap at 50% of consideration; 24-month period. Completion mechanism: Completion accounts with a working capital peg of £520k. Risk to buyer: Low, as the upfront payment is significantly below Net Asset Value, providing a safety buffer for the required capex."
+        },
+        {
+          "name": "Balanced Approach",
+          "strategy": "Fair value for assets with a performance bridge for the 2026 recovery.",
+          "risk_to_buyer": "medium",
+          "suitable_when": "The buyer believes in the strategic shift to in-house production but requires proof of margin sustainability.",
+          "consideration": {
+            "total_headline": 650000,
+            "upfront_cash": 350000,
+            "upfront_percent": 53.8,
+            "deferred": 150000,
+            "earnout_maximum": 150000,
+            "earnout_metric": "Revenue and Gross Margin Floor",
+            "earnout_period_months": 12,
+            "earnout_rationale": "Trigger 2 (Revenue decline): Revenue has fallen 9% recently. This component protects the buyer if the project-based revenue does not stabilize at the £4.8m level.",
+            "retention_escrow": 50000
+          },
+          "key_conditions": [
+            "Consolidation of management team from 5 directors to 3 key roles",
+            "Verification of 2026 management account margins",
+            "Standard fundamental and operational warranties"
+          ],
+          "notes": "Seller obligations: 6-month handover plus 12-month consultancy. Key warranties: Warranty cap at 100% of consideration; 18-month period; basket threshold at 1% of deal value. Completion mechanism: Locked box based on May 2026 accounts to capture recent liquidity. Risk to buyer: Medium, due to the 'Capex Cliff' and the high operational gearing where small revenue misses lead to losses."
+        },
+        {
+          "name": "Competitive Approach",
+          "strategy": "Aggressive upfront offer anchored to NAV with high-upside earnout to bridge the seller's £2m+ expectation gap.",
+          "risk_to_buyer": "high",
+          "suitable_when": "A competitive bidding environment where the buyer wants to secure the 'Design' IP and manufacturing capacity.",
+          "consideration": {
+            "total_headline": 900000,
+            "upfront_cash": 500000,
+            "upfront_percent": 55.5,
+            "deferred": 100000,
+            "earnout_maximum": 300000,
+            "earnout_metric": "EBITDA Growth",
+            "earnout_period_months": 36,
+            "earnout_rationale": "Trigger 6 (Forecasted growth): The seller expects a high valuation based on historical peaks. This structure allows them to achieve a higher price only if they deliver the growth they forecast.",
+            "retention_escrow": 25000
+          },
+          "key_conditions": [
+            "Key person insurance on the Operations and Production Directors",
+            "Immediate investment plan for CNC machinery replacement",
+            "Clean title to all IP and design rights"
+          ],
+          "notes": "Seller obligations: 3-month handover; 24-month non-compete. Key warranties: Lighter warranty package with a 25% cap on non-fundamental claims; 12-month period. Completion mechanism: Completion accounts. Risk to buyer: High, as the upfront payment consumes all available cash and the business is currently loss-making on a normalized basis, leaving no margin for error in the turnaround."
+        }
+      ],
+      "recommended_structure": "Conservative Approach",
+      "recommendation_rationale": "The divergence between reported statutory profit and normalized trading reality is extreme. The business is loss-making once market-rate salaries and accounting anomalies are corrected. A conservative approach anchored to the Adjusted Net Asset Value (£494k) is the only way to protect the buyer from overpaying for 'paper profits' while accounting for the imminent £200k+ capex requirement for aging machinery.",
+      "negotiation_priorities": [
+        "Reconciliation of the £254k negative cost entry in 2025",
+        "Agreement on a 'market rate' salary deduction for the 5 directors",
+        "Securing a retention or price reduction for the 'Capex Cliff' (aging assets)",
+        "Defining the 'Normalized EBITDA' metric for earnout purposes to exclude one-off credits"
+      ],
+      "deal_breaker_terms": [
+        "Refusal to provide a specific indemnity for the 2025 accounting anomaly",
+        "Insistence on a valuation multiple applied to unadjusted statutory EBITDA",
+        "Departure of the Production or Operations directors prior to completion"
+      ],
+      "key_findings": [
+        "Reported EBITDA is artificially inflated by a one-off £254k credit",
+        "Normalized EBITDA is significantly negative (-£326k)",
+        "The asset base is aging (33.5% freshness) with major machines near end-of-life",
+        "There is a massive gap between seller expectations and economic reality"
+      ],
+      "narrative": "Structuring a deal for Innova Design Group requires a 'Turnaround' mindset despite the company's healthy balance sheet. The primary challenge is the Quality of Earnings; the business appears profitable but is actually loss-making when adjusted for commercial management costs and accounting corrections. The recommended Conservative Approach uses the Net Asset Value as a valuation floor, paying only for the tangible assets upfront. The remaining value is shifted into a performance-based earnout, forcing the sellers to prove that the 2026 margin recovery is sustainable and not a result of further accounting anomalies. This structure manages the 'Capex Cliff' risk by retaining funds for necessary machinery upgrades that the current owners have deferred."
+    }
+  },
+  {
+    "id": 2491,
+    "expert_type": "financial",
+    "status": "success",
+    "score": 62,
+    "confidence": "high",
+    "created_at": "2026-07-04T08:19:45.041Z",
+    "analysis_data": {
+      "expert": "financial",
+      "company_name": "Innova Design Group Limited",
+      "analysis_date": "2024-05-22",
+      "score": 62,
+      "confidence": "high",
+      "yearly_metrics": {
+        "2022": {
+          "revenue": 5754293,
+          "revenue_yoy_growth_percent": null,
+          "cost_of_sales": 4437034,
+          "gross_profit": 1317259,
+          "gross_margin_percent": 22.89,
+          "administrative_expenses": 1078058,
+          "operating_profit": 239201,
+          "operating_margin_percent": 4.16,
+          "depreciation_amortisation": 61034,
+          "ebitda": 300235,
+          "interest_payable": 48926,
+          "interest_coverage_ratio": 4.89,
+          "profit_before_tax": 190275,
+          "corporation_tax": -19642,
+          "effective_tax_rate_percent": -10.32,
+          "net_profit": 209917,
+          "net_margin_percent": 3.65
+        },
+        "2023": {
+          "revenue": 4450279,
+          "revenue_yoy_growth_percent": -22.66,
+          "cost_of_sales": 3248360,
+          "gross_profit": 1201919,
+          "gross_margin_percent": 27.01,
+          "administrative_expenses": 1076406,
+          "operating_profit": 125513,
+          "operating_margin_percent": 2.82,
+          "depreciation_amortisation": 54527,
+          "ebitda": 180040,
+          "interest_payable": 15450,
+          "interest_coverage_ratio": 8.12,
+          "profit_before_tax": 110605,
+          "corporation_tax": 22101,
+          "effective_tax_rate_percent": 19.98,
+          "net_profit": 88504,
+          "net_margin_percent": 1.99
+        },
+        "2024": {
+          "revenue": 4956153,
+          "revenue_yoy_growth_percent": 11.37,
+          "cost_of_sales": 3366215,
+          "gross_profit": 1589938,
+          "gross_margin_percent": 32.08,
+          "administrative_expenses": 1198254,
+          "operating_profit": 391684,
+          "operating_margin_percent": 7.9,
+          "depreciation_amortisation": 52606,
+          "ebitda": 444290,
+          "interest_payable": 18842,
+          "interest_coverage_ratio": 20.79,
+          "profit_before_tax": 372842,
+          "corporation_tax": 99882,
+          "effective_tax_rate_percent": 26.79,
+          "net_profit": 272960,
+          "net_margin_percent": 5.51
+        },
+        "2025": {
+          "revenue": 4509086,
+          "revenue_yoy_growth_percent": -9.02,
+          "cost_of_sales": 2979013,
+          "gross_profit": 1530073,
+          "gross_margin_percent": 33.93,
+          "administrative_expenses": 1361040,
+          "operating_profit": 169033,
+          "operating_margin_percent": 3.75,
+          "depreciation_amortisation": 49005,
+          "ebitda": 218038,
+          "interest_payable": 10327,
+          "interest_coverage_ratio": 16.37,
+          "profit_before_tax": 158706,
+          "corporation_tax": 39122,
+          "effective_tax_rate_percent": 24.65,
+          "net_profit": 119584,
+          "net_margin_percent": 2.65
+        }
+      },
+      "cagr": {
+        "revenue_cagr_percent": -7.81,
+        "gross_profit_cagr_percent": 5.12,
+        "operating_profit_cagr_percent": -10.94,
+        "period_years": 3
+      },
+      "cost_structure": {
+        "cost_of_sales_percent_revenue": 66.07,
+        "overheads_percent_revenue": 30.18,
+        "staff_costs_percent_revenue": 15.88,
+        "director_costs_percent_revenue": 0.56,
+        "top_5_overheads": [
+          {
+            "category": "Staff Wages & Salaries",
+            "value": 629176,
+            "percent_of_overheads": 46.23
+          },
+          {
+            "category": "Rent & Rates",
+            "value": 235186,
+            "percent_of_overheads": 17.28
+          },
+          {
+            "category": "Employers NI",
+            "value": 71084,
+            "percent_of_overheads": 5.22
+          },
+          {
+            "category": "Depreciation",
+            "value": 49005,
+            "percent_of_overheads": 3.6
+          },
+          {
+            "category": "Advertising & Marketing",
+            "value": 42617,
+            "percent_of_overheads": 3.13
+          }
+        ],
+        "cost_base_classification": "mixed"
+      },
+      "earnings_quality": {
+        "net_profit_tracks_operating_profit": true,
+        "exceptional_items_identified": [
+          "Tax credit of £19,642 in 2022",
+          "Negative 'Other Direct Costs' of £254,209 in 2025 CoS breakdown"
+        ],
+        "tax_rate_consistent": false,
+        "ebitda_latest": 218038,
+        "ebitda_trend": "declining",
+        "limitations": [
+          "Management accounts for 2026 show significant losses but cover a different period (May-end) compared to statutory accounts (Oct-end)."
+        ]
+      },
+      "debt_service": {
+        "latest_interest_coverage": 16.37,
+        "interest_coverage_trend": "improving",
+        "additional_debt_capacity_assessment": "Strong. Low gearing (8%) and high interest coverage suggest significant capacity for acquisition debt."
+      },
+      "key_findings": [
+        "Revenue is volatile and currently on a downward trajectory, with a 3-year CAGR of -7.81%.",
+        "Gross margins have shown consistent improvement, rising from 22.9% in 2022 to 33.9% in 2025, suggesting better project selection or procurement.",
+        "Operating profit is highly sensitive to revenue volume due to a sticky administrative cost base, particularly staff costs.",
+        "Staff costs increased by 26% in 2025 despite a 9% drop in revenue, causing significant margin compression.",
+        "The company maintains a very strong balance sheet with low gearing and improving liquidity (Current Ratio 1.85).",
+        "Management accounts for 2026 indicate a potential recovery in revenue but continued bottom-line volatility.",
+        "Subcontractor reliance has decreased, shifting the cost base toward direct labour and fixed overheads."
+      ],
+      "red_flags": [
+        "Significant revenue decline of 22.7% between 2022 and 2023.",
+        "Staff costs growing at a rate disconnected from revenue performance in the latest statutory year.",
+        "Inconsistency in 'Other Direct Costs' within the 2025 P&L, showing a large negative value which artificially inflates gross profit."
+      ],
+      "narrative": "Innova Design Group Limited presents a mixed financial profile characterized by strong balance sheet health but volatile trading performance. Over the four-year statutory period analyzed, the company has struggled to maintain a consistent revenue trajectory, experiencing significant contractions in 2023 and 2025. While the business has successfully expanded its gross margin from 22.9% to 33.9%—indicating improved operational efficiency or a shift toward higher-value projects—this has been largely offset by an inability to control administrative overheads. Specifically, staff costs rose sharply in 2025 despite falling sales, leading to a 56% drop in net profit. The earnings quality is generally acceptable, though the 2025 accounts contain an unusual negative cost entry in the cost of sales that warrants further investigation during deep-dive due diligence. From a buyer's perspective, the company's low gearing (approx. 8%) and robust liquidity (Current Ratio of 1.85) make it an attractive candidate for leveraged acquisition, as the balance sheet can comfortably support additional debt. However, the primary risk lies in the 'operational gearing'; the fixed cost base is currently expanding while revenue remains unstable. A successful acquisition would depend on the buyer's ability to stabilize the top line and implement more rigorous controls over the indirect cost base to protect margins during fallow periods."
+    }
+  },
+  {
+    "id": 2492,
+    "expert_type": "operational",
+    "status": "success",
+    "score": 68,
+    "confidence": "high",
+    "created_at": "2026-07-04T08:19:45.071Z",
+    "analysis_data": {
+      "expert": "operational",
+      "company_name": "Innova Design Group Limited",
+      "analysis_date": "2026-07-04",
+      "score": 68,
+      "confidence": "high",
+      "working_capital": {
+        "yearly_metrics": {
+          "2023": {
+            "debtor_days": 38.6,
+            "creditor_days": 32.8,
+            "stock_days": 48.5,
+            "cash_conversion_cycle_days": 54.3,
+            "net_working_capital": 306562,
+            "working_capital_percent_revenue": 6.89
+          },
+          "2024": {
+            "debtor_days": 48.9,
+            "creditor_days": 32.1,
+            "stock_days": 18.1,
+            "cash_conversion_cycle_days": 34.9,
+            "net_working_capital": 519246,
+            "working_capital_percent_revenue": 10.48
+          },
+          "2025": {
+            "debtor_days": 34.8,
+            "creditor_days": 42.5,
+            "stock_days": 33.6,
+            "cash_conversion_cycle_days": 25.9,
+            "net_working_capital": 519280,
+            "working_capital_percent_revenue": 11.52
+          }
+        },
+        "trend": "improving",
+        "working_capital_intensity": "moderate",
+        "observations": [
+          "Cash Conversion Cycle has improved from 54.3 days to 25.9 days over three years, indicating better capital velocity.",
+          "Stock levels fluctuated significantly, with a sharp reduction in 2024 followed by a build-up in 2025.",
+          "The business is a net generator of working capital, with net current assets growing despite revenue volatility.",
+          "Debtor days are well-controlled for a manufacturing business, remaining under 50 days."
+        ]
+      },
+      "capex": {
+        "total_gross_asset_value": 849608.84,
+        "total_nbv": 284665.58,
+        "asset_freshness_percent": 33.5,
+        "recent_additions_24m_value": 137555.04,
+        "recent_additions_percent": 16.19,
+        "annual_depreciation_charge": 52606,
+        "estimated_maintenance_capex": 52606,
+        "capex_cliff_risk": true,
+        "assets_requiring_replacement": [
+          {
+            "description": "Biesse Rover B - Praetura 102364",
+            "cost": 126000,
+            "nbv": 19377.68,
+            "percent_remaining": 15.3
+          },
+          {
+            "description": "fortis assetts purchase buy back",
+            "cost": 86764.6,
+            "nbv": 13586.24,
+            "percent_remaining": 15.6
+          }
+        ],
+        "category_breakdown": {
+          "property": {
+            "cost": 0,
+            "nbv": 0
+          },
+          "plant_machinery": {
+            "cost": 803748.05,
+            "nbv": 262792.56
+          },
+          "vehicles": {
+            "cost": 0,
+            "nbv": 0
+          },
+          "it_equipment": {
+            "cost": 45860.79,
+            "nbv": 21873.02
+          },
+          "other": {
+            "cost": 0,
+            "nbv": 0
+          }
+        },
+        "observations": [
+          "Asset base is aging, with a freshness ratio of only 33.5%.",
+          "Capex cliff risk flagged: several high-value machines (Biesse Rover, Fortis assets) are near the end of their accounting life (NBV < 20% of cost).",
+          "Recent 2026 investment in Ney Beamsaw (£92k) shows proactive but lumpy replacement cycles.",
+          "Plant & Machinery represents 92% of NBV, indicating high capital intensity."
+        ]
+      },
+      "workforce": {
+        "headcount": 26,
+        "total_payroll": 716147,
+        "revenue_per_employee": 173426,
+        "payroll_percent_revenue": 15.88,
+        "average_salary_all": 27544,
+        "average_salary_excl_directors": 32905,
+        "director_remuneration_total": 25140,
+        "director_percent_of_payroll": 3.51,
+        "ft_pt_split": {
+          "full_time": 26,
+          "part_time": 0
+        },
+        "longest_tenured_years": null,
+        "newest_hire_months_ago": 4,
+        "observations": [
+          "Revenue per employee of £173k is moderate for manufacturing; however, staff costs rose 26% in 2025 while revenue fell 9%.",
+          "The business appears to have over-hired or retained excess capacity during the 2025 downturn.",
+          "100% full-time workforce suggests a rigid cost base that does not easily scale down with volume.",
+          "Significant reliance on subcontractor costs in COS (approx. £1.3m) suggests the internal workforce is supplemented heavily by external labor."
+        ]
+      },
+      "owner_dependency": {
+        "risk_level": "medium",
+        "director_count": 5,
+        "highest_individual_salary": null,
+        "highest_individual_percent_of_payroll": null,
+        "critical_function_concentration": "Low",
+        "observations": [
+          "Management structure is well-diversified across 5 directors covering Market Development, Operations, Production, and Finance.",
+          "Director remuneration is unusually low (£25k total), suggesting potential extraction via dividends or other means not fully captured in payroll.",
+          "Operational knowledge is spread across departmental managers (Design, Contracts, Purchasing)."
+        ]
+      },
+      "scalability": {
+        "rating": "medium",
+        "headcount_for_25pct_growth": 5,
+        "capex_needed_for_growth": "High - existing core machinery is aging and near capacity.",
+        "working_capital_supports_growth": true,
+        "bottlenecks": [
+          "Aging CNC and Edgebanding machinery",
+          "High fixed staff costs relative to fluctuating revenue",
+          "Heavy reliance on subcontractors for production volume"
+        ],
+        "observations": [
+          "The business has shown it can handle £5.7m revenue (2022), suggesting current infrastructure can support 25% growth from the current £4.5m-£4.9m level.",
+          "Scalability is hampered by the 'lumpy' nature of capex requirements.",
+          "Operational leverage is high; small revenue drops lead to significant margin compression."
+        ]
+      },
+      "key_findings": [
+        "Working capital management is a strength, with a shortening cash conversion cycle and healthy liquidity.",
+        "The business is entering a replacement cycle for major plant assets which will require significant cash outlay or new financing.",
+        "Workforce productivity declined in 2025 as headcount/costs were not adjusted in line with a 9% revenue drop.",
+        "The shift from subcontractors to in-house labor (seen in 2026 management accounts) is improving gross margins but increasing operational risk."
+      ],
+      "red_flags": [
+        "Capex Cliff: Over 30% of the asset base by value is nearly fully depreciated.",
+        "Negative Operating Leverage: Administrative expenses and staff costs rose significantly in 2025 despite falling sales.",
+        "Dividend Policy: Consistent £60k dividends paid even when net profit was under pressure."
+      ],
+      "narrative": "Innova Design Group Limited exhibits a stable operational foundation with excellent working capital control, but faces a looming capital expenditure requirement. The business has successfully navigated revenue volatility, though its rigid cost structure (100% FT staff) led to a margin squeeze in 2025. The recent 2026 management data suggests a recovery in margins through a strategic shift toward in-house production. The primary risk for an acquirer is the aging asset base, which will likely necessitate a 'capex cliff' investment within the next 24 months to maintain current production standards and support growth."
+    }
+  },
+  {
+    "id": 2494,
+    "expert_type": "qoe",
+    "status": "success",
+    "score": 58,
+    "confidence": "high",
+    "created_at": "2026-07-04T08:19:45.133Z",
+    "analysis_data": {
+      "expert": "quality_of_earnings",
+      "company_name": "Innova Design Group Limited",
+      "analysis_date": "2024-05-22",
+      "score": 58,
+      "confidence": "high",
+      "reported_figures": {
+        "operating_profit": 169033,
+        "depreciation": 49005,
+        "amortisation": 0,
+        "reported_ebitda": 218038,
+        "source_year": 2025
+      },
+      "add_backs": [
+        {
+          "item": "Exceptional Negative Other Direct Costs",
+          "category": "one_off_cost",
+          "amount": -254209,
+          "recurrence": "one_off",
+          "year": 2025,
+          "justification": "The 2025 P&L contains a negative 'Other Direct Costs' entry of £254,209 which artificially inflates Gross Profit and EBITDA. This is likely an accounting correction or one-off credit that does not reflect trading reality.",
+          "confidence": "high",
+          "defensibility_score": 9,
+          "case_for_inclusion": "This is a non-cash accounting anomaly that masks the true cost of production and overstates sustainable earnings.",
+          "case_for_exclusion": "The seller may argue this represents a genuine recovery of costs or a permanent improvement in procurement efficiency."
+        },
+        {
+          "item": "Excess Professional Fees",
+          "category": "one_off_cost",
+          "amount": 24734,
+          "recurrence": "one_off",
+          "year": 2024,
+          "justification": "Professional fees spiked to £37,619 in 2024 compared to a historical average of approx £12,885 (2025). The excess is treated as non-recurring deal or project-related costs.",
+          "confidence": "medium",
+          "defensibility_score": 6,
+          "case_for_inclusion": "Spikes in professional fees in SMEs often relate to one-off legal or advisory projects that a new owner would not incur.",
+          "case_for_exclusion": "The seller may argue these are recurring compliance or consultancy costs necessary for the business's operation."
+        }
+      ],
+      "deductions": [
+        {
+          "item": "Director Salary Market Rate Adjustment",
+          "category": "replacement_salary",
+          "amount": 262360,
+          "recurrence": "recurring",
+          "year": 2025,
+          "justification": "The business has 5 working directors paid a total of £25,140 (£5,028 each). For a £4.5m-£5m revenue business, market rate for 5 functional heads (MD, Ops, Production, Finance, Market Dev) is approx £57,500 each (mid-point of £45k-£70k range). Total market cost £287,500 minus current £25,140.",
+          "confidence": "high",
+          "defensibility_score": 8,
+          "case_for_inclusion": "The current director salaries are clearly nominal and do not reflect the commercial cost of replacing the management team.",
+          "case_for_exclusion": "The seller may argue that the roles could be consolidated or that the current management structure is over-resourced for the business size."
+        },
+        {
+          "item": "Deferred Maintenance / Capex Catch-up",
+          "category": "deferred_maintenance",
+          "amount": 52606,
+          "recurrence": "recurring",
+          "year": 2025,
+          "justification": "Operational expert flags a 'Capex Cliff' with 30% of assets near end of life. An additional annual provision equal to 1x annual depreciation is required to fund the looming replacement cycle of core CNC and Edgebanding machinery.",
+          "confidence": "medium",
+          "defensibility_score": 7,
+          "case_for_inclusion": "The aging asset base (33.5% freshness) requires higher maintenance and replacement capital than is currently reflected in the P&L.",
+          "case_for_exclusion": "The seller will argue that recent 2026 investments (£92k Beamsaw) prove they are already addressing the replacement cycle."
+        }
+      ],
+      "total_add_backs": -229475,
+      "total_deductions": 314966,
+      "adjusted_ebitda": {
+        "conservative": -326403,
+        "base": -326403,
+        "optimistic": -301669
+      },
+      "adjustment_summary": {
+        "reported_ebitda": 218038,
+        "plus_add_backs": -229475,
+        "minus_deductions": 314966,
+        "equals_adjusted_ebitda_base": -326403
+      },
+      "director_salary_analysis": {
+        "directors": [
+          {
+            "name": "Management Team (5 Directors)",
+            "current_salary": 25140,
+            "estimated_market_rate": 287500,
+            "benchmark_range_used": "Revenue £1M-£5M: £45,000–£70,000 per director",
+            "adjustment": 262360,
+            "adjustment_type": "deduction"
+          }
+        ]
+      },
+      "sustainability_assessment": {
+        "sustainable_for_3_years": false,
+        "key_assumptions": [
+          "Revenue stabilizes at £4.5m-£5m range",
+          "Gross margins of 33%+ are maintainable without the negative cost anomaly",
+          "Management structure must be professionalized with market-rate salaries"
+        ],
+        "sensitivity_factors": [
+          "High operational gearing: small revenue drops cause large profit swings",
+          "Reliance on aging CNC machinery",
+          "Fixed nature of 100% full-time workforce"
+        ],
+        "upside_scenarios": [
+          "Successful shift to in-house production (as seen in 2026 management accounts) improves margin",
+          "Consolidation of the 5-director management team into 3 key roles"
+        ],
+        "downside_scenarios": [
+          "Major machine failure on fully depreciated assets",
+          "Continued disconnect between staff costs and revenue performance"
+        ]
+      },
+      "key_findings": [
+        "Reported EBITDA is heavily distorted by a £254k negative cost entry in 2025.",
+        "Director remuneration is significantly below market rates, masking the true overhead of the business.",
+        "The business exhibits 'negative operating leverage' where overheads (staff costs) rose 26% while revenue fell 9%.",
+        "The asset base is aging, creating a looming cash flow requirement for replacement."
+      ],
+      "red_flags": [
+        "Negative 'Other Direct Costs' of £254,209 in 2025 is a major accounting red flag.",
+        "Staff costs growing at a rate disconnected from revenue performance.",
+        "Capex Cliff: Core machinery is nearly fully depreciated and requires imminent replacement."
+      ],
+      "narrative": "The Quality of Earnings analysis for Innova Design Group Limited reveals that the reported 2025 EBITDA of £218k is not a sustainable or transferable figure. The primary distortion is a large negative cost entry in the Cost of Sales which artificially boosted profits. Furthermore, the business is currently 'subsidized' by the owners taking nominal salaries; once adjusted to market rates for a 5-person management team, the business is currently loss-making on a normalized basis. While the 2026 management accounts show signs of recovery and improved margins through in-house production, the buyer must be aware that the current cost base is too rigid for the volatile revenue levels. A valuation based on a multiple of reported EBITDA would result in a significant overpayment."
+    }
+  },
+  {
+    "id": 2493,
+    "expert_type": "risk",
+    "status": "success",
+    "score": 68,
+    "confidence": "high",
+    "created_at": "2026-07-04T08:19:45.102Z",
+    "analysis_data": {
+      "expert": "risk",
+      "company_name": "Innova Design Group Limited",
+      "analysis_date": "2024-05-22",
+      "score": 68,
+      "confidence": "high",
+      "customer_concentration": {
+        "risk_level": "unknown",
+        "top_customer_percent": null,
+        "top_3_customers_percent": null,
+        "top_5_customers_percent": null,
+        "hhi_index": null,
+        "hhi_classification": "diversified",
+        "total_customers": null,
+        "customers_over_15_percent": [],
+        "observations": [
+          "Sales ledger data was not provided in the input; unable to calculate specific concentration metrics.",
+          "Revenue is categorized broadly as 'Sales', preventing granular customer-level analysis."
+        ]
+      },
+      "financial_risk": {
+        "risk_level": "moderate",
+        "technically_insolvent": false,
+        "current_ratio_trend": "improving",
+        "creditor_growth_vs_revenue": "Creditors grew by 1.3% while revenue grew by 11.4% (2023-2024), showing healthy management.",
+        "director_loans_balance": 29032,
+        "intercompany_balances": 0,
+        "interest_coverage_adequate": true,
+        "going_concern_indicators": [],
+        "observations": [
+          "Current ratio improved from 1.43 (2023) to 1.96 (2026), indicating strong liquidity.",
+          "Management accounts for 2025/2026 show significant net losses (£169k and £24k respectively) despite statutory profit in 2024.",
+          "Interest coverage is high (16.4x in 2025), suggesting debt serviceability is not currently an issue."
+        ]
+      },
+      "key_person_risk": {
+        "risk_level": "high",
+        "highest_individual_payroll_percent": null,
+        "single_points_of_failure": [
+          "Operations Director",
+          "Production Director",
+          "Finance & Human Resources Manager"
+        ],
+        "management_depth": "thin",
+        "average_tenure_years": null,
+        "observations": [
+          "The company has 5 directors for a headcount of 26, suggesting a top-heavy structure or high reliance on specific individuals.",
+          "Finance and HR are combined under one manager (Joan Phelan), creating a single point of failure for administrative control.",
+          "Production and Operations are led by specific directors; loss of these individuals would disrupt manufacturing flow."
+        ]
+      },
+      "revenue_quality": {
+        "risk_level": "moderate",
+        "revenue_type": "project_based",
+        "customer_trend": "unknown",
+        "seasonality_detected": true,
+        "observations": [
+          "Revenue is volatile, dropping 22.7% in 2023 and 9% in 2025, suggesting project-based cycles rather than recurring contracts.",
+          "Significant recovery in May 2026 (£242k profit in a single month) suggests lumpy, milestone-based invoicing."
+        ]
+      },
+      "balance_sheet_risks": {
+        "director_loans": 29032,
+        "connected_company_balances": 0,
+        "deferred_tax": null,
+        "pension_obligations": null,
+        "contingent_liabilities": "unable_to_assess",
+        "observations": [
+          "Director loan account is in a credit position (£29,032 owed TO directors as of May 2026).",
+          "Other debt of £182,975 in 2026 long-term liabilities requires further investigation (potential shareholder loans or private finance)."
+        ]
+      },
+      "bad_debt": {
+        "total_overdue_90_plus": null,
+        "recommended_provision": null,
+        "existing_provision": null,
+        "net_profit_impact": null,
+        "observations": [
+          "Trade debtors decreased from £663k (2024) to £480k (2026), which may indicate improved collections or declining sales.",
+          "Aged debt profile not provided; unable to calculate specific provision."
+        ]
+      },
+      "risk_register": [
+        {
+          "risk": "Operational Profitability Volatility",
+          "category": "financial",
+          "severity": "high",
+          "likelihood": "high",
+          "financial_impact": 169631,
+          "impact_description": "Significant losses in management accounts (2025) despite previous statutory profits.",
+          "mitigation": "Implement strict overhead controls and link director bonuses to net profit targets."
+        },
+        {
+          "risk": "Key Person Dependency",
+          "category": "people",
+          "severity": "medium",
+          "likelihood": "medium",
+          "financial_impact": null,
+          "impact_description": "Loss of Production or Operations directors could halt manufacturing.",
+          "mitigation": "Ensure long-term incentive plans (LTIPs) or restrictive covenants are in place for key directors."
+        },
+        {
+          "risk": "Inventory Build-up",
+          "category": "balance_sheet",
+          "severity": "medium",
+          "likelihood": "medium",
+          "financial_impact": 386462,
+          "impact_description": "Stock levels increased significantly in 2026, potentially tying up cash in slow-moving goods.",
+          "mitigation": "Conduct a full physical stock audit and verify obsolescence provisions before completion."
+        },
+        {
+          "risk": "Director Loan Settlement",
+          "category": "balance_sheet",
+          "severity": "low",
+          "likelihood": "high",
+          "financial_impact": 29032,
+          "impact_description": "Directors may require repayment of credit balances upon change of control.",
+          "mitigation": "Include director loan settlement in the completion payment mechanism."
+        }
+      ],
+      "deal_breakers": [
+        "None identified, but the shift from statutory profit to management account losses in 2025/26 requires urgent forensic reconciliation."
+      ],
+      "key_findings": [
+        "The company has a strong balance sheet with high liquidity (Current Ratio 1.96) and low gearing (8-28%).",
+        "There is a concerning trend of rising administrative expenses (up 13.6% in 2025) while revenue is declining.",
+        "Recent capital expenditure in 2026 (£92k Beamsaw) suggests a commitment to modernization but increases depreciation drag on earnings.",
+        "The business is transitioning from subcontractor-heavy production to in-house, evidenced by falling subcontractor costs and rising direct labor/materials."
+      ],
+      "narrative": "Innova Design Group Limited presents a moderate risk profile. While the balance sheet is robust with excellent liquidity and manageable debt, the recent operational performance shown in management accounts (2025-2026) is a cause for concern, showing a swing into losses. The primary risk is the 'lumpy' nature of revenue and the recent inability to scale overheads down in line with revenue contractions. A buyer should focus on verifying the 2026 recovery and ensuring the management team is incentivized to remain post-acquisition, given the specialized nature of the manufacturing processes."
+    }
+  },
+  {
+    "id": 2490,
+    "expert_type": "screening",
+    "status": "success",
+    "score": null,
+    "confidence": null,
+    "created_at": "2026-07-04T08:19:23.656Z",
+    "analysis_data": {
+      "stage": "screening",
+      "company_name": "Innova Design Group Limited",
+      "sector": "Manufacturing",
+      "analysis_date": "2024-05-22",
+      "data_quality_score": 78,
+      "analysis_period": {
+        "earliest_year": 2022,
+        "latest_year": 2026,
+        "years_of_data": 5
+      },
+      "dimensions": {
+        "earnings_trajectory": {
+          "rag": "AMBER",
+          "score": 55,
+          "revenue_cagr_percent": -6,
+          "latest_revenue": 4509086,
+          "latest_gross_margin_percent": 33.9,
+          "latest_operating_margin_percent": 3.8,
+          "latest_net_margin_percent": 2.7,
+          "margin_direction": "contracting",
+          "explanation": "Revenue has been volatile, declining from 5.75m in 2022 to 4.51m in 2025. While gross margins are expanding (22.9% to 33.9%), net margins have contracted significantly from 5.5% in 2024 to 2.7% in 2025 due to rising overheads."
+        },
+        "balance_sheet_health": {
+          "rag": "GREEN",
+          "score": 85,
+          "latest_current_ratio": 1.8,
+          "latest_net_assets": 673237,
+          "net_asset_growth_percent": 0.4,
+          "long_term_debt": 53755,
+          "explanation": "The balance sheet is robust with a strong current ratio of 1.8 and low gearing (approx 8%). Net assets have grown consistently from 429,189 in 2022 to 673,237 in 2025, supported by retained earnings."
+        },
+        "cash_reality": {
+          "rag": "GREEN",
+          "score": 80,
+          "latest_cash_at_bank": 346281,
+          "cash_trend": "growing",
+          "cash_vs_profit_alignment": "aligned",
+          "explanation": "Cash position has improved dramatically from 21,316 in 2022 to over 346,000 in 2025. The company demonstrates strong cash conversion, successfully turning profits into liquid reserves while reducing debt."
+        },
+        "customer_risk": {
+          "rag": "AMBER",
+          "score": 50,
+          "top_customer_concentration_percent": null,
+          "aged_debt_90_plus_percent": null,
+          "total_customers": null,
+          "explanation": "Data Unavailable. Sales ledger detail was not provided in the dataset, preventing an assessment of customer concentration or payment performance."
+        },
+        "asset_quality": {
+          "rag": "GREEN",
+          "score": 75,
+          "nbv_to_cost_percent": 33.5,
+          "recent_additions_percent": 10.8,
+          "total_nbv": 284666,
+          "explanation": "While the overall NBV/Cost ratio is moderate at 33.5%, there is evidence of significant recent investment, including a 92,185 beamsaw in early 2026. The plant and machinery base is specialized and appears well-maintained."
+        },
+        "people_capability": {
+          "rag": "GREEN",
+          "score": 70,
+          "headcount": 26,
+          "revenue_per_employee": 173426,
+          "payroll_to_revenue_percent": 15.9,
+          "director_cost_percent_of_payroll": 3.5,
+          "explanation": "Revenue per head is healthy for the manufacturing sector. Director remuneration is exceptionally low as a percentage of total payroll (3.5%), suggesting low owner-dependency and a professional management structure."
+        }
+      },
+      "overall_score": 71,
+      "recommendation": "PROCEED",
+      "recommendation_justification": "The company exhibits strong fundamental health with excellent liquidity, low debt, and a professionalised staff structure. While revenue has been volatile and net margins compressed in 2025, management accounts for 2026 suggest a strong recovery in progress.",
+      "key_strengths": [
+        "Exceptional liquidity with a current ratio of 1.8 and substantial cash reserves of 346,281.",
+        "Low financial risk profile with a gearing ratio of only 8% and high interest coverage.",
+        "Strong operational recovery indicated in 2026 management accounts with gross margins exceeding 40%."
+      ],
+      "key_concerns": [
+        "Revenue volatility with a notable decline between 2022 and 2025.",
+        "Significant compression of net profit margins in the 2025 statutory period due to rising staff costs.",
+        "Lack of visibility into customer concentration and aged debt profile."
+      ],
+      "questions_for_seller": [
+        "What drove the 22% revenue decline between 2022 and 2023?",
+        "Can you provide a breakdown of the top 5 customers by revenue for the last two years?",
+        "What caused the 26% increase in staff costs in 2025 despite falling revenues?",
+        "What is the nature of the 'Other Debt' of 182,975 appearing in the 2026 balance sheet?"
+      ],
+      "comparable_context": "Innova's gross margins (32-40%) are significantly higher than the UK manufacturing SME average (typically 20-25%), suggesting a high-value niche or superior production efficiency. However, its net margin is currently below the 5-8% sector benchmark.",
+      "executive_summary": "Innova Design Group Limited is a manufacturing entity showing strong signs of a 'turnaround' or recovery phase. We recommend PROCEEDING with further due diligence. The company's primary strength lies in its balance sheet; it is highly liquid, carries minimal long-term debt, and has successfully built a cash buffer of over 346,000. While statutory 2025 figures showed a concerning dip in net profit to 2.7% due to overhead expansion, 2026 management accounts indicate a sharp reversal with revenue growing 34.8% and losses narrowing significantly. The asset base is specialized with recent high-value CNC investments, and the management structure appears robust with five distinct director roles and low owner-salary dependency. The primary risks are the historical revenue volatility and the currently unknown customer concentration. Further investigation should focus on the sustainability of the 2026 recovery and the stability of the order book."
+    }
+  },
+  {
+    "id": 2495,
+    "expert_type": "sector",
+    "status": "success",
+    "score": 58,
+    "confidence": "medium",
+    "created_at": "2026-07-04T08:19:45.166Z",
+    "analysis_data": {
+      "expert": "sector",
+      "company_name": "Innova Design Group Limited",
+      "sector": "Manufacturing",
+      "analysis_date": "2023-10-27",
+      "score": 58,
+      "confidence": "medium",
+      "sector_overview": {
+        "growth_outlook": "mixed",
+        "uk_market_size_estimate": "£30bn+ (Metal Fabrication)",
+        "key_trends": [
+          "Adoption of Industry 4.0 and automated CNC machinery",
+          "Reshoring of supply chains to UK for critical components",
+          "Increased demand for sustainable and low-carbon manufacturing processes",
+          "Rising input costs for raw materials (steel/aluminum) and energy"
+        ],
+        "regulatory_factors": [
+          "UK REACH compliance for chemical usage",
+          "Health and Safety Executive (HSE) focus on welding fume extraction",
+          "Carbon Border Adjustment Mechanism (CBAM) implications"
+        ],
+        "observations": "The UK metal fabrication sector is highly fragmented and currently faces a 'squeeze' between high energy costs and softening demand in construction, though aerospace and defense remain strong."
+      },
+      "competitive_positioning": {
+        "company_size_classification": "small",
+        "typical_gross_margin_range": {
+          "low": 25,
+          "high": 35
+        },
+        "typical_operating_margin_range": {
+          "low": 5,
+          "high": 12
+        },
+        "typical_ebitda_margin_range": {
+          "low": 8,
+          "high": 15
+        },
+        "positioning_assessment": "With £4.5m revenue and 28 staff, Innova is a typical established small-scale fabricator. Revenue per head of ~£161k suggests a reasonably efficient operation, likely involving some specialized design or higher-value assembly rather than just basic commodity welding."
+      },
+      "comparable_multiples": {
+        "ev_revenue_range": {
+          "low": 0.4,
+          "mid": 0.6,
+          "high": 0.8
+        },
+        "ev_ebitda_range": {
+          "low": 2,
+          "mid": 2.75,
+          "high": 3.5
+        },
+        "factors_affecting_multiple": [
+          "Revenue scale (£2M-£5M bracket)",
+          "Capital intensity of machinery",
+          "Customer concentration levels",
+          "Dependency on the founder for technical sales"
+        ],
+        "premium_factors": [
+          "In-house design capabilities (Innova Design Group name implies IP/Design)",
+          "Specialist sector focus (e.g., medical, laboratory, or high-end commercial)",
+          "Modern CNC/Laser equipment with low maintenance capex required"
+        ],
+        "discount_factors": [
+          "Project-based revenue with low recurring visibility",
+          "High sensitivity to raw material price volatility",
+          "Labour-intensive nature of welding and finishing",
+          "Small management team depth"
+        ],
+        "data_confidence": "based_on_training_data"
+      },
+      "growth_opportunities": [
+        {
+          "opportunity": "Automation Investment",
+          "effort": "high",
+          "potential_impact": "high",
+          "timeframe": "medium_term",
+          "description": "Implementing robotic welding cells to reduce reliance on scarce skilled labor and increase throughput."
+        },
+        {
+          "opportunity": "Sector Diversification",
+          "effort": "medium",
+          "potential_impact": "medium",
+          "timeframe": "short_term",
+          "description": "Targeting high-growth sectors like renewable energy components or EV infrastructure to offset cyclical construction/retail exposure."
+        },
+        {
+          "opportunity": "Service Integration",
+          "effort": "low",
+          "potential_impact": "medium",
+          "timeframe": "short_term",
+          "description": "Offering 'Design for Manufacture' (DfM) consultancy as a front-end paid service to lock in fabrication contracts."
+        }
+      ],
+      "sector_risks": [
+        {
+          "risk": "Skilled Labour Shortage",
+          "severity": "high",
+          "timeframe": "immediate",
+          "description": "Acute shortage of coded welders and CNC operators in the UK driving up wage costs."
+        },
+        {
+          "risk": "Energy Price Volatility",
+          "severity": "medium",
+          "timeframe": "near_term",
+          "description": "Manufacturing is energy-intensive; lack of long-term fixed contracts can erode EBITDA margins rapidly."
+        },
+        {
+          "risk": "Economic Cyclicality",
+          "severity": "high",
+          "timeframe": "medium_term",
+          "description": "Metal fabrication is often a leading indicator of economic health; a downturn in CAPEX spending hits order books quickly."
+        }
+      ],
+      "key_findings": [
+        "Innova sits in the £2m-£5m revenue bracket, typically attracting a 2.0x-3.5x EBITDA multiple.",
+        "The company has a healthy revenue-to-headcount ratio for the sub-sector.",
+        "The 'Design' element of the business name suggests a value-add that could push the multiple toward the higher end of the SME range if IP is present.",
+        "Sector attractiveness is moderate (58/100) due to macro-economic headwinds and labor constraints despite steady demand."
+      ],
+      "narrative": "Innova Design Group Limited represents a classic UK manufacturing SME. At £4.5m revenue, it has moved beyond 'micro' status but remains within a valuation tier heavily influenced by owner-dependency and project-based cyclicality. The primary value driver for a buyer will be the 'Design' component—if the company provides end-to-end solutions rather than 'build-to-print' services, it commands higher margins and better customer stickiness. However, without verified EBITDA, the valuation remains anchored to the 2.0x-3.5x range typical for UK trade businesses of this scale. A buyer should focus on the quality of the order book and the degree of automation within the workshop."
+    }
+  },
+  {
+    "id": 2498,
+    "expert_type": "synthesis",
+    "status": "success",
+    "score": null,
+    "confidence": null,
+    "created_at": "2026-07-04T08:19:45.259Z",
+    "analysis_data": {
+      "stage": "synthesis",
+      "company_name": "Innova Design Group Limited",
+      "sector": "Manufacturing",
+      "analysis_date": "2024-05-22",
+      "overall_score": 59,
+      "recommendation": "PROCEED_WITH_CAUTION",
+      "scores_dashboard": {
+        "financial": {
+          "score": 62,
+          "confidence": "high"
+        },
+        "operational": {
+          "score": 68,
+          "confidence": "high"
+        },
+        "risk": {
+          "score": 68,
+          "confidence": "high"
+        },
+        "quality_of_earnings": {
+          "score": 58,
+          "confidence": "high"
+        },
+        "sector": {
+          "score": 58,
+          "confidence": "medium"
+        },
+        "valuation": {
+          "score": 45,
+          "confidence": "medium"
+        },
+        "deal_structure": {
+          "score": 42,
+          "confidence": "high"
+        }
+      },
+      "executive_summary": "Innova Design Group Limited is a manufacturing business presenting a paradox: a robust balance sheet and strong liquidity masking a core operation that is currently loss-making on a normalized basis. While statutory accounts show a profit, the Quality of Earnings (QoE) analysis reveals a massive £254k accounting anomaly in 2025 and significantly below-market director salaries. Revenue is volatile (3-year CAGR of -7.81%) and the business faces a 'Capex Cliff' with 30% of its machinery requiring imminent replacement. However, 2026 management accounts suggest a potential margin recovery through a shift to in-house production. Verdict: Proceed only if the acquisition is structured as an asset-backed turnaround rather than a multiple of earnings. Key Metrics: Revenue £4.5m (2025), Reported EBITDA £218k, Adjusted EBITDA -£326k. Valuation Range: £494k (NAV Floor) to £750k. Top Reasons to Proceed: 1) Strong Net Asset Value and liquidity provide a safety floor; 2) Strategic shift to in-house production is showing early margin success; 3) 'Design' IP offers value-add potential. Top Reasons for Caution: 1) Extreme divergence between reported and normalized earnings; 2) Aging asset base requires significant near-term cash outlay; 3) Rigid 100% full-time staff base creates negative operating leverage. Recommended Structure: Conservative Approach anchored to NAV (£500k headline) with heavy earnouts based on proven normalization.",
+      "expert_consensus": {
+        "agreements": [
+          "The balance sheet is exceptionally strong with low gearing (8%) and high liquidity.",
+          "The asset base is aging and requires a significant capital expenditure cycle within 24 months.",
+          "Reported 2025 profits are distorted by a specific £254k negative cost entry.",
+          "Director remuneration is currently nominal and does not reflect commercial replacement costs."
+        ],
+        "contradictions": [
+          {
+            "topic": "Profitability Outlook",
+            "expert_a": "Financial",
+            "expert_a_view": "Sees a mixed profile with improving gross margins but volatile net profit.",
+            "expert_b": "Quality of Earnings",
+            "expert_b_view": "Argues the business is fundamentally loss-making (-£326k EBITDA) once normalized.",
+            "resolution": "The QoE view is more accurate for an acquirer; the statutory profit is an accounting mirage caused by owner-subsidies and one-off credits."
+          },
+          {
+            "topic": "Operational Efficiency",
+            "expert_a": "Operational",
+            "expert_a_view": "Notes excellent working capital control and improving cash conversion.",
+            "expert_b": "Financial",
+            "expert_b_view": "Highlights negative operating leverage where staff costs rose 26% while revenue fell 9%.",
+            "resolution": "The business is efficient at managing cash but inefficient at managing its fixed cost base relative to revenue volatility."
+          }
+        ]
+      },
+      "devils_advocate": {
+        "worst_case_scenario": "The £254k 'credit' in 2025 is revealed as a correction of multi-year errors, the 2026 margin recovery fails as project volumes drop, and core CNC machinery suffers a catastrophic failure. The buyer is left with a loss-making operation, a £250k+ immediate capex bill, and a rigid staff cost base that cannot be reduced without significant redundancy costs.",
+        "weakest_assumptions": [
+          "That the 2026 management account recovery is sustainable and not another accounting anomaly.",
+          "That the 'Design' brand carries transferable IP value rather than just being a name.",
+          "That the 5-person director team can be consolidated without losing critical operational knowledge."
+        ],
+        "underweighted_risks": [
+          "The 100% full-time workforce creates a 'break-even' point that is dangerously high for a project-based business.",
+          "The 'Other Debt' of £182k in 2026 accounts may carry restrictive covenants or personal guarantees.",
+          "The sector expert notes a 'squeeze' in metal fabrication that could further erode margins regardless of internal improvements."
+        ],
+        "post_mortem_predictions": "If this fails, the post-mortem will show the buyer bought a 'lifestyle business' at a 'commercial multiple,' failing to realize the owners were the ones funding the profit through unpaid labor and deferred maintenance."
+      },
+      "investment_thesis": {
+        "positive_case": "Innova is a well-capitalized manufacturing platform with a strong reputation in 'Design.' By professionalizing the management structure, completing the shift to in-house production, and modernizing the asset base, an acquirer can stabilize margins and leverage the strong balance sheet to fund growth into higher-margin sectors like renewable energy or medical infrastructure.",
+        "conditions_for_success": [
+          "The £254k accounting entry must be a non-recurring item with no tax liability tail.",
+          "At least two key operational directors must remain for a 24-month transition.",
+          "Revenue must be stabilized at a minimum of £4.8m to cover the normalized overhead base."
+        ],
+        "integration_priorities_100_days": [
+          "Perform a full forensic audit of the 2025/2026 P&L and Cost of Sales.",
+          "Initiate the replacement of the Biesse Rover and other 'at-risk' machinery.",
+          "Implement a flexible labor model to reduce the risk of negative operating leverage.",
+          "Consolidate the 5-director management structure into 3 functional leads."
+        ]
+      },
+      "information_requests": {
+        "critical": [
+          {
+            "request": "Full breakdown and explanation of the -£254,209 'Other Direct Costs' in 2025.",
+            "source_expert": "Quality of Earnings",
+            "rationale": "This single item represents the difference between reported profit and a significant loss."
+          },
+          {
+            "request": "Aged Creditor and Debtor ledgers as of May 2026.",
+            "source_expert": "Risk",
+            "rationale": "To verify the quality of the working capital and identify any hidden disputes."
+          },
+          {
+            "request": "Details of 'Other Debt' (£182,975) in 2026 liabilities.",
+            "source_expert": "Financial",
+            "rationale": "To understand repayment terms and potential impact on the equity bridge."
+          }
+        ],
+        "important": [
+          {
+            "request": "Customer concentration report (Top 10 customers by revenue for last 3 years).",
+            "source_expert": "Risk",
+            "rationale": "To assess the risk of project-based revenue volatility."
+          },
+          {
+            "request": "Maintenance logs and service history for the Biesse Rover and Fortis assets.",
+            "source_expert": "Operational",
+            "rationale": "To quantify the urgency of the 'Capex Cliff'."
+          }
+        ],
+        "nice_to_have": [
+          {
+            "request": "Pipeline report of quoted vs. won projects for the next 12 months.",
+            "source_expert": "Sector",
+            "rationale": "To validate the 2026 recovery narrative."
+          }
+        ]
+      },
+      "valuation_summary": {
+        "equity_value_range": {
+          "low": 494280,
+          "mid": 550000,
+          "high": 750000
+        },
+        "recommended_offer": 500000,
+        "recommended_structure": "Conservative Approach: £200k upfront, £100k deferred, £200k earnout based on Normalized EBITDA."
+      },
+      "narrative_report": "INVESTMENT MEMORANDUM: INNOVA DESIGN GROUP LIMITED\n\nEXECUTIVE OVERVIEW\nInnova Design Group Limited ('Innova') is a UK-based manufacturing and design entity with a turnover of approximately £4.5m-£5.0m. On the surface, the company presents as a stable, profitable SME with an enviable balance sheet (Current Ratio 1.85, Gearing 8%). However, deep-dive expert analysis reveals a business at a critical crossroads, where reported statutory success is heavily decoupled from underlying commercial reality. The investment case rests on whether an acquirer can transform this 'owner-subsidised' operation into a professionalised manufacturing platform.\n\nFINANCIAL & QUALITY OF EARNINGS ANALYSIS\nThe central challenge of this acquisition is the Quality of Earnings. In 2025, the company reported an EBITDA of £218k. However, this figure includes a £254k negative cost entry—effectively a credit to the P&L—that appears to be a one-off accounting correction. Furthermore, the five directors are paid a combined total of only £25k. When adjusted to market rates for a management team of this scale (approx. £287k), and removing the one-off credit, the business is currently loss-making with a normalized EBITDA of -£326k. This 'negative operating leverage' is exacerbated by a rigid cost base; staff costs rose 26% in 2025 despite a 9% fall in revenue. \n\nOPERATIONAL STANDING & THE 'CAPEX CLIFF'\nOperationally, Innova is proficient in working capital management, significantly reducing its cash conversion cycle to 25.9 days. However, the physical infrastructure is aging. The 'Asset Freshness' ratio is a low 33.5%, with core CNC machinery (Biesse Rover) nearly fully depreciated. We have identified a 'Capex Cliff' where the buyer will likely need to invest £200k-£300k in the first 24 months just to maintain current production capacity. The recent shift from subcontractors to in-house labor is a positive strategic move for margin control, but it increases the fixed-cost risk during revenue troughs.\n\nRISK PROFILE\nThe risk profile is 'Moderate to High' due to the 'lumpy' nature of project-based revenue and key person dependency. With 5 directors for 26 staff, the business is top-heavy, yet critical functions like Finance and HR are concentrated in a single individual. The lack of recurring revenue visibility means the business is highly sensitive to economic cycles in the construction and commercial sectors. There is also a significant 'valuation gap' risk; the sellers likely expect a multiple of their £5m turnover, whereas the economic reality suggests a value closer to the Net Asset Value (NAV).\n\nDEVIL'S ADVOCATE: THE CASE AGAINST\nAn acquirer must ask: 'Why are the owners selling now?' The combination of a massive one-off P&L credit, deferred machinery replacement, and a sudden spike in staff costs suggests a business being 'dressed' for sale or one where the owners have lost control of overheads. The worst-case scenario is that the 2026 'recovery' is a temporary blip, and the buyer inherits a loss-making entity with a broken production line and a disgruntled, over-paid workforce. If the £254k credit is a tax-related correction, the buyer could also inherit unforeseen liabilities.\n\nINVESTMENT THESIS & VALUATION\nDespite the risks, Innova remains an attractive 'Asset Play.' The Adjusted NAV of £494k provides a solid floor. The investment thesis is built on: 1) Capturing the 'Design' IP to move up the value chain; 2) Using the strong balance sheet to finance a modern, automated workshop; and 3) Rightsizing the management team to improve EBITDA margins. \n\nWe recommend a 'Conservative' deal structure. A headline price of £500k, with only £200k paid upfront, protects the buyer's capital. The remaining £300k should be split between deferred payments and a 24-month earnout tied to 'Normalized EBITDA.' This forces the sellers to stand behind their 2026 recovery claims and ensures the buyer only pays for genuine, sustainable cash flow. Proceed with caution, focusing heavily on forensic P&L reconciliation during due diligence."
+    }
+  },
+  {
+    "id": 2496,
+    "expert_type": "valuation",
+    "status": "success",
+    "score": 45,
+    "confidence": "medium",
+    "created_at": "2026-07-04T08:19:45.198Z",
+    "analysis_data": {
+      "expert": "valuation",
+      "company_name": "Innova Design Group Limited",
+      "analysis_date": "2024-05-22",
+      "score": 45,
+      "confidence": "medium",
+      "ebitda_multiple_valuation": {
+        "adjusted_ebitda_base": -326403,
+        "sector_multiple_range": {
+          "low": 2,
+          "mid": 2.75,
+          "high": 3.5
+        },
+        "selected_multiple": 2.5,
+        "multiple_justification": "A mid-range multiple is selected despite the negative adjusted EBITDA to reflect the underlying asset value and the 'Design' IP. However, the multiple is capped at 2.5x due to the significant 'Capex Cliff' and the disconnect between staff costs and revenue performance.",
+        "premium_factors_applied": [
+          "In-house design capabilities and IP",
+          "Strong balance sheet and liquidity",
+          "Strategic shift to in-house production showing margin potential in 2026"
+        ],
+        "discount_factors_applied": [
+          "Negative normalized EBITDA after market-rate salary adjustments",
+          "Aging asset base (33.5% freshness) requiring imminent replacement",
+          "Volatile revenue with a -7.81% 3-year CAGR",
+          "Rigid cost base with 100% full-time staff"
+        ],
+        "enterprise_value_range": {
+          "conservative": 0,
+          "base": 0,
+          "optimistic": 450000
+        }
+      },
+      "ev_to_equity_bridge": {
+        "enterprise_value_base": 0,
+        "plus_cash": 350000,
+        "minus_long_term_debt": 182975,
+        "minus_director_loans": 29032,
+        "minus_bad_debt_provision": 25000,
+        "minus_working_capital_adjustment": 0,
+        "equity_value": {
+          "conservative": 112993,
+          "base": 112993,
+          "optimistic": 562993
+        }
+      },
+      "asset_based_valuation": {
+        "net_asset_value": 519280,
+        "property_adjustment": 0,
+        "bad_debt_adjustment": -25000,
+        "adjusted_nav": 494280,
+        "nav_as_floor": true
+      },
+      "revenue_multiple_crosscheck": {
+        "latest_revenue": 4509086,
+        "revenue_multiple_range": {
+          "low": 0.4,
+          "high": 0.8
+        },
+        "implied_ev_range": {
+          "low": 1803634,
+          "high": 3607268
+        }
+      },
+      "valuation_summary": {
+        "recommended_range": {
+          "equity_value_low": 494280,
+          "equity_value_mid": 550000,
+          "equity_value_high": 750000
+        },
+        "primary_methodology": "asset_based_valuation",
+        "cross_check_alignment": "weak"
+      },
+      "sensitivity": {
+        "ebitda_plus_10pct": {
+          "enterprise_value": 0,
+          "equity_value": 112993
+        },
+        "ebitda_minus_10pct": {
+          "enterprise_value": 0,
+          "equity_value": 112993
+        },
+        "multiple_plus_half": {
+          "enterprise_value": 0,
+          "equity_value": 112993
+        },
+        "multiple_minus_half": {
+          "enterprise_value": 0,
+          "equity_value": 112993
+        },
+        "key_customer_loss_impact": "High - given the project-based nature and lack of recurring revenue visibility.",
+        "director_replacement_impact": -262360
+      },
+      "seller_expectations": {
+        "likely_seller_expectation_range": {
+          "low": 1500000,
+          "high": 3500000
+        },
+        "seller_anchor_points": [
+          "Reported statutory EBITDA of £218k (ignoring adjustments)",
+          "Historical peak revenue of £5.7m",
+          "Emotional value of the 'Design Group' brand"
+        ],
+        "negotiation_gap_assessment": "Extreme. The seller likely views the business as a £2m+ entity based on turnover multiples, whereas the normalized earnings suggest the business is currently a 'turnaround' or 'asset play' worth closer to its Net Asset Value."
+      },
+      "key_findings": [
+        "The business is currently loss-making on a normalized basis once market-rate salaries and accounting anomalies are adjusted.",
+        "The Net Asset Value of ~£500k provides the most realistic floor for valuation.",
+        "Revenue multiples suggest a much higher value, but these are unsupported by the current bottom-line performance.",
+        "A 'Capex Cliff' exists where 30% of machinery requires replacement, further depressing the cash-flow based value."
+      ],
+      "red_flags": [
+        "Negative £254k 'Other Direct Costs' in 2025 artificially inflates reported profit.",
+        "Normalized EBITDA is significantly negative (-£326k).",
+        "Staff costs increased 26% while revenue fell 9%, indicating poor operational control."
+      ],
+      "narrative": "Valuing Innova Design Group Limited presents a significant challenge due to the divergence between reported statutory figures and normalized trading reality. While the company reports a profit, the Quality of Earnings analysis reveals that after adjusting for a major accounting anomaly and correcting for nominal director salaries, the business is currently loss-making. Consequently, a standard EBITDA multiple approach yields a zero or negative Enterprise Value. The valuation is therefore anchored to the Adjusted Net Asset Value of approximately £494k, which acts as a floor. A buyer might pay a small premium for the 'Design' IP and the 2026 recovery signs, but any valuation exceeding £750k would require the seller to prove the sustainability of the 2026 margins without the historical cost volatility. There is a high risk of a deal-breaking gap between seller expectations (likely anchored to turnover) and the buyer's focus on normalized cash flow."
+    }
+  }
+]

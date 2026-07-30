@@ -1,0 +1,20 @@
+{
+  "id": 228,
+  "company_name": "Thor-CON",
+  "industry": "Home Services & Property Maintenance",
+  "sub_sector": "Heating, Ventilation & Air Conditioning (HVAC)",
+  "website": null,
+  "phone": "+447766770822",
+  "email": "adam@shiftopsconsulting.com",
+  "address": null,
+  "annual_revenue": "1200000",
+  "employee_count": 6,
+  "year_established": 2012,
+  "description": null,
+  "created_by": 1,
+  "created_at": "2026-07-16T13:19:39.699Z",
+  "stage": "Offer Stage",
+  "stage_updated_at": "2026-07-16T19:03:55.507Z",
+  "is_archived": false,
+  "user_company_id": 5
+}

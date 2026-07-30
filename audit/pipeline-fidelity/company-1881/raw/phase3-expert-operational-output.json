@@ -1,0 +1,153 @@
+{
+  "expert": "operational",
+  "company_name": "[AUDIT-138] Cooper Gibson",
+  "analysis_date": "2024-05-22",
+  "score": 58,
+  "confidence": "medium",
+  "working_capital": {
+    "yearly_metrics": {
+      "2022": {
+        "debtor_days": 52.07,
+        "creditor_days": 2.36,
+        "stock_days": 0,
+        "cash_conversion_cycle_days": 49.71,
+        "net_working_capital": 30045,
+        "working_capital_percent_revenue": 8.17
+      },
+      "2023": {
+        "debtor_days": 24.3,
+        "creditor_days": 4.61,
+        "stock_days": 0,
+        "cash_conversion_cycle_days": 19.69,
+        "net_working_capital": 20683,
+        "working_capital_percent_revenue": 6.57
+      },
+      "2024": {
+        "debtor_days": null,
+        "creditor_days": null,
+        "stock_days": 0,
+        "cash_conversion_cycle_days": null,
+        "net_working_capital": 128875,
+        "working_capital_percent_revenue": 39.5
+      },
+      "2025": {
+        "debtor_days": null,
+        "creditor_days": null,
+        "stock_days": 0,
+        "cash_conversion_cycle_days": null,
+        "net_working_capital": 204995,
+        "working_capital_percent_revenue": 46.48
+      },
+      "2026": {
+        "debtor_days": null,
+        "creditor_days": null,
+        "stock_days": 0,
+        "cash_conversion_cycle_days": null,
+        "net_working_capital": 183083,
+        "working_capital_percent_revenue": 81.95
+      }
+    },
+    "trend": "deteriorating",
+    "working_capital_intensity": "heavy",
+    "observations": [
+      "Working capital as a percentage of revenue has increased significantly from 8.17% in 2022 to 81.95% in 2026, indicating a massive build-up of cash and prepayments relative to turnover.",
+      "Trade debtor and creditor data is missing for the 2024-2026 statutory filings, preventing a full CCC calculation for recent years.",
+      "Sales ledger data from Feb 2026 shows a high concentration risk with Client 1 representing 88.31% of receivables."
+    ]
+  },
+  "capex": {
+    "total_gross_asset_value": null,
+    "total_nbv": 6389.47,
+    "asset_freshness_percent": null,
+    "recent_additions_24m_value": null,
+    "recent_additions_percent": null,
+    "annual_depreciation_charge": 1350,
+    "estimated_maintenance_capex": 1350,
+    "capex_cliff_risk": false,
+    "assets_requiring_replacement": [],
+    "category_breakdown": {
+      "property": {
+        "cost": null,
+        "nbv": null
+      },
+      "plant_machinery": {
+        "cost": null,
+        "nbv": null
+      },
+      "vehicles": {
+        "cost": null,
+        "nbv": null
+      },
+      "it_equipment": {
+        "cost": null,
+        "nbv": 6389.47
+      },
+      "other": {
+        "cost": null,
+        "nbv": 20291.36
+      }
+    },
+    "observations": [
+      "The business is asset-light, typical for professional services, with the primary asset being computer equipment.",
+      "Intangible assets of £20,291.36 appeared in the current position (June 2026) which were not present in previous years.",
+      "Tangible fixed assets increased significantly in 2026 (£17,464) compared to 2025 (£9,142), suggesting recent investment in equipment."
+    ]
+  },
+  "workforce": {
+    "headcount": null,
+    "total_payroll": 121874,
+    "revenue_per_employee": null,
+    "payroll_percent_revenue": 54.55,
+    "average_salary_all": null,
+    "average_salary_excl_directors": null,
+    "director_remuneration_total": 37693,
+    "director_percent_of_payroll": 30.93,
+    "ft_pt_split": {
+      "full_time": null,
+      "part_time": null
+    },
+    "longest_tenured_years": null,
+    "newest_hire_months_ago": null,
+    "observations": [
+      "Staff costs as a percentage of revenue have fluctuated wildly, from 85.7% in 2022 to near zero in 2024/2025, before returning to 54.5% in 2026. This suggests a shift between PAYE staff and subcontractors.",
+      "In 2025, subcontractor costs were £163,671, representing 98.5% of Cost of Sales, indicating a highly flexible but potentially less stable delivery model.",
+      "Director remuneration is a significant portion of the total payroll (30.93% in 2026)."
+    ]
+  },
+  "owner_dependency": {
+    "risk_level": "high",
+    "director_count": 1,
+    "highest_individual_salary": 37693,
+    "highest_individual_percent_of_payroll": 30.93,
+    "critical_function_concentration": "High concentration of management and likely sales functions within the directorship.",
+    "observations": [
+      "The current balance sheet shows 'Amounts owed to directors' of £149,587.37, indicating the business is heavily financed by the owners.",
+      "The shift from staff wages to subcontractor costs suggests the directors manage a flexible pool of talent rather than a fixed internal team."
+    ]
+  },
+  "scalability": {
+    "rating": "medium",
+    "headcount_for_25pct_growth": null,
+    "capex_needed_for_growth": "Low - asset light model.",
+    "working_capital_supports_growth": true,
+    "bottlenecks": [
+      "Extreme customer concentration (88% revenue from one client).",
+      "Reliance on subcontractors for delivery."
+    ],
+    "observations": [
+      "The business model is operationally scalable due to the use of subcontractors, but the revenue base is highly fragile due to client concentration.",
+      "The high cash balance (£195k in Feb 2026) provides a strong buffer for funding growth."
+    ]
+  },
+  "key_findings": [
+    "The business has transitioned from a high-fixed-cost model (PAYE) to a high-variable-cost model (subcontractors).",
+    "Significant cash reserves have been built up, with £195,634 at bank as of Feb 2026.",
+    "Operational efficiency is overshadowed by the risk of 88% revenue concentration in a single client."
+  ],
+  "red_flags": [
+    "88.31% of receivables/revenue tied to 'Client 1'.",
+    "Inconsistent reporting of staff costs vs subcontractor costs across fiscal years.",
+    "Large director loan account (£149k) suggests the business is not yet self-sustaining without owner support or is being used as a tax-efficient vehicle."
+  ],
+  "narrative": "Cooper Gibson exhibits the operational profile of a consultancy that has successfully pivoted to a lean, subcontractor-led model, resulting in improved EBITDA margins. However, the operational stability is entirely dependent on a single client relationship. While the balance sheet is liquid and the asset base is modern, the lack of diversified revenue and the high level of owner financing (via director loans) present significant risks for an acquirer. Scalability is high in theory but limited by the current sales pipeline concentration."
+}

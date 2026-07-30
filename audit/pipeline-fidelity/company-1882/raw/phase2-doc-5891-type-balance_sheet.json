@@ -1,0 +1,141 @@
+{
+  "document": "balance_sheet",
+  "source": "management_accounts",
+  "years_covered": [
+    2026,
+    2027
+  ],
+  "period_ends": {
+    "2026": "2026-04-30",
+    "2027": "2026-05-31"
+  },
+  "months_covered": {
+    "2026": 1,
+    "2027": 2
+  },
+  "report_date": null,
+  "years": {
+    "2026": {
+      "year": 2026,
+      "balance_sheet": {
+        "fixed_assets": {
+          "intangible_assets": null,
+          "tangible_assets": 45244.97,
+          "freehold_property": null,
+          "leasehold_property": 8584.7,
+          "plant_machinery": 7360.02,
+          "fixtures_fittings": 669.5,
+          "motor_vehicles": 26955.65,
+          "computer_equipment": 1675.1
+        },
+        "current_assets": {
+          "stock": 16326.01,
+          "trade_debtors": 226970.73,
+          "prepayments": 3703.2,
+          "amounts_owed_by_directors": 176625.1,
+          "amounts_owed_by_connected_companies": 0,
+          "directors_current_account": 176625.1,
+          "other_debtors": 43896.61,
+          "cash_at_bank": 668188.88,
+          "total": 1135698
+        },
+        "current_liabilities": {
+          "trade_creditors": 66207.33,
+          "taxation_social_security": 5272.99,
+          "vat_payable": 53619.63,
+          "corporation_tax": 112405.43,
+          "bank_loans_current": 997.81,
+          "hire_purchase_current": null,
+          "accruals": 50892.31,
+          "amounts_owed_to_directors": null,
+          "other_creditors": 98033.5,
+          "total": 387429
+        },
+        "long_term_liabilities": {
+          "bank_loans": null,
+          "hire_purchase_long_term": 37417.71,
+          "deferred_taxation": 9453.85,
+          "other_debt": null,
+          "total": 46871.56
+        },
+        "equity": {
+          "share_capital": 100,
+          "retained_earnings": 746542.11,
+          "total": 746642.11
+        }
+      },
+      "financial_ratios": {
+        "current_ratio": 2.93137065113866,
+        "quick_ratio": 2.310512893975412,
+        "net_assets_growth_percent": null,
+        "gearing_ratio_percent": 6.27764729144444
+      }
+    },
+    "2027": {
+      "year": 2027,
+      "balance_sheet": {
+        "fixed_assets": {
+          "intangible_assets": null,
+          "tangible_assets": 43772,
+          "freehold_property": null,
+          "leasehold_property": 8266.75,
+          "plant_machinery": 7040.02,
+          "fixtures_fittings": 653.66,
+          "motor_vehicles": 26166.5,
+          "computer_equipment": 1644.92,
+          "total": 43772
+        },
+        "current_assets": {
+          "stock": 16326.01,
+          "trade_debtors": 303064.85,
+          "prepayments": 3627.05,
+          "amounts_owed_by_directors": 184228.7,
+          "amounts_owed_by_connected_companies": 0,
+          "directors_current_account": 184228.7,
+          "other_debtors": 53317.41,
+          "cash_at_bank": 600325.43,
+          "total": 1156884
+        },
+        "current_liabilities": {
+          "trade_creditors": 79996.74,
+          "taxation_social_security": 2689.52,
+          "vat_payable": 85479.19,
+          "corporation_tax": 112405.43,
+          "bank_loans_current": 497.81,
+          "hire_purchase_current": null,
+          "accruals": 78676.25,
+          "amounts_owed_to_directors": null,
+          "other_creditors": 6179.07,
+          "total": 365924
+        },
+        "long_term_liabilities": {
+          "bank_loans": null,
+          "hire_purchase_long_term": 36254.36,
+          "deferred_taxation": 9453.85,
+          "other_debt": null,
+          "total": 45708.21
+        },
+        "equity": {
+          "share_capital": 100,
+          "retained_earnings": 788923.96,
+          "total": 789023.96
+        }
+      },
+      "financial_ratios": {
+        "current_ratio": 3.161541743640756,
+        "quick_ratio": 2.468791880281151,
+        "net_assets_growth_percent": 5.67632600144565,
+        "gearing_ratio_percent": 5.792999999999999
+      }
+    }
+  },
+  "summary_insights": [
+    "The company maintains a very strong liquidity position, with the current ratio improving from 2.93 to 3.16 between April and May 2026.",
+    "Net assets grew by 5.68% in a single month, driven by a significant increase in retained earnings from £746k to £789k.",
+    "Trade debtors increased by 33.5% (£76k) in one month, suggesting a sharp rise in recent trading activity or potential slowing of collections.",
+    "Cash reserves remain robust at over £600k, despite a £68k reduction during the period, largely offset by the increase in receivables.",
+    "The company carries low leverage with a gearing ratio of approximately 5.8%, with long-term liabilities primarily consisting of hire purchase obligations.",
+    "Directors' loan accounts are in a significant debit position (£184k), representing a substantial asset that is effectively a withdrawal of capital from the business."
+  ],
+  "_isIM": false
+}

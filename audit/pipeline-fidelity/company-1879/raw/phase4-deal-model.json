@@ -1,0 +1,1091 @@
+{
+  "model": {
+    "id": 488,
+    "targetCompanyId": 1879,
+    "createdBy": 89,
+    "name": "Audit Model — TC 172",
+    "status": "draft",
+    "version": 1,
+    "transactionType": "share_sale",
+    "parentModelId": null,
+    "isLocked": false,
+    "averagingYears": 3,
+    "ebitdaMultiple": "2",
+    "offerDriver": "ebitda",
+    "targetOfferPrice": null,
+    "multipleLow": "2",
+    "multipleHigh": "3.5",
+    "propertyValue": "0",
+    "cashValue": "0",
+    "otherAssets": "0",
+    "calculatedEbitda": null,
+    "adjustedEbitda": "16827.82",
+    "enterpriseValue": "33655.64",
+    "plusExcessCash": "0",
+    "minusPrimaryDebt": "0",
+    "minusOtherDebt": "27852",
+    "minusCorpTaxDue": null,
+    "minusWorkingCapitalAdj": "25809",
+    "workingCapitalMonths": 3,
+    "workingCapitalMonthlyAmount": "8603",
+    "totalPurchasePrice": null,
+    "totalFundingAvailable": null,
+    "equityRequired": null,
+    "upfrontCash": "25000",
+    "deferredAmount": "15000",
+    "deferredTerms": null,
+    "earnoutMaximum": "15000",
+    "earnoutMetric": "Adjusted EBITDA",
+    "earnoutPeriodMonths": 12,
+    "retentionEscrow": "7500",
+    "feeLegalDdAmount": "25000",
+    "feeAccountingDdAmount": "15000",
+    "feeLoanArrangementAmount": "0",
+    "feeDealMakerAmount": "0",
+    "customFees": [],
+    "expertDataSnapshot": {
+      "qoe": {
+        "expert": "quality_of_earnings",
+        "company_name": "[AUDIT-172] Ideal scaffolding",
+        "analysis_date": "2026-07-30",
+        "score": 48,
+        "confidence": "medium",
+        "reported_figures": {
+          "operating_profit": 183908.52,
+          "depreciation": 0,
+          "amortisation": 0,
+          "reported_ebitda": 183908.52,
+          "source_year": "2026"
+        },
+        "add_backs": [
+          {
+            "item": "Professional Fees Normalisation",
+            "category": "one_off_cost",
+            "amount": 75000,
+            "recurrence": "one_off",
+            "year": "2026",
+            "justification": "Professional fees spiked to £93,574 in 2026 from a historical average of ~£18k, likely related to transaction preparation or one-off legal matters.",
+            "confidence": "medium",
+            "defensibility_score": 6,
+            "case_for_inclusion": "These fees are significantly above the historical run-rate and represent non-operational costs that a buyer would not incur.",
+            "case_for_exclusion": "The seller may argue these fees relate to ongoing compliance or new regulatory requirements in the scaffolding sector."
+          }
+        ],
+        "deductions": [
+          {
+            "item": "Replacement Management Cost (MD/FD)",
+            "category": "missing_management",
+            "amount": 57500,
+            "recurrence": "recurring",
+            "year": "2026",
+            "justification": "The MD (Mark Jones) performs MD, Sales, and Rail Sentinel roles. A replacement manager for a £1.8m revenue business is benchmarked at £57,500 (mid-point of £45k-£70k range).",
+            "confidence": "high",
+            "defensibility_score": 9,
+            "case_for_inclusion": "The current director remuneration is not disclosed for 2026, and the business is heavily dependent on the owner's multi-role involvement.",
+            "case_for_exclusion": "The seller might argue the existing General Manager (Martin Ward) could absorb these duties without a new high-level hire."
+          },
+          {
+            "item": "Deferred Maintenance / Scaffolding Replacement",
+            "category": "deferred_maintenance",
+            "amount": 92854,
+            "recurrence": "recurring",
+            "year": "2026",
+            "justification": "71% of assets are fully depreciated. The 2025 depreciation charge of £92,854 is used as a proxy for the minimum annual maintenance capex required to sustain the aging fleet.",
+            "confidence": "medium",
+            "defensibility_score": 7,
+            "case_for_inclusion": "The aging scaffolding stock represents a 'capex cliff' that will require immediate and ongoing cash outlay to maintain operational capacity.",
+            "case_for_exclusion": "The seller may claim that scaffolding has a longer useful life than accounting depreciation suggests and current stock is fit for purpose."
+          },
+          {
+            "item": "Bad Debt Provision - Worldwide Scaffold",
+            "category": "bad_debt_provision",
+            "amount": 91726.7,
+            "recurrence": "one_off",
+            "year": "2026",
+            "justification": "A balance of £91,726.70 from Worldwide Scaffold and Access LTD has had no activity since November 2025 and is flagged as a collection risk.",
+            "confidence": "high",
+            "defensibility_score": 8,
+            "case_for_inclusion": "This aged debt is highly likely to be unrecoverable given the lack of activity for over 6 months in a high-risk sector.",
+            "case_for_exclusion": "The seller may argue the debt is still being negotiated or is subject to a payment plan not yet reflected in the ledger."
+          }
+        ],
+        "total_add_backs": 75000,
+        "total_deductions": 242080.7,
+        "adjusted_ebitda": {
+          "conservative": 16827.82,
+          "base": 16827.82,
+          "optimistic": 91827.82
+        },
+        "adjustment_summary": {
+          "reported_ebitda": 183908.52,
+          "plus_add_backs": 75000,
+          "minus_deductions": 242080.7,
+          "equals_adjusted_ebitda_base": 16827.82
+        },
+        "director_salary_analysis": {
+          "directors": [
+            {
+              "name": "Mark Jones",
+              "current_salary": null,
+              "estimated_market_rate": 57500,
+              "benchmark_range_used": "Revenue £1M-£5M: Working MD/Owner-Director (£45,000–£70,000)",
+              "adjustment": 57500,
+              "adjustment_type": "deduction"
+            },
+            {
+              "name": "Deborah Jones",
+              "current_salary": null,
+              "estimated_market_rate": 0,
+              "benchmark_range_used": "Non-working/sleeping director",
+              "adjustment": 0,
+              "adjustment_type": "none"
+            }
+          ]
+        },
+        "sustainability_assessment": {
+          "sustainable_for_3_years": false,
+          "key_assumptions": [
+            "Revenue remains stable at ~£1.8m despite historical volatility.",
+            "Subcontractor costs (currently 26% of revenue) do not continue to escalate.",
+            "The 'capex cliff' requires immediate cash injection for scaffolding replacement."
+          ],
+          "sensitivity_factors": [
+            "Loss of Equans Regeneration Ltd (29.6% of top turnover) would make the business loss-making.",
+            "Ability to recover the £91k Worldwide Scaffold debt."
+          ],
+          "upside_scenarios": [
+            "Internalising subcontractor work to improve gross margins back toward 55% levels.",
+            "Leveraging the relatively modern vehicle fleet for higher-margin rail work."
+          ],
+          "downside_scenarios": [
+            "Further margin compression due to rising labor and fuel costs.",
+            "Key person risk if Mark Jones exits without a comprehensive handover of the Rail Sentinel role."
+          ]
+        },
+        "key_findings": [
+          "Reported EBITDA has collapsed by 77% since 2022, indicating a significant loss of operational efficiency.",
+          "The 2026 management accounts do not include depreciation, which masks the true cost of asset wear and tear.",
+          "Heavy reliance on subcontractors in 2025/2026 has severely eroded the net margin.",
+          "The business is carrying significant non-operational risk in the form of inter-company loans (£212k in 2025)."
+        ],
+        "red_flags": [
+          "Significant customer concentration with Equans Regeneration.",
+          "Aging asset base with 71% of gross value fully depreciated.",
+          "Potential £91k bad debt write-off required for Worldwide Scaffold.",
+          "Deteriorating interest coverage and operating margins."
+        ],
+        "narrative": "The Quality of Earnings analysis for Ideal Scaffolding reveals a business in significant transition or decline. While the 2026 management accounts show a reported EBITDA of £183.9k, this figure is highly fragile. It fails to account for the necessary replacement of fully depreciated scaffolding (the 'capex cliff') and the cost of replacing a multi-functional owner-manager. Furthermore, the quality of the balance sheet is compromised by a large, aged debtor balance that appears uncollectible. After adjusting for market-rate management, maintenance requirements, and non-recurring professional fees, the base-case sustainable EBITDA drops to approximately £16.8k. This suggests that the current earnings are not sufficient to support a valuation based on historical multiples without a radical restructuring of the cost base and a mitigation of the high customer concentration risk."
+      },
+      "valuation": {
+        "expert": "valuation",
+        "company_name": "[AUDIT-172] Ideal scaffolding",
+        "analysis_date": "2026-07-30",
+        "score": 45,
+        "confidence": "medium",
+        "ebitda_multiple_valuation": {
+          "adjusted_ebitda_base": 16827.82,
+          "sector_multiple_range": {
+            "low": 2,
+            "mid": 2.75,
+            "high": 3.5
+          },
+          "selected_multiple": 2,
+          "multiple_justification": "The multiple is set at the bottom of the sector range (2.0x) due to the severe collapse in EBITDA from £823k to £184k (reported) and the high customer concentration risk. While the vehicle fleet is modern, the core scaffolding assets are 71% depreciated, creating a significant capex liability for any buyer.",
+          "premium_factors_applied": [
+            "Modern vehicle fleet (recent DAF and Ford additions)",
+            "Healthy cash conversion cycle (10.64 days)"
+          ],
+          "discount_factors_applied": [
+            "Significant revenue and margin contraction (Operating margin fell from 33% to 9.8%)",
+            "Critical customer concentration (Equans Regeneration at 29.6%)",
+            "High owner dependency (MD holds MD, Sales, and Rail Sentinel roles)",
+            "Aging scaffolding stock (Capex Cliff risk)"
+          ],
+          "enterprise_value_range": {
+            "conservative": 25241.73,
+            "base": 33655.64,
+            "optimistic": 58897.37
+          }
+        },
+        "ev_to_equity_bridge": {
+          "enterprise_value_base": 33655.64,
+          "plus_cash": 0,
+          "minus_long_term_debt": 0,
+          "minus_director_loans": 27852,
+          "minus_bad_debt_provision": 91726.7,
+          "minus_working_capital_adjustment": 0,
+          "equity_value": {
+            "conservative": -94336.97,
+            "base": -85923.06,
+            "optimistic": -60681.33
+          }
+        },
+        "asset_based_valuation": {
+          "net_asset_value": 128124.9,
+          "property_adjustment": 0,
+          "bad_debt_adjustment": 91726.7,
+          "adjusted_nav": 36398.2,
+          "nav_as_floor": true
+        },
+        "revenue_multiple_crosscheck": {
+          "latest_revenue": 1869199.89,
+          "revenue_multiple_range": {
+            "low": 0.4,
+            "high": 0.8
+          },
+          "implied_ev_range": {
+            "low": 747679.96,
+            "high": 1495359.91
+          }
+        },
+        "valuation_summary": {
+          "recommended_range": {
+            "equity_value_low": 10000,
+            "equity_value_mid": 36398.2,
+            "equity_value_high": 75000
+          },
+          "primary_methodology": "asset_based",
+          "cross_check_alignment": "weak"
+        },
+        "sensitivity": {
+          "ebitda_plus_10pct": {
+            "enterprise_value": 37021.2,
+            "equity_value": -82557.5
+          },
+          "ebitda_minus_10pct": {
+            "enterprise_value": 30290.08,
+            "equity_value": -89288.62
+          },
+          "multiple_plus_half": {
+            "enterprise_value": 42069.55,
+            "equity_value": -77509.15
+          },
+          "multiple_minus_half": {
+            "enterprise_value": 25241.73,
+            "equity_value": -94336.97
+          },
+          "key_customer_loss_impact": "Loss of Equans Regeneration (29.6% of revenue) would likely result in a negative EBITDA, making the business unviable as a going concern.",
+          "director_replacement_impact": "Replacing Mark Jones costs £57,500 annually, which exceeds the current adjusted EBITDA, effectively wiping out the earnings-based valuation."
+        },
+        "seller_expectations": {
+          "likely_seller_expectation_range": {
+            "low": 500000,
+            "high": 1500000
+          },
+          "seller_anchor_points": [
+            "Historical 2022 EBITDA of £823k",
+            "Revenue levels near £2m",
+            "Emotional value of the 'Ideal Scaffolding' brand and rail compliance status"
+          ],
+          "negotiation_gap_assessment": "Extreme. The seller is likely to anchor on 2022 performance or a revenue multiple (implied £750k+), whereas the current adjusted earnings barely cover management replacement and maintenance capex. A deal is only likely via a distressed asset sale or a heavy earn-out structure."
+        },
+        "key_findings": [
+          "Adjusted EBITDA is negligible (£16.8k) after accounting for market-rate management and maintenance capex.",
+          "The business is facing a 'capex cliff' with 71% of scaffolding assets fully depreciated.",
+          "Equity value is technically negative when applying an earnings multiple and deducting the recommended £91k bad debt provision and director loans.",
+          "The Asset-Based Valuation (Adjusted NAV) of £36.4k provides the only realistic floor for a transaction."
+        ],
+        "red_flags": [
+          "77% collapse in reported EBITDA since 2022.",
+          "Critical customer concentration with Equans Regeneration (29.6%).",
+          "Unrecoverable debt of £91.7k from Worldwide Scaffold.",
+          "Significant drop in retained earnings from £556k (2025) to £128k (2026)."
+        ],
+        "narrative": "The valuation of Ideal Scaffolding is highly challenged by the divergence between its historical success and its current operational reality. While the company generated over £800k in EBITDA in 2022, the 2026 management accounts and subsequent quality of earnings adjustments reveal a business that is currently barely breaking even on a sustainable basis. The 'Adjusted EBITDA' of £16.8k is insufficient to support a traditional multiple-based valuation, as the cost of replacing the owner-manager and maintaining the aging scaffolding fleet consumes nearly all operating cash flow. Furthermore, the bridge to equity value is severely impacted by a recommended £91.7k bad debt write-off and £27.8k in director loans. Consequently, the earnings-based equity value is negative. The most credible valuation approach is the Adjusted Net Asset Value, which provides a floor of approximately £36.4k. A buyer might pay a small premium for the 'Rail Sentinel' compliance status and the modern vehicle fleet, but any significant valuation would require the seller to prove that the 2026 margin collapse is temporary and that the Equans contract is secured long-term. Cash at bank was not stated in the available 2026 management accounts, so it is treated as zero for the bridge."
+      },
+      "deal_structure": {
+        "expert": "deal_structure",
+        "company_name": "[AUDIT-172] Ideal scaffolding",
+        "analysis_date": "2026-07-30",
+        "score": 35,
+        "confidence": "medium",
+        "structures": [
+          {
+            "name": "Conservative Approach",
+            "strategy": "Asset-backed floor with heavy contingency to mitigate customer concentration and capex cliff risks.",
+            "risk_to_buyer": "low",
+            "suitable_when": "The buyer prioritizes capital preservation and is unwilling to pay for 'goodwill' that is currently unsupported by earnings.",
+            "consideration": {
+              "total_headline": 36400,
+              "upfront_cash": 10000,
+              "upfront_percent": 27.5,
+              "deferred": 10000,
+              "earnout_maximum": 16400,
+              "earnout_metric": "Customer Retention (Equans Regeneration Ltd)",
+              "earnout_period_months": 24,
+              "earnout_rationale": "Trigger 1 (Customer Concentration): Equans represents 29.6% of revenue. This earnout, identified by the Risk Expert, ensures the buyer does not pay for a business that becomes unviable if this contract is lost.",
+              "retention_escrow": 5000
+            },
+            "key_conditions": [
+              "Pound-for-pound reduction for any bad debt write-offs over £5,000",
+              "Successful transfer of Rail Sentinel Co-ordinator status to a new hire",
+              "Full write-off or settlement of £212k intercompany loan prior to completion"
+            ],
+            "notes": "Seller must provide a 12-month handover to transition Rail Sentinel compliance and key accounts. Non-compete duration of 3 years covering a 50-mile radius. Specific indemnity required for the £91.7k Worldwide Scaffold debt. Completion mechanism: Completion accounts with a working capital peg based on the 12-month average. Risk is low for the buyer due to the low entry price relative to asset value, but high for deal completion due to seller expectations."
+          },
+          {
+            "name": "Balanced Approach",
+            "strategy": "A middle-ground structure that offers a higher headline price to bridge the expectation gap, but ties the premium to earnings stability.",
+            "risk_to_buyer": "medium",
+            "suitable_when": "The seller is willing to accept that historical 2022 performance is no longer relevant, but believes the 2026 margin collapse is temporary.",
+            "consideration": {
+              "total_headline": 55000,
+              "upfront_cash": 25000,
+              "upfront_percent": 45.5,
+              "deferred": 15000,
+              "earnout_maximum": 15000,
+              "earnout_metric": "Adjusted EBITDA",
+              "earnout_period_months": 12,
+              "earnout_rationale": "Trigger 4 (Uncertain Add-backs/Earnings): The QoE expert flagged a 77% collapse in EBITDA. This earnout ensures the 'Adjusted EBITDA' of £16.8k is actually achieved and sustainable post-acquisition.",
+              "retention_escrow": 7500
+            },
+            "key_conditions": [
+              "Minimum 12-month consultancy agreement for Mark Jones",
+              "Warranty cap at 100% of consideration given the low deal value",
+              "Evidence of scaffolding safety inspections for all 'fully depreciated' stock"
+            ],
+            "notes": "Handover period of 6 months full-time followed by 6 months consultancy. Standard warranty package with a £2,500 de minimis. Completion mechanism: Locked box based on the April 2026 management accounts, adjusted for the £91k bad debt. Risk to buyer is medium because the EBITDA is so thin that any operational hiccup (e.g., vehicle repair) wipes out profit."
+          },
+          {
+            "name": "Competitive Approach",
+            "strategy": "Maximum headline value to appeal to the seller's high expectations, heavily weighted toward future revenue performance.",
+            "risk_to_buyer": "high",
+            "suitable_when": "A strategic buyer sees value in the Rail Sentinel status and modern fleet that exceeds the current earnings-based valuation.",
+            "consideration": {
+              "total_headline": 75000,
+              "upfront_cash": 40000,
+              "upfront_percent": 53.3,
+              "deferred": 15000,
+              "earnout_maximum": 20000,
+              "earnout_metric": "Revenue Stabilisation",
+              "earnout_period_months": 12,
+              "earnout_rationale": "Trigger 2 (Revenue Decline): Revenue has been volatile. This earnout, based on the QoE expert's findings, protects the buyer if the current £1.8m revenue run-rate continues to slide.",
+              "retention_escrow": 10000
+            },
+            "key_conditions": [
+              "Retention of top 3 customers for 12 months post-completion",
+              "Immediate recruitment of a Yard Manager to reduce MD dependency",
+              "Indemnity for any deferred tax liabilities arising from accelerated depreciation"
+            ],
+            "notes": "3-month intensive handover. Warranty period of 18 months for general warranties and 6 years for tax. Completion mechanism: Completion accounts. Risk to buyer is high because the £75k price represents a significant multiple of the actual adjusted EBITDA (£16.8k), effectively paying for a turnaround that hasn't happened yet."
+          }
+        ],
+        "recommended_structure": "Conservative Approach",
+        "recommendation_rationale": "The business is technically worth less than its Net Asset Value when adjusted for bad debts and director loans. The 'Adjusted EBITDA' barely covers the cost of a replacement manager. A conservative, asset-based offer is the only way to protect the buyer from the 'capex cliff' and the extreme customer concentration risk.",
+        "negotiation_priorities": [
+          "Pound-for-pound reduction for the £91.7k Worldwide Scaffold debt",
+          "Verification of the £212k intercompany loan recoverability",
+          "Securing a long-term commitment or transition plan for the Rail Sentinel compliance role",
+          "Bridging the massive gap between the seller's £500k+ expectation and the £36k reality"
+        ],
+        "deal_breaker_terms": [
+          "Loss of Equans Regeneration Ltd contract prior to completion",
+          "Refusal to provide a specific indemnity for the £91.7k aged debt",
+          "Inability to transfer Rail Sentinel accreditation",
+          "Discovery that the £212k intercompany loan has been spent/dissipated"
+        ],
+        "key_findings": [
+          "The business is facing a 'capex cliff' with 71% of scaffolding assets fully depreciated.",
+          "Customer concentration is critical, with one client at 29.6%.",
+          "Adjusted EBITDA is negligible (£16.8k) after market-rate management costs.",
+          "There is a massive disconnect between seller expectations and financial reality."
+        ],
+        "narrative": "Structuring a deal for Ideal Scaffolding is exceptionally difficult due to the 'valuation gap.' The seller is anchoring on historical 2022 performance, while the 2026 reality shows a business that is barely breaking even after accounting for the owner's replacement and necessary asset maintenance. The deal must be structured as an asset-based purchase (Adjusted NAV) rather than an earnings-based one. The primary goal of the structure is to ensure the buyer does not inherit a 'hollowed-out' company where the main contract leaves and the equipment requires immediate, expensive replacement. An earnout is mandatory to manage the 29.6% customer concentration risk."
+      },
+      "financial": {
+        "expert": "financial",
+        "company_name": "[AUDIT-172] Ideal scaffolding",
+        "analysis_date": "2026-07-30",
+        "score": 52,
+        "confidence": "high",
+        "yearly_metrics": {
+          "2022": {
+            "revenue": 2141738,
+            "revenue_yoy_growth_percent": null,
+            "cost_of_sales": 951259,
+            "gross_profit": 1190479,
+            "gross_margin_percent": 55.58,
+            "administrative_expenses": 484317,
+            "operating_profit": 706162,
+            "operating_margin_percent": 32.97,
+            "depreciation_amortisation": 117453,
+            "ebitda": 823615,
+            "interest_payable": 1801,
+            "interest_coverage_ratio": 392.09,
+            "profit_before_tax": 705224,
+            "corporation_tax": 105125,
+            "effective_tax_rate_percent": 14.91,
+            "net_profit": 600099,
+            "net_margin_percent": 28.02
+          },
+          "2023": {
+            "revenue": 2038844,
+            "revenue_yoy_growth_percent": -4.8,
+            "cost_of_sales": 1007456,
+            "gross_profit": 1031388,
+            "gross_margin_percent": 50.59,
+            "administrative_expenses": 585138,
+            "operating_profit": 446250,
+            "operating_margin_percent": 21.89,
+            "depreciation_amortisation": 148547,
+            "ebitda": 594797,
+            "interest_payable": 3004,
+            "interest_coverage_ratio": 148.55,
+            "profit_before_tax": 443954,
+            "corporation_tax": 83194,
+            "effective_tax_rate_percent": 18.74,
+            "net_profit": 360760,
+            "net_margin_percent": 17.69
+          },
+          "2024": {
+            "revenue": 1636215,
+            "revenue_yoy_growth_percent": -19.75,
+            "cost_of_sales": 861049,
+            "gross_profit": 775166,
+            "gross_margin_percent": 47.38,
+            "administrative_expenses": 662120,
+            "operating_profit": 113046,
+            "operating_margin_percent": 6.91,
+            "depreciation_amortisation": 145685,
+            "ebitda": 258731,
+            "interest_payable": 1836,
+            "interest_coverage_ratio": 61.57,
+            "profit_before_tax": 118786,
+            "corporation_tax": 30830,
+            "effective_tax_rate_percent": 25.95,
+            "net_profit": 87956,
+            "net_margin_percent": 5.38
+          },
+          "2025": {
+            "revenue": 1777001,
+            "revenue_yoy_growth_percent": 8.6,
+            "cost_of_sales": 995977,
+            "gross_profit": 781024,
+            "gross_margin_percent": 43.95,
+            "administrative_expenses": 527166,
+            "operating_profit": 253858,
+            "operating_margin_percent": 14.29,
+            "depreciation_amortisation": 92854,
+            "ebitda": 346712,
+            "interest_payable": 0,
+            "interest_coverage_ratio": null,
+            "profit_before_tax": 258124,
+            "corporation_tax": 64813,
+            "effective_tax_rate_percent": 25.11,
+            "net_profit": 193311,
+            "net_margin_percent": 10.88
+          },
+          "2026": {
+            "revenue": 1869199.89,
+            "revenue_yoy_growth_percent": 5.19,
+            "cost_of_sales": 971147.23,
+            "gross_profit": 898052.66,
+            "gross_margin_percent": 48.04,
+            "administrative_expenses": 714144.14,
+            "operating_profit": 183908.52,
+            "operating_margin_percent": 9.84,
+            "depreciation_amortisation": null,
+            "ebitda": 183908.52,
+            "interest_payable": 3183.95,
+            "interest_coverage_ratio": 57.76,
+            "profit_before_tax": 183908.52,
+            "corporation_tax": null,
+            "effective_tax_rate_percent": null,
+            "net_profit": 183908.52,
+            "net_margin_percent": 9.84
+          }
+        },
+        "cagr": {
+          "revenue_cagr_percent": -3.35,
+          "gross_profit_cagr_percent": -6.81,
+          "operating_profit_cagr_percent": -28.58,
+          "period_years": 4
+        },
+        "cost_structure": {
+          "cost_of_sales_percent_revenue": 51.96,
+          "overheads_percent_revenue": 38.21,
+          "staff_costs_percent_revenue": 11.13,
+          "director_costs_percent_revenue": 0,
+          "top_5_overheads": [
+            {
+              "category": "Staff Wages & Salaries",
+              "value": 208119.82,
+              "percent_of_overheads": 29.14
+            },
+            {
+              "category": "Motor Expenses",
+              "value": 191698.32,
+              "percent_of_overheads": 26.84
+            },
+            {
+              "category": "Professional Fees",
+              "value": 93574.08,
+              "percent_of_overheads": 13.1
+            },
+            {
+              "category": "Rent & Rates",
+              "value": 46758.59,
+              "percent_of_overheads": 6.55
+            },
+            {
+              "category": "Other Overheads",
+              "value": 33283.36,
+              "percent_of_overheads": 4.66
+            }
+          ],
+          "cost_base_classification": "mixed"
+        },
+        "earnings_quality": {
+          "net_profit_tracks_operating_profit": true,
+          "exceptional_items_identified": [],
+          "tax_rate_consistent": false,
+          "ebitda_latest": 183908.52,
+          "ebitda_trend": "declining",
+          "limitations": [
+            "Depreciation not disclosed for 2026 management accounts",
+            "Director remuneration not disclosed for 2026",
+            "Corporation tax not calculated for 2026"
+          ]
+        },
+        "debt_service": {
+          "latest_interest_coverage": 57.76,
+          "interest_coverage_trend": "deteriorating",
+          "additional_debt_capacity_assessment": "Moderate. While interest coverage remains healthy, the significant decline in EBITDA from 823k to 184k limits the quantum of senior debt the business can comfortably service."
+        },
+        "key_findings": [
+          "Revenue has experienced a negative CAGR of 3.35% over the 4-year period, indicating a contracting market presence or loss of key contracts.",
+          "Operating margins have collapsed from 32.97% in 2022 to 9.84% in 2026, driven by rising overheads and fluctuating cost of sales.",
+          "Staff costs and subcontractor usage have shifted significantly; 2026 shows a heavy reliance on subcontractors (485k) compared to previous years.",
+          "Motor expenses represent a massive 26.8% of total overheads, reflecting the logistical intensity of scaffolding operations.",
+          "The business maintains a strong cash position historically, though the 2026 management accounts lack a full balance sheet snapshot to confirm current liquidity.",
+          "Director remuneration was exceptionally high in 2024 (130k) compared to other years, suggesting potential discretionary drawings.",
+          "Customer concentration is a major risk, with one debtor (Equans Regeneration) representing nearly 30% of the top 10 turnover."
+        ],
+        "red_flags": [
+          "Significant collapse in EBITDA from 823,615 in 2022 to 183,908 in 2026.",
+          "Negative Revenue CAGR over the analysis period.",
+          "High customer concentration risk with top 3 debtors representing over 60% of the ledger.",
+          "Potential collection risk on a 91k balance from Worldwide Scaffold with no activity since late 2025."
+        ],
+        "narrative": "Ideal Scaffolding presents a financial profile of a business that was highly profitable in 2022 but has since struggled with significant margin compression and declining earnings. Revenue peaked in 2022 at £2.14m and has failed to return to those levels, with 2026 figures suggesting a stagnant trajectory. The most concerning trend is the erosion of the operating margin, which has fallen from nearly 33% to under 10%. This appears to be driven by a combination of rising administrative expenses—specifically professional fees and motor expenses—and a shift in the delivery model towards more expensive subcontractor labour in the most recent period. \n\nFrom an earnings quality perspective, the 2026 EBITDA of £183.9k (noting the absence of depreciation data) is a fraction of the £823.6k generated four years prior. This suggests the business is currently operating at a much lower level of efficiency. While the company remains profitable and has historically maintained a clean balance sheet with low long-term debt, the downward trend in cash generation capacity is a significant risk for an acquirer. The high customer concentration, particularly with Equans Regeneration, further increases the vulnerability of the current revenue stream. A buyer would need to investigate whether the 2022 performance was an anomaly or if the subsequent decline is due to specific operational failures that can be reversed. Without a clear plan to restore margins to the 20% range, the current valuation should be heavily scrutinised against the declining EBITDA trend."
+      }
+    },
+    "financialDataSnapshot": {
+      "balanceSheet": {
+        "id": 4881,
+        "financialPeriodId": 7964,
+        "targetCompanyId": 1879,
+        "intangibleAssets": null,
+        "tangibleFixedAssets": null,
+        "freeholdProperty": null,
+        "leaseholdProperty": null,
+        "plantMachinery": null,
+        "fixturesFittings": null,
+        "motorVehicles": null,
+        "computerEquipment": null,
+        "stockInventory": null,
+        "tradeDebtors": null,
+        "prepayments": null,
+        "amountsOwedByDirectors": null,
+        "amountsOwedByConnectedCompanies": null,
+        "directorsCurrentAccount": null,
+        "otherDebtors": null,
+        "cashAtBank": null,
+        "totalCurrentAssets": null,
+        "tradeCreditors": null,
+        "taxationSocialSecurity": null,
+        "vatPayable": null,
+        "corporationTaxDue": null,
+        "bankLoansOverdraftCurrent": null,
+        "hirePurchaseCurrent": null,
+        "accruals": null,
+        "amountsOwedToDirectors": null,
+        "otherCreditors": null,
+        "totalCurrentLiabilities": null,
+        "bankLoansLongTerm": null,
+        "hirePurchaseLongTerm": null,
+        "deferredTaxation": null,
+        "otherLongTermDebt": null,
+        "totalLongTermLiabilities": null,
+        "shareCapital": null,
+        "retainedEarnings": "128124.9",
+        "totalEquity": "128124.9",
+        "debtorsList": null,
+        "creditorsList": null,
+        "fixedAssetsDetail": null,
+        "sourceDocumentId": 5854,
+        "createdAt": "2026-07-30T01:18:58.970Z",
+        "updatedAt": "2026-07-30T01:19:29.112Z",
+        "fiscalYear": "2026",
+        "periodEnd": "2026-04-30",
+        "sourceTier": "management",
+        "_label": "CURRENT POSITION"
+      },
+      "fixedAssets": {
+        "id": 26,
+        "targetCompanyId": 1879,
+        "reportDate": "2026-03-31",
+        "totalGrossBookValue": "1147436.43",
+        "totalAccumulatedDepreciation": "996520.73",
+        "totalNetBookValue": "150915.69",
+        "propertyGrossValue": "0",
+        "propertyNetBookValue": "0",
+        "plantMachineryGrossValue": "681223.8",
+        "plantMachineryNetBookValue": "33430.18",
+        "vehiclesGrossValue": "434883.51",
+        "vehiclesNetBookValue": "106672",
+        "itEquipmentGrossValue": "19516.16",
+        "itEquipmentNetBookValue": "9213.93",
+        "otherAssetsGrossValue": "11812.96",
+        "otherAssetsNetBookValue": "1599.58",
+        "refinanceableAssetsValue": "140102.18",
+        "fullyDepreciatedStillInUse": "815343.33",
+        "assetItems": [
+          {
+            "description": "PJ71KWU - DAF LF 260",
+            "category": "Motor Vehicles",
+            "purchase_date": "2026-01-29",
+            "cost": 38500,
+            "accumulated_depreciation": 9625,
+            "net_book_value": 28875,
+            "depreciation_rate": 25,
+            "depreciation_method": "Straight-line",
+            "location": null,
+            "condition": null
+          },
+          {
+            "description": "EO25XKZ - RANGER P703 WILDTRACK",
+            "category": "Motor Vehicles",
+            "purchase_date": "2025-03-10",
+            "cost": 44665,
+            "accumulated_depreciation": 22332,
+            "net_book_value": 22333,
+            "depreciation_rate": 25,
+            "depreciation_method": "Straight-line",
+            "location": null,
+            "condition": null
+          },
+          {
+            "description": "PN72FXX - DAF LF 260 FLAT",
+            "category": "Motor Vehicles",
+            "purchase_date": "2025-03-26",
+            "cost": 46500,
+            "accumulated_depreciation": 23250,
+            "net_book_value": 23250,
+            "depreciation_rate": 25,
+            "depreciation_method": "Straight-line",
+            "location": null,
+            "condition": null
+          },
+          {
+            "description": "AD72TVA - FORD RANGER PICK-UP",
+            "category": "Motor Vehicles",
+            "purchase_date": "2025-02-05",
+            "cost": 23495,
+            "accumulated_depreciation": 11748,
+            "net_book_value": 11747,
+            "depreciation_rate": 25,
+            "depreciation_method": "Straight-line",
+            "location": null,
+            "condition": null
+          },
+          {
+            "description": "Scaffold boards",
+            "category": "Plant & Machinery",
+            "purchase_date": "2025-08-12",
+            "cost": 13030,
+            "accumulated_depreciation": 2606,
+            "net_book_value": 10424,
+            "depreciation_rate": 20,
+            "depreciation_method": "Straight-line",
+            "location": null,
+            "condition": null
+          },
+          {
+            "description": "FN68HPV - HGV 12 TONNE",
+            "category": "Motor Vehicles",
+            "purchase_date": "2024-08-09",
+            "cost": 20000,
+            "accumulated_depreciation": 10000,
+            "net_book_value": 10000,
+            "depreciation_rate": 25,
+            "depreciation_method": "Straight-line",
+            "location": null,
+            "condition": null
+          },
+          {
+            "description": "AV22UVZ - TRANSIT CONNECT VAN",
+            "category": "Motor Vehicles",
+            "purchase_date": "2025-02-13",
+            "cost": 12995,
+            "accumulated_depreciation": 6498,
+            "net_book_value": 6497,
+            "depreciation_rate": 25,
+            "depreciation_method": "Straight-line",
+            "location": null,
+            "condition": null
+          },
+          {
+            "description": "Scaffold boards",
+            "category": "Plant & Machinery",
+            "purchase_date": "2025-10-27",
+            "cost": 5250,
+            "accumulated_depreciation": 1050,
+            "net_book_value": 4200,
+            "depreciation_rate": 20,
+            "depreciation_method": "Straight-line",
+            "location": null,
+            "condition": null
+          },
+          {
+            "description": "FORKLIFT",
+            "category": "Plant & Machinery",
+            "purchase_date": "2024-06-27",
+            "cost": 3800,
+            "accumulated_depreciation": 1520,
+            "net_book_value": 2280,
+            "depreciation_rate": 20,
+            "depreciation_method": "Straight-line",
+            "location": null,
+            "condition": null
+          },
+          {
+            "description": "WU67ENO - VAUXHALL CORSA 1.3",
+            "category": "Motor Vehicles",
+            "purchase_date": "2025-03-31",
+            "cost": 4195,
+            "accumulated_depreciation": 2098,
+            "net_book_value": 2097,
+            "depreciation_rate": 25,
+            "depreciation_method": "Straight-line",
+            "location": null,
+            "condition": null
+          },
+          {
+            "description": "Galv Tubes",
+            "category": "Plant & Machinery",
+            "purchase_date": "2025-01-31",
+            "cost": 6049.98,
+            "accumulated_depreciation": 4030,
+            "net_book_value": 2019.98,
+            "depreciation_rate": 33.3,
+            "depreciation_method": "Straight-line",
+            "location": null,
+            "condition": null
+          },
+          {
+            "description": "Digi DL Remote",
+            "category": "Plant & Machinery",
+            "purchase_date": "2026-02-27",
+            "cost": 2310,
+            "accumulated_depreciation": 462,
+            "net_book_value": 1848,
+            "depreciation_rate": 20,
+            "depreciation_method": "Straight-line",
+            "location": null,
+            "condition": null
+          },
+          {
+            "description": "2 X Big Ben Anchor Test Kit",
+            "category": "Plant & Machinery",
+            "purchase_date": "2025-10-14",
+            "cost": 2300,
+            "accumulated_depreciation": 460,
+            "net_book_value": 1840,
+            "depreciation_rate": 20,
+            "depreciation_method": "Straight-line",
+            "location": null,
+            "condition": null
+          },
+          {
+            "description": "40 x ladder guards",
+            "category": "Plant & Machinery",
+            "purchase_date": "2026-03-16",
+            "cost": 2400,
+            "accumulated_depreciation": 480,
+            "net_book_value": 1920,
+            "depreciation_rate": 20,
+            "depreciation_method": "Straight-line",
+            "location": null,
+            "condition": null
+          },
+          {
+            "description": "Scaffold boards",
+            "category": "Plant & Machinery",
+            "purchase_date": "2025-10-27",
+            "cost": 2400,
+            "accumulated_depreciation": 480,
+            "net_book_value": 1920,
+            "depreciation_rate": 20,
+            "depreciation_method": "Straight-line",
+            "location": null,
+            "condition": null
+          }
+        ],
+        "propertyDetails": [],
+        "vehicleDetails": [
+          {
+            "make_model": "PJ71KWU - DAF LF 260",
+            "registration": "PJ71KWU",
+            "purchase_date": "2026-01-29",
+            "cost": 38500,
+            "net_book_value": 28875,
+            "market_value": null
+          },
+          {
+            "make_model": "EO25XKZ - RANGER P703 WILDTRACK",
+            "registration": "EO25XKZ",
+            "purchase_date": "2025-03-10",
+            "cost": 44665,
+            "net_book_value": 22333,
+            "market_value": null
+          },
+          {
+            "make_model": "PN72FXX - DAF LF 260 FLAT",
+            "registration": "PN72FXX",
+            "purchase_date": "2025-03-26",
+            "cost": 46500,
+            "net_book_value": 23250,
+            "market_value": null
+          },
+          {
+            "make_model": "AD72TVA - FORD RANGER PICK-UP",
+            "registration": "AD72TVA",
+            "purchase_date": "2025-02-05",
+            "cost": 23495,
+            "net_book_value": 11747,
+            "market_value": null
+          },
+          {
+            "make_model": "FN68HPV - HGV 12 TONNE",
+            "registration": "FN68HPV",
+            "purchase_date": "2024-08-09",
+            "cost": 20000,
+            "net_book_value": 10000,
+            "market_value": null
+          }
+        ],
+        "sourceDocumentId": 5856,
+        "createdAt": "2026-07-30T01:19:17.537Z",
+        "updatedAt": "2026-07-30T01:19:17.537Z"
+      }
+    },
+    "notes": null,
+    "createdAt": "2026-07-30T01:23:10.335Z",
+    "updatedAt": "2026-07-30T01:23:10.335Z",
+    "adjustments": [
+      {
+        "id": 2038,
+        "dealModelId": 488,
+        "sourceExpertResultId": 812,
+        "adjustmentType": "add_back",
+        "category": "one_off_cost",
+        "description": "Professional Fees Normalisation",
+        "amount": "75000",
+        "amountsByYear": {
+          "2022": 0,
+          "2023": 0,
+          "2024": 0,
+          "2025": 0,
+          "2026": 75000
+        },
+        "sourceExpert": "qoe",
+        "reasoning": "Professional fees spiked to £93,574 in 2026 from a historical average of ~£18k, likely related to transaction preparation or one-off legal matters.",
+        "confidence": "medium",
+        "defensibilityScore": 6,
+        "caseForInclusion": "These fees are significantly above the historical run-rate and represent non-operational costs that a buyer would not incur.",
+        "caseForExclusion": "The seller may argue these fees relate to ongoing compliance or new regulatory requirements in the scaffolding sector.",
+        "status": "suggested",
+        "isAccepted": false,
+        "isManual": false,
+        "sortOrder": 0,
+        "createdAt": "2026-07-30T01:23:10.348Z",
+        "updatedAt": "2026-07-30T01:23:10.348Z"
+      },
+      {
+        "id": 2039,
+        "dealModelId": 488,
+        "sourceExpertResultId": 812,
+        "adjustmentType": "deduction",
+        "category": "missing_management",
+        "description": "Replacement Management Cost (MD/FD)",
+        "amount": "57500",
+        "amountsByYear": null,
+        "sourceExpert": "qoe",
+        "reasoning": "The MD (Mark Jones) performs MD, Sales, and Rail Sentinel roles. A replacement manager for a £1.8m revenue business is benchmarked at £57,500 (mid-point of £45k-£70k range).",
+        "confidence": "high",
+        "defensibilityScore": 9,
+        "caseForInclusion": "The current director remuneration is not disclosed for 2026, and the business is heavily dependent on the owner's multi-role involvement.",
+        "caseForExclusion": "The seller might argue the existing General Manager (Martin Ward) could absorb these duties without a new high-level hire.",
+        "status": "suggested",
+        "isAccepted": false,
+        "isManual": false,
+        "sortOrder": 1,
+        "createdAt": "2026-07-30T01:23:10.352Z",
+        "updatedAt": "2026-07-30T01:23:10.352Z"
+      },
+      {
+        "id": 2040,
+        "dealModelId": 488,
+        "sourceExpertResultId": 812,
+        "adjustmentType": "deduction",
+        "category": "deferred_maintenance",
+        "description": "Deferred Maintenance / Scaffolding Replacement",
+        "amount": "92854",
+        "amountsByYear": null,
+        "sourceExpert": "qoe",
+        "reasoning": "71% of assets are fully depreciated. The 2025 depreciation charge of £92,854 is used as a proxy for the minimum annual maintenance capex required to sustain the aging fleet.",
+        "confidence": "medium",
+        "defensibilityScore": 7,
+        "caseForInclusion": "The aging scaffolding stock represents a 'capex cliff' that will require immediate and ongoing cash outlay to maintain operational capacity.",
+        "caseForExclusion": "The seller may claim that scaffolding has a longer useful life than accounting depreciation suggests and current stock is fit for purpose.",
+        "status": "suggested",
+        "isAccepted": false,
+        "isManual": false,
+        "sortOrder": 2,
+        "createdAt": "2026-07-30T01:23:10.442Z",
+        "updatedAt": "2026-07-30T01:23:10.442Z"
+      },
+      {
+        "id": 2041,
+        "dealModelId": 488,
+        "sourceExpertResultId": 812,
+        "adjustmentType": "deduction",
+        "category": "bad_debt_provision",
+        "description": "Bad Debt Provision - Worldwide Scaffold",
+        "amount": "91726.7",
+        "amountsByYear": {
+          "2022": 0,
+          "2023": 0,
+          "2024": 0,
+          "2025": 0,
+          "2026": 91726.7
+        },
+        "sourceExpert": "qoe",
+        "reasoning": "A balance of £91,726.70 from Worldwide Scaffold and Access LTD has had no activity since November 2025 and is flagged as a collection risk.",
+        "confidence": "high",
+        "defensibilityScore": 8,
+        "caseForInclusion": "This aged debt is highly likely to be unrecoverable given the lack of activity for over 6 months in a high-risk sector.",
+        "caseForExclusion": "The seller may argue the debt is still being negotiated or is subject to a payment plan not yet reflected in the ledger.",
+        "status": "suggested",
+        "isAccepted": false,
+        "isManual": false,
+        "sortOrder": 3,
+        "createdAt": "2026-07-30T01:23:10.447Z",
+        "updatedAt": "2026-07-30T01:23:10.447Z"
+      },
+      {
+        "id": 2042,
+        "dealModelId": 488,
+        "sourceExpertResultId": 812,
+        "adjustmentType": "deduction",
+        "category": "replacement_salary",
+        "description": "Director replacement cost: Mark Jones (current: 0, market: 57500)",
+        "amount": "57500",
+        "amountsByYear": null,
+        "sourceExpert": "qoe",
+        "reasoning": "Director Mark Jones current salary is below market rate; replacement would cost more",
+        "confidence": "medium",
+        "defensibilityScore": 6,
+        "caseForInclusion": "Director compensation of £0 differs from the UK SME market rate of £57,500 for this role and company size.",
+        "caseForExclusion": "Market rate estimates are benchmarks, not exact figures. The seller may argue the director's specific skills or responsibilities justify their current compensation.",
+        "status": "suggested",
+        "isAccepted": false,
+        "isManual": false,
+        "sortOrder": 4,
+        "createdAt": "2026-07-30T01:23:10.465Z",
+        "updatedAt": "2026-07-30T01:23:10.465Z"
+      }
+    ],
+    "fundingLines": [
+      {
+        "id": 1372,
+        "dealModelId": 488,
+        "fundingType": "asset_finance",
+        "label": "Asset Finance (Plant, Machinery & Vehicles)",
+        "assetBaseValue": "140102.18",
+        "ltvPercent": "60",
+        "availableAmount": "84061",
+        "amountUsed": "0",
+        "interestRate": "6.0",
+        "arrangementFeePercent": null,
+        "termMonths": 60,
+        "monthlyRepayment": null,
+        "isDebt": true,
+        "repaymentStructure": "amortizing",
+        "isActive": false,
+        "notes": null,
+        "sortOrder": 0,
+        "createdAt": "2026-07-30T01:23:10.471Z",
+        "updatedAt": "2026-07-30T01:23:10.471Z"
+      },
+      {
+        "id": 1373,
+        "dealModelId": 488,
+        "fundingType": "cash_equity",
+        "label": "Cash Equity (Cash to Introduce)",
+        "assetBaseValue": null,
+        "ltvPercent": null,
+        "availableAmount": null,
+        "amountUsed": "0",
+        "interestRate": null,
+        "arrangementFeePercent": null,
+        "termMonths": null,
+        "monthlyRepayment": null,
+        "isDebt": false,
+        "repaymentStructure": "amortizing",
+        "isActive": true,
+        "notes": null,
+        "sortOrder": 1,
+        "createdAt": "2026-07-30T01:23:10.476Z",
+        "updatedAt": "2026-07-30T01:23:10.476Z"
+      }
+    ],
+    "sellerPayments": [],
+    "contingentConsideration": []
+  },
+  "calculations": {
+    "adjustedEbitdaByYear": {
+      "2022": 823615,
+      "2023": 594797,
+      "2024": 258731,
+      "2025": 346712,
+      "2026": 183908.52
+    },
+    "averageAdjustedEbitda": 263117.17333333334,
+    "enterpriseValue": 526234.3466666667,
+    "offerPrice": 472573.3466666667,
+    "impliedMultiple": null,
+    "feeLegalDd": 25000,
+    "feeAccountingDd": 15000,
+    "feeLoanArrangement": 0,
+    "feeDealMaker": 0,
+    "customFeeAmounts": [],
+    "totalFees": 40000,
+    "totalFundingRequired": 512573.3466666667,
+    "fundingLines": [
+      {
+        "availableAmount": 0,
+        "monthlyRepayment": 0,
+        "annualRepayment": 0,
+        "arrangementFee": 0
+      },
+      {
+        "availableAmount": 0,
+        "monthlyRepayment": 0,
+        "annualRepayment": 0,
+        "arrangementFee": 0
+      }
+    ],
+    "totalFunded": 0,
+    "fundingGap": 472573.35,
+    "totalAnnualDebtService": 0,
+    "sellerAnnualDebtService": 0,
+    "earnoutAnnualDebtService": 0,
+    "revolvingInterestAnnual": 0,
+    "receivablesInterestAnnual": 0,
+    "valuationEbitda": 263117.17333333334,
+    "paymentCoverRatio": null,
+    "paymentCoverRating": "no_debt"
+  }
+}

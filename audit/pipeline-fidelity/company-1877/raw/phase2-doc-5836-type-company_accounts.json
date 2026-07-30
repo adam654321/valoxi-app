@@ -1,0 +1,174 @@
+{
+  "document": "company_accounts",
+  "source": "statutory_accounts",
+  "profit_and_loss": {
+    "document": "balance_sheet",
+    "source": "management",
+    "years_covered": [
+      2025
+    ],
+    "period_ends": {
+      "2025": "2025-09-08"
+    },
+    "months_covered": {
+      "2025": null
+    },
+    "report_date": "2025-09-08",
+    "years": {
+      "2025": {
+        "year": 2025,
+        "profit_and_loss": {
+          "revenue": null,
+          "cost_of_sales": null,
+          "gross_profit": null,
+          "administrative_expenses": null,
+          "depreciation_amortisation": null,
+          "other_operating_income": null,
+          "operating_profit": null,
+          "interest_receivable": null,
+          "interest_payable": null,
+          "profit_before_tax": null,
+          "corporation_tax": 1208.26,
+          "net_profit": 183126.57
+        },
+        "revenue_breakdown": {
+          "by_product": {},
+          "by_segment": {}
+        },
+        "cost_of_sales_breakdown": {
+          "direct_materials": null,
+          "direct_labour": null,
+          "subcontractor_costs": null,
+          "other_direct_costs": null
+        },
+        "overheads_breakdown": {
+          "staff_wages_salaries": 33571.85,
+          "directors_salaries": null,
+          "directors_pension": null,
+          "employers_national_insurance": 5349.75,
+          "staff_pension_contributions": 3147.43,
+          "staff_training_recruitment": null,
+          "use_of_home_as_office": null,
+          "rent_rates": null,
+          "utilities": null,
+          "insurance": null,
+          "accountancy_bookkeeping": null,
+          "professional_fees": null,
+          "software_subscriptions": null,
+          "computer_costs": null,
+          "it_support_hosting": null,
+          "telecommunications": null,
+          "printing_stationery": null,
+          "postage_courier": null,
+          "subscriptions_memberships": null,
+          "bank_charges": null,
+          "advertising_marketing": null,
+          "travel_subsistence": null,
+          "motor_expenses": null,
+          "repairs_maintenance": null,
+          "depreciation": null,
+          "amortisation": null,
+          "other_overheads": null
+        },
+        "total_staff_costs": 42069.03,
+        "total_directors_remuneration": null,
+        "dividends_paid": 75140.85,
+        "exceptional_items": [],
+        "financial_ratios": {
+          "gross_margin_percent": null,
+          "net_margin_percent": null,
+          "interest_coverage_ratio": null
+        }
+      }
+    },
+    "summary_insights": [
+      "The company reports a strong current year earnings figure of £183,126.57 as of September 2025.",
+      "Net assets are healthy at £622,963.28, supported by a significant tangible asset base of £502,332.22.",
+      "The balance sheet shows substantial inter-company and related party lending, including over £170,000 in various loans to A&M and AS entities.",
+      "Liquidity appears stable with a cash balance of £187,479.57, though this is offset by £101,313.07 in customer deposits held as liabilities.",
+      "Significant long-term liabilities exist in the form of hire purchase accounts (£302,670.90), indicating heavy investment in the vehicle fleet.",
+      "Directors have taken dividends of £75,140.85 during the period, alongside a director's loan account debit of £16,056.67."
+    ]
+  },
+  "balance_sheet": {
+    "document": "balance_sheet",
+    "source": "management",
+    "years_covered": [
+      2025
+    ],
+    "period_ends": {
+      "2025": "2025-09-08"
+    },
+    "months_covered": {
+      "2025": null
+    },
+    "report_date": "2025-09-08",
+    "years": {
+      "2025": {
+        "year": 2025,
+        "balance_sheet": {
+          "fixed_assets": {
+            "intangible_assets": null,
+            "tangible_assets": 502332.22,
+            "freehold_property": null,
+            "leasehold_property": null,
+            "plant_machinery": 2008,
+            "fixtures_fittings": 12786.16,
+            "motor_vehicles": 297992.12,
+            "computer_equipment": 12798.44
+          },
+          "current_assets": {
+            "stock": null,
+            "trade_debtors": 226803.01,
+            "prepayments": 499,
+            "amounts_owed_by_directors": null,
+            "amounts_owed_by_connected_companies": 122038.22,
+            "directors_current_account": null,
+            "other_debtors": 5140.1,
+            "cash_at_bank": 187479.57,
+            "total": 419921.68
+          },
+          "current_liabilities": {
+            "trade_creditors": 14122.57,
+            "taxation_social_security": 22742.17,
+            "vat_payable": 7645.14,
+            "corporation_tax": 1208.26,
+            "bank_loans_current": null,
+            "hire_purchase_current": null,
+            "accruals": 7412.48,
+            "amounts_owed_to_directors": -16056.67,
+            "other_creditors": 58803.27,
+            "total": 95877.22
+          },
+          "long_term_liabilities": {
+            "bank_loans": 5140.73,
+            "hire_purchase_long_term": -167914.37,
+            "deferred_taxation": 46935,
+            "other_debt": 319252.04,
+            "total": 203413.4
+          },
+          "equity": {
+            "share_capital": 100,
+            "retained_earnings": 622863.28,
+            "total": 622963.28
+          }
+        },
+        "financial_ratios": {
+          "current_ratio": 4.379785730000001,
+          "quick_ratio": 4.320970000000001,
+          "net_assets_growth_percent": null,
+          "gearing_ratio_percent": 32.65255055
+        }
+      }
+    },
+    "summary_insights": [
+      "The company maintains a very strong liquidity position with a current ratio of 4.38 and a quick ratio of 4.32, indicating ample coverage for short-term obligations.",
+      "The asset base is heavily weighted towards tangible assets (£502k), primarily driven by a significant motor vehicle fleet with a net book value of nearly £298k.",
+      "There is significant intercompany activity, with over £122k in loans to connected companies and directors, which should be monitored for recoverability.",
+      "Net current assets are robust at £324k, providing a solid buffer for operational working capital requirements.",
+      "The capital structure is healthy, with total equity of £623k largely comprised of retained earnings, though this is offset by a high volume of director drawings (£75k).",
+      "Long-term liabilities include substantial hire purchase and lease obligations, though the net gearing ratio remains manageable at approximately 32.7%.",
+      "The balance sheet shows a complex mix of director-related transactions, including a credit balance on the Directors' Loan Account and significant dividends/drawings."
+    ]
+  }
+}

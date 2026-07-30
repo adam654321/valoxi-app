@@ -1,0 +1,156 @@
+{
+  "expert": "financial",
+  "company_name": "[AUDIT-228] Thor-CON",
+  "analysis_date": "2025-09-08",
+  "score": 72,
+  "confidence": "high",
+  "yearly_metrics": {
+    "2022": {
+      "revenue": 1097307,
+      "revenue_yoy_growth_percent": null,
+      "cost_of_sales": 440662,
+      "gross_profit": 656645,
+      "gross_margin_percent": 59.84,
+      "administrative_expenses": 554473,
+      "operating_profit": 126779,
+      "operating_margin_percent": 11.55,
+      "depreciation_amortisation": 10960,
+      "ebitda": 137739,
+      "interest_payable": 7720,
+      "interest_coverage_ratio": 16.42,
+      "profit_before_tax": 119062,
+      "corporation_tax": 29820,
+      "effective_tax_rate_percent": 25.05,
+      "net_profit": 89242,
+      "net_margin_percent": 8.13
+    },
+    "2023": {
+      "revenue": 1441671,
+      "revenue_yoy_growth_percent": 31.38,
+      "cost_of_sales": 538883,
+      "gross_profit": 902788,
+      "gross_margin_percent": 62.62,
+      "administrative_expenses": 730019,
+      "operating_profit": 172769,
+      "operating_margin_percent": 11.98,
+      "depreciation_amortisation": 10824,
+      "ebitda": 183593,
+      "interest_payable": 4524,
+      "interest_coverage_ratio": 38.19,
+      "profit_before_tax": 168306,
+      "corporation_tax": 31780,
+      "effective_tax_rate_percent": 18.88,
+      "net_profit": 136526,
+      "net_margin_percent": 9.47
+    },
+    "2024": {
+      "revenue": 1695203,
+      "revenue_yoy_growth_percent": 17.59,
+      "cost_of_sales": 632814,
+      "gross_profit": 1062389,
+      "gross_margin_percent": 62.67,
+      "administrative_expenses": 985102,
+      "operating_profit": 77287,
+      "operating_margin_percent": 4.56,
+      "depreciation_amortisation": 51911,
+      "ebitda": 129198,
+      "interest_payable": 6761,
+      "interest_coverage_ratio": 11.43,
+      "profit_before_tax": 71038,
+      "corporation_tax": 17148,
+      "effective_tax_rate_percent": 24.14,
+      "net_profit": 53890,
+      "net_margin_percent": 3.18
+    },
+    "2025": {
+      "revenue": 1944079,
+      "revenue_yoy_growth_percent": 14.68,
+      "cost_of_sales": 1127175.46,
+      "gross_profit": 816903.54,
+      "gross_margin_percent": 42.02,
+      "administrative_expenses": 538499.64,
+      "operating_profit": 278403.9,
+      "operating_margin_percent": 14.32,
+      "depreciation_amortisation": null,
+      "ebitda": 278403.9,
+      "interest_payable": 3254.93,
+      "interest_coverage_ratio": 85.53,
+      "profit_before_tax": 279164.69,
+      "corporation_tax": null,
+      "effective_tax_rate_percent": null,
+      "net_profit": 279164.69,
+      "net_margin_percent": 14.36
+    }
+  },
+  "cagr": {
+    "revenue_cagr_percent": 21,
+    "gross_profit_cagr_percent": 7.55,
+    "operating_profit_cagr_percent": 30,
+    "period_years": 3
+  },
+  "cost_structure": {
+    "cost_of_sales_percent_revenue": 57.98,
+    "overheads_percent_revenue": 27.7,
+    "staff_costs_percent_revenue": 10.98,
+    "director_costs_percent_revenue": 0.47,
+    "top_5_overheads": [
+      {
+        "category": "Staff Wages & Salaries",
+        "value": 194583.37,
+        "percent_of_overheads": 36.13
+      },
+      {
+        "category": "Motor Expenses",
+        "value": 126444.1,
+        "percent_of_overheads": 23.48
+      },
+      {
+        "category": "Advertising & Marketing",
+        "value": 115375.65,
+        "percent_of_overheads": 21.43
+      },
+      {
+        "category": "Professional Fees",
+        "value": 36281.27,
+        "percent_of_overheads": 6.74
+      },
+      {
+        "category": "Insurance",
+        "value": 33318.71,
+        "percent_of_overheads": 6.19
+      }
+    ],
+    "cost_base_classification": "mixed"
+  },
+  "earnings_quality": {
+    "net_profit_tracks_operating_profit": true,
+    "exceptional_items_identified": [],
+    "tax_rate_consistent": false,
+    "ebitda_latest": 278403.9,
+    "ebitda_trend": "growing",
+    "limitations": [
+      "Depreciation not disclosed for FY2025 management accounts",
+      "Corporation tax not accrued in FY2025 management accounts"
+    ]
+  },
+  "debt_service": {
+    "latest_interest_coverage": 85.53,
+    "interest_coverage_trend": "improving",
+    "additional_debt_capacity_assessment": "Strong. High interest coverage and significant EBITDA growth suggest the business can comfortably service additional acquisition debt."
+  },
+  "key_findings": [
+    "Revenue has demonstrated consistent organic growth, achieving a 21% CAGR over the last three years.",
+    "Operating margins recovered significantly in FY2025 (14.3%) after a sharp dip in FY2024 (4.6%) caused by a spike in administrative expenses.",
+    "The cost of sales structure shifted in FY2025, with a higher proportion of direct labour now recognised within COS rather than overheads.",
+    "Marketing spend has increased substantially, reaching £115k in the latest period, suggesting a high cost of customer acquisition.",
+    "Motor expenses are a major overhead component (£126k), reflecting the fleet-heavy nature of the property maintenance sector.",
+    "The business maintains a healthy interest coverage ratio, indicating low financial risk regarding current debt obligations.",
+    "Net profit for FY2025 is likely overstated as corporation tax has not yet been applied to the management figures."
+  ],
+  "red_flags": [
+    "Significant volatility in administrative expenses between FY2023 and FY2024, which nearly doubled without a proportional revenue increase.",
+    "Gross margin compression in FY2025 (42% vs 62% in FY2024) suggests either pricing pressure or a change in accounting allocation for direct costs.",
+    "High reliance on marketing spend to drive revenue growth, which may impact long-term scalability if acquisition costs continue to rise."
+  ],
+  "narrative": "Thor-CON exhibits a strong growth trajectory within the Home Services sector, with revenue increasing from £1.1m to £1.9m over a three-year period. The financial performance is characterised by robust top-line expansion, though profitability has shown some volatility. In FY2024, the company experienced a significant margin squeeze as administrative expenses outpaced revenue growth, resulting in an operating margin of just 4.6%. However, the FY2025 management accounts indicate a strong recovery in operational efficiency, with operating profit reaching £278k. \n\nThe cost structure is heavily influenced by the mobile nature of the business, with motor expenses and staff costs representing the primary drivers of overheads. There is a notable trend of increasing investment in marketing, which has successfully driven the 'Installation - Air Conditioning' segment to become the dominant revenue stream (74% of FY2025 turnover). While gross margins appear to have contracted in the latest period, this is largely attributable to a more granular allocation of direct labour within the Cost of Sales, rather than a fundamental loss of pricing power. \n\nFrom an earnings quality perspective, the results are generally reliable, though the lack of tax accruals and depreciation in the latest management data requires a pro-forma adjustment for a true valuation. The balance sheet is asset-rich, particularly in motor vehicles, providing good collateral for future financing. Overall, the company presents a scalable platform with strong interest coverage and improving EBITDA, making it an attractive acquisition target provided the marketing-to-revenue efficiency can be maintained."
+}

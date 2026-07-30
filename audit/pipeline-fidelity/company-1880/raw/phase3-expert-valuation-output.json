@@ -1,0 +1,119 @@
+{
+  "expert": "valuation",
+  "company_name": "[AUDIT-89] Innova Design Group Limited",
+  "analysis_date": "2025-05-22",
+  "score": 65,
+  "confidence": "medium",
+  "ebitda_multiple_valuation": {
+    "adjusted_ebitda_base": 109490,
+    "sector_multiple_range": {
+      "low": 2,
+      "mid": 2.75,
+      "high": 3.5
+    },
+    "selected_multiple": 2.5,
+    "multiple_justification": "A multiple of 2.5x is selected, sitting slightly below the sector midpoint. While the company shows impressive gross margin expansion (33.9%) and in-house design capabilities, these are heavily offset by critical risks. The extreme customer concentration (68.7% of debtors from one client) and the 'capex cliff' regarding 12-year-old machinery necessitate a discount from the sector average for a business of this scale.",
+    "premium_factors_applied": [
+      "Significant Gross Margin expansion from 23.6% to 33.9%",
+      "In-house design capability providing higher value-add than pure fabrication",
+      "Strong interest coverage ratio (16.37x) providing debt capacity"
+    ],
+    "discount_factors_applied": [
+      "Critical customer concentration (68.7% of revenue/debtors)",
+      "Aging asset base (66.5% depreciated) requiring imminent replacement",
+      "Revenue volatility with significant year-on-year swings",
+      "Small scale (sub-£5m revenue) limiting buyer pool"
+    ],
+    "enterprise_value_range": {
+      "conservative": 214980,
+      "base": 273725,
+      "optimistic": 383215
+    }
+  },
+  "ev_to_equity_bridge": {
+    "enterprise_value_base": 273725,
+    "plus_cash": 210202,
+    "minus_long_term_debt": 182975,
+    "minus_director_loans": 0,
+    "minus_bad_debt_provision": 52988,
+    "minus_working_capital_adjustment": 0,
+    "equity_value": {
+      "conservative": 189219,
+      "base": 247964,
+      "optimistic": 357454
+    }
+  },
+  "asset_based_valuation": {
+    "net_asset_value": 648347,
+    "property_adjustment": 0,
+    "bad_debt_adjustment": 52988,
+    "adjusted_nav": 595359,
+    "nav_as_floor": true
+  },
+  "revenue_multiple_crosscheck": {
+    "latest_revenue": 4509086,
+    "revenue_multiple_range": {
+      "low": 0.4,
+      "high": 0.8
+    },
+    "implied_ev_range": {
+      "low": 1803634,
+      "high": 3607268
+    }
+  },
+  "valuation_summary": {
+    "recommended_range": {
+      "equity_value_low": 190000,
+      "equity_value_mid": 250000,
+      "equity_value_high": 360000
+    },
+    "primary_methodology": "ebitda_multiple",
+    "cross_check_alignment": "weak"
+  },
+  "sensitivity": {
+    "ebitda_plus_10pct": {
+      "enterprise_value": 301097,
+      "equity_value": 275336
+    },
+    "ebitda_minus_10pct": {
+      "enterprise_value": 246352,
+      "equity_value": 220591
+    },
+    "multiple_plus_half": {
+      "enterprise_value": 328470,
+      "equity_value": 302709
+    },
+    "multiple_minus_half": {
+      "enterprise_value": 218980,
+      "equity_value": 193219
+    },
+    "key_customer_loss_impact": 3095000,
+    "director_replacement_impact": 32360
+  },
+  "seller_expectations": {
+    "likely_seller_expectation_range": {
+      "low": 1000000,
+      "high": 2250000
+    },
+    "seller_anchor_points": [
+      "Reported EBITDA of £218,038 (ignoring market salary adjustments)",
+      "Net Asset Value of £648,347",
+      "Historical peak revenue of £5.75m in 2022",
+      "Emotional value of the 'Innova Design' brand"
+    ],
+    "negotiation_gap_assessment": "There is a significant gap between the earnings-based valuation and the Net Asset Value. The seller is likely to anchor on the NAV of ~£648k as a floor, whereas the adjusted earnings only support an equity value of ~£250k. A buyer will struggle to pay for assets that are not generating a commensurate return on investment."
+  },
+  "key_findings": [
+    "Adjusted EBITDA (£109k) is 50% lower than reported due to under-market director pay and bad debt.",
+    "The business is asset-rich but earnings-poor relative to its capital base.",
+    "Extreme customer concentration (68.7%) makes the business a 'high-risk' acquisition.",
+    "The 2026 cash position of £210,202 (from Risk Expert) provides a significant boost to equity value.",
+    "Revenue multiple cross-check is ignored as it produces values disconnected from the thin operating margins."
+  ],
+  "red_flags": [
+    "19.7% of the sales ledger is 90+ days overdue with documented disputes.",
+    "Core production machinery is over 10 years old and requires replacement.",
+    "Revenue has a negative 4-year CAGR of -0.8%, showing lack of growth."
+  ],
+  "narrative": "The valuation of Innova Design Group Limited presents a classic SME conflict between asset value and earnings power. On an earnings basis, using a normalized EBITDA of £109,490 (which accounts for a market-rate MD salary and bad debt provisions), the business supports an Enterprise Value of approximately £273k at a 2.5x multiple. After bridging for cash (£210,202 from 2026 figures) and debt (£182,975), the resulting Equity Value is £247,964. However, the Net Asset Value stands much higher at over £648k. In such cases, a seller will rarely accept a price below the liquidation value of the assets. A trade buyer may see value in the design IP and the education sector relationships, but the extreme customer concentration and the 'capex cliff' for the Biesse machinery fleet make this a high-risk proposition. The most likely deal structure would involve a base price near the adjusted NAV, but with a significant portion held in escrow or structured as an earn-out contingent on the retention of the primary education-sector client and the successful recovery of the disputed aged debt."
+}

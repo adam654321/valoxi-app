@@ -1,0 +1,258 @@
+{
+  "document": "balance_sheet",
+  "source": "management",
+  "years_covered": [
+    2023,
+    2024,
+    2025,
+    2026
+  ],
+  "period_ends": {
+    "2023": "2023-05-31",
+    "2024": "2024-05-31",
+    "2025": "2025-05-31",
+    "2026": "2026-05-31"
+  },
+  "months_covered": {
+    "2023": 12,
+    "2024": 12,
+    "2025": 12,
+    "2026": 12
+  },
+  "report_date": "2026-06-09",
+  "years": {
+    "2023": {
+      "year": 2023,
+      "balance_sheet": {
+        "fixed_assets": {
+          "intangible_assets": 0,
+          "tangible_assets": 188904.34,
+          "freehold_property": null,
+          "leasehold_property": null,
+          "plant_machinery": 3065.62,
+          "fixtures_fittings": 160.62,
+          "motor_vehicles": 97764.57,
+          "computer_equipment": null
+        },
+        "current_assets": {
+          "stock": 57484,
+          "trade_debtors": 99335.2,
+          "prepayments": 3875,
+          "amounts_owed_by_directors": null,
+          "amounts_owed_by_connected_companies": null,
+          "directors_current_account": null,
+          "other_debtors": -1000,
+          "cash_at_bank": 794127.75,
+          "total": 953821.95
+        },
+        "current_liabilities": {
+          "trade_creditors": 251529.96,
+          "taxation_social_security": 8408.74,
+          "vat_payable": 31614.48,
+          "corporation_tax": 93194.62,
+          "bank_loans_current": null,
+          "hire_purchase_current": null,
+          "accruals": 2400,
+          "amounts_owed_to_directors": null,
+          "other_creditors": 52.64,
+          "total": 387200.44
+        },
+        "long_term_liabilities": {
+          "bank_loans": null,
+          "hire_purchase_long_term": null,
+          "deferred_taxation": null,
+          "other_debt": null,
+          "total": 0
+        },
+        "equity": {
+          "share_capital": 1000,
+          "retained_earnings": 754525.85,
+          "total": 755525.85
+        }
+      },
+      "financial_ratios": {
+        "current_ratio": 2.463380335,
+        "quick_ratio": 2.307494668,
+        "net_assets_growth_percent": null,
+        "gearing_ratio_percent": 0
+      }
+    },
+    "2024": {
+      "year": 2024,
+      "balance_sheet": {
+        "fixed_assets": {
+          "intangible_assets": 0,
+          "tangible_assets": 287714.3,
+          "freehold_property": null,
+          "leasehold_property": null,
+          "plant_machinery": 36983.62,
+          "fixtures_fittings": 120.62,
+          "motor_vehicles": 110150,
+          "computer_equipment": null
+        },
+        "current_assets": {
+          "stock": 61706.16,
+          "trade_debtors": 70248.95,
+          "prepayments": 17326.26,
+          "amounts_owed_by_directors": null,
+          "amounts_owed_by_connected_companies": null,
+          "directors_current_account": null,
+          "other_debtors": -1000,
+          "cash_at_bank": 630284.08,
+          "total": 778565.45
+        },
+        "current_liabilities": {
+          "trade_creditors": 255320.66,
+          "taxation_social_security": 10638.51,
+          "vat_payable": 12365.33,
+          "corporation_tax": 38403.47,
+          "bank_loans_current": null,
+          "hire_purchase_current": null,
+          "accruals": 3300,
+          "amounts_owed_to_directors": null,
+          "other_creditors": 148.52,
+          "total": 320176.49
+        },
+        "long_term_liabilities": {
+          "bank_loans": null,
+          "hire_purchase_long_term": null,
+          "deferred_taxation": null,
+          "other_debt": null,
+          "total": 0
+        },
+        "equity": {
+          "share_capital": 1000,
+          "retained_earnings": 745103.26,
+          "total": 746103.26
+        }
+      },
+      "financial_ratios": {
+        "current_ratio": 2.43167588,
+        "quick_ratio": 2.18795901,
+        "net_assets_growth_percent": -1.2471559,
+        "gearing_ratio_percent": 0
+      }
+    },
+    "2025": {
+      "year": 2025,
+      "balance_sheet": {
+        "fixed_assets": {
+          "intangible_assets": 0,
+          "tangible_assets": 200720.75,
+          "freehold_property": null,
+          "leasehold_property": null,
+          "plant_machinery": 12752.27,
+          "fixtures_fittings": 90.62,
+          "motor_vehicles": 110150,
+          "computer_equipment": null
+        },
+        "current_assets": {
+          "stock": 72169.55,
+          "trade_debtors": 118804.34,
+          "prepayments": 16187.94,
+          "amounts_owed_by_directors": null,
+          "amounts_owed_by_connected_companies": null,
+          "directors_current_account": null,
+          "other_debtors": 3360,
+          "cash_at_bank": 766991.25,
+          "total": 977513.08
+        },
+        "current_liabilities": {
+          "trade_creditors": 186931.09,
+          "taxation_social_security": 9708.96,
+          "vat_payable": 87560.96,
+          "corporation_tax": 50427.13,
+          "bank_loans_current": null,
+          "hire_purchase_current": null,
+          "accruals": 3400,
+          "amounts_owed_to_directors": null,
+          "other_creditors": 148.52,
+          "total": 338176.66
+        },
+        "long_term_liabilities": {
+          "bank_loans": null,
+          "hire_purchase_long_term": null,
+          "deferred_taxation": null,
+          "other_debt": null,
+          "total": 0
+        },
+        "equity": {
+          "share_capital": 1000,
+          "retained_earnings": 839057.17,
+          "total": 840057.17
+        }
+      },
+      "financial_ratios": {
+        "current_ratio": 2.89053975,
+        "quick_ratio": 2.61932801,
+        "net_assets_growth_percent": 12.592615,
+        "gearing_ratio_percent": 0
+      }
+    },
+    "2026": {
+      "year": 2026,
+      "balance_sheet": {
+        "fixed_assets": {
+          "intangible_assets": 0,
+          "tangible_assets": 286935.2,
+          "freehold_property": null,
+          "leasehold_property": null,
+          "plant_machinery": 14252.27,
+          "fixtures_fittings": 90.62,
+          "motor_vehicles": 149647.93,
+          "computer_equipment": null
+        },
+        "current_assets": {
+          "stock": 72169.55,
+          "trade_debtors": 83058.26,
+          "prepayments": 16187.94,
+          "amounts_owed_by_directors": null,
+          "amounts_owed_by_connected_companies": null,
+          "directors_current_account": null,
+          "other_debtors": 2160,
+          "cash_at_bank": 795164.52,
+          "total": 968740.27
+        },
+        "current_liabilities": {
+          "trade_creditors": 158033.51,
+          "taxation_social_security": 2260.25,
+          "vat_payable": 95931.97,
+          "corporation_tax": 0,
+          "bank_loans_current": null,
+          "hire_purchase_current": null,
+          "accruals": 3400,
+          "amounts_owed_to_directors": null,
+          "other_creditors": -39394.62,
+          "total": 220231.11
+        },
+        "long_term_liabilities": {
+          "bank_loans": null,
+          "hire_purchase_long_term": null,
+          "deferred_taxation": null,
+          "other_debt": null,
+          "total": 0
+        },
+        "equity": {
+          "share_capital": 1000,
+          "retained_earnings": 1034444.36,
+          "total": 1035444.36
+        }
+      },
+      "financial_ratios": {
+        "current_ratio": 4.39874403,
+        "quick_ratio": 3.9877313,
+        "net_assets_growth_percent": 23.25879,
+        "gearing_ratio_percent": 0
+      }
+    }
+  },
+  "summary_insights": [
+    "The company exhibits a very strong and improving liquidity position, with the current ratio rising from 2.46 in 2023 to 4.40 in 2026.",
+    "Net assets have grown significantly by 37% over the four-year period, reaching £1.035m, driven by consistent retained profitability.",
+    "The cash position is exceptionally robust, with £795k in bank accounts as of May 2026, representing over 80% of total current assets.",
+    "Tangible assets increased by 43% in the final year, primarily due to investments in motor vehicles and plant equipment.",
+    "The business operates with zero long-term debt, resulting in a 0% gearing ratio and a very low-risk capital structure.",
+    "Working capital management is efficient, with a notable reduction in total current liabilities from £338k to £220k between 2025 and 2026."
+  ],
+  "_isIM": false
+}

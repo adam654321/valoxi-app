@@ -1,0 +1,165 @@
+{
+  "document": "profit_and_loss",
+  "source": "statutory",
+  "years_covered": [
+    2023,
+    2024
+  ],
+  "period_ends": {
+    "2023": "2023-03-31",
+    "2024": "2024-03-31"
+  },
+  "months_covered": {
+    "2023": 12,
+    "2024": 12
+  },
+  "report_date": "2024-12-12",
+  "years": {
+    "2023": {
+      "year": 2023,
+      "profit_and_loss": {
+        "revenue": 2038844,
+        "cost_of_sales": 1007456,
+        "gross_profit": 1031388,
+        "administrative_expenses": 585138,
+        "depreciation_amortisation": 148547,
+        "other_operating_income": null,
+        "operating_profit": 446250,
+        "interest_receivable": 708,
+        "interest_payable": 3004,
+        "profit_before_tax": 443954,
+        "corporation_tax": 83194,
+        "net_profit": 360760
+      },
+      "revenue_breakdown": {
+        "by_product": {
+          "Sales": 2023789,
+          "Insurance claims received": 15055
+        },
+        "by_segment": {}
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": 79745,
+        "direct_labour": 469657,
+        "subcontractor_costs": 43892,
+        "other_direct_costs": 414162
+      },
+      "overheads_breakdown": {
+        "staff_wages_salaries": 32066,
+        "directors_salaries": 16328,
+        "directors_pension": null,
+        "employers_national_insurance": 52019,
+        "staff_pension_contributions": 10042,
+        "staff_training_recruitment": 18933,
+        "use_of_home_as_office": null,
+        "rent_rates": 28744,
+        "utilities": null,
+        "insurance": 75864,
+        "accountancy_bookkeeping": 22980,
+        "professional_fees": 27379,
+        "software_subscriptions": null,
+        "computer_costs": null,
+        "it_support_hosting": null,
+        "telecommunications": 3123,
+        "printing_stationery": 2136,
+        "postage_courier": null,
+        "subscriptions_memberships": 7809,
+        "bank_charges": 549,
+        "advertising_marketing": null,
+        "travel_subsistence": 4698,
+        "motor_expenses": 165824,
+        "repairs_maintenance": 6148,
+        "depreciation": 148547,
+        "amortisation": null,
+        "other_overheads": 18044
+      },
+      "total_staff_costs": 113060,
+      "total_directors_remuneration": 16328,
+      "dividends_paid": null,
+      "exceptional_items": [],
+      "financial_ratios": {
+        "gross_margin_percent": 50.59,
+        "net_margin_percent": 17.69,
+        "interest_coverage_ratio": 148.55
+      }
+    },
+    "2024": {
+      "year": 2024,
+      "profit_and_loss": {
+        "revenue": 1636215,
+        "cost_of_sales": 861049,
+        "gross_profit": 775166,
+        "administrative_expenses": 662120,
+        "depreciation_amortisation": 145685,
+        "other_operating_income": null,
+        "operating_profit": 113046,
+        "interest_receivable": 7576,
+        "interest_payable": 1836,
+        "profit_before_tax": 118786,
+        "corporation_tax": 30830,
+        "net_profit": 87956
+      },
+      "revenue_breakdown": {
+        "by_product": {
+          "Sales": 1633903,
+          "Insurance claims received": 2312
+        },
+        "by_segment": {}
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": 52187,
+        "direct_labour": 418396,
+        "subcontractor_costs": 35522,
+        "other_direct_costs": 354944
+      },
+      "overheads_breakdown": {
+        "staff_wages_salaries": 32000,
+        "directors_salaries": 116328,
+        "directors_pension": null,
+        "employers_national_insurance": 45052,
+        "staff_pension_contributions": 9674,
+        "staff_training_recruitment": 14775,
+        "use_of_home_as_office": null,
+        "rent_rates": 32750,
+        "utilities": null,
+        "insurance": 74342,
+        "accountancy_bookkeeping": 17355,
+        "professional_fees": 12379,
+        "software_subscriptions": null,
+        "computer_costs": null,
+        "it_support_hosting": null,
+        "telecommunications": 3248,
+        "printing_stationery": 2137,
+        "postage_courier": null,
+        "subscriptions_memberships": 9819,
+        "bank_charges": 544,
+        "advertising_marketing": null,
+        "travel_subsistence": 5531,
+        "motor_expenses": 141335,
+        "repairs_maintenance": 8241,
+        "depreciation": 145685,
+        "amortisation": null,
+        "other_overheads": 12525
+      },
+      "total_staff_costs": 101501,
+      "total_directors_remuneration": 130128,
+      "dividends_paid": null,
+      "exceptional_items": [],
+      "financial_ratios": {
+        "gross_margin_percent": 47.38,
+        "net_margin_percent": 5.38,
+        "interest_coverage_ratio": 61.57
+      }
+    }
+  },
+  "summary_insights": [
+    "Revenue declined significantly by 19.7%, falling from £2.04m to £1.64m year-on-year.",
+    "Gross margin experienced compression, dropping from 50.6% to 47.4%, indicating higher relative direct costs.",
+    "Net profit saw a sharp contraction of 75.6%, falling from £360,760 to £87,956.",
+    "Administrative expenses increased by 13.2% despite the revenue drop, largely driven by a substantial rise in directors' salaries from £16,328 to £116,328.",
+    "Net margin fell from a healthy 17.7% to 5.4%, reflecting significantly reduced operational efficiency.",
+    "Interest coverage remains strong at 61.6x, though it has declined from the previous year's exceptionally high level.",
+    "The average monthly number of employees decreased from 11 to 9, aligning with the reduction in turnover."
+  ],
+  "_isIM": false
+}

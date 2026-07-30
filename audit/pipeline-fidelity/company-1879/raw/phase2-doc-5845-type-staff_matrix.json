@@ -1,0 +1,150 @@
+{
+  "document": "staff_matrix",
+  "report_date": "2026-07-30",
+  "summary": {
+    "total_headcount": 10,
+    "total_staff_costs": null,
+    "total_gross_salaries": null,
+    "total_employer_ni": null,
+    "total_employer_pension": null,
+    "director_count": 2,
+    "director_remuneration": null,
+    "working_director_count": 2,
+    "non_working_director_count": 0,
+    "employee_count": 8,
+    "employee_costs": null
+  },
+  "staff": [
+    {
+      "name": "Mark Jones",
+      "position": "Managing Director, Company Secretary, Deputy Rail Sentinel Co-Ordinator",
+      "gross_salary": null,
+      "employer_ni": null,
+      "employer_pension": null,
+      "total_cost": null,
+      "is_director": true,
+      "is_owner": null,
+      "employment_type": "Full-Time",
+      "start_date": null
+    },
+    {
+      "name": "Deborah Jones",
+      "position": "Director",
+      "gross_salary": null,
+      "employer_ni": null,
+      "employer_pension": null,
+      "total_cost": null,
+      "is_director": true,
+      "is_owner": null,
+      "employment_type": "Full-Time",
+      "start_date": null
+    },
+    {
+      "name": "Martin Ward",
+      "position": "General Manager",
+      "gross_salary": null,
+      "employer_ni": null,
+      "employer_pension": null,
+      "total_cost": null,
+      "is_director": false,
+      "is_owner": null,
+      "employment_type": "Full-Time",
+      "start_date": null
+    },
+    {
+      "name": "John Morgan",
+      "position": "HSQE Advisor (Consultancy 360)",
+      "gross_salary": null,
+      "employer_ni": null,
+      "employer_pension": null,
+      "total_cost": null,
+      "is_director": false,
+      "is_owner": null,
+      "employment_type": "Full-Time",
+      "start_date": null
+    },
+    {
+      "name": "Demi Streeter",
+      "position": "Office Manager & Rail Sentinel Co-Ordinator",
+      "gross_salary": null,
+      "employer_ni": null,
+      "employer_pension": null,
+      "total_cost": null,
+      "is_director": false,
+      "is_owner": null,
+      "employment_type": "Full-Time",
+      "start_date": null
+    },
+    {
+      "name": "Robert Williamson",
+      "position": "Supervisor/Scaffold Inspector",
+      "gross_salary": null,
+      "employer_ni": null,
+      "employer_pension": null,
+      "total_cost": null,
+      "is_director": false,
+      "is_owner": null,
+      "employment_type": "Full-Time",
+      "start_date": null
+    },
+    {
+      "name": "Paul Rest",
+      "position": "Advanced Scaffolder",
+      "gross_salary": null,
+      "employer_ni": null,
+      "employer_pension": null,
+      "total_cost": null,
+      "is_director": false,
+      "is_owner": null,
+      "employment_type": "Full-Time",
+      "start_date": null
+    },
+    {
+      "name": "Labourers",
+      "position": "Labourers",
+      "gross_salary": null,
+      "employer_ni": null,
+      "employer_pension": null,
+      "total_cost": null,
+      "is_director": false,
+      "is_owner": null,
+      "employment_type": "Full-Time",
+      "start_date": null
+    },
+    {
+      "name": "Trainee Scaffolders",
+      "position": "Trainee Scaffolders",
+      "gross_salary": null,
+      "employer_ni": null,
+      "employer_pension": null,
+      "total_cost": null,
+      "is_director": false,
+      "is_owner": null,
+      "employment_type": "Full-Time",
+      "start_date": null
+    },
+    {
+      "name": "Scaffold Yardmen",
+      "position": "Scaffold Yardmen",
+      "gross_salary": null,
+      "employer_ni": null,
+      "employer_pension": null,
+      "total_cost": null,
+      "is_director": false,
+      "is_owner": null,
+      "employment_type": "Full-Time",
+      "start_date": null
+    }
+  ],
+  "employment_type_breakdown": {
+    "Full-Time": 10,
+    "Part-Time": 0
+  },
+  "observations": [
+    "The organization chart identifies 10 distinct roles/entities, including 2 directors.",
+    "Financial data (salaries, NI, pension) is not present on the provided organization chart.",
+    "One role (John Morgan) is noted as 'CONSULTANCY 360', suggesting an external advisor or contractor relationship.",
+    "The chart includes group categories such as 'Labourers' and 'Trainee Scaffolders' rather than individual names for those positions."
+  ],
+  "_isIM": false
+}

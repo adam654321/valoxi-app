@@ -1,0 +1,81 @@
+{
+  "document": "balance_sheet",
+  "source": "management_accounts",
+  "years_covered": [
+    2025
+  ],
+  "period_ends": {
+    "2025": "2025-05-31"
+  },
+  "months_covered": {
+    "2025": 6
+  },
+  "report_date": null,
+  "years": {
+    "2025": {
+      "year": 2025,
+      "balance_sheet": {
+        "fixed_assets": {
+          "intangible_assets": null,
+          "tangible_assets": 332.96,
+          "freehold_property": null,
+          "leasehold_property": null,
+          "plant_machinery": null,
+          "fixtures_fittings": null,
+          "motor_vehicles": null,
+          "computer_equipment": 1524.17
+        },
+        "current_assets": {
+          "stock": null,
+          "trade_debtors": 82709.74,
+          "prepayments": null,
+          "amounts_owed_by_directors": null,
+          "amounts_owed_by_connected_companies": null,
+          "directors_current_account": null,
+          "other_debtors": null,
+          "cash_at_bank": 79802.3,
+          "total": 162512.04
+        },
+        "current_liabilities": {
+          "trade_creditors": 3141.8,
+          "taxation_social_security": 1339.96,
+          "vat_payable": 9870.76,
+          "corporation_tax": 73280.94,
+          "bank_loans_current": 5125.78,
+          "hire_purchase_current": null,
+          "accruals": 1890,
+          "amounts_owed_to_directors": 1761.56,
+          "other_creditors": 6543.05,
+          "total": 102953.85
+        },
+        "long_term_liabilities": {
+          "bank_loans": 6518.72,
+          "hire_purchase_long_term": null,
+          "deferred_taxation": null,
+          "other_debt": null,
+          "total": 6518.72
+        },
+        "equity": {
+          "share_capital": 1250,
+          "retained_earnings": 52122.43,
+          "total": 53372.43
+        }
+      },
+      "financial_ratios": {
+        "current_ratio": 1.578494,
+        "quick_ratio": 1.578494,
+        "net_assets_growth_percent": null,
+        "gearing_ratio_percent": 12.213646
+      }
+    }
+  },
+  "summary_insights": [
+    "The company maintains a healthy liquidity position with a current ratio of 1.58, indicating sufficient coverage for short-term obligations.",
+    "The asset base is heavily weighted towards current assets, specifically trade debtors and cash, which comprise over 99% of total assets.",
+    "Net current assets (working capital) stand at £59,558, providing a solid operational buffer for the marketing business.",
+    "The business carries low long-term leverage, with a gearing ratio of 12.2% relating to a Bounce Back Loan.",
+    "Shareholder value is primarily driven by retained earnings of £52,122, despite significant dividend distributions during the period.",
+    "A significant portion of current liabilities is comprised of taxation (£73,281), which will require careful cash flow management as payment dates approach."
+  ],
+  "_isIM": false
+}

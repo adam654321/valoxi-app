@@ -1,0 +1,20 @@
+{
+  "id": 138,
+  "company_name": "Cooper Gibson",
+  "industry": "Professional Services",
+  "sub_sector": "Business Consulting & Advisory",
+  "website": "https://www.coopergibson.co.uk/",
+  "phone": null,
+  "email": null,
+  "address": null,
+  "annual_revenue": null,
+  "employee_count": null,
+  "year_established": null,
+  "description": null,
+  "created_by": 42,
+  "created_at": "2026-05-15T09:50:53.246Z",
+  "stage": "New Target",
+  "stage_updated_at": "2026-05-15T09:50:53.246Z",
+  "is_archived": false,
+  "user_company_id": 39
+}

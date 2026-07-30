@@ -1,0 +1,163 @@
+{
+  "document": "profit_and_loss",
+  "source": "statutory",
+  "years_covered": [
+    2022,
+    2021
+  ],
+  "period_ends": {
+    "2021": "2021-10-31",
+    "2022": "2022-10-31"
+  },
+  "months_covered": {
+    "2021": 12,
+    "2022": 12
+  },
+  "report_date": "2023-04-28",
+  "years": {
+    "2021": {
+      "year": 2021,
+      "profit_and_loss": {
+        "revenue": 4656312,
+        "cost_of_sales": 3558769,
+        "gross_profit": 1097543,
+        "administrative_expenses": 960613,
+        "depreciation_amortisation": 76175,
+        "other_operating_income": null,
+        "operating_profit": 136930,
+        "interest_receivable": null,
+        "interest_payable": 29920,
+        "profit_before_tax": 107010,
+        "corporation_tax": -48949,
+        "net_profit": 155959
+      },
+      "revenue_breakdown": {
+        "by_product": {
+          "Sales": 4656312
+        },
+        "by_segment": {}
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": 588332,
+        "direct_labour": 257518,
+        "subcontractor_costs": 2163596,
+        "other_direct_costs": 549323
+      },
+      "overheads_breakdown": {
+        "staff_wages_salaries": 400751,
+        "directors_salaries": 19995,
+        "directors_pension": null,
+        "employers_national_insurance": 54970,
+        "staff_pension_contributions": 14187,
+        "staff_training_recruitment": 7392,
+        "use_of_home_as_office": 1800,
+        "rent_rates": 151591,
+        "utilities": 28868,
+        "insurance": 16515,
+        "accountancy_bookkeeping": 3600,
+        "professional_fees": 25689,
+        "software_subscriptions": null,
+        "computer_costs": 20675,
+        "it_support_hosting": null,
+        "telecommunications": 11100,
+        "printing_stationery": 9500,
+        "postage_courier": null,
+        "subscriptions_memberships": 1692,
+        "bank_charges": 917,
+        "advertising_marketing": 22039,
+        "travel_subsistence": 7611,
+        "motor_expenses": 12065,
+        "repairs_maintenance": 29582,
+        "depreciation": 76175,
+        "amortisation": null,
+        "other_overheads": 43894
+      },
+      "total_staff_costs": 469908,
+      "total_directors_remuneration": 19995,
+      "dividends_paid": 90000,
+      "exceptional_items": [],
+      "financial_ratios": {
+        "gross_margin_percent": 23.57,
+        "net_margin_percent": 3.35,
+        "interest_coverage_ratio": 4.58
+      }
+    },
+    "2022": {
+      "year": 2022,
+      "profit_and_loss": {
+        "revenue": 5754293,
+        "cost_of_sales": 4437034,
+        "gross_profit": 1317259,
+        "administrative_expenses": 1078058,
+        "depreciation_amortisation": 61034,
+        "other_operating_income": null,
+        "operating_profit": 239201,
+        "interest_receivable": null,
+        "interest_payable": 48926,
+        "profit_before_tax": 190275,
+        "corporation_tax": -19642,
+        "net_profit": 209917
+      },
+      "revenue_breakdown": {
+        "by_product": {
+          "Sales": 5754293
+        },
+        "by_segment": {}
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": 819476,
+        "direct_labour": 252380,
+        "subcontractor_costs": 2384460,
+        "other_direct_costs": 980718
+      },
+      "overheads_breakdown": {
+        "staff_wages_salaries": 471773,
+        "directors_salaries": 23427,
+        "directors_pension": null,
+        "employers_national_insurance": 53034,
+        "staff_pension_contributions": 13494,
+        "staff_training_recruitment": 21533,
+        "use_of_home_as_office": 1800,
+        "rent_rates": 135583,
+        "utilities": 85081,
+        "insurance": 18601,
+        "accountancy_bookkeeping": 2600,
+        "professional_fees": 16995,
+        "software_subscriptions": null,
+        "computer_costs": 30486,
+        "it_support_hosting": null,
+        "telecommunications": 9757,
+        "printing_stationery": 8371,
+        "postage_courier": null,
+        "subscriptions_memberships": 2099,
+        "bank_charges": 2427,
+        "advertising_marketing": 27848,
+        "travel_subsistence": 15439,
+        "motor_expenses": 10347,
+        "repairs_maintenance": 32882,
+        "depreciation": 61034,
+        "amortisation": null,
+        "other_overheads": 33723
+      },
+      "total_staff_costs": 538301,
+      "total_directors_remuneration": 23427,
+      "dividends_paid": 92000,
+      "exceptional_items": [],
+      "financial_ratios": {
+        "gross_margin_percent": 22.89,
+        "net_margin_percent": 3.65,
+        "interest_coverage_ratio": 4.89
+      }
+    }
+  },
+  "summary_insights": [
+    "Revenue grew significantly by 23.6%, rising from £4.66m to £5.75m year-on-year.",
+    "Gross profit increased by 20.0%, although the gross margin experienced a slight compression from 23.6% to 22.9%.",
+    "Operating profit saw a robust 74.7% increase, driven by revenue growth outstripping the 12.2% rise in administrative overheads.",
+    "Net profit improved by 34.6%, reaching £209,917, with the net margin remaining stable at approximately 3.6%.",
+    "Interest coverage remains healthy at 4.89x, indicating the company comfortably services its debt obligations despite a 63.5% increase in interest costs.",
+    "Subcontractor costs represent the largest single expense, accounting for over 50% of the total cost of sales in both years.",
+    "The company maintained a consistent dividend policy, distributing £92,000 in 2022 compared to £90,000 in 2021."
+  ],
+  "_isIM": false
+}

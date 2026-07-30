@@ -1,0 +1,136 @@
+{
+  "expert": "financial",
+  "company_name": "[AUDIT-130] Keen As Mustard",
+  "analysis_date": "2025-05-20",
+  "score": 72,
+  "confidence": "high",
+  "yearly_metrics": {
+    "2023": {
+      "revenue": 396623,
+      "revenue_yoy_growth_percent": null,
+      "cost_of_sales": 108601,
+      "gross_profit": 288022,
+      "gross_margin_percent": 72.62,
+      "administrative_expenses": 162308,
+      "operating_profit": 125714,
+      "operating_margin_percent": 31.7,
+      "depreciation_amortisation": 148,
+      "ebitda": 125862,
+      "interest_payable": 802,
+      "interest_coverage_ratio": 156.75,
+      "profit_before_tax": 124912,
+      "corporation_tax": 28749,
+      "effective_tax_rate_percent": 23.02,
+      "net_profit": 96163,
+      "net_margin_percent": 24.25
+    },
+    "2024": {
+      "revenue": 436233,
+      "revenue_yoy_growth_percent": 9.99,
+      "cost_of_sales": 103808,
+      "gross_profit": 332425,
+      "gross_margin_percent": 76.2,
+      "administrative_expenses": 134730,
+      "operating_profit": 197695,
+      "operating_margin_percent": 45.32,
+      "depreciation_amortisation": 111,
+      "ebitda": 197806,
+      "interest_payable": 450,
+      "interest_coverage_ratio": 439.32,
+      "profit_before_tax": 198347,
+      "corporation_tax": 50839,
+      "effective_tax_rate_percent": 25.63,
+      "net_profit": 147508,
+      "net_margin_percent": 33.81
+    },
+    "2025": {
+      "revenue": 358524.86,
+      "revenue_yoy_growth_percent": -17.81,
+      "cost_of_sales": null,
+      "gross_profit": 358524.86,
+      "gross_margin_percent": 100,
+      "administrative_expenses": null,
+      "operating_profit": null,
+      "operating_margin_percent": null,
+      "depreciation_amortisation": null,
+      "ebitda": 0,
+      "interest_payable": null,
+      "interest_coverage_ratio": null,
+      "profit_before_tax": null,
+      "corporation_tax": null,
+      "effective_tax_rate_percent": null,
+      "net_profit": null,
+      "net_margin_percent": null
+    }
+  },
+  "cagr": {
+    "revenue_cagr_percent": -4.93,
+    "gross_profit_cagr_percent": 11.58,
+    "operating_profit_cagr_percent": null,
+    "period_years": 2
+  },
+  "cost_structure": {
+    "cost_of_sales_percent_revenue": 23.8,
+    "overheads_percent_revenue": 30.88,
+    "staff_costs_percent_revenue": null,
+    "director_costs_percent_revenue": 4.13,
+    "top_5_overheads": [
+      {
+        "category": "Travel & Subsistence",
+        "value": 28310,
+        "percent_of_overheads": 21.01
+      },
+      {
+        "category": "Computer Costs",
+        "value": 20940,
+        "percent_of_overheads": 15.54
+      },
+      {
+        "category": "Directors Salaries",
+        "value": 18000,
+        "percent_of_overheads": 13.36
+      },
+      {
+        "category": "Professional Fees",
+        "value": 17640,
+        "percent_of_overheads": 13.09
+      },
+      {
+        "category": "Staff Training & Recruitment",
+        "value": 14559,
+        "percent_of_overheads": 10.81
+      }
+    ],
+    "cost_base_classification": "mixed"
+  },
+  "earnings_quality": {
+    "net_profit_tracks_operating_profit": true,
+    "exceptional_items_identified": [],
+    "tax_rate_consistent": true,
+    "ebitda_latest": 197806,
+    "ebitda_trend": "growing",
+    "limitations": [
+      "2025 data is management accounts and lacks full P&L breakdown",
+      "Staff costs (wages/salaries) are not explicitly broken out from administrative expenses"
+    ]
+  },
+  "debt_service": {
+    "latest_interest_coverage": 439.32,
+    "interest_coverage_trend": "improving",
+    "additional_debt_capacity_assessment": "High. The company has minimal interest-bearing debt and exceptionally high coverage ratios, suggesting significant headroom for acquisition financing."
+  },
+  "key_findings": [
+    "Operating margins showed significant expansion from 31.7% in 2023 to 45.3% in 2024.",
+    "Revenue growth was positive in 2024 (+10%) but 2025 management figures suggest a potential contraction or partial-year reporting.",
+    "The business maintains a high gross margin (72-76%), typical of a high-value creative consultancy.",
+    "Cost of sales is primarily driven by direct labour and subcontractors, providing some flexibility in the cost base.",
+    "Travel and subsistence is a major overhead component, accounting for over 20% of total administrative expenses in 2024.",
+    "The company is highly profitable with a net margin exceeding 33% in the latest full fiscal year.",
+    "Dividend payments are high relative to net profit, indicating a policy of full profit extraction by shareholders."
+  ],
+  "red_flags": [
+    "Significant drop in revenue reported in 2025 management accounts compared to 2024 full-year performance.",
+    "High reliance on subcontractor costs within the Cost of Sales (approx. 29% of COS)."
+  ],
+  "narrative": "Keen As Mustard demonstrates a robust financial profile characterized by high margins and strong earnings quality. Between 2023 and 2024, the company successfully increased its revenue by 10% while simultaneously reducing its administrative expense base, leading to a substantial expansion in operating margin from 31.7% to 45.3%. This suggests high operational gearing and effective cost management. The gross margin remains consistently high at over 70%, reflecting the premium nature of its marketing and creative services. \n\nThe cost structure is a mix of fixed and variable elements. While professional fees and computer costs are relatively stable, the high use of subcontractors and significant travel expenses provide some levers for cost adjustment should revenue fluctuate. However, the 2025 management data shows a revenue figure of £358k, which is a decline from the 2024 peak of £436k; further due diligence is required to determine if this represents a full-year result or a period-to-date snapshot. \n\nFrom an earnings quality perspective, net profit tracks operating profit closely, with no evidence of significant exceptional items or volatile tax treatments. The company's ability to service debt is exceptional, with interest coverage ratios far exceeding standard banking covenants. The primary consideration for a buyer is the sustainability of the 2024 margin levels and the explanation for the apparent revenue softening in the 2025 management accounts. Overall, the financial performance is strong, providing a solid foundation for acquisition, and high capacity for, acquisition-related debt."
+}

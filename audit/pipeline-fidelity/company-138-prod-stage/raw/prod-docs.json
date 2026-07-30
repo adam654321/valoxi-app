@@ -1,0 +1,123 @@
+[
+  {
+    "id": 848,
+    "document_name": "IM - 163009.pdf",
+    "original_filename": "IM - 163009.pdf",
+    "document_category": "Deal Documents",
+    "secondary_category": null,
+    "file_path": "companies/138/doc-1778838673399-328152625.pdf",
+    "file_type": "application/pdf",
+    "file_size": 2082278,
+    "upload_date": "2026-05-15T09:51:14.097Z"
+  },
+  {
+    "id": 849,
+    "document_name": "Cooper-Gibson Limited AC and CT ye 29.02.2024.pdf",
+    "original_filename": "Cooper-Gibson Limited AC and CT ye 29.02.2024.pdf",
+    "document_category": "Company Accounts",
+    "secondary_category": null,
+    "file_path": "companies/138/doc-1778838689011-823319302.pdf",
+    "file_type": "application/pdf",
+    "file_size": 118101,
+    "upload_date": "2026-05-15T09:51:29.741Z"
+  },
+  {
+    "id": 851,
+    "document_name": "CGRProfitandLoss1Mar24.pdf",
+    "original_filename": "CGRProfitandLoss1Mar24.pdf",
+    "document_category": "Company Accounts",
+    "secondary_category": null,
+    "file_path": "companies/138/doc-1778838746863-404999227.pdf",
+    "file_type": "application/pdf",
+    "file_size": 40179,
+    "upload_date": "2026-05-15T09:52:27.539Z"
+  },
+  {
+    "id": 852,
+    "document_name": "CompanyOverview-end28.2.25.pdf",
+    "original_filename": "CompanyOverview-end28.2.25.pdf",
+    "document_category": "Deal Documents",
+    "secondary_category": null,
+    "file_path": "companies/138/doc-1778838776011-725630720.pdf",
+    "file_type": "application/pdf",
+    "file_size": 35253,
+    "upload_date": "2026-05-15T09:52:56.580Z"
+  },
+  {
+    "id": 853,
+    "document_name": "FS_Cooper-GibsonLimited_28022025.pdf",
+    "original_filename": "FS_Cooper-GibsonLimited_28022025.pdf",
+    "document_category": "Company Accounts",
+    "secondary_category": null,
+    "file_path": "companies/138/doc-1778838798393-104382606.pdf",
+    "file_type": "application/pdf",
+    "file_size": 73405,
+    "upload_date": "2026-05-15T09:53:18.960Z"
+  },
+  {
+    "id": 854,
+    "document_name": "YE23 Accounts.pdf",
+    "original_filename": "YE23 Accounts.pdf",
+    "document_category": "Company Accounts",
+    "secondary_category": null,
+    "file_path": "companies/138/doc-1778838811755-535012742.pdf",
+    "file_type": "application/pdf",
+    "file_size": 182192,
+    "upload_date": "2026-05-15T09:53:32.314Z"
+  },
+  {
+    "id": 1335,
+    "document_name": "Cooper-Gibson Ltd AC and CT ye 29.02.26._final.pdf",
+    "original_filename": "Cooper-Gibson Ltd AC and CT ye 29.02.26._final.pdf",
+    "document_category": "Company Accounts",
+    "secondary_category": null,
+    "file_path": "companies/138/doc-1782036715100-291703953.pdf",
+    "file_type": "application/pdf",
+    "file_size": 109852,
+    "upload_date": "2026-06-21T10:11:56.805Z"
+  },
+  {
+    "id": 1432,
+    "document_name": "FYTDBalanceSheet_25.6.26.pdf",
+    "original_filename": "FYTDBalanceSheet_25.6.26.pdf",
+    "document_category": "YTD Balance Sheet",
+    "secondary_category": null,
+    "file_path": "companies/138/doc-1782760216464-656399555.pdf",
+    "file_type": "application/pdf",
+    "file_size": 37383,
+    "upload_date": "2026-06-29T19:10:17.843Z"
+  },
+  {
+    "id": 1433,
+    "document_name": "FYTD_ProfitandLoss_25.6.26.pdf",
+    "original_filename": "FYTD_ProfitandLoss_25.6.26.pdf",
+    "document_category": "Deal Documents",
+    "secondary_category": null,
+    "file_path": "companies/138/doc-1782760240362-645911187.pdf",
+    "file_type": "application/pdf",
+    "file_size": 35681,
+    "upload_date": "2026-06-29T19:10:41.290Z"
+  },
+  {
+    "id": 1434,
+    "document_name": "Cooper-Gibson Ltd_Sales by Customer Summary_LastFYto28.2.26.xlsx",
+    "original_filename": "Cooper-Gibson Ltd_Sales by Customer Summary_LastFYto28.2.26.xlsx",
+    "document_category": "Sales Ledger",
+    "secondary_category": null,
+    "file_path": "companies/138/doc-1782760262433-615318484.xlsx",
+    "file_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "file_size": 10347,
+    "upload_date": "2026-06-29T19:11:03.278Z"
+  },
+  {
+    "id": 1435,
+    "document_name": "Cooper-Gibson Ltd_Sales by Customer Summary_1.3.26-25.6.26.xlsx",
+    "original_filename": "Cooper-Gibson Ltd_Sales by Customer Summary_1.3.26-25.6.26.xlsx",
+    "document_category": "Deal Documents",
+    "secondary_category": null,
+    "file_path": "companies/138/doc-1782760273763-234847667.xlsx",
+    "file_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "file_size": 10099,
+    "upload_date": "2026-06-29T19:11:14.691Z"
+  }
+]

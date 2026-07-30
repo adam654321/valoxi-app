@@ -1,0 +1,119 @@
+{
+  "expert": "valuation",
+  "company_name": "[AUDIT-138] Cooper Gibson",
+  "analysis_date": "2024-05-22",
+  "score": 42,
+  "confidence": "low",
+  "ebitda_multiple_valuation": {
+    "adjusted_ebitda_base": -5526,
+    "sector_multiple_range": {
+      "low": 2,
+      "mid": 2.75,
+      "high": 3.5
+    },
+    "selected_multiple": 2,
+    "multiple_justification": "The lowest end of the sector range is applied due to extreme customer concentration (88%), a 49% revenue decline in the most recent year, and the fact that adjusted EBITDA is negative when accounting for market-rate management costs.",
+    "premium_factors_applied": [
+      "Debt-free balance sheet",
+      "High historical margins during peak project years"
+    ],
+    "discount_factors_applied": [
+      "Extreme customer concentration (88.31% from one client)",
+      "Significant revenue volatility (-49% YoY)",
+      "High owner dependency",
+      "Negative adjusted EBITDA base case",
+      "Small micro-business scale"
+    ],
+    "enterprise_value_range": {
+      "conservative": 0,
+      "base": 0,
+      "optimistic": 78308
+    }
+  },
+  "ev_to_equity_bridge": {
+    "enterprise_value_base": 0,
+    "plus_cash": 195634,
+    "minus_long_term_debt": 0,
+    "minus_director_loans": 149587.37,
+    "minus_bad_debt_provision": 0,
+    "minus_working_capital_adjustment": 0,
+    "equity_value": {
+      "conservative": 46046.63,
+      "base": 46046.63,
+      "optimistic": 124354.63
+    }
+  },
+  "asset_based_valuation": {
+    "net_asset_value": 183083,
+    "property_adjustment": 0,
+    "bad_debt_adjustment": 0,
+    "adjusted_nav": 183083,
+    "nav_as_floor": true
+  },
+  "revenue_multiple_crosscheck": {
+    "latest_revenue": 223404,
+    "revenue_multiple_range": {
+      "low": 0.4,
+      "high": 0.7
+    },
+    "implied_ev_range": {
+      "low": 89361.6,
+      "high": 156382.8
+    }
+  },
+  "valuation_summary": {
+    "recommended_range": {
+      "equity_value_low": 46046.63,
+      "equity_value_mid": 114563.32,
+      "equity_value_high": 183083
+    },
+    "primary_methodology": "asset_based",
+    "cross_check_alignment": "weak"
+  },
+  "sensitivity": {
+    "ebitda_plus_10pct": {
+      "enterprise_value": 0,
+      "equity_value": 46046.63
+    },
+    "ebitda_minus_10pct": {
+      "enterprise_value": 0,
+      "equity_value": 46046.63
+    },
+    "multiple_plus_half": {
+      "enterprise_value": 0,
+      "equity_value": 46046.63
+    },
+    "multiple_minus_half": {
+      "enterprise_value": 0,
+      "equity_value": 46046.63
+    },
+    "key_customer_loss_impact": "Loss of Client 1 would result in an 88% revenue drop, rendering the business insolvent and reducing value to net cash after liquidation costs.",
+    "director_replacement_impact": -44930
+  },
+  "seller_expectations": {
+    "likely_seller_expectation_range": {
+      "low": 250000,
+      "high": 450000
+    },
+    "seller_anchor_points": [
+      "Peak 2025 revenue of £441k",
+      "Healthy cash balance of £195k",
+      "Historical high margins (50% operating margin in 2025)"
+    ],
+    "negotiation_gap_assessment": "Significant. The seller will likely anchor on the 2025 'outlier' year and the cash balance, whereas a buyer will focus on the negative adjusted EBITDA and the 88% client concentration risk."
+  },
+  "key_findings": [
+    "The business is technically worth more as a collection of assets (cash) than as a going concern due to negative adjusted EBITDA.",
+    "Adjusted EBITDA is negative (£-5,526) once a market-rate salary for a replacement manager is factored in.",
+    "The 88.31% revenue concentration in a single client makes the earnings stream highly speculative.",
+    "The company has a strong cash position of £195,634 (from 2026 Operational Assessment) but owes £149,587.37 to directors.",
+    "Revenue volatility is extreme, with a 49% decline in the most recent year."
+  ],
+  "red_flags": [
+    "88.31% revenue concentration in one client.",
+    "Negative adjusted EBITDA base case.",
+    "Significant director loan liability (£149k) to be settled.",
+    "49% year-on-year revenue decline."
+  ],
+  "narrative": "Valuing Cooper Gibson as a going concern using an EBITDA multiple is problematic because the 'Base Case' adjusted EBITDA is negative (£-5,526) after normalizing director compensation. While the company reported a 2026 EBITDA of £57,012, this relies on an under-market director salary of £12,570. A commercial buyer must account for the £44,930 cost to replace the owner-manager. Consequently, the Enterprise Value is effectively zero under standard earnings methodologies. The primary value of the business lies in its Net Assets, specifically the cash balance of £195,634 (as cited in the 2026 Operational Assessment). However, this is offset by a substantial liability of £149,587.37 owed to directors (Risk Expert, 2026-06-25). The resulting Equity Value is heavily dependent on whether the buyer views the remaining client relationship as sustainable. Given the 88% concentration risk, any deal should be structured with a low upfront payment and a significant earn-out. The Net Asset Value of £183,083 serves as the absolute ceiling for valuation, though a buyer is unlikely to pay full NAV for a business with negative adjusted earnings and extreme concentration risk."
+}

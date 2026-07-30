@@ -1,0 +1,99 @@
+{
+  "document": "profit_and_loss",
+  "source": "management",
+  "years_covered": [
+    2026
+  ],
+  "period_ends": {
+    "2026": "2026-03-31"
+  },
+  "months_covered": {
+    "2026": 12
+  },
+  "report_date": "2025-09-08",
+  "years": {
+    "2026": {
+      "year": 2026,
+      "profit_and_loss": {
+        "revenue": 825234.65,
+        "cost_of_sales": 372850.39,
+        "gross_profit": 452384.26,
+        "administrative_expenses": 269379.63,
+        "depreciation_amortisation": null,
+        "other_operating_income": 121.94,
+        "operating_profit": 183004.63,
+        "interest_receivable": 121.94,
+        "interest_payable": 4613.79,
+        "profit_before_tax": 183126.57,
+        "corporation_tax": null,
+        "net_profit": 183126.57
+      },
+      "revenue_breakdown": {
+        "by_product": {
+          "Installation - AIR CONDITIONING": 651125.71,
+          "Installation - ELECTRICAL": 3459,
+          "Installation - EV": 2387.5,
+          "Installation - SOLAR": 45144.56,
+          "Maintenance": 48233.49,
+          "Portable Units": 2164.5,
+          "Quoted Works / Extra Works": 56013.06,
+          "Reactive Works / Call Outs": 16706.83
+        },
+        "by_segment": {}
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": 225926.99,
+        "direct_labour": 87593.07,
+        "subcontractor_costs": 47218.15,
+        "other_direct_costs": 12112.18
+      },
+      "overheads_breakdown": {
+        "staff_wages_salaries": 105376.37,
+        "directors_salaries": 3789.98,
+        "directors_pension": null,
+        "employers_national_insurance": 13541.71,
+        "staff_pension_contributions": 2151.21,
+        "staff_training_recruitment": 3742.33,
+        "use_of_home_as_office": null,
+        "rent_rates": 6998.32,
+        "utilities": 639.52,
+        "insurance": 9755.5,
+        "accountancy_bookkeeping": null,
+        "professional_fees": 12616.54,
+        "software_subscriptions": 7358.44,
+        "computer_costs": 1659.38,
+        "it_support_hosting": null,
+        "telecommunications": 3044.84,
+        "printing_stationery": 96.01,
+        "postage_courier": 11,
+        "subscriptions_memberships": 6570.37,
+        "bank_charges": 6028.16,
+        "advertising_marketing": 42211.5,
+        "travel_subsistence": 1611.29,
+        "motor_expenses": 19351.05,
+        "repairs_maintenance": 4423.75,
+        "depreciation": null,
+        "amortisation": null,
+        "other_overheads": 21403.36
+      },
+      "total_staff_costs": 124811.62,
+      "total_directors_remuneration": 3789.98,
+      "dividends_paid": null,
+      "exceptional_items": [],
+      "financial_ratios": {
+        "gross_margin_percent": 54.82,
+        "net_margin_percent": 22.19,
+        "interest_coverage_ratio": 39.66
+      }
+    }
+  },
+  "summary_insights": [
+    "The business achieved a strong gross margin of 54.8%, driven primarily by high-value Air Conditioning installations which account for 79% of total turnover.",
+    "Net profitability is healthy at 22.2%, indicating effective control over administrative overheads relative to the scale of operations.",
+    "The company maintains a very high interest coverage ratio of 39.7x, suggesting excellent financial resilience and capacity to service existing debt.",
+    "Direct labour and subcontractor costs represent a significant portion of the cost of sales (approx. 36%), highlighting the business's reliance on skilled technical staff.",
+    "Marketing spend is substantial at over £42,000 (approx. 5% of revenue), indicating an active investment in customer acquisition and brand presence.",
+    "The revenue mix shows a heavy reliance on installation projects; increasing the 'Maintenance' and 'Reactive' streams could provide more stable, recurring income."
+  ],
+  "_isIM": false
+}

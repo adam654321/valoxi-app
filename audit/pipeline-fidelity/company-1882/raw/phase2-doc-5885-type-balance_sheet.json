@@ -1,0 +1,141 @@
+{
+  "document": "balance_sheet",
+  "source": "statutory",
+  "years_covered": [
+    2024,
+    2025
+  ],
+  "period_ends": {
+    "2024": "2024-03-31",
+    "2025": "2025-03-31"
+  },
+  "months_covered": {
+    "2024": 12,
+    "2025": 12
+  },
+  "report_date": null,
+  "years": {
+    "2024": {
+      "year": 2024,
+      "balance_sheet": {
+        "fixed_assets": {
+          "intangible_assets": null,
+          "tangible_assets": 61921,
+          "freehold_property": null,
+          "leasehold_property": null,
+          "plant_machinery": 41572,
+          "fixtures_fittings": null,
+          "motor_vehicles": 12529,
+          "computer_equipment": 360
+        },
+        "current_assets": {
+          "stock": 60496,
+          "trade_debtors": 214592,
+          "prepayments": null,
+          "amounts_owed_by_directors": null,
+          "amounts_owed_by_connected_companies": null,
+          "directors_current_account": null,
+          "other_debtors": 59585,
+          "cash_at_bank": 153138,
+          "total": 487811
+        },
+        "current_liabilities": {
+          "trade_creditors": 108788,
+          "taxation_social_security": 106308,
+          "vat_payable": null,
+          "corporation_tax": null,
+          "bank_loans_current": 5906,
+          "hire_purchase_current": 12610,
+          "accruals": null,
+          "amounts_owed_to_directors": null,
+          "other_creditors": 42912,
+          "total": 276524
+        },
+        "long_term_liabilities": {
+          "bank_loans": 7592,
+          "hire_purchase_long_term": 27504,
+          "deferred_taxation": 7899,
+          "other_debt": null,
+          "total": 42995
+        },
+        "equity": {
+          "share_capital": 100,
+          "retained_earnings": 230113,
+          "total": 230213
+        }
+      },
+      "financial_ratios": {
+        "current_ratio": 1.764082,
+        "quick_ratio": 1.32983,
+        "net_assets_growth_percent": null,
+        "gearing_ratio_percent": 18.676183
+      }
+    },
+    "2025": {
+      "year": 2025,
+      "balance_sheet": {
+        "fixed_assets": {
+          "intangible_assets": null,
+          "tangible_assets": 37693,
+          "freehold_property": null,
+          "leasehold_property": 12718,
+          "plant_machinery": 24975,
+          "fixtures_fittings": null,
+          "motor_vehicles": null,
+          "computer_equipment": null
+        },
+        "current_assets": {
+          "stock": 78057,
+          "trade_debtors": 286551,
+          "prepayments": null,
+          "amounts_owed_by_directors": null,
+          "amounts_owed_by_connected_companies": null,
+          "directors_current_account": null,
+          "other_debtors": 108225,
+          "cash_at_bank": 422653,
+          "total": 895486
+        },
+        "current_liabilities": {
+          "trade_creditors": 94707,
+          "taxation_social_security": 254190,
+          "vat_payable": null,
+          "corporation_tax": null,
+          "bank_loans_current": 5980,
+          "hire_purchase_current": 12298,
+          "accruals": null,
+          "amounts_owed_to_directors": null,
+          "other_creditors": 66308,
+          "total": 433483
+        },
+        "long_term_liabilities": {
+          "bank_loans": 1519,
+          "hire_purchase_long_term": 15206,
+          "deferred_taxation": 4742,
+          "other_debt": null,
+          "total": 21467
+        },
+        "equity": {
+          "share_capital": 100,
+          "retained_earnings": 478129,
+          "total": 478229
+        }
+      },
+      "financial_ratios": {
+        "current_ratio": 2.065793,
+        "quick_ratio": 1.635827,
+        "net_assets_growth_percent": 107.733273,
+        "gearing_ratio_percent": 4.489063
+      }
+    }
+  },
+  "summary_insights": [
+    "Net assets more than doubled, growing by 107.7% from £230,213 to £478,229, driven by strong retained profits.",
+    "Liquidity has significantly improved, with the current ratio rising from 1.76 to 2.07 and the quick ratio increasing to 1.64.",
+    "Cash reserves saw a substantial 176% increase, rising from £153,138 to £422,653, providing a robust buffer for operations.",
+    "Net current assets (working capital) expanded by 118.7%, growing from £211,287 to £462,003.",
+    "Long-term leverage has decreased, with the gearing ratio dropping from 18.7% to 4.5% as long-term debt was reduced.",
+    "Taxation and social security liabilities more than doubled to £254,190, which may impact short-term cash flow requirements.",
+    "Tangible fixed assets decreased by 39% due to depreciation exceeding new capital expenditure during the period."
+  ],
+  "_isIM": false
+}

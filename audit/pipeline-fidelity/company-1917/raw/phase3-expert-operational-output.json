@@ -1,0 +1,146 @@
+{
+  "expert": "operational",
+  "company_name": "[AUDIT-190] Spruce Pools",
+  "analysis_date": "2024-05-22",
+  "score": 68,
+  "confidence": "high",
+  "working_capital": {
+    "yearly_metrics": {
+      "2022": {
+        "debtor_days": 16.71,
+        "creditor_days": 30.03,
+        "stock_days": 14.14,
+        "cash_conversion_cycle_days": 0.82,
+        "net_working_capital": 701868,
+        "working_capital_percent_revenue": 30.75
+      },
+      "2023": {
+        "debtor_days": 10.83,
+        "creditor_days": 44.94,
+        "stock_days": 16.49,
+        "cash_conversion_cycle_days": -17.62,
+        "net_working_capital": 655518,
+        "working_capital_percent_revenue": 32.89
+      },
+      "2024": {
+        "debtor_days": 11.77,
+        "creditor_days": 23.46,
+        "stock_days": 17.96,
+        "cash_conversion_cycle_days": 6.27,
+        "net_working_capital": 629880,
+        "working_capital_percent_revenue": 31.78
+      },
+      "2025": {
+        "debtor_days": 7.29,
+        "creditor_days": 26.74,
+        "stock_days": 13.79,
+        "cash_conversion_cycle_days": -5.66,
+        "net_working_capital": 635790,
+        "working_capital_percent_revenue": 27.48
+      }
+    },
+    "trend": "improving",
+    "working_capital_intensity": "moderate",
+    "observations": [
+      "The cash conversion cycle is exceptionally tight, frequently dipping into negative territory, indicating the business is effectively funded by its suppliers and prompt customer payments.",
+      "Debtor days have improved significantly from 16.7 in 2022 to 7.3 in 2025, suggesting very strong credit control or a high proportion of point-of-sale/upfront payments.",
+      "Net working capital remains robust, largely driven by a high cash balance (Current Position: £795,164.52 as at 2026-05-31)."
+    ]
+  },
+  "capex": {
+    "total_gross_asset_value": 286935.2,
+    "total_nbv": 286935.2,
+    "asset_freshness_percent": 100,
+    "recent_additions_24m_value": null,
+    "recent_additions_percent": null,
+    "annual_depreciation_charge": 71116,
+    "estimated_maintenance_capex": 71116,
+    "capex_cliff_risk": false,
+    "assets_requiring_replacement": [],
+    "category_breakdown": {
+      "property": {
+        "cost": 24747,
+        "nbv": 24747
+      },
+      "plant_machinery": {
+        "cost": 26716.9,
+        "nbv": 26716.9
+      },
+      "vehicles": {
+        "cost": 149647.93,
+        "nbv": 149647.93
+      },
+      "it_equipment": {
+        "cost": 36307.67,
+        "nbv": 36307.67
+      },
+      "other": {
+        "cost": 49515.7,
+        "nbv": 49515.7
+      }
+    },
+    "observations": [
+      "The asset register shows a 100% freshness ratio because accumulated depreciation is recorded as zero in the summary, which contradicts the P&L depreciation charges; this suggests the register is not fully reconciled with the statutory accounts.",
+      "Vehicles represent the largest tangible asset category (£149,647.93), which is typical for a field-based construction and maintenance business.",
+      "Significant intangible assets (Goodwill) totaling over £138k are noted in the detailed asset list but are not reflected in the statutory balance sheet 'Intangible Assets' line, which is reported as zero."
+    ]
+  },
+  "workforce": {
+    "headcount": null,
+    "total_payroll": 236078,
+    "revenue_per_employee": null,
+    "payroll_percent_revenue": 10.2,
+    "average_salary_all": null,
+    "average_salary_excl_directors": null,
+    "director_remuneration_total": 69100,
+    "director_percent_of_payroll": 29.27,
+    "ft_pt_split": {
+      "full_time": null,
+      "part_time": null
+    },
+    "longest_tenured_years": null,
+    "newest_hire_months_ago": null,
+    "observations": [
+      "Staff costs as a percentage of revenue are low (10.2% in 2025), however, this excludes direct labor captured in Cost of Sales (£390k in 2023). Total labor intensity is higher than the overhead P&L suggests.",
+      "There was a significant spike in 'Staff wages & salaries' in 2024 (£468,010) compared to 2025 (£176,078), suggesting either a reclassification of direct labor or a significant headcount reduction.",
+      "Director remuneration is a significant portion of the administrative payroll (29.3%)."
+    ]
+  },
+  "owner_dependency": {
+    "risk_level": "medium",
+    "director_count": null,
+    "highest_individual_salary": null,
+    "highest_individual_percent_of_payroll": null,
+    "critical_function_concentration": "High concentration in directorship based on remuneration vs total staff costs.",
+    "observations": [
+      "The business pays significant dividends (£162k in 2025) alongside director salaries, indicating the owners are heavily incentivized through profit distribution.",
+      "Lack of a detailed staff matrix prevents assessment of middle-management depth."
+    ]
+  },
+  "scalability": {
+    "rating": "medium",
+    "headcount_for_25pct_growth": null,
+    "capex_needed_for_growth": "Moderate - likely requires additional vehicles and plant for new service teams.",
+    "working_capital_supports_growth": true,
+    "bottlenecks": [
+      "Subcontractor availability",
+      "Vehicle fleet capacity",
+      "Direct labor recruitment"
+    ],
+    "observations": [
+      "The business generates sufficient cash to fund its own working capital requirements for growth.",
+      "Revenue has been volatile (dipping in 2023/2024 before recovering in 2025), suggesting scalability may be limited by market demand or project lead times rather than capital."
+    ]
+  },
+  "key_findings": [
+    "Excellent working capital management with very low debtor days and a neutral-to-negative cash conversion cycle.",
+    "Strong liquidity position with over £795k cash as of 2026-05-31.",
+    "The business model appears to rely on a mix of direct labor and subcontractors, providing some operational flexibility."
+  ],
+  "red_flags": [
+    "Data discrepancy: The asset register shows zero accumulated depreciation while the P&L shows ~£71k annual charges.",
+    "Significant P&L volatility in staff costs between 2024 and 2025 suggests inconsistent accounting treatment of labor.",
+    "High dividend extraction relative to net profit (89.7% of net profit paid as dividends in 2025)."
+  ],
+  "narrative": "Spruce Pools demonstrates strong operational efficiency in terms of cash management and working capital. The business operates with a very short collection cycle, which minimizes the need for external growth funding. However, there are notable inconsistencies between the asset register and the statutory accounts regarding depreciation and the classification of labor costs. While the business is profitable and liquid, the high rate of dividend extraction and the volatility in overhead staff costs suggest a need for tighter financial controls and a clearer distinction between cost of sales and administrative labor before scaling."
+}

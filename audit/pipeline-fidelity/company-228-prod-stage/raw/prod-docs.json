@@ -1,0 +1,123 @@
+[
+  {
+    "id": 1624,
+    "document_name": "Signed - Full Accounts - 31032024_230330.pdf",
+    "original_filename": "Signed - Full Accounts - 31032024_230330.pdf",
+    "document_category": "Company Accounts",
+    "secondary_category": null,
+    "file_path": "companies/228/doc-1784214789681-342348647.pdf",
+    "file_type": "application/pdf",
+    "file_size": 397088,
+    "upload_date": "2026-07-16T15:13:10.806Z"
+  },
+  {
+    "id": 1759,
+    "document_name": "Year Ending 31.03.2023.pdf",
+    "original_filename": "Year Ending 31.03.2023.pdf",
+    "document_category": "Company Accounts",
+    "secondary_category": null,
+    "file_path": "companies/228/doc-1784216448649-638236711.pdf",
+    "file_type": "application/pdf",
+    "file_size": 91859,
+    "upload_date": "2026-07-16T15:40:49.565Z"
+  },
+  {
+    "id": 1762,
+    "document_name": "Midland_Air_Conditioning___Facility_Management_Ltd_-_Profit_and_Loss (31) DRAFT.pdf",
+    "original_filename": "Midland_Air_Conditioning___Facility_Management_Ltd_-_Profit_and_Loss (31) DRAFT.pdf",
+    "document_category": "Company Accounts",
+    "secondary_category": null,
+    "file_path": "companies/228/doc-1784216927322-99318749.pdf",
+    "file_type": "application/pdf",
+    "file_size": 28001,
+    "upload_date": "2026-07-16T15:48:48.077Z"
+  },
+  {
+    "id": 1763,
+    "document_name": "P&L YE 31.03.2026.pdf",
+    "original_filename": "P&L YE 31.03.2026.pdf",
+    "document_category": "YTD Profit & Loss",
+    "secondary_category": null,
+    "file_path": "companies/228/doc-1784216942561-584515673.pdf",
+    "file_type": "application/pdf",
+    "file_size": 25634,
+    "upload_date": "2026-07-16T15:49:03.390Z"
+  },
+  {
+    "id": 1764,
+    "document_name": "MI Presentation 06-25.pptx",
+    "original_filename": "MI Presentation 06-25.pptx",
+    "document_category": "Deal Documents",
+    "secondary_category": null,
+    "file_path": "companies/228/doc-1784217011240-707079318.pptx",
+    "file_type": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "file_size": 796328,
+    "upload_date": "2026-07-16T15:50:11.988Z"
+  },
+  {
+    "id": 1765,
+    "document_name": "154764 - Midland Air Conditioning & Facility Management Ltd.pdf",
+    "original_filename": "154764 - Midland Air Conditioning & Facility Management Ltd.pdf",
+    "document_category": "Deal Documents",
+    "secondary_category": null,
+    "file_path": "companies/228/doc-1784217025842-596919980.pdf",
+    "file_type": "application/pdf",
+    "file_size": 5607240,
+    "upload_date": "2026-07-16T15:50:27.112Z"
+  },
+  {
+    "id": 1775,
+    "document_name": "Balance Sheet.pdf",
+    "original_filename": "Balance Sheet.pdf",
+    "document_category": "Company Accounts",
+    "secondary_category": null,
+    "file_path": "companies/228/doc-1784222385163-591978777.pdf",
+    "file_type": "application/pdf",
+    "file_size": 26424,
+    "upload_date": "2026-07-16T17:19:46.018Z"
+  },
+  {
+    "id": 1777,
+    "document_name": "MAC Sales Ledger 01.04.25 to 08.09.25.csv",
+    "original_filename": "MAC Sales Ledger 01.04.25 to 08.09.25.csv",
+    "document_category": "Sales Ledger",
+    "secondary_category": null,
+    "file_path": "companies/228/doc-1784226449803-712664815.csv",
+    "file_type": "text/csv",
+    "file_size": 53351,
+    "upload_date": "2026-07-16T18:27:30.663Z"
+  },
+  {
+    "id": 1778,
+    "document_name": "MAC Staff Matrix - Sept 2025.csv",
+    "original_filename": "MAC Staff Matrix - Sept 2025.csv",
+    "document_category": "Staff Matrix",
+    "secondary_category": null,
+    "file_path": "companies/228/doc-1784226459457-262851834.csv",
+    "file_type": "text/csv",
+    "file_size": 3821,
+    "upload_date": "2026-07-16T18:27:40.151Z"
+  },
+  {
+    "id": 1779,
+    "document_name": "MAC Fixed Asset Register 08.09.25.csv",
+    "original_filename": "MAC Fixed Asset Register 08.09.25.csv",
+    "document_category": "Asset Register",
+    "secondary_category": null,
+    "file_path": "companies/228/doc-1784226472422-618799378.csv",
+    "file_type": "text/csv",
+    "file_size": 6329,
+    "upload_date": "2026-07-16T18:27:53.104Z"
+  },
+  {
+    "id": 1780,
+    "document_name": "Signed NDA - Thor-CON",
+    "original_filename": "signed_nda_228_2026-07-16T18-58-57-118Z.pdf",
+    "document_category": "Deal Documents",
+    "secondary_category": null,
+    "file_path": "signed-ndas/doc-1784228337118-311080624.pdf",
+    "file_type": "application/pdf",
+    "file_size": 70090,
+    "upload_date": "2026-07-16T18:58:57.850Z"
+  }
+]

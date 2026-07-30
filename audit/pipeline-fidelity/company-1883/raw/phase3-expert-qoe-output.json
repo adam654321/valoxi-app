@@ -1,0 +1,111 @@
+{
+  "expert": "quality_of_earnings",
+  "company_name": "[AUDIT-220] Canoports UK Limited",
+  "analysis_date": "2025-07-24",
+  "score": 75,
+  "confidence": "high",
+  "reported_figures": {
+    "operating_profit": 1322241,
+    "depreciation": 303929,
+    "amortisation": 0,
+    "reported_ebitda": 1626170,
+    "source_year": "2024"
+  },
+  "add_backs": [
+    {
+      "item": "Non-recurring items",
+      "category": "one_off_cost",
+      "amount": 284357,
+      "recurrence": "one_off",
+      "year": "2024",
+      "justification": "Identified in RECONCILED_FINANCIALS as non-recurring items impacting the 2024 P&L.",
+      "confidence": "high",
+      "defensibility_score": 9,
+      "case_for_inclusion": "These are explicitly flagged as non-recurring in the reconciled accounting records and should be added back to reflect sustainable earnings.",
+      "case_for_exclusion": "The seller must provide a detailed breakdown to prove these are truly non-operational and will not recur under new ownership."
+    },
+    {
+      "item": "Extraordinary Items",
+      "category": "one_off_cost",
+      "amount": 17715,
+      "recurrence": "one_off",
+      "year": "2024",
+      "justification": "Identified in RECONCILED_FINANCIALS as extraordinary items impacting the 2024 P&L.",
+      "confidence": "high",
+      "defensibility_score": 9,
+      "case_for_inclusion": "Extraordinary items are by definition outside the ordinary course of business and distort the underlying EBITDA.",
+      "case_for_exclusion": "The amount is relatively immaterial and may relate to minor operational adjustments the seller argues are part of normal business volatility."
+    }
+  ],
+  "deductions": [
+    {
+      "item": "Director Salary Market Rate Adjustment",
+      "category": "replacement_salary",
+      "amount": 64525,
+      "recurrence": "recurring",
+      "year": "2024",
+      "justification": "Current director remuneration for two directors is £140,475. For a £14m revenue business, the benchmark for two working directors is £205,000 (£102,500 each).",
+      "confidence": "medium",
+      "defensibility_score": 7,
+      "case_for_inclusion": "The current owners are underpaid relative to market rates for a business of this scale; a buyer would need to budget for commercial salaries to replace them.",
+      "case_for_exclusion": "The seller may argue that the existing CEO (Richard) already handles the majority of operations, reducing the need for two high-salary directors."
+    }
+  ],
+  "total_add_backs": 302072,
+  "total_deductions": 64525,
+  "adjusted_ebitda": {
+    "conservative": 1863717,
+    "base": 1863717,
+    "optimistic": 1928242
+  },
+  "adjustment_summary": {
+    "reported_ebitda": 1626170,
+    "plus_add_backs": 302072,
+    "minus_deductions": 64525,
+    "equals_adjusted_ebitda_base": 1863717
+  },
+  "director_salary_analysis": {
+    "directors": [
+      {
+        "name": "Mark & Louisa Wood (Combined)",
+        "current_salary": 140475,
+        "estimated_market_rate": 205000,
+        "benchmark_range_used": "Revenue £10M-£20M: Working MD/Owner-Director (£85,000–£120,000)",
+        "adjustment": 64525,
+        "adjustment_type": "deduction"
+      }
+    ]
+  },
+  "sustainability_assessment": {
+    "sustainable_for_3_years": true,
+    "key_assumptions": [
+      "The 37% gross margin is maintainable despite inflationary pressures in manufacturing.",
+      "The £17.4m secured pipeline converts to revenue at historical conversion rates.",
+      "The CEO (Richard) remains with the business to ensure operational continuity."
+    ],
+    "sensitivity_factors": [
+      "Working capital intensity: Increasing stock and debtor days could squeeze cash flow if not managed.",
+      "Customer concentration: While currently low, the loss of any top-tier client would impact the high-margin revenue base."
+    ],
+    "upside_scenarios": [
+      "Internalisation of powder coating via the new £1.3m line improves margins further.",
+      "Implementation of tighter credit control reduces debtor days to the 45-50 day range."
+    ],
+    "downside_scenarios": [
+      "Raw material price volatility (aluminum/steel) erodes the 37% gross margin.",
+      "Failure to manage the high stock levels (£3.3m) leads to obsolescence or liquidity constraints."
+    ]
+  },
+  "key_findings": [
+    "Adjusted EBITDA of £1.86m is significantly higher than reported EBITDA due to £302k of non-recurring items identified in the 2024 accounts.",
+    "The business is highly liquid with £2.95m cash at bank as of May 2026 and negligible long-term debt.",
+    "Director remuneration is currently below market rates, requiring a £64.5k downward adjustment to EBITDA to reflect commercial replacement costs.",
+    "The effective tax rate of 50% in FY24 is an anomaly that does not impact EBITDA but significantly affects net cash flow and requires tax due diligence."
+  ],
+  "red_flags": [
+    "Stock levels have increased to £3.3m (May 2026) from £2.6m (May 2024), suggesting potential overstocking or slowing turnover.",
+    "Debtor days are trending upwards (62.9 days per latest ledger vs 52.5 days in FY24).",
+    "The lack of multi-year P&L data in the reconciled set limits the ability to verify the stability of the 37% gross margin."
+  ],
+  "narrative": "Canoports UK Limited presents a high-quality earnings profile characterized by strong margins and robust cash generation. The primary adjustment to earnings is the add-back of £302k in non-recurring and extraordinary items, which appear well-evidenced in the reconciled financials. While reported EBITDA is £1.63m, the normalized 'Base Case' EBITDA is £1.86m after accounting for these items and adjusting for under-market director salaries. The business has successfully deleveraged, with bank debt almost entirely cleared by May 2026, leaving a clean balance sheet for acquisition. However, the buyer should focus on the 'heavy' working capital requirement; with £7m tied up in NWC and increasing stock levels, any post-acquisition growth will require significant cash injection or a radical improvement in the cash conversion cycle."
+}

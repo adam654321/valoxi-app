@@ -1,0 +1,18 @@
+{
+  "document": "balance_sheet",
+  "source": "statutory",
+  "years_covered": [],
+  "period_ends": {},
+  "months_covered": {},
+  "report_date": null,
+  "years": {},
+  "summary_insights": [
+    "The provided document is an Information Memorandum (IM) which contains an Income Statement but lacks a detailed Balance Sheet.",
+    "Page 26 of the document is explicitly titled 'Balance Sheet' but is marked with 'Information Required', indicating the data was not included in this version of the report.",
+    "While the Income Statement on page 25 shows profitability and EBITDA figures for 2022-2024, the corresponding asset and liability breakdowns are missing.",
+    "Property details on page 8 confirm the business operates from a leasehold premises with an annual rent of £35,400, but no book value for leasehold improvements is provided.",
+    "Without the Balance Sheet data, liquidity ratios (Current/Quick) and capital structure (Gearing) cannot be calculated or assessed.",
+    "The absence of a Balance Sheet prevents an analysis of the company's net asset growth or working capital management."
+  ],
+  "_isIM": true
+}

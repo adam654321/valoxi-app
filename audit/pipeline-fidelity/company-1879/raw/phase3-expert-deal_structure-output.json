@@ -1,0 +1,99 @@
+{
+  "expert": "deal_structure",
+  "company_name": "[AUDIT-172] Ideal scaffolding",
+  "analysis_date": "2026-07-30",
+  "score": 35,
+  "confidence": "medium",
+  "structures": [
+    {
+      "name": "Conservative Approach",
+      "strategy": "Asset-backed floor with heavy contingency to mitigate customer concentration and capex cliff risks.",
+      "risk_to_buyer": "low",
+      "suitable_when": "The buyer prioritizes capital preservation and is unwilling to pay for 'goodwill' that is currently unsupported by earnings.",
+      "consideration": {
+        "total_headline": 36400,
+        "upfront_cash": 10000,
+        "upfront_percent": 27.5,
+        "deferred": 10000,
+        "earnout_maximum": 16400,
+        "earnout_metric": "Customer Retention (Equans Regeneration Ltd)",
+        "earnout_period_months": 24,
+        "earnout_rationale": "Trigger 1 (Customer Concentration): Equans represents 29.6% of revenue. This earnout, identified by the Risk Expert, ensures the buyer does not pay for a business that becomes unviable if this contract is lost.",
+        "retention_escrow": 5000
+      },
+      "key_conditions": [
+        "Pound-for-pound reduction for any bad debt write-offs over £5,000",
+        "Successful transfer of Rail Sentinel Co-ordinator status to a new hire",
+        "Full write-off or settlement of £212k intercompany loan prior to completion"
+      ],
+      "notes": "Seller must provide a 12-month handover to transition Rail Sentinel compliance and key accounts. Non-compete duration of 3 years covering a 50-mile radius. Specific indemnity required for the £91.7k Worldwide Scaffold debt. Completion mechanism: Completion accounts with a working capital peg based on the 12-month average. Risk is low for the buyer due to the low entry price relative to asset value, but high for deal completion due to seller expectations."
+    },
+    {
+      "name": "Balanced Approach",
+      "strategy": "A middle-ground structure that offers a higher headline price to bridge the expectation gap, but ties the premium to earnings stability.",
+      "risk_to_buyer": "medium",
+      "suitable_when": "The seller is willing to accept that historical 2022 performance is no longer relevant, but believes the 2026 margin collapse is temporary.",
+      "consideration": {
+        "total_headline": 55000,
+        "upfront_cash": 25000,
+        "upfront_percent": 45.5,
+        "deferred": 15000,
+        "earnout_maximum": 15000,
+        "earnout_metric": "Adjusted EBITDA",
+        "earnout_period_months": 12,
+        "earnout_rationale": "Trigger 4 (Uncertain Add-backs/Earnings): The QoE expert flagged a 77% collapse in EBITDA. This earnout ensures the 'Adjusted EBITDA' of £16.8k is actually achieved and sustainable post-acquisition.",
+        "retention_escrow": 7500
+      },
+      "key_conditions": [
+        "Minimum 12-month consultancy agreement for Mark Jones",
+        "Warranty cap at 100% of consideration given the low deal value",
+        "Evidence of scaffolding safety inspections for all 'fully depreciated' stock"
+      ],
+      "notes": "Handover period of 6 months full-time followed by 6 months consultancy. Standard warranty package with a £2,500 de minimis. Completion mechanism: Locked box based on the April 2026 management accounts, adjusted for the £91k bad debt. Risk to buyer is medium because the EBITDA is so thin that any operational hiccup (e.g., vehicle repair) wipes out profit."
+    },
+    {
+      "name": "Competitive Approach",
+      "strategy": "Maximum headline value to appeal to the seller's high expectations, heavily weighted toward future revenue performance.",
+      "risk_to_buyer": "high",
+      "suitable_when": "A strategic buyer sees value in the Rail Sentinel status and modern fleet that exceeds the current earnings-based valuation.",
+      "consideration": {
+        "total_headline": 75000,
+        "upfront_cash": 40000,
+        "upfront_percent": 53.3,
+        "deferred": 15000,
+        "earnout_maximum": 20000,
+        "earnout_metric": "Revenue Stabilisation",
+        "earnout_period_months": 12,
+        "earnout_rationale": "Trigger 2 (Revenue Decline): Revenue has been volatile. This earnout, based on the QoE expert's findings, protects the buyer if the current £1.8m revenue run-rate continues to slide.",
+        "retention_escrow": 10000
+      },
+      "key_conditions": [
+        "Retention of top 3 customers for 12 months post-completion",
+        "Immediate recruitment of a Yard Manager to reduce MD dependency",
+        "Indemnity for any deferred tax liabilities arising from accelerated depreciation"
+      ],
+      "notes": "3-month intensive handover. Warranty period of 18 months for general warranties and 6 years for tax. Completion mechanism: Completion accounts. Risk to buyer is high because the £75k price represents a significant multiple of the actual adjusted EBITDA (£16.8k), effectively paying for a turnaround that hasn't happened yet."
+    }
+  ],
+  "recommended_structure": "Conservative Approach",
+  "recommendation_rationale": "The business is technically worth less than its Net Asset Value when adjusted for bad debts and director loans. The 'Adjusted EBITDA' barely covers the cost of a replacement manager. A conservative, asset-based offer is the only way to protect the buyer from the 'capex cliff' and the extreme customer concentration risk.",
+  "negotiation_priorities": [
+    "Pound-for-pound reduction for the £91.7k Worldwide Scaffold debt",
+    "Verification of the £212k intercompany loan recoverability",
+    "Securing a long-term commitment or transition plan for the Rail Sentinel compliance role",
+    "Bridging the massive gap between the seller's £500k+ expectation and the £36k reality"
+  ],
+  "deal_breaker_terms": [
+    "Loss of Equans Regeneration Ltd contract prior to completion",
+    "Refusal to provide a specific indemnity for the £91.7k aged debt",
+    "Inability to transfer Rail Sentinel accreditation",
+    "Discovery that the £212k intercompany loan has been spent/dissipated"
+  ],
+  "key_findings": [
+    "The business is facing a 'capex cliff' with 71% of scaffolding assets fully depreciated.",
+    "Customer concentration is critical, with one client at 29.6%.",
+    "Adjusted EBITDA is negligible (£16.8k) after market-rate management costs.",
+    "There is a massive disconnect between seller expectations and financial reality."
+  ],
+  "narrative": "Structuring a deal for Ideal Scaffolding is exceptionally difficult due to the 'valuation gap.' The seller is anchoring on historical 2022 performance, while the 2026 reality shows a business that is barely breaking even after accounting for the owner's replacement and necessary asset maintenance. The deal must be structured as an asset-based purchase (Adjusted NAV) rather than an earnings-based one. The primary goal of the structure is to ensure the buyer does not inherit a 'hollowed-out' company where the main contract leaves and the equipment requires immediate, expensive replacement. An earnout is mandatory to manage the 29.6% customer concentration risk."
+}

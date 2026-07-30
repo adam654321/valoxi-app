@@ -1,0 +1,117 @@
+{
+  "expert": "valuation",
+  "company_name": "[AUDIT-172] Ideal scaffolding",
+  "analysis_date": "2026-07-30",
+  "score": 45,
+  "confidence": "medium",
+  "ebitda_multiple_valuation": {
+    "adjusted_ebitda_base": 16827.82,
+    "sector_multiple_range": {
+      "low": 2,
+      "mid": 2.75,
+      "high": 3.5
+    },
+    "selected_multiple": 2,
+    "multiple_justification": "The multiple is set at the bottom of the sector range (2.0x) due to the severe collapse in EBITDA from £823k to £184k (reported) and the high customer concentration risk. While the vehicle fleet is modern, the core scaffolding assets are 71% depreciated, creating a significant capex liability for any buyer.",
+    "premium_factors_applied": [
+      "Modern vehicle fleet (recent DAF and Ford additions)",
+      "Healthy cash conversion cycle (10.64 days)"
+    ],
+    "discount_factors_applied": [
+      "Significant revenue and margin contraction (Operating margin fell from 33% to 9.8%)",
+      "Critical customer concentration (Equans Regeneration at 29.6%)",
+      "High owner dependency (MD holds MD, Sales, and Rail Sentinel roles)",
+      "Aging scaffolding stock (Capex Cliff risk)"
+    ],
+    "enterprise_value_range": {
+      "conservative": 25241.73,
+      "base": 33655.64,
+      "optimistic": 58897.37
+    }
+  },
+  "ev_to_equity_bridge": {
+    "enterprise_value_base": 33655.64,
+    "plus_cash": 0,
+    "minus_long_term_debt": 0,
+    "minus_director_loans": 27852,
+    "minus_bad_debt_provision": 91726.7,
+    "minus_working_capital_adjustment": 0,
+    "equity_value": {
+      "conservative": -94336.97,
+      "base": -85923.06,
+      "optimistic": -60681.33
+    }
+  },
+  "asset_based_valuation": {
+    "net_asset_value": 128124.9,
+    "property_adjustment": 0,
+    "bad_debt_adjustment": 91726.7,
+    "adjusted_nav": 36398.2,
+    "nav_as_floor": true
+  },
+  "revenue_multiple_crosscheck": {
+    "latest_revenue": 1869199.89,
+    "revenue_multiple_range": {
+      "low": 0.4,
+      "high": 0.8
+    },
+    "implied_ev_range": {
+      "low": 747679.96,
+      "high": 1495359.91
+    }
+  },
+  "valuation_summary": {
+    "recommended_range": {
+      "equity_value_low": 10000,
+      "equity_value_mid": 36398.2,
+      "equity_value_high": 75000
+    },
+    "primary_methodology": "asset_based",
+    "cross_check_alignment": "weak"
+  },
+  "sensitivity": {
+    "ebitda_plus_10pct": {
+      "enterprise_value": 37021.2,
+      "equity_value": -82557.5
+    },
+    "ebitda_minus_10pct": {
+      "enterprise_value": 30290.08,
+      "equity_value": -89288.62
+    },
+    "multiple_plus_half": {
+      "enterprise_value": 42069.55,
+      "equity_value": -77509.15
+    },
+    "multiple_minus_half": {
+      "enterprise_value": 25241.73,
+      "equity_value": -94336.97
+    },
+    "key_customer_loss_impact": "Loss of Equans Regeneration (29.6% of revenue) would likely result in a negative EBITDA, making the business unviable as a going concern.",
+    "director_replacement_impact": "Replacing Mark Jones costs £57,500 annually, which exceeds the current adjusted EBITDA, effectively wiping out the earnings-based valuation."
+  },
+  "seller_expectations": {
+    "likely_seller_expectation_range": {
+      "low": 500000,
+      "high": 1500000
+    },
+    "seller_anchor_points": [
+      "Historical 2022 EBITDA of £823k",
+      "Revenue levels near £2m",
+      "Emotional value of the 'Ideal Scaffolding' brand and rail compliance status"
+    ],
+    "negotiation_gap_assessment": "Extreme. The seller is likely to anchor on 2022 performance or a revenue multiple (implied £750k+), whereas the current adjusted earnings barely cover management replacement and maintenance capex. A deal is only likely via a distressed asset sale or a heavy earn-out structure."
+  },
+  "key_findings": [
+    "Adjusted EBITDA is negligible (£16.8k) after accounting for market-rate management and maintenance capex.",
+    "The business is facing a 'capex cliff' with 71% of scaffolding assets fully depreciated.",
+    "Equity value is technically negative when applying an earnings multiple and deducting the recommended £91k bad debt provision and director loans.",
+    "The Asset-Based Valuation (Adjusted NAV) of £36.4k provides the only realistic floor for a transaction."
+  ],
+  "red_flags": [
+    "77% collapse in reported EBITDA since 2022.",
+    "Critical customer concentration with Equans Regeneration (29.6%).",
+    "Unrecoverable debt of £91.7k from Worldwide Scaffold.",
+    "Significant drop in retained earnings from £556k (2025) to £128k (2026)."
+  ],
+  "narrative": "The valuation of Ideal Scaffolding is highly challenged by the divergence between its historical success and its current operational reality. While the company generated over £800k in EBITDA in 2022, the 2026 management accounts and subsequent quality of earnings adjustments reveal a business that is currently barely breaking even on a sustainable basis. The 'Adjusted EBITDA' of £16.8k is insufficient to support a traditional multiple-based valuation, as the cost of replacing the owner-manager and maintaining the aging scaffolding fleet consumes nearly all operating cash flow. Furthermore, the bridge to equity value is severely impacted by a recommended £91.7k bad debt write-off and £27.8k in director loans. Consequently, the earnings-based equity value is negative. The most credible valuation approach is the Adjusted Net Asset Value, which provides a floor of approximately £36.4k. A buyer might pay a small premium for the 'Rail Sentinel' compliance status and the modern vehicle fleet, but any significant valuation would require the seller to prove that the 2026 margin collapse is temporary and that the Equans contract is secured long-term. Cash at bank was not stated in the available 2026 management accounts, so it is treated as zero for the bridge."
+}

@@ -1,0 +1,945 @@
+{
+  "model": {
+    "id": 493,
+    "targetCompanyId": 1884,
+    "createdBy": 89,
+    "name": "Audit Model — TC 218",
+    "status": "draft",
+    "version": 1,
+    "transactionType": "share_sale",
+    "parentModelId": null,
+    "isLocked": false,
+    "averagingYears": 3,
+    "ebitdaMultiple": "4.5",
+    "offerDriver": "ebitda",
+    "targetOfferPrice": null,
+    "multipleLow": "3.5",
+    "multipleHigh": "6",
+    "propertyValue": "0",
+    "cashValue": "0",
+    "otherAssets": "0",
+    "calculatedEbitda": null,
+    "adjustedEbitda": "1705875",
+    "enterpriseValue": "7676437",
+    "plusExcessCash": "2949661",
+    "minusPrimaryDebt": "3867",
+    "minusOtherDebt": "0",
+    "minusCorpTaxDue": null,
+    "minusWorkingCapitalAdj": "0",
+    "workingCapitalMonths": 3,
+    "workingCapitalMonthlyAmount": null,
+    "totalPurchasePrice": null,
+    "totalFundingAvailable": null,
+    "equityRequired": null,
+    "upfrontCash": "7435400",
+    "deferredAmount": "1593300",
+    "deferredTerms": null,
+    "earnoutMaximum": "1593300",
+    "earnoutMetric": "EBITDA Stability",
+    "earnoutPeriodMonths": 24,
+    "retentionEscrow": "531100",
+    "feeLegalDdAmount": "25000",
+    "feeAccountingDdAmount": "15000",
+    "feeLoanArrangementAmount": "0",
+    "feeDealMakerAmount": "0",
+    "customFees": [],
+    "expertDataSnapshot": {
+      "qoe": {
+        "expert": "quality_of_earnings",
+        "company_name": "[AUDIT-218] Canoports UK Limited",
+        "analysis_date": "2025-05-22",
+        "score": 65,
+        "confidence": "medium",
+        "reported_figures": {
+          "operating_profit": null,
+          "depreciation": 180200,
+          "amortisation": 0,
+          "reported_ebitda": null,
+          "source_year": "2025"
+        },
+        "add_backs": [
+          {
+            "item": "Excess Director Remuneration (CEO/MD)",
+            "category": "owner_salary",
+            "amount": 0,
+            "recurrence": "recurring",
+            "year": "2025",
+            "justification": "Total director remuneration is not disclosed in the reconciled financials, preventing calculation of an add-back despite the presence of 3 directors.",
+            "confidence": "low",
+            "defensibility_score": 0,
+            "case_for_inclusion": "Owner-directors in SMEs often take dividends or salaries that do not reflect market rates for their operational roles.",
+            "case_for_exclusion": "Without specific salary data for the individuals, any adjustment is speculative and would be rejected by the seller."
+          }
+        ],
+        "deductions": [
+          {
+            "item": "Replacement Finance Director Cost",
+            "category": "missing_management",
+            "amount": 82500,
+            "recurrence": "recurring",
+            "year": "2025",
+            "justification": "The business currently employs a Controller 'working toward FD'. For a £18m+ revenue business, a fully qualified FD is required. Benchmark for £10m-£20m revenue is £70k-£95k; mid-point used.",
+            "confidence": "high",
+            "defensibility_score": 8,
+            "case_for_inclusion": "A buyer will require a qualified FD to manage the complex working capital and growth profile of this manufacturing entity.",
+            "case_for_exclusion": "The seller may argue the current Controller is sufficient and the cost is already partially reflected in the staff cost base."
+          },
+          {
+            "item": "Increased Maintenance Capex / IT Infrastructure",
+            "category": "deferred_maintenance",
+            "amount": 45000,
+            "recurrence": "recurring",
+            "year": "2025",
+            "justification": "Operational data shows IT hardware and office equipment are 71% and 67% depreciated respectively. An annualised provision for infrastructure refresh is required.",
+            "confidence": "medium",
+            "defensibility_score": 6,
+            "case_for_inclusion": "The aging IT and office asset base represents a looming capital requirement that should be reflected as an annualised operating cost.",
+            "case_for_exclusion": "The seller will argue that maintenance is already captured in the P&L and that capital replacement is a balance sheet item, not an EBITDA deduction."
+          }
+        ],
+        "total_add_backs": 0,
+        "total_deductions": 127500,
+        "adjusted_ebitda": {
+          "conservative": null,
+          "base": null,
+          "optimistic": null
+        },
+        "adjustment_summary": {
+          "reported_ebitda": null,
+          "plus_add_backs": 0,
+          "minus_deductions": 127500,
+          "equals_adjusted_ebitda_base": null
+        },
+        "director_salary_analysis": {
+          "directors": [
+            {
+              "name": "CEO / MD, Div 1",
+              "current_salary": null,
+              "estimated_market_rate": 102500,
+              "benchmark_range_used": "Revenue £10M-£20M: £85,000–£120,000",
+              "adjustment": null,
+              "adjustment_type": "none"
+            },
+            {
+              "name": "MD, Division 2",
+              "current_salary": null,
+              "estimated_market_rate": 75000,
+              "benchmark_range_used": "Revenue £10M-£20M: £65,000–£85,000",
+              "adjustment": null,
+              "adjustment_type": "none"
+            },
+            {
+              "name": "MD, Division 3",
+              "current_salary": null,
+              "estimated_market_rate": 75000,
+              "benchmark_range_used": "Revenue £10M-£20M: £65,000–£85,000",
+              "adjustment": null,
+              "adjustment_type": "none"
+            }
+          ]
+        },
+        "sustainability_assessment": {
+          "sustainable_for_3_years": true,
+          "key_assumptions": [
+            "Revenue remains stable at approximately £18.3m.",
+            "The powder coating line maintains its QualiCoat accreditation and operational efficiency.",
+            "Staff costs remain controlled at ~15.6% of turnover."
+          ],
+          "sensitivity_factors": [
+            "Working capital absorption: The sharp increase in NWC (£7.07m in 2026) could constrain cash flow for growth.",
+            "Raw material price volatility affecting gross margins (not visible in current data)."
+          ],
+          "upside_scenarios": [
+            "Capacity utilization of the 2022 powder coating line investment increases.",
+            "Professionalization of the finance function leads to better inventory management and cash conversion."
+          ],
+          "downside_scenarios": [
+            "Failure to replace aging IT/Office infrastructure leads to operational disruption.",
+            "Loss of key personnel (CEO has 15-year tenure)."
+          ]
+        },
+        "key_findings": [
+          "The business has successfully deleveraged, with bank debt falling from £1.34m in 2023 to £15.8k in 2026.",
+          "Strong liquidity with £2.95m cash at bank as of May 2026.",
+          "Significant working capital intensity, with stock and debtors tying up over £5.5m in the latest period.",
+          "Asset base is 60% depreciated, suggesting a medium-term requirement for reinvestment despite the recent powder coating line purchase."
+        ],
+        "red_flags": [
+          "Missing P&L data prevents a definitive calculation of Reported EBITDA and margin trends.",
+          "Trade creditors dropped by over 50% in FY26, suggesting a significant cash outflow to suppliers that may not be sustainable.",
+          "Lack of a qualified Finance Director in a business of this scale."
+        ],
+        "narrative": "Canoports UK Limited presents as a financially stable, deleveraged manufacturing business with a strong asset core (the 2022 powder coating line). However, the Quality of Earnings analysis is severely limited by the absence of a full Income Statement in the reconciled data. While balance sheet growth and cash reserves are impressive, the business is becoming increasingly working-capital heavy, with Net Working Capital reaching £7.07m in 2026. We have identified a requirement for a qualified Finance Director (£82.5k deduction) and a provision for infrastructure renewal (£45k deduction). The sustainability of earnings is high given the niche manufacturing capability, but the buyer must investigate the 'missing' P&L data to confirm that the inferred £18.3m revenue translates into healthy operating margins before proceeding with a valuation based on these figures."
+      },
+      "valuation": {
+        "expert": "valuation",
+        "company_name": "[AUDIT-218] Canoports UK Limited",
+        "analysis_date": "2025-05-22",
+        "score": 55,
+        "confidence": "low",
+        "ebitda_multiple_valuation": {
+          "adjusted_ebitda_base": 1705875,
+          "sector_multiple_range": {
+            "low": 3.5,
+            "mid": 4.5,
+            "high": 6
+          },
+          "selected_multiple": 4.5,
+          "multiple_justification": "A mid-range multiple of 4.5x is selected. The business qualifies for the £10M-£20M revenue bracket (3.5x-7.0x guardrail). While it has a strong niche and significant scale, the lack of P&L transparency and aging asset base prevent a premium multiple.",
+          "premium_factors_applied": [
+            "Revenue scale (£18.3m) provides platform quality",
+            "Niche focus in specialized canopy systems",
+            "Strong liquidity and debt-free status"
+          ],
+          "discount_factors_applied": [
+            "Missing P&L data creates significant earnings quality risk",
+            "Aging asset base (60% depreciated) suggests future CapEx requirements",
+            "High working capital intensity and cash absorption"
+          ],
+          "enterprise_value_range": {
+            "conservative": 5970562,
+            "base": 7676437,
+            "optimistic": 9382312
+          }
+        },
+        "ev_to_equity_bridge": {
+          "enterprise_value_base": 7676437,
+          "plus_cash": 2949661,
+          "minus_long_term_debt": 3867,
+          "minus_director_loans": 0,
+          "minus_bad_debt_provision": 0,
+          "minus_working_capital_adjustment": 0,
+          "equity_value": {
+            "conservative": 8916356,
+            "base": 10622231,
+            "optimistic": 12328106
+          }
+        },
+        "asset_based_valuation": {
+          "net_asset_value": 7873818,
+          "property_adjustment": 0,
+          "bad_debt_adjustment": 0,
+          "adjusted_nav": 7873818,
+          "nav_as_floor": true
+        },
+        "revenue_multiple_crosscheck": {
+          "latest_revenue": 18333750,
+          "revenue_multiple_range": {
+            "low": 0.4,
+            "high": 0.8
+          },
+          "implied_ev_range": {
+            "low": 7333500,
+            "high": 14667000
+          }
+        },
+        "valuation_summary": {
+          "recommended_range": {
+            "equity_value_low": 8916000,
+            "equity_value_mid": 10622000,
+            "equity_value_high": 12328000
+          },
+          "primary_methodology": "ebitda_multiple",
+          "cross_check_alignment": "moderate"
+        },
+        "sensitivity": {
+          "ebitda_plus_10pct": {
+            "enterprise_value": 8444081,
+            "equity_value": 11389875
+          },
+          "ebitda_minus_10pct": {
+            "enterprise_value": 6908793,
+            "equity_value": 9854587
+          },
+          "multiple_plus_half": {
+            "enterprise_value": 8529375,
+            "equity_value": 11475169
+          },
+          "multiple_minus_half": {
+            "enterprise_value": 6823500,
+            "equity_value": 9769294
+          },
+          "key_customer_loss_impact": "Moderate; while specific concentration is unknown, the divisional structure provides some revenue insulation.",
+          "director_replacement_impact": 127500
+        },
+        "seller_expectations": {
+          "likely_seller_expectation_range": {
+            "low": 12000000,
+            "high": 18000000
+          },
+          "seller_anchor_points": [
+            "Strong cash balance of £2.95m",
+            "High Net Asset Value of £7.87m",
+            "Revenue scale of £18m+"
+          ],
+          "negotiation_gap_assessment": "Significant. The seller is likely to anchor on the high revenue and cash position, potentially seeking a 1x Revenue multiple (£18m) or a high EBITDA multiple on unadjusted figures. The buyer will focus on the £127.5k in necessary EBITDA deductions and the aging asset base."
+        },
+        "key_findings": [
+          "The business is exceptionally liquid with nearly £3m in cash and a current ratio of 4.44.",
+          "Valuation is heavily dependent on an inferred EBITDA, as full P&L data was missing from the reconciled financials.",
+          "The 2022 investment in a powder coating line is a key value driver, though other assets are 60% depreciated.",
+          "The business has successfully deleveraged, making it an attractive target for leveraged buyouts."
+        ],
+        "red_flags": [
+          "Missing P&L data prevents a definitive assessment of operating margins.",
+          "Significant increase in Net Working Capital (£7.07m) suggests cash is being trapped in the business cycle.",
+          "Lack of a qualified Finance Director for a business of this scale requires a post-acquisition cost adjustment."
+        ],
+        "narrative": "The valuation of Canoports UK Limited is characterized by a strong balance sheet but limited income statement visibility. Based on inferred revenue of £18.3m and a conservative 10% EBITDA margin (adjusted for FD replacement and maintenance capex), we arrive at an Adjusted EBITDA of approximately £1.7m. Using a 4.5x multiple—appropriate for a manufacturing business of this scale—the Enterprise Value is estimated at £7.68m. After adding the verbatim cash balance of £2,949,661 (from the 2026 Current Position) and deducting the remaining long-term debt of £3,867 (2026), the Base Equity Value is £10.62m. The high Net Asset Value of £7.87m provides a strong floor for the valuation. However, the 'low' confidence rating reflects the necessity of verifying the inferred revenue and margin data during due diligence, as any deviation in EBITDA will significantly swing the final price."
+      },
+      "deal_structure": {
+        "expert": "deal_structure",
+        "company_name": "[AUDIT-218] Canoports UK Limited",
+        "analysis_date": "2025-05-22",
+        "score": 62,
+        "confidence": "medium",
+        "structures": [
+          {
+            "name": "Conservative Approach",
+            "strategy": "Minimize upfront risk by shifting 50% of the consideration to performance-based and time-based milestones, specifically to address the lack of P&L transparency.",
+            "risk_to_buyer": "low",
+            "suitable_when": "Due diligence cannot fully verify the inferred 10% EBITDA margin or if the aging asset base requires immediate heavy CapEx.",
+            "consideration": {
+              "total_headline": 10622000,
+              "upfront_cash": 5311000,
+              "upfront_percent": 50,
+              "deferred": 2124400,
+              "earnout_maximum": 3186600,
+              "earnout_metric": "Adjusted EBITDA",
+              "earnout_period_months": 36,
+              "earnout_rationale": "Trigger 4 (Unverified add-backs/earnings): The valuation is based on an inferred EBITDA due to missing P&L data. The earnout ensures the buyer only pays for verified, sustainable earnings.",
+              "retention_escrow": 1062200
+            },
+            "key_conditions": [
+              "Full P&L audit for the last 3 fiscal years prior to completion",
+              "CEO and Divisional MDs must remain in post for the full 36-month earnout period",
+              "Working capital peg set at £7.07M (Current Position)"
+            ],
+            "notes": "Seller obligations: 12-month full-time handover followed by 24-month consultancy; 3-year non-compete. Warranties: 25% cap on general warranties, 100% on fundamental; 24-month claim period. Completion: Completion accounts mechanism required to verify the high cash and inventory balances. Risk: Low, as the structure protects against the 'missing' P&L data and aging assets."
+          },
+          {
+            "name": "Balanced Approach",
+            "strategy": "A standard 70/30 split that provides the seller with significant liquidity while retaining enough leverage to ensure a smooth management transition.",
+            "risk_to_buyer": "medium",
+            "suitable_when": "Preliminary due diligence confirms the revenue scale and provides reasonable comfort on the gross margin profile.",
+            "consideration": {
+              "total_headline": 10622000,
+              "upfront_cash": 7435400,
+              "upfront_percent": 70,
+              "deferred": 1593300,
+              "earnout_maximum": 1593300,
+              "earnout_metric": "EBITDA Stability",
+              "earnout_period_months": 24,
+              "earnout_rationale": "Trigger 3 (Key person dependency): The CEO's 15-year tenure creates significant institutional knowledge risk. The earnout is tied to a successful 2-year transition and relationship handover.",
+              "retention_escrow": 531100
+            },
+            "key_conditions": [
+              "Appointment of a Group Finance Director within 6 months of completion",
+              "Maintenance of QualiCoat accreditation for the powder coating line",
+              "Inventory valuation audit to ensure £3.3M stock is current and saleable"
+            ],
+            "notes": "Seller obligations: 6-month handover; 2-year non-compete. Warranties: 35% cap; 18-month claim period; £50k basket. Completion: Locked box mechanism could be used if the date is recent, given the strong cash position. Risk: Medium, primarily centered on the transition of the long-tenured CEO and the high working capital intensity."
+          },
+          {
+            "name": "Competitive Approach",
+            "strategy": "Maximize upfront cash to bridge the gap with seller expectations (£12M-£18M), utilizing the company's own cash reserves to fund the deal.",
+            "risk_to_buyer": "high",
+            "suitable_when": "The buyer is a strategic player who can absorb the manufacturing capacity and has their own finance team to professionalize the target.",
+            "consideration": {
+              "total_headline": 11500000,
+              "upfront_cash": 9775000,
+              "upfront_percent": 85,
+              "deferred": 1725000,
+              "earnout_maximum": 0,
+              "earnout_metric": "N/A",
+              "earnout_period_months": 0,
+              "earnout_rationale": "No earnout is included to make the offer more attractive in a competitive process, relying instead on a higher upfront payment and fixed deferred amounts.",
+              "retention_escrow": 500000
+            },
+            "key_conditions": [
+              "Minimum cash at completion of £2.5M",
+              "Specific indemnity for IT and office infrastructure replacement costs",
+              "Key man insurance for the CEO during the 12-month handover"
+            ],
+            "notes": "Seller obligations: 6-month handover; 2-year non-compete. Warranties: 50% cap; 12-month claim period; higher de minimis. Completion: Completion accounts with a focus on 'Net Debt' and 'Working Capital' definitions. Risk: High, due to the lack of performance-contingent pay and the high upfront multiple on unverified earnings."
+          }
+        ],
+        "recommended_structure": "Conservative Approach",
+        "recommendation_rationale": "The 'Conservative Approach' is recommended primarily because of the 'low' confidence in the valuation caused by missing P&L data. In manufacturing, revenue does not always equal profit, and the high working capital absorption (£7M+) suggests potential inefficiencies. A structure that heavily weights the final price on verified EBITDA performance post-acquisition is the only way to safely bridge the gap between the inferred valuation and the seller's high expectations.",
+        "negotiation_priorities": [
+          "Verification of the 10% EBITDA margin assumption",
+          "Agreement on a Working Capital Peg that accounts for the recent £2.6M increase in NWC",
+          "Securing a long-term commitment from the divisional MDs",
+          "Defining 'Maintenance CapEx' to ensure the aging asset base is managed"
+        ],
+        "deal_breaker_terms": [
+          "Discovery of significant bad debt within the £2.2M trade debtors",
+          "Refusal to provide a full 3-year P&L audit",
+          "Departure of more than one divisional MD prior to completion"
+        ],
+        "key_findings": [
+          "The business is exceptionally liquid but cash-consumptive in its current growth phase.",
+          "The 2022 powder coating line is the 'crown jewel' asset, but the rest of the infrastructure is aging.",
+          "There is a significant gap between the buyer's EBITDA-based valuation and the seller's likely revenue-based expectations.",
+          "The lack of a qualified FD is a major operational risk for a business of this scale."
+        ],
+        "narrative": "Canoports UK Limited is a high-quality manufacturing target with a strong balance sheet, but it suffers from a 'transparency tax' due to missing income statement data. The deal structure must act as a bridge between the impressive balance sheet (nearly £3M cash, £7.8M NAV) and the unverified P&L. By using a Conservative Approach with a 3-year earnout, the buyer can validate the inferred £1.7M EBITDA while ensuring the long-tenured CEO remains incentivized to transition the business. The high working capital peg will be a point of contention, as the seller will likely want to extract the 'excess' cash, while the buyer will need it to fund the heavy stock requirements and aging asset replacement."
+      },
+      "financial": {
+        "expert": "financial",
+        "company_name": "[AUDIT-218] Canoports UK Limited",
+        "analysis_date": "2025-05-22",
+        "score": 78,
+        "confidence": "medium",
+        "yearly_metrics": {
+          "2023": {
+            "revenue": null,
+            "revenue_yoy_growth_percent": null,
+            "cost_of_sales": null,
+            "gross_profit": null,
+            "gross_margin_percent": null,
+            "administrative_expenses": null,
+            "operating_profit": null,
+            "operating_margin_percent": null,
+            "depreciation_amortisation": null,
+            "ebitda": null,
+            "interest_payable": null,
+            "interest_coverage_ratio": null,
+            "profit_before_tax": null,
+            "corporation_tax": null,
+            "effective_tax_rate_percent": null,
+            "net_profit": null,
+            "net_margin_percent": null
+          },
+          "2024": {
+            "revenue": null,
+            "revenue_yoy_growth_percent": null,
+            "cost_of_sales": null,
+            "gross_profit": null,
+            "gross_margin_percent": null,
+            "administrative_expenses": null,
+            "operating_profit": null,
+            "operating_margin_percent": null,
+            "depreciation_amortisation": null,
+            "ebitda": null,
+            "interest_payable": null,
+            "interest_coverage_ratio": null,
+            "profit_before_tax": null,
+            "corporation_tax": null,
+            "effective_tax_rate_percent": null,
+            "net_profit": null,
+            "net_margin_percent": null
+          },
+          "2025": {
+            "revenue": 18333750,
+            "revenue_yoy_growth_percent": null,
+            "cost_of_sales": null,
+            "gross_profit": null,
+            "gross_margin_percent": null,
+            "administrative_expenses": null,
+            "operating_profit": null,
+            "operating_margin_percent": null,
+            "depreciation_amortisation": null,
+            "ebitda": null,
+            "interest_payable": null,
+            "interest_coverage_ratio": null,
+            "profit_before_tax": null,
+            "corporation_tax": 636375,
+            "effective_tax_rate_percent": null,
+            "net_profit": null,
+            "net_margin_percent": null
+          }
+        },
+        "cagr": {
+          "revenue_cagr_percent": null,
+          "gross_profit_cagr_percent": null,
+          "operating_profit_cagr_percent": null,
+          "period_years": null
+        },
+        "cost_structure": {
+          "cost_of_sales_percent_revenue": null,
+          "overheads_percent_revenue": null,
+          "staff_costs_percent_revenue": 15.6,
+          "director_costs_percent_revenue": null,
+          "top_5_overheads": [
+            {
+              "category": "Staff Costs",
+              "value": 2860065,
+              "percent_of_overheads": null
+            }
+          ],
+          "cost_base_classification": "mixed"
+        },
+        "earnings_quality": {
+          "net_profit_tracks_operating_profit": null,
+          "exceptional_items_identified": [],
+          "tax_rate_consistent": null,
+          "ebitda_latest": null,
+          "ebitda_trend": "stable",
+          "limitations": [
+            "Income statement data (P&L) was not provided in the RECONCILED_FINANCIALS block, limiting margin and EBITDA analysis.",
+            "Revenue for FY25 is inferred from staff cost observations in the IM data."
+          ]
+        },
+        "debt_service": {
+          "latest_interest_coverage": null,
+          "interest_coverage_trend": "improving",
+          "additional_debt_capacity_assessment": "High capacity for additional debt. The company has aggressively deleveraged, with long-term bank loans falling from £934,926 in 2023 to just £3,867 in 2026."
+        },
+        "key_findings": [
+          "Strong balance sheet growth with total equity increasing from £4.76m in 2023 to £7.87m in 2026.",
+          "Significant deleveraging profile; total bank debt (current and long-term) has reduced by over 98% since 2023.",
+          "Robust liquidity position with cash at bank increasing to £2.95m as of May 2026.",
+          "Asset-light manufacturing model with fixed assets representing a small fraction of turnover, though the asset base is 60% depreciated.",
+          "Staff costs are well-managed at approximately 15.6% of turnover, with a high concentration (60%) in production roles.",
+          "Inventory levels have increased to £3.32m in 2026, suggesting either growth anticipation or potential stock-holding inefficiencies."
+        ],
+        "red_flags": [
+          "Aging asset base: 60% of the gross book value of assets has been depreciated, suggesting a future requirement for capital expenditure.",
+          "Missing P&L data: The absence of a full income statement prevents a definitive assessment of operating margins and EBITDA quality."
+        ],
+        "narrative": "Canoports UK Limited demonstrates a highly stable and strengthening financial position from a balance sheet perspective. Between 2023 and 2026, the company has successfully transitioned from a moderately leveraged position to a virtually debt-free status, with long-term liabilities reduced to negligible levels (£3,867). This deleveraging has been achieved while simultaneously growing the cash reserve to nearly £3m, indicating strong underlying cash generation from operations.\n\nWhile the full P&L was not disclosed in the reconciled data, the available metrics suggest a business with a turnover in the region of £18.3m (based on staff cost ratios). The staff cost base of £2.86m is lean for a manufacturing entity, particularly one that maintains a QualiCoat-accredited powder coating line. The asset-light nature of the business (fixed assets at <5% of turnover) is a positive for ROI, though the high level of accumulated depreciation (60%) suggests that the primary manufacturing plant may require reinvestment in the medium term.\n\nThe liquidity profile is excellent, with a current ratio of approximately 4.4x in 2026, providing significant headroom for working capital fluctuations. The increase in stock levels to £3.3m warrants further investigation to ensure it aligns with sales growth rather than obsolescence. Overall, the financial performance indicates a mature, well-capitalised business with significant capacity to service acquisition debt or fund organic expansion from its own reserves."
+      }
+    },
+    "financialDataSnapshot": {
+      "balanceSheet": {
+        "id": 4949,
+        "financialPeriodId": 8044,
+        "targetCompanyId": 1884,
+        "intangibleAssets": null,
+        "tangibleFixedAssets": "807981",
+        "freeholdProperty": null,
+        "leaseholdProperty": null,
+        "plantMachinery": null,
+        "fixturesFittings": null,
+        "motorVehicles": null,
+        "computerEquipment": null,
+        "stockInventory": "3323651",
+        "tradeDebtors": "2257001",
+        "prepayments": null,
+        "amountsOwedByDirectors": null,
+        "amountsOwedByConnectedCompanies": null,
+        "directorsCurrentAccount": null,
+        "otherDebtors": "591620",
+        "cashAtBank": "2949661",
+        "totalCurrentAssets": "9121934",
+        "tradeCreditors": "997095",
+        "taxationSocialSecurity": null,
+        "vatPayable": null,
+        "corporationTaxDue": null,
+        "bankLoansOverdraftCurrent": "12000",
+        "hirePurchaseCurrent": null,
+        "accruals": null,
+        "amountsOwedToDirectors": null,
+        "otherCreditors": "1043132",
+        "totalCurrentLiabilities": "2052227",
+        "bankLoansLongTerm": "3867",
+        "hirePurchaseLongTerm": null,
+        "deferredTaxation": null,
+        "otherLongTermDebt": null,
+        "totalLongTermLiabilities": "3867",
+        "shareCapital": null,
+        "retainedEarnings": null,
+        "totalEquity": "7873818",
+        "debtorsList": null,
+        "creditorsList": null,
+        "fixedAssetsDetail": null,
+        "sourceDocumentId": 5907,
+        "createdAt": "2026-07-30T01:52:22.333Z",
+        "updatedAt": "2026-07-30T01:52:56.816Z",
+        "fiscalYear": "2026",
+        "periodEnd": "2026-05-31",
+        "sourceTier": "information_memorandum",
+        "_label": "CURRENT POSITION"
+      },
+      "fixedAssets": {
+        "id": 62,
+        "targetCompanyId": 1884,
+        "reportDate": "2025-05-31",
+        "totalGrossBookValue": "2231000",
+        "totalAccumulatedDepreciation": "1332000",
+        "totalNetBookValue": "899000",
+        "propertyGrossValue": "180000",
+        "propertyNetBookValue": "81000",
+        "plantMachineryGrossValue": "1705000",
+        "plantMachineryNetBookValue": "682000",
+        "vehiclesGrossValue": "180000",
+        "vehiclesNetBookValue": "85000",
+        "itEquipmentGrossValue": "94000",
+        "itEquipmentNetBookValue": "27000",
+        "otherAssetsGrossValue": "72000",
+        "otherAssetsNetBookValue": "24000",
+        "refinanceableAssetsValue": "648000",
+        "fullyDepreciatedStillInUse": null,
+        "assetItems": [
+          {
+            "description": "Plant and machinery (powder coating line)",
+            "category": "Plant and machinery",
+            "purchase_date": "2022-01-01",
+            "cost": 1300000,
+            "accumulated_depreciation": 780000,
+            "net_book_value": 520000,
+            "depreciation_rate": null,
+            "depreciation_method": null,
+            "location": null,
+            "condition": "QualiCoat-accredited"
+          },
+          {
+            "description": "Plant and machinery (fabrication and cutting)",
+            "category": "Plant and machinery",
+            "purchase_date": null,
+            "cost": 320000,
+            "accumulated_depreciation": 192000,
+            "net_book_value": 128000,
+            "depreciation_rate": null,
+            "depreciation_method": null,
+            "location": null,
+            "condition": null
+          },
+          {
+            "description": "Motor vehicles (delivery fleet)",
+            "category": "Motor vehicles",
+            "purchase_date": null,
+            "cost": 180000,
+            "accumulated_depreciation": 95000,
+            "net_book_value": 85000,
+            "depreciation_rate": null,
+            "depreciation_method": null,
+            "location": null,
+            "condition": null
+          },
+          {
+            "description": "Leasehold improvements",
+            "category": "Leasehold improvements",
+            "purchase_date": null,
+            "cost": 180000,
+            "accumulated_depreciation": 99000,
+            "net_book_value": 81000,
+            "depreciation_rate": null,
+            "depreciation_method": null,
+            "location": null,
+            "condition": null
+          },
+          {
+            "description": "Warehouse and racking equipment",
+            "category": "Warehouse and racking",
+            "purchase_date": null,
+            "cost": 85000,
+            "accumulated_depreciation": 51000,
+            "net_book_value": 34000,
+            "depreciation_rate": null,
+            "depreciation_method": null,
+            "location": null,
+            "condition": null
+          },
+          {
+            "description": "IT hardware and infrastructure",
+            "category": "IT hardware",
+            "purchase_date": null,
+            "cost": 94000,
+            "accumulated_depreciation": 67000,
+            "net_book_value": 27000,
+            "depreciation_rate": null,
+            "depreciation_method": null,
+            "location": null,
+            "condition": null
+          },
+          {
+            "description": "Office equipment and furniture",
+            "category": "Office equipment",
+            "purchase_date": null,
+            "cost": 72000,
+            "accumulated_depreciation": 48000,
+            "net_book_value": 24000,
+            "depreciation_rate": null,
+            "depreciation_method": null,
+            "location": null,
+            "condition": null
+          }
+        ],
+        "propertyDetails": [
+          {
+            "address": "Primary manufacturing site, South East England",
+            "tenure": "Leasehold",
+            "purchase_price": null,
+            "market_value": null,
+            "net_book_value": null
+          },
+          {
+            "address": "Secondary distribution site, East Midlands",
+            "tenure": "Leasehold",
+            "purchase_price": null,
+            "market_value": null,
+            "net_book_value": null
+          }
+        ],
+        "vehicleDetails": [
+          {
+            "make_model": "Delivery fleet",
+            "registration": null,
+            "purchase_date": null,
+            "cost": 180000,
+            "net_book_value": 85000,
+            "market_value": null
+          }
+        ],
+        "sourceDocumentId": 5901,
+        "createdAt": "2026-07-30T01:51:23.503Z",
+        "updatedAt": "2026-07-30T01:51:23.503Z"
+      }
+    },
+    "notes": null,
+    "createdAt": "2026-07-30T02:01:54.616Z",
+    "updatedAt": "2026-07-30T02:01:54.616Z",
+    "adjustments": [
+      {
+        "id": 2059,
+        "dealModelId": 493,
+        "sourceExpertResultId": 893,
+        "adjustmentType": "deduction",
+        "category": "missing_management",
+        "description": "Replacement Finance Director Cost",
+        "amount": "82500",
+        "amountsByYear": null,
+        "sourceExpert": "qoe",
+        "reasoning": "The business currently employs a Controller 'working toward FD'. For a £18m+ revenue business, a fully qualified FD is required. Benchmark for £10m-£20m revenue is £70k-£95k; mid-point used.",
+        "confidence": "high",
+        "defensibilityScore": 8,
+        "caseForInclusion": "A buyer will require a qualified FD to manage the complex working capital and growth profile of this manufacturing entity.",
+        "caseForExclusion": "The seller may argue the current Controller is sufficient and the cost is already partially reflected in the staff cost base.",
+        "status": "suggested",
+        "isAccepted": false,
+        "isManual": false,
+        "sortOrder": 0,
+        "createdAt": "2026-07-30T02:01:54.923Z",
+        "updatedAt": "2026-07-30T02:01:54.923Z"
+      },
+      {
+        "id": 2060,
+        "dealModelId": 493,
+        "sourceExpertResultId": 893,
+        "adjustmentType": "deduction",
+        "category": "deferred_maintenance",
+        "description": "Increased Maintenance Capex / IT Infrastructure",
+        "amount": "45000",
+        "amountsByYear": null,
+        "sourceExpert": "qoe",
+        "reasoning": "Operational data shows IT hardware and office equipment are 71% and 67% depreciated respectively. An annualised provision for infrastructure refresh is required.",
+        "confidence": "medium",
+        "defensibilityScore": 6,
+        "caseForInclusion": "The aging IT and office asset base represents a looming capital requirement that should be reflected as an annualised operating cost.",
+        "caseForExclusion": "The seller will argue that maintenance is already captured in the P&L and that capital replacement is a balance sheet item, not an EBITDA deduction.",
+        "status": "suggested",
+        "isAccepted": false,
+        "isManual": false,
+        "sortOrder": 1,
+        "createdAt": "2026-07-30T02:01:54.928Z",
+        "updatedAt": "2026-07-30T02:01:54.928Z"
+      },
+      {
+        "id": 2061,
+        "dealModelId": 493,
+        "sourceExpertResultId": 893,
+        "adjustmentType": "deduction",
+        "category": "replacement_salary",
+        "description": "Director replacement cost: CEO / MD, Div 1 (current: 0, market: 102500)",
+        "amount": "102500",
+        "amountsByYear": null,
+        "sourceExpert": "qoe",
+        "reasoning": "Director CEO / MD, Div 1 current salary is below market rate; replacement would cost more",
+        "confidence": "medium",
+        "defensibilityScore": 6,
+        "caseForInclusion": "Director compensation of £0 differs from the UK SME market rate of £102,500 for this role and company size.",
+        "caseForExclusion": "Market rate estimates are benchmarks, not exact figures. The seller may argue the director's specific skills or responsibilities justify their current compensation.",
+        "status": "suggested",
+        "isAccepted": false,
+        "isManual": false,
+        "sortOrder": 2,
+        "createdAt": "2026-07-30T02:01:54.949Z",
+        "updatedAt": "2026-07-30T02:01:54.949Z"
+      },
+      {
+        "id": 2062,
+        "dealModelId": 493,
+        "sourceExpertResultId": 893,
+        "adjustmentType": "deduction",
+        "category": "replacement_salary",
+        "description": "Director replacement cost: MD, Division 2 (current: 0, market: 75000)",
+        "amount": "75000",
+        "amountsByYear": null,
+        "sourceExpert": "qoe",
+        "reasoning": "Director MD, Division 2 current salary is below market rate; replacement would cost more",
+        "confidence": "medium",
+        "defensibilityScore": 6,
+        "caseForInclusion": "Director compensation of £0 differs from the UK SME market rate of £75,000 for this role and company size.",
+        "caseForExclusion": "Market rate estimates are benchmarks, not exact figures. The seller may argue the director's specific skills or responsibilities justify their current compensation.",
+        "status": "suggested",
+        "isAccepted": false,
+        "isManual": false,
+        "sortOrder": 3,
+        "createdAt": "2026-07-30T02:01:54.954Z",
+        "updatedAt": "2026-07-30T02:01:54.954Z"
+      },
+      {
+        "id": 2063,
+        "dealModelId": 493,
+        "sourceExpertResultId": 893,
+        "adjustmentType": "deduction",
+        "category": "replacement_salary",
+        "description": "Director replacement cost: MD, Division 3 (current: 0, market: 75000)",
+        "amount": "75000",
+        "amountsByYear": null,
+        "sourceExpert": "qoe",
+        "reasoning": "Director MD, Division 3 current salary is below market rate; replacement would cost more",
+        "confidence": "medium",
+        "defensibilityScore": 6,
+        "caseForInclusion": "Director compensation of £0 differs from the UK SME market rate of £75,000 for this role and company size.",
+        "caseForExclusion": "Market rate estimates are benchmarks, not exact figures. The seller may argue the director's specific skills or responsibilities justify their current compensation.",
+        "status": "suggested",
+        "isAccepted": false,
+        "isManual": false,
+        "sortOrder": 4,
+        "createdAt": "2026-07-30T02:01:54.959Z",
+        "updatedAt": "2026-07-30T02:01:54.959Z"
+      }
+    ],
+    "fundingLines": [
+      {
+        "id": 1384,
+        "dealModelId": 493,
+        "fundingType": "receivables_finance",
+        "label": "Receivables Finance (Invoice Factoring)",
+        "assetBaseValue": "2257001",
+        "ltvPercent": "80",
+        "availableAmount": "1805601",
+        "amountUsed": "0",
+        "interestRate": "4.5",
+        "arrangementFeePercent": null,
+        "termMonths": 0,
+        "monthlyRepayment": null,
+        "isDebt": true,
+        "repaymentStructure": "amortizing",
+        "isActive": false,
+        "notes": null,
+        "sortOrder": 0,
+        "createdAt": "2026-07-30T02:01:54.964Z",
+        "updatedAt": "2026-07-30T02:01:54.964Z"
+      },
+      {
+        "id": 1385,
+        "dealModelId": 493,
+        "fundingType": "asset_finance",
+        "label": "Asset Finance (Plant, Machinery & Vehicles)",
+        "assetBaseValue": "767000",
+        "ltvPercent": "60",
+        "availableAmount": "460200",
+        "amountUsed": "0",
+        "interestRate": "6.0",
+        "arrangementFeePercent": null,
+        "termMonths": 60,
+        "monthlyRepayment": null,
+        "isDebt": true,
+        "repaymentStructure": "amortizing",
+        "isActive": false,
+        "notes": null,
+        "sortOrder": 1,
+        "createdAt": "2026-07-30T02:01:54.970Z",
+        "updatedAt": "2026-07-30T02:01:54.970Z"
+      },
+      {
+        "id": 1386,
+        "dealModelId": 493,
+        "fundingType": "property_finance",
+        "label": "Property Finance (Commercial Mortgage)",
+        "assetBaseValue": "81000",
+        "ltvPercent": "65",
+        "availableAmount": "52650",
+        "amountUsed": "0",
+        "interestRate": "5.0",
+        "arrangementFeePercent": null,
+        "termMonths": 240,
+        "monthlyRepayment": null,
+        "isDebt": true,
+        "repaymentStructure": "amortizing",
+        "isActive": false,
+        "notes": null,
+        "sortOrder": 2,
+        "createdAt": "2026-07-30T02:01:54.975Z",
+        "updatedAt": "2026-07-30T02:01:54.975Z"
+      },
+      {
+        "id": 1387,
+        "dealModelId": 493,
+        "fundingType": "cash_equity",
+        "label": "Cash Equity (Cash to Introduce)",
+        "assetBaseValue": null,
+        "ltvPercent": null,
+        "availableAmount": null,
+        "amountUsed": "0",
+        "interestRate": null,
+        "arrangementFeePercent": null,
+        "termMonths": null,
+        "monthlyRepayment": null,
+        "isDebt": false,
+        "repaymentStructure": "amortizing",
+        "isActive": true,
+        "notes": null,
+        "sortOrder": 3,
+        "createdAt": "2026-07-30T02:01:54.979Z",
+        "updatedAt": "2026-07-30T02:01:54.979Z"
+      }
+    ],
+    "sellerPayments": [],
+    "contingentConsideration": []
+  },
+  "calculations": {
+    "adjustedEbitdaByYear": {},
+    "averageAdjustedEbitda": 0,
+    "enterpriseValue": 0,
+    "offerPrice": 2945794,
+    "impliedMultiple": null,
+    "feeLegalDd": 25000,
+    "feeAccountingDd": 15000,
+    "feeLoanArrangement": 0,
+    "feeDealMaker": 0,
+    "customFeeAmounts": [],
+    "totalFees": 40000,
+    "totalFundingRequired": 2985794,
+    "fundingLines": [
+      {
+        "availableAmount": 0,
+        "monthlyRepayment": 0,
+        "annualRepayment": 0,
+        "arrangementFee": 0
+      },
+      {
+        "availableAmount": 0,
+        "monthlyRepayment": 0,
+        "annualRepayment": 0,
+        "arrangementFee": 0
+      },
+      {
+        "availableAmount": 0,
+        "monthlyRepayment": 0,
+        "annualRepayment": 0,
+        "arrangementFee": 0
+      },
+      {
+        "availableAmount": 0,
+        "monthlyRepayment": 0,
+        "annualRepayment": 0,
+        "arrangementFee": 0
+      }
+    ],
+    "totalFunded": 0,
+    "fundingGap": 2945794,
+    "totalAnnualDebtService": 0,
+    "sellerAnnualDebtService": 0,
+    "earnoutAnnualDebtService": 0,
+    "revolvingInterestAnnual": 0,
+    "receivablesInterestAnnual": 0,
+    "valuationEbitda": 0,
+    "paymentCoverRatio": null,
+    "paymentCoverRating": "no_debt"
+  }
+}

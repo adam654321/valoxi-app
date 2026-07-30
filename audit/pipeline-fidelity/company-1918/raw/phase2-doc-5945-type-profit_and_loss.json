@@ -1,0 +1,98 @@
+{
+  "document": "profit_and_loss",
+  "source": "management_accounts",
+  "years_covered": [
+    2025
+  ],
+  "period_ends": {
+    "2025": "2025-11-30"
+  },
+  "months_covered": {
+    "2025": 12
+  },
+  "report_date": null,
+  "years": {
+    "2025": {
+      "year": 2025,
+      "profit_and_loss": {
+        "revenue": 358524.86,
+        "cost_of_sales": null,
+        "gross_profit": 358524.86,
+        "administrative_expenses": null,
+        "depreciation_amortisation": null,
+        "other_operating_income": null,
+        "operating_profit": null,
+        "interest_receivable": null,
+        "interest_payable": null,
+        "profit_before_tax": null,
+        "corporation_tax": null,
+        "net_profit": null
+      },
+      "revenue_breakdown": {
+        "by_product": {
+          "Brand": 313557.86,
+          "Supplier": 44967
+        },
+        "by_segment": {
+          "USA": 198244.35,
+          "UK": 90200.4,
+          "Europe": 70080.11
+        }
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": null,
+        "direct_labour": null,
+        "subcontractor_costs": null,
+        "other_direct_costs": null
+      },
+      "overheads_breakdown": {
+        "staff_wages_salaries": null,
+        "directors_salaries": null,
+        "directors_pension": null,
+        "employers_national_insurance": null,
+        "staff_pension_contributions": null,
+        "staff_training_recruitment": null,
+        "use_of_home_as_office": null,
+        "rent_rates": null,
+        "utilities": null,
+        "insurance": null,
+        "accountancy_bookkeeping": null,
+        "professional_fees": null,
+        "software_subscriptions": null,
+        "computer_costs": null,
+        "it_support_hosting": null,
+        "telecommunications": null,
+        "printing_stationery": null,
+        "postage_courier": null,
+        "subscriptions_memberships": null,
+        "bank_charges": null,
+        "advertising_marketing": null,
+        "travel_subsistence": null,
+        "motor_expenses": null,
+        "repairs_maintenance": null,
+        "depreciation": null,
+        "amortisation": null,
+        "other_overheads": null
+      },
+      "total_staff_costs": null,
+      "total_directors_remuneration": null,
+      "dividends_paid": null,
+      "exceptional_items": [],
+      "financial_ratios": {
+        "gross_margin_percent": 100,
+        "net_margin_percent": null,
+        "interest_coverage_ratio": null
+      }
+    }
+  },
+  "summary_insights": [
+    "Total revenue for the 2025 financial period reached £358,525, driven heavily by retainer-based marketing communications.",
+    "The business shows significant geographic concentration, with the USA market accounting for 55.3% of total income.",
+    "Revenue is highly reliant on a core group of clients, with Integro, InsightsNow, and Brand Genetics together contributing over 48% of total turnover.",
+    "The 'Brand' service line is the primary revenue driver, representing 87.5% of total sales compared to the 'Supplier' line.",
+    "Average monthly income is stable at approximately £23,902, suggesting a consistent and predictable cash flow from retainers.",
+    "The absence of cost of sales and overhead data in this document prevents a full assessment of net profitability or operational efficiency.",
+    "A significant portion of revenue is billed in USD and EUR, exposing the business to potential currency fluctuation risks."
+  ],
+  "_isIM": false
+}
