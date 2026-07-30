@@ -1,6 +1,7 @@
 import { documentAnalysisRepository } from "../repositories/document-analysis.repository";
 import { documentsRepository } from "../repositories/documents.repository";
 import { targetCompaniesRepository } from "../repositories/target-companies.repository";
+import { evidenceRepository } from "../repositories/evidence.repository";
 
 const retriggerCounts = new Map<number, number>();
 
@@ -311,6 +312,20 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
               usageMetadata: result.usageMetadata || null,
             });
             console.log(`[FILE_ANALYSIS] Successfully stored ${result.documentType} analysis for document ${event.documentId}`);
+
+            try {
+              const darRow = await documentAnalysisRepository.getAnalysisResultByDocumentIdAndType(
+                event.documentId, result.documentType);
+              await evidenceRepository.writeFromPayload({
+                targetCompanyId: event.targetCompanyId,
+                documentId: event.documentId,
+                documentAnalysisResultId: darRow?.id ?? null,
+                documentType: result.documentType,
+                payload: result.analysisData as Record<string, unknown>,
+              });
+            } catch (evidenceErr) {
+              console.error('[FILE_ANALYSIS] evidence shadow write failed (non-fatal):', evidenceErr);
+            }
 
             try {
               const normalizationResult = await financialDataService.processExtractedData(

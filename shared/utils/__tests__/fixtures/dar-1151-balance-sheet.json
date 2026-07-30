@@ -1,0 +1,82 @@
+{
+    "document": "balance_sheet",
+    "source": "management",
+    "years_covered": [
+        2025
+    ],
+    "period_ends": {
+        "2025": "2025-09-08"
+    },
+    "months_covered": {
+        "2025": null
+    },
+    "report_date": "2025-09-08",
+    "years": {
+        "2025": {
+            "year": 2025,
+            "balance_sheet": {
+                "fixed_assets": {
+                    "intangible_assets": null,
+                    "tangible_assets": 502332.22,
+                    "freehold_property": null,
+                    "leasehold_property": null,
+                    "plant_machinery": 2008,
+                    "fixtures_fittings": 12786.16,
+                    "motor_vehicles": 297992.12,
+                    "computer_equipment": 12798.44
+                },
+                "current_assets": {
+                    "stock": null,
+                    "trade_debtors": 226803.01,
+                    "prepayments": 499,
+                    "amounts_owed_by_directors": null,
+                    "amounts_owed_by_connected_companies": 122038.22,
+                    "directors_current_account": null,
+                    "other_debtors": 5140.1,
+                    "cash_at_bank": 187479.57,
+                    "total": 419921.68
+                },
+                "current_liabilities": {
+                    "trade_creditors": 14122.57,
+                    "taxation_social_security": 22742.17,
+                    "vat_payable": 7645.14,
+                    "corporation_tax": 1208.26,
+                    "bank_loans_current": null,
+                    "hire_purchase_current": null,
+                    "accruals": 7412.48,
+                    "amounts_owed_to_directors": -16056.67,
+                    "other_creditors": 58803.27,
+                    "total": 95877.22
+                },
+                "long_term_liabilities": {
+                    "bank_loans": 5140.73,
+                    "hire_purchase_long_term": -167914.37,
+                    "deferred_taxation": 46935,
+                    "other_debt": 319252.04,
+                    "total": 203413.4
+                },
+                "equity": {
+                    "share_capital": 100,
+                    "retained_earnings": 622863.28,
+                    "total": 622963.28
+                }
+            },
+            "financial_ratios": {
+                "current_ratio": 4.379785730000001,
+                "quick_ratio": 4.320970000000001,
+                "net_assets_growth_percent": null,
+                "gearing_ratio_percent": 32.65255055
+            }
+        }
+    },
+    "summary_insights": [
+        "The company maintains a very strong liquidity position with a current ratio of 4.38 and a quick ratio of 4.32, indicating ample coverage for short-term obligations.",
+        "The asset base is heavily weighted towards tangible assets (\u00a3502k), primarily driven by a significant motor vehicle fleet with a net book value of nearly \u00a3298k.",
+        "There is significant intercompany activity, with over \u00a3122k in loans to connected companies and directors, which should be monitored for recoverability.",
+        "Net current assets are robust at \u00a3324k, providing a solid buffer for operational working capital requirements.",
+        "The capital structure is healthy, with total equity of \u00a3623k largely comprised of retained earnings, though this is offset by a high volume of director drawings (\u00a375k).",
+        "Long-term liabilities include substantial hire purchase and lease obligations, though the net gearing ratio remains manageable at approximately 32.7%.",
+        "The balance sheet shows a complex mix of director-related transactions, including a credit balance on the Directors' Loan Account and significant dividends/drawings."
+    ],
+    "_isIM": false
+}

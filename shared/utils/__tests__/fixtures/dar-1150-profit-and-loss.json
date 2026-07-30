@@ -1,0 +1,90 @@
+{
+    "document": "balance_sheet",
+    "source": "management",
+    "years_covered": [
+        2025
+    ],
+    "period_ends": {
+        "2025": "2025-09-08"
+    },
+    "months_covered": {
+        "2025": null
+    },
+    "report_date": "2025-09-08",
+    "years": {
+        "2025": {
+            "year": 2025,
+            "profit_and_loss": {
+                "revenue": null,
+                "cost_of_sales": null,
+                "gross_profit": null,
+                "administrative_expenses": null,
+                "depreciation_amortisation": null,
+                "other_operating_income": null,
+                "operating_profit": null,
+                "interest_receivable": null,
+                "interest_payable": null,
+                "profit_before_tax": null,
+                "corporation_tax": 1208.26,
+                "net_profit": 183126.57
+            },
+            "revenue_breakdown": {
+                "by_product": {},
+                "by_segment": {}
+            },
+            "cost_of_sales_breakdown": {
+                "direct_materials": null,
+                "direct_labour": null,
+                "subcontractor_costs": null,
+                "other_direct_costs": null
+            },
+            "overheads_breakdown": {
+                "staff_wages_salaries": 33571.85,
+                "directors_salaries": null,
+                "directors_pension": null,
+                "employers_national_insurance": 5349.75,
+                "staff_pension_contributions": 3147.43,
+                "staff_training_recruitment": null,
+                "use_of_home_as_office": null,
+                "rent_rates": null,
+                "utilities": null,
+                "insurance": null,
+                "accountancy_bookkeeping": null,
+                "professional_fees": null,
+                "software_subscriptions": null,
+                "computer_costs": null,
+                "it_support_hosting": null,
+                "telecommunications": null,
+                "printing_stationery": null,
+                "postage_courier": null,
+                "subscriptions_memberships": null,
+                "bank_charges": null,
+                "advertising_marketing": null,
+                "travel_subsistence": null,
+                "motor_expenses": null,
+                "repairs_maintenance": null,
+                "depreciation": null,
+                "amortisation": null,
+                "other_overheads": null
+            },
+            "total_staff_costs": 42069.03,
+            "total_directors_remuneration": null,
+            "dividends_paid": 75140.85,
+            "exceptional_items": [],
+            "financial_ratios": {
+                "gross_margin_percent": null,
+                "net_margin_percent": null,
+                "interest_coverage_ratio": null
+            }
+        }
+    },
+    "summary_insights": [
+        "The company reports a strong current year earnings figure of \u00a3183,126.57 as of September 2025.",
+        "Net assets are healthy at \u00a3622,963.28, supported by a significant tangible asset base of \u00a3502,332.22.",
+        "The balance sheet shows substantial inter-company and related party lending, including over \u00a3170,000 in various loans to A&M and AS entities.",
+        "Liquidity appears stable with a cash balance of \u00a3187,479.57, though this is offset by \u00a3101,313.07 in customer deposits held as liabilities.",
+        "Significant long-term liabilities exist in the form of hire purchase accounts (\u00a3302,670.90), indicating heavy investment in the vehicle fleet.",
+        "Directors have taken dividends of \u00a375,140.85 during the period, alongside a director's loan account debit of \u00a316,056.67."
+    ],
+    "_isIM": false
+}
