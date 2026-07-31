@@ -78,6 +78,7 @@ export class TargetCompaniesRepository {
         initialDiscussionBy: targetCompanies.initialDiscussionBy,
         isArchived: targetCompanies.isArchived,
         archivedAt: targetCompanies.archivedAt,
+        companyNumber: targetCompanies.companyNumber,
         totalContacts: sql<number>`COALESCE((SELECT COUNT(*)::int FROM target_contacts WHERE target_contacts.target_company_id = "target_companies"."id"), 0)`.as('totalContacts'),
         contactCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM target_contacts WHERE target_contacts.target_company_id = "target_companies"."id"), 0)`.as('contactCount'),
         primaryContactName: sql<string | null>`(SELECT target_contacts.first_name || ' ' || target_contacts.last_name FROM target_contacts WHERE target_contacts.target_company_id = "target_companies"."id" AND target_contacts.is_primary = true LIMIT 1)`.as('primaryContactName')
@@ -190,6 +191,7 @@ export class TargetCompaniesRepository {
         initialDiscussionBy: targetCompanies.initialDiscussionBy,
         isArchived: targetCompanies.isArchived,
         archivedAt: targetCompanies.archivedAt,
+        companyNumber: targetCompanies.companyNumber,
         totalContacts: sql<number>`COALESCE((SELECT COUNT(*)::int FROM target_contacts WHERE target_contacts.target_company_id = "target_companies"."id"), 0)`.as('totalContacts'),
         contactCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM target_contacts WHERE target_contacts.target_company_id = "target_companies"."id"), 0)`.as('contactCount'),
         primaryContactName: sql<string | null>`(SELECT target_contacts.first_name || ' ' || target_contacts.last_name FROM target_contacts WHERE target_contacts.target_company_id = "target_companies"."id" AND target_contacts.is_primary = true LIMIT 1)`.as('primaryContactName'),
@@ -273,6 +275,7 @@ export class TargetCompaniesRepository {
         initialDiscussionBy: targetCompanies.initialDiscussionBy,
         isArchived: targetCompanies.isArchived,
         archivedAt: targetCompanies.archivedAt,
+        companyNumber: targetCompanies.companyNumber,
         contactCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM target_contacts WHERE target_contacts.target_company_id = "target_companies"."id"), 0)`.as('contactCount'),
         primaryContactName: sql<string | null>`(SELECT target_contacts.first_name || ' ' || target_contacts.last_name FROM target_contacts WHERE target_contacts.target_company_id = "target_companies"."id" AND target_contacts.is_primary = true LIMIT 1)`.as('primaryContactName')
       })
@@ -310,6 +313,7 @@ export class TargetCompaniesRepository {
         createdAt: targetCompanies.createdAt,
         isArchived: targetCompanies.isArchived,
         archivedAt: targetCompanies.archivedAt,
+        companyNumber: targetCompanies.companyNumber,
         createdByName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`.as('createdByName'),
         userCompanyName: userCompanies.companyName,
         totalContacts: sql<number>`COALESCE((SELECT COUNT(*)::int FROM target_contacts WHERE target_contacts.target_company_id = "target_companies"."id"), 0)`.as('totalContacts'),

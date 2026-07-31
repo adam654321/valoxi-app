@@ -9,6 +9,8 @@ import {
   date,
   jsonb,
   numeric,
+  index,
+  unique,
 } from 'drizzle-orm/pg-core';
 import { targetCompanies } from './deals';
 import { documents } from './documents';
@@ -41,7 +43,11 @@ export const documentEvidence = pgTable('document_evidence', {
   reportDate: date('report_date'),
   identityVerdict: varchar('identity_verdict', { length: 20 }),
   createdAt: timestamp('created_at').defaultNow(),
-});
+}, (t) => ({
+  docTypeVersionUnique: unique('document_evidence_doc_type_version_unique').on(t.documentId, t.documentType, t.extractionVersion),
+  companyIdx: index('idx_document_evidence_company').on(t.targetCompanyId),
+  documentIdx: index('idx_document_evidence_document').on(t.documentId),
+}));
 
 export const documentEvidencePeriod = pgTable('document_evidence_period', {
   id: serial('id').primaryKey(),
@@ -57,7 +63,9 @@ export const documentEvidencePeriod = pgTable('document_evidence_period', {
   isFullYearComputed: boolean('is_full_year_computed'),
   provenance: varchar('provenance', { length: 40 }),
   createdAt: timestamp('created_at').defaultNow(),
-});
+}, (t) => ({
+  periodEvidenceIdx: index('idx_document_evidence_period_evidence').on(t.documentEvidenceId),
+}));
 
 export const documentEvidenceFigure = pgTable('document_evidence_figure', {
   id: serial('id').primaryKey(),
@@ -72,4 +80,6 @@ export const documentEvidenceFigure = pgTable('document_evidence_figure', {
   payloadPath: text('payload_path'),
   isModelDerived: boolean('is_model_derived').notNull().default(false),
   createdAt: timestamp('created_at').defaultNow(),
-});
+}, (t) => ({
+  figurePeriodIdx: index('idx_document_evidence_figure_period').on(t.documentEvidencePeriodId),
+}));

@@ -5,15 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1785484800000,
-      "tag": "0000_baseline_prod_20260731",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1785486357445,
-      "tag": "0001_strange_amazoness",
+      "when": 1785490442681,
+      "tag": "0000_glossy_northstar",
       "breakpoints": true
     }
   ]

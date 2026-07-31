@@ -31,6 +31,7 @@ export const targetCompanies = pgTable("target_companies", {
   createdAt: timestamp("created_at").defaultNow(),
   isArchived: boolean("is_archived").default(false).notNull(),
   archivedAt: timestamp("archived_at"),
+  companyNumber: varchar("company_number", { length: 20 }),
 });
 
 // Primary contacts at target companies
