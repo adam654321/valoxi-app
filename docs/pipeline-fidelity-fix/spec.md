@@ -71,16 +71,37 @@ names the data that would close it. Enforced, not requested: see section 5.
 
 2.1 **Identity block per document.** Extract: company names found (all variants),
 registered numbers, year end, directors named, accountant, draft/abridged/signed
-markers, print or report date. Identity verdict computed in code against the target
-company registry record:
-- MATCH: proceed.
-- MISMATCH (different registered number or contradicting name+details): QUARANTINE.
-  The document is stored, visible, and contributes nothing to financial history.
-  (Kills tc138 doc 854 permanently.)
+markers, print or report date. Registered numbers found in documents are written
+into the evidence layer as first-class fields.
+
+AMENDED 31 July 2026 (#338, #294). The identity key is the REGISTERED NUMBER.
+Name is a weak corroborator only and never decides a verdict on its own. This is
+forced by evidence: target_companies had no company_number column at all, so no
+registered number was stored anywhere in the system, and the registry record for
+the live Midland deal (dev clone 1877, prod tc228, the deal that received a
+£152,815 offer) is named "Thor-CON" while every document in it reads Midland Air
+Conditioning & Facility Management Ltd, 06858221. A name-based check would
+quarantine an entire genuine document set. The registry record is therefore
+treated as UNVERIFIED INPUT, not as authority. target_companies.company_number
+(added slice 1a, nullable, unpopulated) is backfilled from document consensus,
+never trusted from user input alone.
+
+Identity verdict computed in code, document identity against the registry record:
+- MATCH: registered numbers agree. Proceed.
+- MISMATCH: registered numbers disagree, or names contradict with no number on
+  either side. QUARANTINE. The document is stored, visible, and contributes
+  nothing to financial history. (Kills tc138 doc 854 permanently.)
 - ABSENT (no identity in document, e.g. tc89 restores): admit with flag; its figures
   reach CORROBORATED at best (they can confirm a verified source, never stand alone).
 - VARIANT (name differs, number matches or absent with strong overlap): one-time
   user confirmation, remembered.
+- REGISTRY_UNVERIFIED (fourth verdict path, added 31 July 2026): the registry
+  record carries no registered number, or carries a name contradicted by a
+  document set that is internally consistent. The DOCUMENTS are admitted
+  normally; the REGISTRY RECORD is flagged for correction. This is
+  registry-wrong as distinct from document-wrong and must never quarantine
+  documents. Resolution offers the user the document consensus, name and
+  number, as the correction.
 
 2.2 **Span engine in code.** For each period found in a document: period_start,
 period_end from content; months = date arithmetic; is_full_year = (months = 12 AND
@@ -318,11 +339,23 @@ Fixtures encode the three references end to end. Non-negotiable assertions:
 
 ## 10. Build order (one concern per slice)
 
-1. Evidence schema + anchored extraction write path (no behaviour change).
+1. Evidence layer, SPLIT (amended 31 July 2026):
+   1a. Schema only, no reads, no writes. SHIPPED dev and prod 31 July.
+   1a.1. Foreign key ON DELETE correction (#337). SHIPPED dev and prod 31 July.
+   1b. Shadow write path behind system_config key evidence_shadow_write_enabled,
+       off by absence. SHIPPED dev and prod 31 July, dev flag false, no prod row.
+   1c. Prompt extension: period start, report_date reliability, identity block
+       including registered number, page and label anchors. ALL prompt changes
+       in the whole programme are consolidated here. Rationale: extraction is
+       proven faithful to the pound across twelve statutory year sets (#329),
+       which is the one thing that provably works, so every prompt edit is a
+       fresh regression risk against it. 1c ships only after all three reference
+       companies are re-run and diffed to the pound.
 2. Identity block + span engine + cast checks writing to evidence.
 3. Resolver + canonical schema, SHADOW mode with diff reports.
-4. Receipts + flag cards (front end), category demoted to hint.
-5. Cutover: reconciled read from canonical; tier logic replaced by trust states.
+4. Receipts + flag cards (front end). DISPLAY ONLY.
+5. Cutover: reconciled read from canonical; tier logic replaced by trust states;
+   category demoted to hint.
 6. Derivations: EBITDA, one-off register, basis rules, averaging constraints.
 7. Expert input manifest + section-level grounding validator + gaps rendering.
 8. QoE candidate computation + adjustment lifecycle (suggested-only creation).
@@ -330,6 +363,31 @@ Fixtures encode the three references end to end. Non-negotiable assertions:
 10. Offer regeneration-at-send + faithfulness check.
 11. Migration backfill + acceptance fixtures wired into CI.
 
+AMENDED 31 July 2026: "category demoted to hint" moves from slice 4 to slice 5.
+Demoting it at slice 4 would remove the only live protection against the tc228
+161-day interim while the code span engine is still writing to evidence only and
+protecting nothing on the live read path. Slice 4 is receipts and flag cards,
+display only.
+
 Each slice: assess prompt first, apply with pre-step re-greps, V-check with grep
 assertions, stop. Schema changes by direct ALTER with explicit constraint names
-(#188/#189 rules). Nothing prod-touching without TARGET: PROD and hostname print.
+(#188/#189 rules). Nothing prod-touching without a TARGET: PROD header. Connection proof is
+SELECT current_database(), inet_server_addr() run inside the same connection that
+does the work, using an explicit connection string; printing a hostname proves
+nothing (LN-017, #334).
+
+## 11. Release strategy (added 31 July 2026)
+
+Slices 1 to 3 are dark and additive: they write evidence and shadow canonical,
+change no user-visible behaviour, and each is deployable alone. Slice 5 is the
+only cutover. It is released alone, per company, behind a flag, gated on reviewed
+shadow diffs, and is instantly reversible. Slices 6 to 10 each ship alone
+afterwards.
+
+Four mandatory deploy gates: after 1c, after 3, after 5, after 10. Never more
+than two slices of undeployed work at any time.
+
+Shadow diffs are only meaningful against prod's real document set, so the shadow
+layer must be live and dark on prod to tell us anything true. That is why the
+evidence layer shipped to prod empty and behind a kill switch rather than waiting
+for the full build to be finished.
