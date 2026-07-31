@@ -5,57 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1770389858992,
-      "tag": "0000_opposite_silvermane",
+      "when": 1785484800000,
+      "tag": "0000_baseline_prod_20260731",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1770741240918,
-      "tag": "0001_sturdy_stardust",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1771947942147,
-      "tag": "0002_rapid_betty_ross",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1776552257498,
-      "tag": "0003_parallel_redwing",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1776558324137,
-      "tag": "0004_abnormal_cloak",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1776632628047,
-      "tag": "0005_vengeful_turbo",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1776639458374,
-      "tag": "0006_tiresome_wraith",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1776674313987,
-      "tag": "0007_gifted_proteus",
+      "when": 1785486357445,
+      "tag": "0001_strange_amazoness",
       "breakpoints": true
     }
   ]
