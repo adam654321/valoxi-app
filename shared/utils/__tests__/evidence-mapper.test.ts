@@ -264,3 +264,40 @@ describe('mapPayloadToEvidence — wrapped shape edge cases (#339)', () => {
     expect(periods).toHaveLength(0);
   });
 });
+
+describe('mapPayloadToEvidence — report_date resolution (#339 follow-on)', () => {
+  it('hoists report_date from the balance_sheet sub-object', () => {
+    const p = JSON.parse(JSON.stringify(WRAPPED_PAYLOAD));
+    p.balance_sheet.report_date = '2024-12-19';
+    const { evidence } = mapPayloadToEvidence({ ...BASE_INPUT_WRAPPED, payload: p });
+    expect(evidence.reportDate).toBe('2024-12-19');
+  });
+
+  it('falls back to profit_and_loss when balance_sheet has none (dar 1322 shape)', () => {
+    const p = JSON.parse(JSON.stringify(WRAPPED_PAYLOAD));
+    p.profit_and_loss.report_date = '2025-05-31';
+    const { evidence } = mapPayloadToEvidence({ ...BASE_INPUT_WRAPPED, payload: p });
+    expect(evidence.reportDate).toBe('2025-05-31');
+  });
+
+  it('balance_sheet wins when both sub-objects carry one', () => {
+    const p = JSON.parse(JSON.stringify(WRAPPED_PAYLOAD));
+    p.balance_sheet.report_date = '2024-12-19';
+    p.profit_and_loss.report_date = '2024-12-19';
+    const { evidence } = mapPayloadToEvidence({ ...BASE_INPUT_WRAPPED, payload: p });
+    expect(evidence.reportDate).toBe('2024-12-19');
+  });
+
+  it('root report_date still wins over sub-objects (PL/BS document regression guard)', () => {
+    const p = JSON.parse(JSON.stringify(WRAPPED_PAYLOAD));
+    p.report_date = '2020-01-01';
+    p.balance_sheet.report_date = '2024-12-19';
+    const { evidence } = mapPayloadToEvidence({ ...BASE_INPUT_WRAPPED, payload: p });
+    expect(evidence.reportDate).toBe('2020-01-01');
+  });
+
+  it('null when no report_date exists anywhere', () => {
+    const { evidence } = mapPayloadToEvidence(BASE_INPUT_WRAPPED);
+    expect(evidence.reportDate).toBeNull();
+  });
+});

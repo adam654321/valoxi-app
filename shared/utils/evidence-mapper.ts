@@ -149,6 +149,24 @@ function collectYearContainers(payload: Record<string, unknown>): YearContainer[
   return containers;
 }
 
+/**
+ * #339 follow-on: company_accounts payloads carry no top-level report_date,
+ * but their nested balance_sheet and profit_and_loss sub-objects do (51 and 52
+ * of 152 on dev). Same precedence order as collectYearContainers: root wins,
+ * then balance_sheet, then profit_and_loss.
+ */
+function resolveReportDate(payload: Record<string, unknown>): string | null {
+  if (typeof payload.report_date === 'string') return payload.report_date;
+  for (const key of ['balance_sheet', 'profit_and_loss']) {
+    const sub = payload[key];
+    if (sub !== null && sub !== undefined && !Array.isArray(sub) && typeof sub === 'object') {
+      const rd = (sub as Record<string, unknown>).report_date;
+      if (typeof rd === 'string') return rd;
+    }
+  }
+  return null;
+}
+
 export function mapPayloadToEvidence(input: MapPayloadInput): MapPayloadOutput {
   const {
     targetCompanyId,
@@ -159,8 +177,7 @@ export function mapPayloadToEvidence(input: MapPayloadInput): MapPayloadOutput {
     payload,
   } = input;
 
-  const reportDate =
-    typeof payload.report_date === 'string' ? payload.report_date : null;
+  const reportDate = resolveReportDate(payload);
 
   const evidence: EvidenceRow = {
     targetCompanyId,
