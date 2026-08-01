@@ -104,6 +104,51 @@ function walkForFigures(
   }
 }
 
+interface YearContainer {
+  pathPrefix: string;
+  container: Record<string, unknown>;
+}
+
+/**
+ * #339: locate the object(s) that hold years / period_ends / months_covered.
+ * The root years-keyed shape (profit_and_loss / balance_sheet documents) wins
+ * outright and preserves pre-#339 behaviour exactly. Otherwise the wrapped
+ * company_accounts shape contributes one container per sub-object,
+ * balance_sheet first, so its period_end wins the first-non-null merge.
+ */
+function collectYearContainers(payload: Record<string, unknown>): YearContainer[] {
+  const rootYears = payload.years;
+  if (
+    rootYears !== null &&
+    rootYears !== undefined &&
+    !Array.isArray(rootYears) &&
+    typeof rootYears === 'object'
+  ) {
+    return [{ pathPrefix: '', container: payload }];
+  }
+  const containers: YearContainer[] = [];
+  for (const key of ['balance_sheet', 'profit_and_loss']) {
+    const sub = payload[key];
+    if (
+      sub !== null &&
+      sub !== undefined &&
+      !Array.isArray(sub) &&
+      typeof sub === 'object'
+    ) {
+      const subYears = (sub as Record<string, unknown>).years;
+      if (
+        subYears !== null &&
+        subYears !== undefined &&
+        !Array.isArray(subYears) &&
+        typeof subYears === 'object'
+      ) {
+        containers.push({ pathPrefix: key, container: sub as Record<string, unknown> });
+      }
+    }
+  }
+  return containers;
+}
+
 export function mapPayloadToEvidence(input: MapPayloadInput): MapPayloadOutput {
   const {
     targetCompanyId,
@@ -137,42 +182,52 @@ export function mapPayloadToEvidence(input: MapPayloadInput): MapPayloadOutput {
     identityVerdict: null,
   };
 
-  const yearsObj = payload.years;
-  const periodEnds = (
-    typeof payload.period_ends === 'object' && payload.period_ends !== null
-      ? payload.period_ends
-      : {}
-  ) as Record<string, string | null>;
-  const monthsCoveredMap = (
-    typeof payload.months_covered === 'object' && payload.months_covered !== null
-      ? payload.months_covered
-      : {}
-  ) as Record<string, number | null>;
+  const containers = collectYearContainers(payload);
+  const periodMap = new Map<string, EvidencePeriod>();
+  const periodOrder: string[] = [];
 
-  const periods: EvidencePeriod[] = [];
+  for (const { pathPrefix, container } of containers) {
+    const yearsObj = container.years as Record<string, unknown>;
+    const periodEnds = (
+      typeof container.period_ends === 'object' && container.period_ends !== null
+        ? container.period_ends
+        : {}
+    ) as Record<string, string | null>;
+    const monthsCoveredMap = (
+      typeof container.months_covered === 'object' && container.months_covered !== null
+        ? container.months_covered
+        : {}
+    ) as Record<string, number | null>;
 
-  if (
-    yearsObj !== null &&
-    yearsObj !== undefined &&
-    !Array.isArray(yearsObj) &&
-    typeof yearsObj === 'object'
-  ) {
-    for (const yearKey of Object.keys(yearsObj as Record<string, unknown>)) {
-      const fiscalYearStated = parseInt(yearKey, 10);
+    for (const yearKey of Object.keys(yearsObj)) {
+      let period = periodMap.get(yearKey);
+      if (!period) {
+        period = {
+          fiscalYearStated: parseInt(yearKey, 10),
+          periodEnd: null,
+          monthsCoveredStated: null,
+          figures: [],
+        };
+        periodMap.set(yearKey, period);
+        periodOrder.push(yearKey);
+      }
 
       const rawPeriodEnd = periodEnds[yearKey];
-      const periodEnd = typeof rawPeriodEnd === 'string' ? rawPeriodEnd : null;
-
+      if (period.periodEnd === null && typeof rawPeriodEnd === 'string') {
+        period.periodEnd = rawPeriodEnd;
+      }
       const rawMonths = monthsCoveredMap[yearKey];
-      const monthsCoveredStated = typeof rawMonths === 'number' ? rawMonths : null;
+      if (period.monthsCoveredStated === null && typeof rawMonths === 'number') {
+        period.monthsCoveredStated = rawMonths;
+      }
 
-      const figures: EvidenceFigure[] = [];
-      const yearData = (yearsObj as Record<string, unknown>)[yearKey];
-      walkForFigures(yearData, `years.${yearKey}`, figures);
-
-      periods.push({ fiscalYearStated, periodEnd, monthsCoveredStated, figures });
+      const yearData = yearsObj[yearKey];
+      const basePath = pathPrefix ? `${pathPrefix}.years.${yearKey}` : `years.${yearKey}`;
+      walkForFigures(yearData, basePath, period.figures);
     }
   }
+
+  const periods: EvidencePeriod[] = periodOrder.map(k => periodMap.get(k)!);
 
   return { evidence, periods };
 }

@@ -133,3 +133,134 @@ describe('mapPayloadToEvidence — dar 1150 (profit and loss)', () => {
     expect(true).toBe(true);
   });
 });
+
+// ─── wrapped company_accounts shape (#339) ──────────────────────────────────
+
+const WRAPPED_PAYLOAD = {
+  document: 'company_accounts',
+  source: 'statutory',
+  balance_sheet: {
+    document: 'balance_sheet',
+    source: 'statutory',
+    years_covered: [2022, 2023],
+    period_ends: { '2022': '2022-03-31', '2023': '2023-03-31' },
+    months_covered: { '2022': 12, '2023': 12 },
+    years: {
+      '2022': {
+        year: 2022,
+        balance_sheet: {
+          equity: { share_capital: 100, retained_earnings: 5000.5 },
+          financial_ratios: { current_ratio: 1.5 },
+        },
+      },
+      '2023': {
+        year: 2023,
+        balance_sheet: { equity: { share_capital: 100, retained_earnings: 7500 } },
+      },
+    },
+  },
+  profit_and_loss: {
+    document: 'profit_and_loss',
+    source: 'statutory',
+    years_covered: [2022, 2023],
+    period_ends: { '2022': '2022-03-31', '2023': '2023-03-31' },
+    months_covered: { '2022': 12, '2023': 12 },
+    years: {
+      '2022': { year: 2022, profit_and_loss: { revenue: 250000.5, net_profit: 40000.25 } },
+      '2023': { year: 2023, profit_and_loss: { revenue: 300000, net_profit: -1500.75 } },
+    },
+  },
+};
+
+const BASE_INPUT_WRAPPED = {
+  targetCompanyId: 8,
+  documentId: 100,
+  documentAnalysisResultId: 41,
+  documentType: 'company_accounts',
+  extractionVersion: 1,
+  payload: WRAPPED_PAYLOAD as Record<string, unknown>,
+};
+
+describe('mapPayloadToEvidence — wrapped company_accounts shape (#339)', () => {
+  const { evidence, periods } = mapPayloadToEvidence(BASE_INPUT_WRAPPED);
+
+  it('two periods, merged per fiscal year, not four', () => {
+    expect(periods).toHaveLength(2);
+    expect(periods.map(p => p.fiscalYearStated).sort()).toEqual([2022, 2023]);
+  });
+
+  it('period 2022 carries periodEnd and stated months from the sub-object', () => {
+    const p = periods.find(x => x.fiscalYearStated === 2022)!;
+    expect(p.periodEnd).toBe('2022-03-31');
+    expect(p.monthsCoveredStated).toBe(12);
+  });
+
+  it('period 2022 holds figures from BOTH statements', () => {
+    const p = periods.find(x => x.fiscalYearStated === 2022)!;
+    const bs = p.figures.find(f => f.fieldKey === 'share_capital');
+    const pl = p.figures.find(f => f.fieldKey === 'revenue');
+    expect(bs).toBeDefined();
+    expect(bs!.value).toBe(100);
+    expect(bs!.statementType).toBe('balance');
+    expect(bs!.payloadPath).toBe('balance_sheet.years.2022.balance_sheet.equity.share_capital');
+    expect(pl).toBeDefined();
+    expect(pl!.value).toBe(250000.5);
+    expect(pl!.statementType).toBe('income');
+    expect(pl!.payloadPath).toBe('profit_and_loss.years.2022.profit_and_loss.revenue');
+  });
+
+  it('negative values preserved exactly, no abs()', () => {
+    const p = periods.find(x => x.fiscalYearStated === 2023)!;
+    const fig = p.figures.find(f => f.fieldKey === 'net_profit');
+    expect(fig).toBeDefined();
+    expect(fig!.value).toBe(-1500.75);
+  });
+
+  it('financial_ratios figures flagged isModelDerived', () => {
+    const p = periods.find(x => x.fiscalYearStated === 2022)!;
+    const ratio = p.figures.find(f => f.fieldKey === 'current_ratio');
+    expect(ratio).toBeDefined();
+    expect(ratio!.isModelDerived).toBe(true);
+  });
+
+  it('evidence.reportDate is null (wrapped payloads carry no top-level report_date)', () => {
+    expect(evidence.reportDate).toBeNull();
+  });
+});
+
+describe('mapPayloadToEvidence — wrapped shape edge cases (#339)', () => {
+  it('balance-sheet-only wrapped payload maps, income figures absent', () => {
+    const bsOnly = JSON.parse(JSON.stringify(WRAPPED_PAYLOAD));
+    delete bsOnly.profit_and_loss;
+    const { periods } = mapPayloadToEvidence({ ...BASE_INPUT_WRAPPED, payload: bsOnly });
+    expect(periods).toHaveLength(2);
+    expect(periods.flatMap(p => p.figures).length).toBeGreaterThan(0);
+    expect(periods.every(p => p.figures.every(f => f.statementType === 'balance'))).toBe(true);
+  });
+
+  it('balance_sheet period_end wins when sub-objects disagree', () => {
+    const conflicting = JSON.parse(JSON.stringify(WRAPPED_PAYLOAD));
+    conflicting.profit_and_loss.period_ends['2022'] = '2022-04-30';
+    const { periods } = mapPayloadToEvidence({ ...BASE_INPUT_WRAPPED, payload: conflicting });
+    expect(periods.find(x => x.fiscalYearStated === 2022)!.periodEnd).toBe('2022-03-31');
+  });
+
+  it('top-level years takes precedence, wrapped sub-objects ignored', () => {
+    const mixed = JSON.parse(JSON.stringify(WRAPPED_PAYLOAD));
+    mixed.years = { '2024': { year: 2024, profit_and_loss: { revenue: 111 } } };
+    mixed.period_ends = { '2024': '2024-03-31' };
+    const { periods } = mapPayloadToEvidence({ ...BASE_INPUT_WRAPPED, payload: mixed });
+    expect(periods).toHaveLength(1);
+    expect(periods[0].fiscalYearStated).toBe(2024);
+    expect(periods[0].figures.every(f => f.payloadPath.startsWith('years.'))).toBe(true);
+  });
+
+  it('payload with neither years nor wrapped sub-objects yields zero periods', () => {
+    const { periods } = mapPayloadToEvidence({
+      ...BASE_INPUT_WRAPPED,
+      documentType: 'sales_ledger',
+      payload: { document: 'sales_ledger', rows_summary: { count: 12 } } as Record<string, unknown>,
+    });
+    expect(periods).toHaveLength(0);
+  });
+});
