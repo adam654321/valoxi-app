@@ -45,13 +45,21 @@ import { evidenceRepository } from '../server/repositories/evidence.repository';
 const APPLY = process.argv.includes('--apply');
 const PROGRESS_EVERY = 50;
 
-const IN_SCOPE_TYPES = ['profit_and_loss', 'balance_sheet'] as const;
+const IN_SCOPE_TYPES = ['profit_and_loss', 'balance_sheet', 'company_accounts'] as const;
 const OUT_OF_SCOPE_TYPES = [
-  'company_accounts',
   'sales_ledger',
   'asset_register',
   'staff_matrix',
 ];
+
+// #339 backfill exclusion. DAR 1158 carries a genuine two-non-null
+// period_end conflict for FY2024: balance_sheet says 2024-02-28,
+// profit_and_loss says 2024-02-29. Spec 2.7 requires the disagreement to be
+// recorded as an anomaly, never silently resolved, and the anomaly field
+// does not exist until slice 2b. Excluded rather than written with a
+// silently chosen value. Idempotency on document_analysis_result_id means a
+// re-run picks it up once the anomaly flag lands.
+const DENY_DAR_IDS = new Set<number>([1158]);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -131,9 +139,16 @@ async function main(): Promise<void> {
     )
     .orderBy(documentAnalysisResults.id);
 
-  const total = candidates.length;
+  const denied = candidates.filter(c => DENY_DAR_IDS.has(c.darId));
+  const inScope = candidates.filter(c => !DENY_DAR_IDS.has(c.darId));
+  for (const d of denied) {
+    console.log(`  EXCLUDED dar ${d.darId} (${d.documentType}) — DENY_DAR_IDS, see #339 note`);
+  }
+  console.log(`  candidates: ${candidates.length}, excluded: ${denied.length}, in scope: ${inScope.length}`);
+
+  const total = inScope.length;
   const byType: Record<string, number> = {};
-  for (const c of candidates) {
+  for (const c of inScope) {
     byType[c.documentType] = (byType[c.documentType] ?? 0) + 1;
   }
 
@@ -164,7 +179,7 @@ async function main(): Promise<void> {
     console.log('[apply] Writing to database ...');
     console.log('');
 
-    for (const candidate of candidates) {
+    for (const candidate of inScope) {
       processedCount++;
 
       if (processedCount % PROGRESS_EVERY === 0 || processedCount === 1) {
@@ -261,7 +276,7 @@ async function main(): Promise<void> {
     console.log('[dry-run] Calling mapPayloadToEvidence for each candidate ...');
     console.log('');
 
-    for (const candidate of candidates) {
+    for (const candidate of inScope) {
       processedCount++;
 
       if (processedCount % PROGRESS_EVERY === 0 || processedCount === 1) {
@@ -324,7 +339,7 @@ async function main(): Promise<void> {
   } else {
     console.log(`  Zero-period DARs (${zeroPeriodDarIds.length}):`);
     for (const id of zeroPeriodDarIds) {
-      const candidate = candidates.find((c) => c.darId === id)!;
+      const candidate = inScope.find((c) => c.darId === id)!;
       console.log(`    DAR id=${id}  document_type=${candidate.documentType}  document_id=${candidate.documentId}`);
     }
   }
