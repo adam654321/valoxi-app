@@ -27,7 +27,7 @@ Slice 1: evidence layer, split three ways (amended 31 July 2026).
   1b shadow write path behind evidence_shadow_write_enabled. SHIPPED dev and prod.
   1c prompt extension, all programme prompt changes consolidated here, ships only
      after all three reference companies are re-run and diffed to the pound (#329).
-Slice 2: identity block, span engine, cast checks writing to evidence (#294, #315, #317, #318 casts, #326, #338).
+Slice 2: identity block, span engine, cast checks writing to evidence, including the #339 wrapped-shape mapper extension and the company_accounts cohort re-backfill (spec section 2.7). Identity verdicts are built but inert until 1c supplies identity fields; span months-by-arithmetic applies from 1c-era evidence onward (spec section 2.2 amendment). (#294, #315, #317, #318 casts, #326, #338, #339).
 Slice 3: resolver plus canonical schema, SHADOW mode with diff reports (#316, #266, #302). Database uniqueness constraints considered here, duplicate count first (#332).
 Slice 4: receipts and flag cards in the front end. Display only (#262, #305).
 Slice 5: cutover, reconciled read from canonical, tier logic replaced by trust states, category demoted to hint (#299, #306, #333).
