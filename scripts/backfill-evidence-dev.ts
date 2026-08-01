@@ -35,6 +35,7 @@ import {
   documentAnalysisResults,
   documents,
   documentEvidence,
+  documentEvidencePeriod,
 } from '@shared/schema';
 import { mapPayloadToEvidence } from '@shared/utils/evidence-mapper';
 import { evidenceRepository } from '../server/repositories/evidence.repository';
@@ -150,9 +151,11 @@ async function main(): Promise<void> {
 
   // ── Step 2: Process candidates ───────────────────────────────────────────
   const periodsPerDar: number[] = [];
-  const figuresPerPeriod: number[] = [];
+  const figuresPerPeriod: number[] = []; // dry-run path only; exact per-period counts
   const zeroPeriodDarIds: number[] = [];
   const errors: { darId: number; message: string }[] = [];
+  let totalFiguresExact = 0;               // apply path: exact sum from writeFromPayload
+  const writtenEvidenceIds: number[] = []; // apply path: collected for reconciliation
 
   let processedCount = 0;
 
@@ -193,20 +196,66 @@ async function main(): Promise<void> {
         if (result.periodCount === 0) {
           zeroPeriodDarIds.push(candidate.darId);
         }
-        // figuresPerPeriod breakdown not available from writeFromPayload result;
-        // record total figures / period count as average contribution
-        if (result.periodCount > 0) {
-          figuresPerPeriod.push(
-            ...Array(result.periodCount).fill(
-              Math.round(result.figureCount / result.periodCount),
-            ),
-          );
-        }
+        totalFiguresExact += result.figureCount;
+        writtenEvidenceIds.push(result.evidenceId);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         errors.push({ darId: candidate.darId, message: msg });
       }
     }
+
+    // ── Step 2.5: Post-run reconciliation guard ───────────────────────────
+    // Queries the database for the actual row counts attributable to this run
+    // and compares them against the script's own tallies. A mismatch means a
+    // write was silently dropped or duplicated — the script exits non-zero.
+    if (writtenEvidenceIds.length > 0) {
+      const scriptEvidenceCount = writtenEvidenceIds.length;
+      const scriptPeriodCount   = periodsPerDar.reduce((a, b) => a + b, 0);
+      const scriptFigureCount   = totalFiguresExact;
+
+      const [dbEvidenceRow] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(documentEvidence)
+        .where(inArray(documentEvidence.id, writtenEvidenceIds));
+
+      const [dbPeriodRow] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(documentEvidencePeriod)
+        .where(inArray(documentEvidencePeriod.documentEvidenceId, writtenEvidenceIds));
+
+      const dbFigureRes = await db.execute(
+        sql.raw(
+          `SELECT count(*)::int AS count
+           FROM document_evidence_figure f
+           JOIN document_evidence_period p ON p.id = f.document_evidence_period_id
+           WHERE p.document_evidence_id = ANY(ARRAY[${writtenEvidenceIds.join(',')}])`,
+        ),
+      );
+      const dbFigureCount =
+        (dbFigureRes.rows?.[0] as { count: number } | undefined)?.count ?? 0;
+
+      const dbEvidenceCount = dbEvidenceRow?.count ?? 0;
+      const dbPeriodCount   = dbPeriodRow?.count   ?? 0;
+
+      const evidenceOk = scriptEvidenceCount === dbEvidenceCount;
+      const periodsOk  = scriptPeriodCount   === dbPeriodCount;
+      const figuresOk  = scriptFigureCount   === dbFigureCount;
+
+      console.log('');
+      console.log('── Reconciliation (script tally vs database) ──');
+      console.log(`  document_evidence:        script=${scriptEvidenceCount}  db=${dbEvidenceCount}  ${evidenceOk ? '✓' : 'MISMATCH'}`);
+      console.log(`  document_evidence_period: script=${scriptPeriodCount}  db=${dbPeriodCount}  ${periodsOk ? '✓' : 'MISMATCH'}`);
+      console.log(`  document_evidence_figure: script=${scriptFigureCount}  db=${dbFigureCount}  ${figuresOk ? '✓' : 'MISMATCH'}`);
+
+      if (!evidenceOk || !periodsOk || !figuresOk) {
+        console.error('');
+        console.error('RECONCILIATION FAILED — script tally does not match database counts.');
+        console.error('Investigate before proceeding. No further action taken.');
+        await pool.end();
+        process.exit(1);
+      }
+    }
+
   } else {
     // ── DRY RUN PATH: call mapPayloadToEvidence directly, NO writeFromPayload ─
     console.log('[dry-run] Calling mapPayloadToEvidence for each candidate ...');
@@ -246,7 +295,9 @@ async function main(): Promise<void> {
   // ── Step 3: Report ──────────────────────────────────────────────────────
   const successCount = total - errors.length;
   const totalPeriods = periodsPerDar.reduce((a, b) => a + b, 0);
-  const totalFigures = figuresPerPeriod.reduce((a, b) => a + b, 0);
+  const totalFigures = APPLY
+    ? totalFiguresExact
+    : figuresPerPeriod.reduce((a, b) => a + b, 0);
 
   console.log('');
   console.log('═══════════════════════════════════════════════');
@@ -264,8 +315,8 @@ async function main(): Promise<void> {
   console.log('');
   console.log(`  Periods per DAR — mean:   ${fmt(mean(periodsPerDar))}`);
   console.log(`  Periods per DAR — max:    ${max(periodsPerDar)}`);
-  console.log(`  Figures per period — mean: ${fmt(mean(figuresPerPeriod))}`);
-  console.log(`  Figures per period — max:  ${max(figuresPerPeriod)}`);
+  console.log(`  Figures per period — mean: ${APPLY ? fmt(totalPeriods > 0 ? totalFiguresExact / totalPeriods : 0) : fmt(mean(figuresPerPeriod))}`);
+  console.log(`  Figures per period — max:  ${APPLY ? 'not available in apply mode' : String(max(figuresPerPeriod))}`);
   console.log('');
 
   if (zeroPeriodDarIds.length === 0) {
