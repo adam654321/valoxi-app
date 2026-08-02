@@ -152,25 +152,27 @@ multiple files, so re-uploads and restores can never double-write or overwrite.
 The restore path must preserve original filenames and provenance (live tc89
 currently renames all documents "Restored document (N of 16)" and drops analysis).
 
-2.7 **company_accounts payload shape (#339, added 1 August 2026).** The
-company_accounts result is not a distinct extraction: file-analysis.service.ts
-assembles it by nesting the profit_and_loss and balance_sheet step-2 results,
-each in the standard years-keyed shape, under top-level profit_and_loss and
-balance_sheet keys. 152 of 545 dev DARs (28 per cent) carry this wrapped shape
-and currently map to zero periods and zero figures because the mapper walks only
-payload.years. The mapper must handle both shapes: direct years-keyed, and
-wrapped (balance_sheet.years / profit_and_loss.years, with period_ends and
-months_covered inside each sub-object). A company_accounts document produces ONE
-evidence row; periods are MERGED per fiscal year across the two sub-objects so
-each year holds figures from both statements; a period_end disagreement between
-the sub-objects for the same year is recorded as an anomaly flag on the period,
-never silently resolved. After the mapper extension ships, the dev backfill is
-re-run for the company_accounts cohort (idempotency on
-document_analysis_result_id admits exactly the previously unmapped 152); that
-run also serves as the live test of the corrected #341 reporting path. Cast
-checks bind figures by payloadPath section, never by bare field_key: the
-vocabulary census shows "total" appearing across every balance section and a
-depreciation_amortisation/depreciation dual naming.
+2.7 **company_accounts payloads are derived composites, not a lost source
+(#339, added 1 August 2026, CORRECTED same day).** The company_accounts result
+is assembled by file-analysis.service.ts from the profit_and_loss and
+balance_sheet step-2 results for the same document, and persisted as a third
+DAR. The evidence layer records the two primary extractions and deliberately
+records nothing for the composite: writeFromPayload is called only inside the
+step-2 loop, which never contains company_accounts. All 152 company_accounts
+DARs on dev have PL or BS siblings, and 301 of those siblings already hold
+evidence rows, so the figures are captured. **No company_accounts backfill is
+to be run**; doing so would duplicate roughly 12,944 figures with no content
+hash to dedupe them, against spec 2.5.
+The mapper nonetheless handles the wrapped shape (slice 2a) and hoists
+report_date from sub-objects (slice 2a.1), so a wrapped payload arriving
+without siblings maps correctly. Period merging is per fiscal year across both
+sub-objects; a period_end disagreement is recorded as an anomaly on the period,
+never silently resolved, and until that anomaly field exists such documents are
+excluded rather than written with a chosen value.
+**Open for slice 3:** the composite DAR has consumers but no evidence
+representation. The resolver design must state whether canonical history is
+rebuilt from the primary extractions alone, and what becomes of anything
+reading the composite at cutover.
 
 ## 3. The resolver (canonical financial history)
 
@@ -384,10 +386,11 @@ Fixtures encode the three references end to end. Non-negotiable assertions:
        fresh regression risk against it. 1c ships only after all three reference
        companies are re-run and diffed to the pound.
 2. Identity block + span engine + cast checks writing to evidence, including
-   the #339 wrapped-shape mapper extension and the company_accounts cohort
-   re-backfill (section 2.7). Identity verdicts are built but inert until 1c
-   supplies identity fields; span months-by-arithmetic applies from 1c-era
-   evidence onward (section 2.2 amendment).
+   the #339 wrapped-shape mapper extension (company_accounts cohort backfill
+   removed from scope — section 2.7 corrected 1 August 2026). Identity verdicts
+   are built but inert until 1c supplies identity fields; span
+   months-by-arithmetic applies from 1c-era evidence onward (section 2.2
+   amendment).
 3. Resolver + canonical schema, SHADOW mode with diff reports.
 4. Receipts + flag cards (front end). DISPLAY ONLY.
 5. Cutover: reconciled read from canonical; tier logic replaced by trust states;

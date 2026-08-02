@@ -45,20 +45,27 @@ import { evidenceRepository } from '../server/repositories/evidence.repository';
 const APPLY = process.argv.includes('--apply');
 const PROGRESS_EVERY = 50;
 
-const IN_SCOPE_TYPES = ['profit_and_loss', 'balance_sheet', 'company_accounts'] as const;
+const IN_SCOPE_TYPES = ['profit_and_loss', 'balance_sheet'] as const;
 const OUT_OF_SCOPE_TYPES = [
+  'company_accounts',
   'sales_ledger',
   'asset_register',
   'staff_matrix',
 ];
 
-// #339 backfill exclusion. DAR 1158 carries a genuine two-non-null
-// period_end conflict for FY2024: balance_sheet says 2024-02-28,
-// profit_and_loss says 2024-02-29. Spec 2.7 requires the disagreement to be
-// recorded as an anomaly, never silently resolved, and the anomaly field
-// does not exist until slice 2b. Excluded rather than written with a
-// silently chosen value. Idempotency on document_analysis_result_id means a
-// re-run picks it up once the anomaly flag lands.
+// company_accounts DARs are NOT backfilled. Assessed 1 August 2026: every
+// company_accounts DAR is a synthetic composite assembled from the
+// profit_and_loss and balance_sheet results for the SAME document
+// (file-analysis.service.ts, insert before the step2 loop), and all 152 on
+// dev have PL/BS siblings whose evidence rows already hold the same
+// figures. Backfilling them would write ~12,944 duplicate figures with no
+// content hash to dedupe. The live path never writes evidence for a
+// company_accounts DAR: writeFromPayload is called only inside the step2
+// loop, which contains PL and BS only.
+// DENY_DAR_IDS is retained as machinery. DAR 1158 stays listed: it carries
+// a two-non-null period_end conflict (BS 2024-02-28, PL 2024-02-29) that
+// spec 2.7 requires to be recorded as an anomaly, and the anomaly field
+// does not exist until slice 2b.
 const DENY_DAR_IDS = new Set<number>([1158]);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
