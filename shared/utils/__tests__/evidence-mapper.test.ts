@@ -301,3 +301,58 @@ describe('mapPayloadToEvidence — report_date resolution (#339 follow-on)', () 
     expect(evidence.reportDate).toBeNull();
   });
 });
+
+describe('mapPayloadToEvidence — merge anomalies (spec 2.7)', () => {
+  it('wrapped payload, conflicting period_end: one anomaly, type period_end_conflict, used=BS value, usedSource=balance_sheet', () => {
+    const payload = JSON.parse(JSON.stringify(WRAPPED_PAYLOAD));
+    payload.profit_and_loss.period_ends['2022'] = '2022-04-30';
+    const { periods } = mapPayloadToEvidence({ ...BASE_INPUT_WRAPPED, payload });
+    const p = periods.find(x => x.fiscalYearStated === 2022)!;
+    expect(p.anomalies).toHaveLength(1);
+    expect(p.anomalies[0].type).toBe('period_end_conflict');
+    expect(p.anomalies[0].detail.used).toBe('2022-03-31');
+    expect(p.anomalies[0].detail.usedSource).toBe('balance_sheet');
+    expect(p.anomalies[0].detail.discarded).toBe('2022-04-30');
+  });
+
+  it('wrapped payload, both sub-objects agree on period_end: anomalies is an empty array', () => {
+    const { periods } = mapPayloadToEvidence(BASE_INPUT_WRAPPED);
+    expect(periods.every(p => p.anomalies.length === 0)).toBe(true);
+  });
+
+  it('wrapped payload, balance_sheet only: anomalies is an empty array', () => {
+    const payload = JSON.parse(JSON.stringify(WRAPPED_PAYLOAD));
+    delete payload.profit_and_loss;
+    const { periods } = mapPayloadToEvidence({ ...BASE_INPUT_WRAPPED, payload });
+    expect(periods.every(p => p.anomalies.length === 0)).toBe(true);
+  });
+
+  it('root years-keyed payload (pre-#339 shape): every period has an empty anomalies array', () => {
+    const { periods } = mapPayloadToEvidence(BASE_INPUT_1150);
+    expect(periods.length).toBeGreaterThan(0);
+    expect(periods.every(p => p.anomalies.length === 0)).toBe(true);
+  });
+
+  it('wrapped payload, conflicting months_covered: one anomaly, type months_covered_conflict', () => {
+    const payload = JSON.parse(JSON.stringify(WRAPPED_PAYLOAD));
+    payload.profit_and_loss.months_covered['2022'] = 11;
+    const { periods } = mapPayloadToEvidence({ ...BASE_INPUT_WRAPPED, payload });
+    const p = periods.find(x => x.fiscalYearStated === 2022)!;
+    expect(p.anomalies).toHaveLength(1);
+    expect(p.anomalies[0].type).toBe('months_covered_conflict');
+    expect(p.anomalies[0].detail.used).toBe(12);
+    expect(p.anomalies[0].detail.usedSource).toBe('balance_sheet');
+    expect(p.anomalies[0].detail.discarded).toBe(11);
+  });
+
+  it('wrapped payload with both conflicts on the same fiscal year: exactly two anomalies, one of each type', () => {
+    const payload = JSON.parse(JSON.stringify(WRAPPED_PAYLOAD));
+    payload.profit_and_loss.period_ends['2022'] = '2022-04-30';
+    payload.profit_and_loss.months_covered['2022'] = 11;
+    const { periods } = mapPayloadToEvidence({ ...BASE_INPUT_WRAPPED, payload });
+    const p = periods.find(x => x.fiscalYearStated === 2022)!;
+    expect(p.anomalies).toHaveLength(2);
+    const types = p.anomalies.map(a => a.type).sort();
+    expect(types).toEqual(['months_covered_conflict', 'period_end_conflict']);
+  });
+});

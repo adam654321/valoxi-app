@@ -17,10 +17,16 @@ export interface EvidenceFigure {
   isModelDerived: boolean;
 }
 
+export interface EvidenceAnomaly {
+  type: string;
+  detail: Record<string, unknown>;
+}
+
 export interface EvidencePeriod {
   fiscalYearStated: number;
   periodEnd: string | null;
   monthsCoveredStated: number | null;
+  anomalies: EvidenceAnomaly[];
   figures: EvidenceFigure[];
 }
 
@@ -202,6 +208,8 @@ export function mapPayloadToEvidence(input: MapPayloadInput): MapPayloadOutput {
   const containers = collectYearContainers(payload);
   const periodMap = new Map<string, EvidencePeriod>();
   const periodOrder: string[] = [];
+  const periodEndSource = new Map<string, string>();
+  const monthsSource = new Map<string, string>();
 
   for (const { pathPrefix, container } of containers) {
     const yearsObj = container.years as Record<string, unknown>;
@@ -223,19 +231,52 @@ export function mapPayloadToEvidence(input: MapPayloadInput): MapPayloadOutput {
           fiscalYearStated: parseInt(yearKey, 10),
           periodEnd: null,
           monthsCoveredStated: null,
+          anomalies: [],
           figures: [],
         };
         periodMap.set(yearKey, period);
         periodOrder.push(yearKey);
       }
 
+      // spec 2.7: a disagreement is recorded, never silently resolved.
+      // Container order is balance_sheet then profit_and_loss, so the first
+      // non-null value wins and the later one is recorded as discarded.
+      const sourceLabel = pathPrefix || 'root';
       const rawPeriodEnd = periodEnds[yearKey];
-      if (period.periodEnd === null && typeof rawPeriodEnd === 'string') {
-        period.periodEnd = rawPeriodEnd;
+      if (typeof rawPeriodEnd === 'string') {
+        if (period.periodEnd === null) {
+          period.periodEnd = rawPeriodEnd;
+          periodEndSource.set(yearKey, sourceLabel);
+        } else if (period.periodEnd !== rawPeriodEnd) {
+          period.anomalies.push({
+            type: 'period_end_conflict',
+            detail: {
+              fiscalYear: yearKey,
+              used: period.periodEnd,
+              usedSource: periodEndSource.get(yearKey) ?? null,
+              discarded: rawPeriodEnd,
+              discardedSource: sourceLabel,
+            },
+          });
+        }
       }
       const rawMonths = monthsCoveredMap[yearKey];
-      if (period.monthsCoveredStated === null && typeof rawMonths === 'number') {
-        period.monthsCoveredStated = rawMonths;
+      if (typeof rawMonths === 'number') {
+        if (period.monthsCoveredStated === null) {
+          period.monthsCoveredStated = rawMonths;
+          monthsSource.set(yearKey, sourceLabel);
+        } else if (period.monthsCoveredStated !== rawMonths) {
+          period.anomalies.push({
+            type: 'months_covered_conflict',
+            detail: {
+              fiscalYear: yearKey,
+              used: period.monthsCoveredStated,
+              usedSource: monthsSource.get(yearKey) ?? null,
+              discarded: rawMonths,
+              discardedSource: sourceLabel,
+            },
+          });
+        }
       }
 
       const yearData = yearsObj[yearKey];

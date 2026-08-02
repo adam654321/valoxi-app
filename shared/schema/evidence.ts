@@ -62,6 +62,7 @@ export const documentEvidencePeriod = pgTable('document_evidence_period', {
   monthsCoveredComputed: integer('months_covered_computed'),
   isFullYearComputed: boolean('is_full_year_computed'),
   provenance: varchar('provenance', { length: 40 }),
+  anomalies: jsonb('anomalies'),
   createdAt: timestamp('created_at').defaultNow(),
 }, (t) => ({
   periodEvidenceIdx: index('idx_document_evidence_period_evidence').on(t.documentEvidenceId),
