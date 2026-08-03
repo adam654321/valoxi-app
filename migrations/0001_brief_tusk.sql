@@ -1,0 +1,1 @@
+ALTER TABLE "document_evidence_period" ADD COLUMN "anomalies" jsonb;
