@@ -327,10 +327,13 @@ describe('mapPayloadToEvidence — merge anomalies (spec 2.7)', () => {
     expect(periods.every(p => p.anomalies.length === 0)).toBe(true);
   });
 
-  it('root years-keyed payload (pre-#339 shape): every period has an empty anomalies array', () => {
+  it('root years-keyed payload (pre-#339 shape): no MERGE anomalies (casts are out of scope for this block)', () => {
     const { periods } = mapPayloadToEvidence(BASE_INPUT_1150);
     expect(periods.length).toBeGreaterThan(0);
-    expect(periods.every(p => p.anomalies.length === 0)).toBe(true);
+    const mergeTypes = ['period_end_conflict', 'months_covered_conflict'];
+    expect(
+      periods.every(p => p.anomalies.every(a => mergeTypes.indexOf(a.type) === -1)),
+    ).toBe(true);
   });
 
   it('wrapped payload, conflicting months_covered: one anomaly, type months_covered_conflict', () => {

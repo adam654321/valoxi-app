@@ -17,8 +17,11 @@ export interface EvidenceFigure {
   isModelDerived: boolean;
 }
 
+export type AnomalySeverity = 'trust_blocking' | 'informational';
+
 export interface EvidenceAnomaly {
   type: string;
+  severity: AnomalySeverity;
   detail: Record<string, unknown>;
 }
 
@@ -173,6 +176,285 @@ function resolveReportDate(payload: Record<string, unknown>): string | null {
   return null;
 }
 
+// --- Slice 2b.2: cast checks (spec 2.3) ------------------------------------
+// Calibrated 2/3 August 2026 over 514 deduplicated dev figure sets.
+// Severity split is evidence-based, not argued. Full record in
+// claude/CALIBRATION-2b.2-cast-checks.md.
+//
+// There is deliberately NO Math.abs in this file. #295 and #331 are both
+// abs()-on-financial-values defects, and a grep for Math.abs in the evidence
+// layer must keep returning zero. Magnitudes below are written out longhand.
+
+type FigureLookup = {
+  get(path: string): number | null;
+  sum(prefix: string, exclude: string[]): number | null;
+};
+
+/**
+ * Relative payload path: everything after the FIRST `years.<n>.` segment.
+ *   root    'years.2024.profit_and_loss.revenue'                  -> 'profit_and_loss.revenue'
+ *   wrapped 'profit_and_loss.years.2024.profit_and_loss.revenue'  -> 'profit_and_loss.revenue'
+ * Taking everything after the first segment is what normalises the two shapes.
+ */
+function toRelativePath(payloadPath: string): string {
+  const m = payloadPath.match(/years\.[0-9]+\./);
+  if (!m || m.index === undefined) return payloadPath;
+  return payloadPath.slice(m.index + m[0].length);
+}
+
+function buildFigureLookup(figures: EvidenceFigure[]): FigureLookup {
+  const byPath = new Map<string, number>();
+  for (const f of figures) {
+    if (f.isModelDerived) continue;
+    const rel = toRelativePath(f.payloadPath);
+    if (!byPath.has(rel)) byPath.set(rel, f.value);
+  }
+  return {
+    get(path: string): number | null {
+      const v = byPath.get(path);
+      return v === undefined ? null : v;
+    },
+    sum(prefix: string, exclude: string[]): number | null {
+      let total = 0;
+      let found = false;
+      byPath.forEach((v, k) => {
+        if (k.indexOf(prefix) !== 0) return;
+        if (exclude.indexOf(k) !== -1) return;
+        total += v;
+        found = true;
+      });
+      return found ? total : null;
+    },
+  };
+}
+
+function sumOfPaths(g: FigureLookup, paths: string[]): number | null {
+  let total = 0;
+  let found = false;
+  for (const p of paths) {
+    const v = g.get(p);
+    if (v === null) continue;
+    total += v;
+    found = true;
+  }
+  return found ? total : null;
+}
+
+const nz = (v: number | null): number => (v === null ? 0 : v);
+
+interface CastDefinition {
+  check: string;
+  type: string;
+  severity: AnomalySeverity;
+  sides: (g: FigureLookup) => [number | null, number | null];
+}
+
+const CA_PREFIX = 'balance_sheet.current_assets.';
+const CL_PREFIX = 'balance_sheet.current_liabilities.';
+const LTL_PREFIX = 'balance_sheet.long_term_liabilities.';
+
+// tangible_assets is the PARENT of these six, measured 148 testable / 123 equal.
+// Summing all fixed-asset components together would double count it.
+const TANGIBLE_COMPONENTS = [
+  'balance_sheet.fixed_assets.plant_machinery',
+  'balance_sheet.fixed_assets.computer_equipment',
+  'balance_sheet.fixed_assets.fixtures_fittings',
+  'balance_sheet.fixed_assets.motor_vehicles',
+  'balance_sheet.fixed_assets.leasehold_property',
+  'balance_sheet.fixed_assets.freehold_property',
+];
+
+const CAST_CHECKS: CastDefinition[] = [
+  {
+    check: 'PL1',
+    type: 'cast_failure',
+    severity: 'trust_blocking',
+    sides: g => {
+      const rev = g.get('profit_and_loss.revenue');
+      const cos = g.get('profit_and_loss.cost_of_sales');
+      return [
+        g.get('profit_and_loss.gross_profit'),
+        rev === null || cos === null ? null : rev - cos,
+      ];
+    },
+  },
+  {
+    check: 'PL2',
+    type: 'cast_failure',
+    severity: 'informational',
+    sides: g => {
+      const gp = g.get('profit_and_loss.gross_profit');
+      const admin = g.get('profit_and_loss.administrative_expenses');
+      return [
+        g.get('profit_and_loss.operating_profit'),
+        gp === null || admin === null
+          ? null
+          : gp - admin + nz(g.get('profit_and_loss.other_operating_income')),
+      ];
+    },
+  },
+  {
+    check: 'PL3',
+    type: 'cast_failure',
+    severity: 'informational',
+    sides: g => {
+      const op = g.get('profit_and_loss.operating_profit');
+      const ip = g.get('profit_and_loss.interest_payable');
+      return [
+        g.get('profit_and_loss.profit_before_tax'),
+        op === null || ip === null
+          ? null
+          : op - ip + nz(g.get('profit_and_loss.interest_receivable')),
+      ];
+    },
+  },
+  {
+    check: 'PL4',
+    type: 'cast_failure',
+    severity: 'informational',
+    sides: g => {
+      const pbt = g.get('profit_and_loss.profit_before_tax');
+      const tax = g.get('profit_and_loss.corporation_tax');
+      return [
+        g.get('profit_and_loss.net_profit'),
+        pbt === null || tax === null ? null : pbt - tax,
+      ];
+    },
+  },
+  {
+    check: 'PL6',
+    type: 'cast_failure',
+    severity: 'informational',
+    sides: g => [
+      g.get('profit_and_loss.cost_of_sales'),
+      g.sum('cost_of_sales_breakdown.', []),
+    ],
+  },
+  {
+    check: 'PL7',
+    type: 'cast_failure',
+    severity: 'trust_blocking',
+    sides: g => [
+      g.get('profit_and_loss.revenue'),
+      g.sum('revenue_breakdown.by_product.', []),
+    ],
+  },
+  {
+    check: 'BS1',
+    type: 'cast_failure',
+    severity: 'informational',
+    sides: g => {
+      const sc = g.get('balance_sheet.equity.share_capital');
+      const re = g.get('balance_sheet.equity.retained_earnings');
+      return [
+        g.get('balance_sheet.equity.total'),
+        sc === null || re === null ? null : sc + re,
+      ];
+    },
+  },
+  {
+    check: 'BS2',
+    type: 'cast_failure',
+    severity: 'informational',
+    sides: g => [
+      g.get(CA_PREFIX + 'total'),
+      g.sum(CA_PREFIX, [CA_PREFIX + 'total', CA_PREFIX + 'directors_current_account']),
+    ],
+  },
+  {
+    check: 'BS3',
+    type: 'cast_failure',
+    severity: 'informational',
+    sides: g => [
+      g.get(CL_PREFIX + 'total'),
+      g.sum(CL_PREFIX, [
+        CL_PREFIX + 'total',
+        CL_PREFIX + 'other_debt',
+        CL_PREFIX + 'other_debtors',
+      ]),
+    ],
+  },
+  {
+    check: 'BS4',
+    type: 'cast_failure',
+    severity: 'trust_blocking',
+    sides: g => [
+      g.get(LTL_PREFIX + 'total'),
+      g.sum(LTL_PREFIX, [LTL_PREFIX + 'total']),
+    ],
+  },
+  {
+    check: 'BS5',
+    type: 'cast_failure',
+    severity: 'informational',
+    sides: g => {
+      const eq = g.get('balance_sheet.equity.total');
+      const tang = g.get('balance_sheet.fixed_assets.tangible_assets');
+      const ca = g.get(CA_PREFIX + 'total');
+      const cl = g.get(CL_PREFIX + 'total');
+      const ltl = g.get(LTL_PREFIX + 'total');
+      if (tang === null || ca === null || cl === null || ltl === null) return [eq, null];
+      const fa =
+        tang +
+        nz(g.get('balance_sheet.fixed_assets.intangible_assets')) +
+        nz(g.get('balance_sheet.fixed_assets.investments'));
+      return [eq, fa + ca - cl - ltl];
+    },
+  },
+  {
+    check: 'DUP1',
+    type: 'duplicate_path_conflict',
+    severity: 'trust_blocking',
+    sides: g => [
+      g.get('profit_and_loss.depreciation_amortisation'),
+      g.get('overheads_breakdown.depreciation'),
+    ],
+  },
+  {
+    check: 'DUP2',
+    type: 'duplicate_path_conflict',
+    severity: 'trust_blocking',
+    sides: g => [
+      g.get('balance_sheet.fixed_assets.tangible_assets'),
+      sumOfPaths(g, TANGIBLE_COMPONENTS),
+    ],
+  },
+];
+
+/**
+ * One basis point of the left-hand side, floored at one pound. Derived from the
+ * eight inspected clone-cohort failures: it absorbs both observed rounding
+ * artefacts (2 on 6,591,524 and 219 on 4,508,976) and keeps every real signal,
+ * including a 200 column bleed at a 36 threshold.
+ */
+function castTolerance(lhs: number): number {
+  const scale = lhs < 0 ? -lhs : lhs;
+  const bp = scale * 0.0001;
+  return bp > 1 ? bp : 1;
+}
+
+function runCastChecks(figures: EvidenceFigure[]): EvidenceAnomaly[] {
+  if (figures.length === 0) return [];
+  const g = buildFigureLookup(figures);
+  const out: EvidenceAnomaly[] = [];
+  for (const c of CAST_CHECKS) {
+    const sides = c.sides(g);
+    const lhs = sides[0];
+    const rhs = sides[1];
+    if (lhs === null || rhs === null) continue;
+    const diff = lhs - rhs;
+    const gap = diff < 0 ? -diff : diff;
+    const tol = castTolerance(lhs);
+    if (gap <= tol) continue;
+    out.push({
+      type: c.type,
+      severity: c.severity,
+      detail: { check: c.check, lhs, rhs, diff, tolerance: tol },
+    });
+  }
+  return out;
+}
+
 export function mapPayloadToEvidence(input: MapPayloadInput): MapPayloadOutput {
   const {
     targetCompanyId,
@@ -250,6 +532,7 @@ export function mapPayloadToEvidence(input: MapPayloadInput): MapPayloadOutput {
         } else if (period.periodEnd !== rawPeriodEnd) {
           period.anomalies.push({
             type: 'period_end_conflict',
+            severity: 'trust_blocking',
             detail: {
               fiscalYear: yearKey,
               used: period.periodEnd,
@@ -268,6 +551,7 @@ export function mapPayloadToEvidence(input: MapPayloadInput): MapPayloadOutput {
         } else if (period.monthsCoveredStated !== rawMonths) {
           period.anomalies.push({
             type: 'months_covered_conflict',
+            severity: 'trust_blocking',
             detail: {
               fiscalYear: yearKey,
               used: period.monthsCoveredStated,
@@ -286,6 +570,16 @@ export function mapPayloadToEvidence(input: MapPayloadInput): MapPayloadOutput {
   }
 
   const periods: EvidencePeriod[] = periodOrder.map(k => periodMap.get(k)!);
+
+  // Slice 2b.2: casts run AFTER all containers are merged, so a wrapped payload
+  // is checked once against the combined figure set rather than once per
+  // sub-object. Merge anomalies from spec 2.7 are already on the period.
+  for (const period of periods) {
+    const castAnomalies = runCastChecks(period.figures);
+    if (castAnomalies.length > 0) {
+      period.anomalies.push(...castAnomalies);
+    }
+  }
 
   return { evidence, periods };
 }
