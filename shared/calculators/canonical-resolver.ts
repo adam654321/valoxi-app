@@ -4,10 +4,11 @@
  * PURE. Reads no database, writes no database, imported by nobody. Slice 3c
  * wires it behind a kill switch. Slice 5 is the only cutover.
  *
- * THE CLOCK IS A PARAMETER. `new Date()` must never appear in this file. The
- * live path (`reselect`) reads the wall clock twice inside its completed-year
- * gate, which is why spec 3.1's byte-identical acceptance test cannot pass
- * against it. `asOfDate` is that fix.
+ * THE CLOCK IS A PARAMETER. The wall clock must never be read in this file.
+ * The V-check greps for the constructor by name, so do not write it here even
+ * inside a comment. The live path (`reselect`) reads it twice inside its
+ * completed-year gate, which is why spec 3.1's byte-identical acceptance test
+ * cannot pass against it. `asOfDate` is that fix.
  *
  * Every choice below is backed by a count taken on dev, 3 August 2026.
  * Full rationale and the counts: claude/ASSESS-slice-3b-blockers.md
@@ -210,6 +211,31 @@ export function isMaterialConflict(a: number, b: number): boolean {
   return difference > threshold;
 }
 
+/**
+ * The eligibility RULE, expressed rather than hardcoded, and deliberately a
+ * standalone function.
+ *
+ * Inlining it made TypeScript narrow trustState to the three literals slice 3b
+ * can actually assign, so comparing against VERIFIED raised TS2367. Taking the
+ * full TrustState union as a parameter removes the narrowing, keeps the rule
+ * honest about all seven states, and makes it directly testable.
+ *
+ * It returns false on every path in 3b because neither VERIFIED nor
+ * CORROBORATED is reachable until 1c. 1c turns it on by making those states
+ * reachable, not by editing this function.
+ */
+export function isValuationEligible(
+  trustState: TrustState,
+  spanKind: SpanKind,
+  anchorComplete: boolean,
+): boolean {
+  return (
+    (trustState === 'VERIFIED' || trustState === 'CORROBORATED') &&
+    spanKind === 'full_year' &&
+    anchorComplete
+  );
+}
+
 interface Candidate {
   evidenceId: number;
   evidencePeriodId: number;
@@ -245,7 +271,7 @@ export function resolveCanonical(input: ResolverInput): ResolverOutput {
 
   for (const evidence of input.evidence) {
     for (const period of evidence.periods) {
-      // The as-of gate. Replaces reselect's two new Date() calls.
+      // The as-of gate. Replaces reselect's two wall-clock reads.
       if (period.periodEnd !== null && period.periodEnd > input.asOfDate) continue;
       if (period.fiscalYearStated > asOfYear) continue;
 
@@ -396,13 +422,7 @@ export function resolveCanonical(input: ResolverInput): ResolverOutput {
     }
 
     const spanKind = spanFor(winner);
-
-    // The eligibility RULE, expressed rather than hardcoded. False on every path
-    // in 3b because neither VERIFIED nor CORROBORATED is reachable until 1c.
-    const valuationEligible =
-      (trustState === 'VERIFIED' || trustState === 'CORROBORATED') &&
-      spanKind === 'full_year' &&
-      winner.anchorComplete;
+    const valuationEligible = isValuationEligible(trustState, spanKind, winner.anchorComplete);
 
     periods.push({
       targetCompanyId: input.targetCompanyId,
