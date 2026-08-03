@@ -49,8 +49,16 @@ export const canonicalFigure = pgTable('canonical_figure', {
   fieldKey: varchar('field_key', { length: 100 }).notNull(),
   value: numeric('value'),
   sourceEvidenceFigureId: integer('source_evidence_figure_id'),
+  // Relative payload path, everything after the first years.N. segment, e.g.
+  // balance_sheet.current_assets.total. THIS is the uniqueness key, not
+  // field_key. field_key is the leaf name and repeats within a period: dev
+  // carries 295 duplicate (period, field_key) groups, 294 of them 'total'.
+  // Type text, matching document_evidence_figure.payload_path, deliberately
+  // not varchar, because revenue_breakdown paths encode product names as key
+  // segments and the vocabulary is unbounded.
+  figurePath: text('figure_path').notNull(),
 }, (t) => ({
-  periodFieldUnique: unique('canonical_figure_period_field_unique').on(t.canonicalPeriodId, t.fieldKey),
+  periodPathUnique: unique('canonical_figure_period_path_unique').on(t.canonicalPeriodId, t.figurePath),
   periodFk: foreignKey({ columns: [t.canonicalPeriodId], foreignColumns: [canonicalPeriod.id], name: 'canonical_figure_period_fk' }).onDelete('cascade'),
   sourceFigureFk: foreignKey({ columns: [t.sourceEvidenceFigureId], foreignColumns: [documentEvidenceFigure.id], name: 'canonical_figure_source_figure_fk' }).onDelete('set null'),
 }));
