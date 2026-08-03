@@ -181,9 +181,11 @@ function resolveReportDate(payload: Record<string, unknown>): string | null {
 // Severity split is evidence-based, not argued. Full record in
 // claude/CALIBRATION-2b.2-cast-checks.md.
 //
-// There is deliberately NO Math.abs in this file. #295 and #331 are both
-// abs()-on-financial-values defects, and a grep for Math.abs in the evidence
-// layer must keep returning zero. Magnitudes below are written out longhand.
+// This file deliberately contains no absolute-value function calls. #295 and
+// #331 are both abs()-on-financial-values defects, and the grep invariant for
+// that function name in the evidence layer must keep returning zero, which is
+// why the name does not appear even in this comment. Magnitudes below are
+// written out longhand instead.
 
 type FigureLookup = {
   get(path: string): number | null;
@@ -411,9 +413,17 @@ const CAST_CHECKS: CastDefinition[] = [
     ],
   },
   {
-    check: 'DUP2',
-    type: 'duplicate_path_conflict',
-    severity: 'trust_blocking',
+    // Renamed from DUP2 and demoted to informational, 3 August 2026.
+    // This compares a PARENT to a SUM OF CHILDREN, so it only holds when the
+    // children are exhaustive. A document listing only some tangible asset
+    // categories fails it legitimately. That makes it a completeness cast like
+    // BS2 and BS4, not a contradiction like DUP1, which compares two paths
+    // holding the same concept. dar 1151 (Midland) exposed this on the first
+    // real fixture: 502,332.22 against 325,584.72. The 83% measured rate
+    // (148 testable, 123 equal) already said so.
+    check: 'BS6',
+    type: 'cast_failure',
+    severity: 'informational',
     sides: g => [
       g.get('balance_sheet.fixed_assets.tangible_assets'),
       sumOfPaths(g, TANGIBLE_COMPONENTS),

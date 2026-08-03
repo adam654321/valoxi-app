@@ -79,7 +79,7 @@ describe('cast checks — tolerance is one basis point, floored at one pound', (
   });
 });
 
-describe('cast checks — duplicate path conflicts', () => {
+describe('cast checks — duplicate paths and component completeness', () => {
   it('DUP1 fires when the two depreciation paths disagree', () => {
     const { periods } = mapRoot({
       profit_and_loss: { depreciation_amortisation: 12000 },
@@ -100,7 +100,7 @@ describe('cast checks — duplicate path conflicts', () => {
     expect(casts(periods[0])).toHaveLength(0);
   });
 
-  it('DUP2 fires when tangible_assets does not equal its six components', () => {
+  it('BS6 fires when tangible_assets does not equal its six components, and is informational', () => {
     const { periods } = mapRoot({
       balance_sheet: {
         fixed_assets: {
@@ -112,7 +112,9 @@ describe('cast checks — duplicate path conflicts', () => {
     });
     const a = casts(periods[0]);
     expect(a).toHaveLength(1);
-    expect((a[0] as any).detail.check).toBe('DUP2');
+    expect((a[0] as any).detail.check).toBe('BS6');
+    expect((a[0] as any).type).toBe('cast_failure');
+    expect((a[0] as any).severity).toBe('informational');
     expect((a[0] as any).detail.rhs).toBe(85000);
   });
 });
