@@ -2,6 +2,7 @@ import { documentAnalysisRepository } from "../repositories/document-analysis.re
 import { documentsRepository } from "../repositories/documents.repository";
 import { targetCompaniesRepository } from "../repositories/target-companies.repository";
 import { evidenceRepository } from "../repositories/evidence.repository";
+import { canonicalRepository } from "../repositories/canonical.repository";
 
 const retriggerCounts = new Map<number, number>();
 
@@ -325,6 +326,21 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
               });
             } catch (evidenceErr) {
               console.error('[FILE_ANALYSIS] evidence shadow write failed (non-fatal):', evidenceErr);
+            }
+
+            try {
+              const canonicalResult = await canonicalRepository.writeForCompany({
+                targetCompanyId: event.targetCompanyId,
+              });
+              if (canonicalResult.written) {
+                console.log(
+                  `[FILE_ANALYSIS] canonical shadow write: run ${canonicalResult.runId}, ` +
+                  `${canonicalResult.periodCount} periods, ${canonicalResult.figureCount} figures, ` +
+                  `fingerprint ${canonicalResult.outputFingerprint}`,
+                );
+              }
+            } catch (canonicalErr) {
+              console.error('[FILE_ANALYSIS] canonical shadow write failed (non-fatal):', canonicalErr);
             }
 
             try {
