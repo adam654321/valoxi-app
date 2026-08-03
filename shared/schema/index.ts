@@ -14,6 +14,7 @@ export * from './deal-documents';
 export * from './due-diligence';
 export * from './value-creation';
 export * from './evidence';
+export * from './canonical';
 
 // Relations
 export * from './relations';
