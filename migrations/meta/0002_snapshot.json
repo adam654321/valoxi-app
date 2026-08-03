@@ -1,5 +1,5 @@
 {
-  "id": "5d1a3b5b-2b94-4576-8902-08357dd5df46",
+  "id": "190afa8b-8b04-4080-8a56-7315968e6c8e",
   "prevId": "ff59ab8a-2400-4a52-8da7-5645c2db47e5",
   "version": "7",
   "dialect": "postgresql",
@@ -11890,8 +11890,8 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "canonical_figure_canonical_period_id_canonical_period_id_fk": {
-          "name": "canonical_figure_canonical_period_id_canonical_period_id_fk",
+        "canonical_figure_period_fk": {
+          "name": "canonical_figure_period_fk",
           "tableFrom": "canonical_figure",
           "tableTo": "canonical_period",
           "columnsFrom": [
@@ -11903,8 +11903,8 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "canonical_figure_source_evidence_figure_id_document_evidence_figure_id_fk": {
-          "name": "canonical_figure_source_evidence_figure_id_document_evidence_figure_id_fk",
+        "canonical_figure_source_figure_fk": {
+          "name": "canonical_figure_source_figure_fk",
           "tableFrom": "canonical_figure",
           "tableTo": "document_evidence_figure",
           "columnsFrom": [
@@ -11988,8 +11988,8 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "canonical_gap_canonical_run_id_canonical_run_id_fk": {
-          "name": "canonical_gap_canonical_run_id_canonical_run_id_fk",
+        "canonical_gap_run_fk": {
+          "name": "canonical_gap_run_fk",
           "tableFrom": "canonical_gap",
           "tableTo": "canonical_run",
           "columnsFrom": [
@@ -12001,8 +12001,8 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "canonical_gap_target_company_id_target_companies_id_fk": {
-          "name": "canonical_gap_target_company_id_target_companies_id_fk",
+        "canonical_gap_company_fk": {
+          "name": "canonical_gap_company_fk",
           "tableFrom": "canonical_gap",
           "tableTo": "target_companies",
           "columnsFrom": [
@@ -12140,8 +12140,8 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "canonical_period_canonical_run_id_canonical_run_id_fk": {
-          "name": "canonical_period_canonical_run_id_canonical_run_id_fk",
+        "canonical_period_run_fk": {
+          "name": "canonical_period_run_fk",
           "tableFrom": "canonical_period",
           "tableTo": "canonical_run",
           "columnsFrom": [
@@ -12153,8 +12153,8 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "canonical_period_target_company_id_target_companies_id_fk": {
-          "name": "canonical_period_target_company_id_target_companies_id_fk",
+        "canonical_period_company_fk": {
+          "name": "canonical_period_company_fk",
           "tableFrom": "canonical_period",
           "tableTo": "target_companies",
           "columnsFrom": [
@@ -12166,8 +12166,8 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "canonical_period_winning_evidence_id_document_evidence_id_fk": {
-          "name": "canonical_period_winning_evidence_id_document_evidence_id_fk",
+        "canonical_period_evidence_fk": {
+          "name": "canonical_period_evidence_fk",
           "tableFrom": "canonical_period",
           "tableTo": "document_evidence",
           "columnsFrom": [
@@ -12179,8 +12179,8 @@
           "onDelete": "set null",
           "onUpdate": "no action"
         },
-        "canonical_period_winning_period_id_document_evidence_period_id_fk": {
-          "name": "canonical_period_winning_period_id_document_evidence_period_id_fk",
+        "canonical_period_winning_period_fk": {
+          "name": "canonical_period_winning_period_fk",
           "tableFrom": "canonical_period",
           "tableTo": "document_evidence_period",
           "columnsFrom": [
@@ -12283,8 +12283,8 @@
         }
       },
       "foreignKeys": {
-        "canonical_run_target_company_id_target_companies_id_fk": {
-          "name": "canonical_run_target_company_id_target_companies_id_fk",
+        "canonical_run_company_fk": {
+          "name": "canonical_run_company_fk",
           "tableFrom": "canonical_run",
           "tableTo": "target_companies",
           "columnsFrom": [
