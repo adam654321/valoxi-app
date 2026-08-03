@@ -336,7 +336,7 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
                 console.log(
                   `[FILE_ANALYSIS] canonical shadow write: run ${canonicalResult.runId}, ` +
                   `${canonicalResult.periodCount} periods, ${canonicalResult.figureCount} figures, ` +
-                  `fingerprint ${canonicalResult.outputFingerprint}`,
+                  `fingerprint ${canonicalResult.output.run.outputFingerprint}`,
                 );
               }
             } catch (canonicalErr) {
