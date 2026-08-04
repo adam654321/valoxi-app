@@ -8,6 +8,7 @@
 
 import { db } from '../server/db';
 import { sql } from 'drizzle-orm';
+import { mapFigurePath } from '../shared/calculators/canonical-live-map';
 
 // ─── Argument handling ────────────────────────────────────────────────────────
 
@@ -1241,17 +1242,564 @@ async function main() {
   line();
 
   // ─────────────────────────────────────────────────────────────────────────
-  // SECTION 6: SCOPE AND LIMITS
+  // SECTION 6: FIGURE-LEVEL VALUE COMPARISON
   // ─────────────────────────────────────────────────────────────────────────
   line('='.repeat(70));
-  line('SECTION 6: SCOPE AND LIMITS');
+  line('SECTION 6: FIGURE-LEVEL VALUE COMPARISON');
   line('='.repeat(70));
   line();
-  line('This report does NOT yet perform any figure-level value comparison.');
+
+  // ── Normalisation helper ─────────────────────────────────────────────────
+  // Trim whitespace, strip leading '+', then re-stringify via Number so that
+  // '1000', '1000.0' and '1000.00' all become '1000'.  Financial figures are
+  // well within IEEE-754 double precision range so no precision is lost.
+  const normalizeDecimal = (s: string): string => {
+    const trimmed = s.trim().replace(/^\+/, '');
+    const n = Number(trimmed);
+    return isNaN(n) ? trimmed : String(n);
+  };
+
+  // ── JSON column resolver ─────────────────────────────────────────────────
+  // postgres / pg driver returns jsonb columns as already-parsed JS objects.
+  // This helper also handles the rare case where the driver returns a string.
+  const resolveJsonColumn = (raw: unknown): Record<string, unknown> | null => {
+    if (raw === null || raw === undefined) return null;
+    if (typeof raw === 'string') {
+      try { return JSON.parse(raw) as Record<string, unknown>; } catch { return null; }
+    }
+    if (typeof raw === 'object') return raw as Record<string, unknown>;
+    return null;
+  };
+
+  // ── SHARED_CTES_S6: extends live_all with financial_period_id ─────────────
+  // Identical to SHARED_CTES except live_income and live_balance expose fp.id.
+  // CAN_BUCKETS_EXT is unchanged: it joins live_all on tc/fy/statement_type only.
+  const SHARED_CTES_S6 = `
+    both_cos AS (
+      SELECT DISTINCT cr.target_company_id
+      FROM canonical_run cr
+      WHERE cr.target_company_id IN (SELECT DISTINCT target_company_id FROM financial_periods)
+    ),
+    sel_runs AS (
+      SELECT MAX(id) AS rid, target_company_id FROM canonical_run GROUP BY target_company_id
+    ),
+    can_periods AS (
+      SELECT cp.id, cp.target_company_id, cp.fiscal_year, cp.statement_type,
+             cp.span_kind, cp.period_end
+      FROM canonical_period cp
+      JOIN sel_runs sr ON cp.canonical_run_id = sr.rid
+      WHERE cp.target_company_id IN (SELECT target_company_id FROM both_cos)
+    ),
+    live_income AS (
+      SELECT fp.target_company_id, fp.fiscal_year, 'income'::text AS statement_type,
+             fp.id AS financial_period_id,
+             fp.period_end, fp.months_covered, fp.is_full_year,
+             ${SPAN_CASE} AS derived_span
+      FROM financial_periods fp
+      JOIN income_statements is_ ON is_.financial_period_id = fp.id
+      WHERE fp.target_company_id IN (SELECT target_company_id FROM both_cos)
+    ),
+    live_balance AS (
+      SELECT fp.target_company_id, fp.fiscal_year, 'balance'::text AS statement_type,
+             fp.id AS financial_period_id,
+             fp.period_end, fp.months_covered, fp.is_full_year,
+             ${SPAN_CASE} AS derived_span
+      FROM financial_periods fp
+      JOIN balance_sheets bs ON bs.financial_period_id = fp.id
+      WHERE fp.target_company_id IN (SELECT target_company_id FROM both_cos)
+    ),
+    live_all AS (SELECT * FROM live_income UNION ALL SELECT * FROM live_balance)`;
+
+  // ── Step 1: Get the 316 matched pairs with financial_period_id ─────────────
+  const s6PairsResult = await db.execute<{
+    canonical_period_id: string;
+    statement_type: string;
+    target_company_id: string;
+    fiscal_year: string;
+    financial_period_id: string;
+  }>(sql.raw(`
+    WITH ${SHARED_CTES_S6}
+    ${CAN_BUCKETS_EXT},
+    matched_a AS (
+      SELECT
+        cb.cp_id::text AS canonical_period_id,
+        cb.statement_type,
+        cb.target_company_id::text,
+        cb.fiscal_year::text,
+        la.financial_period_id::text
+      FROM can_buckets cb
+      JOIN live_all la
+        ON la.target_company_id = cb.target_company_id
+        AND la.fiscal_year = cb.fiscal_year
+        AND la.statement_type = cb.statement_type
+        AND (
+          (cb.can_count = 1 AND cb.total_live = 1)
+          OR (cb.span_disambiguated = true AND la.derived_span = cb.span_kind)
+        )
+      WHERE cb.bucket = 'a'
+    )
+    SELECT * FROM matched_a
+    ORDER BY target_company_id::int, fiscal_year, statement_type
+  `));
+
+  const matchedPairs = s6PairsResult.rows;
+  const matchedCpIdList = matchedPairs.map(r => r.canonical_period_id).join(',');
+  const incomeFpIds = matchedPairs
+    .filter(r => r.statement_type === 'income')
+    .map(r => r.financial_period_id);
+  const balanceFpIds = matchedPairs
+    .filter(r => r.statement_type === 'balance')
+    .map(r => r.financial_period_id);
+
+  // canonical_period_id → pair info (for lookup during figure iteration)
+  const cpToPair = new Map<string, typeof matchedPairs[0]>();
+  for (const r of matchedPairs) {
+    cpToPair.set(r.canonical_period_id, r);
+  }
+
+  // ── 6.0 Denominator ────────────────────────────────────────────────────────
+  const s60 = await db.execute<{ n: string; nulls: string }>(sql.raw(`
+    SELECT
+      COUNT(*)::text AS n,
+      SUM(CASE WHEN value IS NULL THEN 1 ELSE 0 END)::text AS nulls
+    FROM canonical_figure
+    WHERE canonical_period_id = ANY(ARRAY[${matchedCpIdList}]::int[])
+  `));
+  const N = parseInt(s60.rows[0].n);
+  const figNulls = parseInt(s60.rows[0].nulls);
+  const totalSelFigs = parseInt(cp.sel_figures);
+  const unmatchedFigs = totalSelFigs - N;
+
+  line('6.0 FIGURE DENOMINATOR');
+  line(`  N (figures in 316 matched periods):             ${N}`);
+  line(`  Total figures across all 335 selected periods: ${totalSelFigs}`);
+  line(`  Figures in the 19 unmatched periods:            ${unmatchedFigs}  (${totalSelFigs} - ${N})`);
+  if (figNulls === 0) {
+    line(`  canonical_figure.value nulls among N rows: 0 ✓`);
+  } else {
+    line(`  *** ALERT: canonical_figure.value IS NULL on ${figNulls} of ${N} rows. This contradicts the 3c assess finding that document_evidence_figure.value is non-null on all 14398 rows. Something changed. ***`);
+  }
   line();
-  line('Figure-level fidelity arrives at 3d.3b.');
+
+  // ── Step 2: Load canonical_figures for matched periods ─────────────────────
+  const canFigsResult = await db.execute<{
+    canonical_period_id: string;
+    figure_path: string;
+    value: string;
+  }>(sql.raw(`
+    SELECT canonical_period_id::text, figure_path, value::text
+    FROM canonical_figure
+    WHERE canonical_period_id = ANY(ARRAY[${matchedCpIdList}]::int[])
+    ORDER BY canonical_period_id, figure_path
+  `));
+
+  // ── Step 3: Load income_statements for matched income periods ──────────────
+  const incomeMap = new Map<string, Record<string, unknown>>();
+  if (incomeFpIds.length > 0) {
+    const incomeFpIdList = incomeFpIds.join(',');
+    const incomeResult = await db.execute<Record<string, unknown>>(sql.raw(`
+      SELECT
+        is_.financial_period_id::text,
+        is_.revenue::text,
+        is_.cost_of_sales::text,
+        is_.gross_profit::text,
+        is_.administrative_expenses::text,
+        is_.depreciation_amortisation::text,
+        is_.other_operating_income::text,
+        is_.operating_profit::text,
+        is_.interest_receivable::text,
+        is_.interest_payable::text,
+        is_.profit_before_tax::text,
+        is_.corporation_tax::text,
+        is_.net_profit::text,
+        is_.staff_costs::text,
+        is_.directors_remuneration::text,
+        is_.dividends_paid::text,
+        is_.overheads_breakdown,
+        is_.cost_of_sales_breakdown,
+        is_.revenue_breakdown
+      FROM income_statements is_
+      WHERE is_.financial_period_id = ANY(ARRAY[${incomeFpIdList}]::int[])
+    `));
+    for (const r of incomeResult.rows) {
+      incomeMap.set(r.financial_period_id as string, r);
+    }
+  }
+
+  // ── Step 4: Load balance_sheets for matched balance periods ───────────────
+  const balanceMap = new Map<string, Record<string, unknown>>();
+  if (balanceFpIds.length > 0) {
+    const balanceFpIdListStr = balanceFpIds.join(',');
+    const balanceResult = await db.execute<Record<string, unknown>>(sql.raw(`
+      SELECT
+        bs.financial_period_id::text,
+        bs.intangible_assets::text,
+        bs.tangible_fixed_assets::text,
+        bs.freehold_property::text,
+        bs.leasehold_property::text,
+        bs.plant_machinery::text,
+        bs.fixtures_fittings::text,
+        bs.motor_vehicles::text,
+        bs.computer_equipment::text,
+        bs.stock_inventory::text,
+        bs.trade_debtors::text,
+        bs.prepayments::text,
+        bs.amounts_owed_by_directors::text,
+        bs.amounts_owed_by_connected_companies::text,
+        bs.directors_current_account::text,
+        bs.other_debtors::text,
+        bs.cash_at_bank::text,
+        bs.total_current_assets::text,
+        bs.trade_creditors::text,
+        bs.taxation_social_security::text,
+        bs.vat_payable::text,
+        bs.corporation_tax_due::text,
+        bs.bank_loans_overdraft_current::text,
+        bs.hire_purchase_current::text,
+        bs.accruals::text,
+        bs.amounts_owed_to_directors::text,
+        bs.other_creditors::text,
+        bs.total_current_liabilities::text,
+        bs.bank_loans_long_term::text,
+        bs.hire_purchase_long_term::text,
+        bs.deferred_taxation::text,
+        bs.other_long_term_debt::text,
+        bs.total_long_term_liabilities::text,
+        bs.share_capital::text,
+        bs.retained_earnings::text,
+        bs.total_equity::text
+      FROM balance_sheets bs
+      WHERE bs.financial_period_id = ANY(ARRAY[${balanceFpIdListStr}]::int[])
+    `));
+    for (const r of balanceResult.rows) {
+      balanceMap.set(r.financial_period_id as string, r);
+    }
+  }
+
+  // ── Step 5: Per-figure comparison ─────────────────────────────────────────
+  interface FigureResult {
+    bucket: 'A' | 'B' | 'C' | 'U' | 'X';
+    target_company_id: string;
+    fiscal_year: string;
+    statement_type: string;
+    figure_path: string;
+    live_col_or_path: string;
+    canonical_value: string;
+    live_value: string | null;
+    delta: number | null;
+    absence_reason: string | null;
+    kind: 'scalar' | 'json' | 'unmapped' | 'contradiction';
+  }
+
+  const figureResults: FigureResult[] = [];
+  let jsonColNull = 0;
+  let jsonGroupKeyMissing = 0;
+  let jsonLeafKeyMissingOrNull = 0;
+
+  for (const fig of canFigsResult.rows) {
+    const pair = cpToPair.get(fig.canonical_period_id);
+    if (!pair) continue; // unreachable: figure set was filtered to matched cp ids
+
+    const { financial_period_id, statement_type, target_company_id, fiscal_year } = pair;
+    const target = mapFigurePath(fig.figure_path);
+
+    // STEP 2: Consistency guard — table must match statement_type
+    if (target.kind === 'scalar' || target.kind === 'json') {
+      const expectedTable = statement_type === 'income' ? 'income' : 'balance';
+      if (target.table !== expectedTable) {
+        figureResults.push({
+          bucket: 'X',
+          target_company_id, fiscal_year, statement_type,
+          figure_path: fig.figure_path,
+          live_col_or_path: `table mismatch: corpus=${statement_type}, map=${target.table}`,
+          canonical_value: fig.value,
+          live_value: null,
+          delta: null,
+          absence_reason: null,
+          kind: 'contradiction',
+        });
+        continue;
+      }
+    }
+
+    // Bucket U: unmapped
+    if (target.kind === 'unmapped') {
+      figureResults.push({
+        bucket: 'U',
+        target_company_id, fiscal_year, statement_type,
+        figure_path: fig.figure_path,
+        live_col_or_path: target.reason,
+        canonical_value: fig.value,
+        live_value: null,
+        delta: null,
+        absence_reason: null,
+        kind: 'unmapped',
+      });
+      continue;
+    }
+
+    // STEP 3: Resolve live value
+    let liveValue: string | null = null;
+    let live_col_or_path = '';
+    let absenceReason: string | null = null;
+
+    if (target.kind === 'scalar') {
+      const liveRow = statement_type === 'income'
+        ? incomeMap.get(financial_period_id)
+        : balanceMap.get(financial_period_id);
+      live_col_or_path = target.column;
+      const rawVal = liveRow ? liveRow[target.column] : null;
+      liveValue = (rawVal !== null && rawVal !== undefined) ? String(rawVal) : null;
+
+    } else {
+      // json kind — always income (Block A3 of assess: all json columns are on income)
+      const liveRow = incomeMap.get(financial_period_id);
+      live_col_or_path = target.jsonPath.length === 2
+        ? `${target.column}['${target.jsonPath[0]}']['${target.jsonPath[1]}']`
+        : `${target.column}['${target.jsonPath[0]}']`;
+
+      const rawCol = liveRow ? liveRow[target.column] : null;
+      const colObj = resolveJsonColumn(rawCol);
+
+      if (colObj === null) {
+        // Absence reason 1: JSON column itself is null
+        jsonColNull++;
+        absenceReason = 'json_col_null';
+
+      } else if (target.jsonPath.length === 2) {
+        // Two-element path: revenue_breakdown.by_product/by_segment.<key>
+        const groupKey = target.jsonPath[0];
+        const leafKey = target.jsonPath[1];
+
+        if (!(groupKey in colObj)) {
+          // Absence reason 2: grouping key is missing
+          jsonGroupKeyMissing++;
+          absenceReason = 'json_group_key_missing';
+        } else {
+          const groupVal = colObj[groupKey];
+          const groupObj: Record<string, unknown> | null =
+            groupVal === null ? null :
+            typeof groupVal === 'object' ? groupVal as Record<string, unknown> : null;
+
+          if (groupObj === null) {
+            jsonGroupKeyMissing++;
+            absenceReason = 'json_group_key_missing';
+          } else {
+            const leafVal = groupObj[leafKey];
+            if (leafVal === undefined || leafVal === null) {
+              // Absence reason 3: leaf key missing or value is null
+              jsonLeafKeyMissingOrNull++;
+              absenceReason = 'json_leaf_missing_or_null';
+            } else {
+              liveValue = String(leafVal);
+            }
+          }
+        }
+
+      } else {
+        // Single-element path: overheads_breakdown.<key> or cost_of_sales_breakdown.<key>
+        const leafKey = target.jsonPath[0];
+        const leafVal = (colObj as Record<string, unknown>)[leafKey];
+        if (leafVal === undefined || leafVal === null) {
+          // Absence reason 3: leaf key missing or value is null
+          jsonLeafKeyMissingOrNull++;
+          absenceReason = 'json_leaf_missing_or_null';
+        } else {
+          liveValue = String(leafVal);
+        }
+      }
+    }
+
+    // STEP 4: Compare (no tolerance)
+    if (liveValue === null) {
+      figureResults.push({
+        bucket: 'C',
+        target_company_id, fiscal_year, statement_type,
+        figure_path: fig.figure_path,
+        live_col_or_path,
+        canonical_value: fig.value,
+        live_value: null,
+        delta: null,
+        absence_reason: absenceReason,
+        kind: target.kind,
+      });
+    } else {
+      const normCan = normalizeDecimal(fig.value);
+      const normLive = normalizeDecimal(liveValue);
+      if (normCan === normLive) {
+        figureResults.push({
+          bucket: 'A',
+          target_company_id, fiscal_year, statement_type,
+          figure_path: fig.figure_path,
+          live_col_or_path,
+          canonical_value: fig.value,
+          live_value: liveValue,
+          delta: 0,
+          absence_reason: null,
+          kind: target.kind,
+        });
+      } else {
+        const delta = Math.abs(parseFloat(liveValue) - parseFloat(fig.value));
+        figureResults.push({
+          bucket: 'B',
+          target_company_id, fiscal_year, statement_type,
+          figure_path: fig.figure_path,
+          live_col_or_path,
+          canonical_value: fig.value,
+          live_value: liveValue,
+          delta,
+          absence_reason: null,
+          kind: target.kind,
+        });
+      }
+    }
+  }
+
+  // ── Bucket arrays and counts ───────────────────────────────────────────────
+  const bktA = figureResults.filter(r => r.bucket === 'A');
+  const bktB = figureResults.filter(r => r.bucket === 'B');
+  const bktC = figureResults.filter(r => r.bucket === 'C');
+  const bktU = figureResults.filter(r => r.bucket === 'U');
+  const bktX = figureResults.filter(r => r.bucket === 'X');
+  const countA = bktA.length, countB = bktB.length, countC = bktC.length;
+  const countU = bktU.length, countX = bktX.length;
+  const totalBuckets = countA + countB + countC + countU + countX;
+
+  // ── 6.1 Bucket counts ─────────────────────────────────────────────────────
+  const aIncome  = bktA.filter(r => r.statement_type === 'income').length;
+  const aBalance = bktA.filter(r => r.statement_type === 'balance').length;
+  const bIncome  = bktB.filter(r => r.statement_type === 'income').length;
+  const bBalance = bktB.filter(r => r.statement_type === 'balance').length;
+  const cIncome  = bktC.filter(r => r.statement_type === 'income').length;
+  const cBalance = bktC.filter(r => r.statement_type === 'balance').length;
+
+  line(`6.1 FIGURE BUCKET COUNTS (N = ${N}):`);
+  line(`  A. equal:                        ${countA}  (${pct(countA, N)})  [income=${aIncome}, balance=${aBalance}]`);
+  line(`  B. differ, both present:         ${countB}  (${pct(countB, N)})  [income=${bIncome}, balance=${bBalance}]`);
+  line(`  C. live absent:                  ${countC}  (${pct(countC, N)})  [income=${cIncome}, balance=${cBalance}]`);
+  line(`  U. unmapped:                     ${countU}  (${pct(countU, N)})`);
+  line(`  X. table contradiction:          ${countX}  (${pct(countX, N)})`);
+  line(`  Arithmetic: A(${countA}) + B(${countB}) + C(${countC}) + U(${countU}) + X(${countX}) = ${totalBuckets}`);
+  if (totalBuckets === N) {
+    line(`  Sum = ${totalBuckets} = N. MATCH ✓`);
+  } else {
+    line(`  *** SUM IS ${totalBuckets}, NOT N=${N}. MISMATCH — STOP. ***`);
+  }
   line();
-  line('The primary join key that 3d.3b will use:');
+
+  // ── 6.2 Scalar vs JSON split ──────────────────────────────────────────────
+  const aScalar = bktA.filter(r => r.kind === 'scalar').length;
+  const aJson   = bktA.filter(r => r.kind === 'json').length;
+  const bScalar = bktB.filter(r => r.kind === 'scalar').length;
+  const bJson   = bktB.filter(r => r.kind === 'json').length;
+  const cScalar = bktC.filter(r => r.kind === 'scalar').length;
+  const cJson   = bktC.filter(r => r.kind === 'json').length;
+  const s62sum  = aScalar + aJson + bScalar + bJson + cScalar + cJson + countU + countX;
+
+  line('6.2 SCALAR VS JSON SPLIT (across all five buckets):');
+  line(`  A scalar: ${aScalar}   A json: ${aJson}`);
+  line(`  B scalar: ${bScalar}   B json: ${bJson}`);
+  line(`  C scalar: ${cScalar}   C json: ${cJson}`);
+  line(`  U (all unmapped, no target kind):  ${countU}`);
+  line(`  X (table contradiction):           ${countX}`);
+  line(`  Arithmetic: ${aScalar}+${aJson}+${bScalar}+${bJson}+${cScalar}+${cJson}+${countU}+${countX} = ${s62sum}`);
+  if (s62sum === N) {
+    line(`  Sum = ${s62sum} = N. ✓`);
+  } else {
+    line(`  *** SUM IS ${s62sum}, NOT N=${N}. ***`);
+  }
+  line();
+
+  // ── 6.3 Bucket B in full ─────────────────────────────────────────────────
+  line('6.3 BUCKET B IN FULL (sorted by absolute delta descending):');
+  if (bktB.length === 0) {
+    line('  NO DIFFERENCES');
+  } else {
+    const sortedB = [...bktB].sort((a, b) => (b.delta ?? 0) - (a.delta ?? 0));
+    const CAP_B = 60;
+    const toShowB = sortedB.slice(0, CAP_B);
+    line('  tc | fiscal_year | statement_type | figure_path | live_col/path | canonical | live | delta');
+    for (const r of toShowB) {
+      const deltaStr = r.delta !== null ? r.delta.toFixed(2) : 'N/A';
+      line(`  ${r.target_company_id} | ${r.fiscal_year} | ${r.statement_type} | ${r.figure_path} | ${r.live_col_or_path} | ${r.canonical_value} | ${r.live_value} | ${deltaStr}`);
+    }
+    if (sortedB.length > CAP_B) {
+      line(`TRUNCATED AT ${CAP_B} OF ${sortedB.length}`);
+    }
+  }
+  line();
+
+  // ── 6.4 Bucket C summary ──────────────────────────────────────────────────
+  line('6.4 BUCKET C SUMMARY:');
+  if (bktC.length === 0) {
+    line('  NO ABSENT FIGURES');
+  } else {
+    line(`  JSON absence sub-counts:`);
+    line(`    json column itself is null:                   ${jsonColNull}`);
+    line(`    grouping key is missing:                      ${jsonGroupKeyMissing}`);
+    line(`    leaf key is missing or its value is null:     ${jsonLeafKeyMissingOrNull}`);
+    const jsonAbsenceTotal = jsonColNull + jsonGroupKeyMissing + jsonLeafKeyMissingOrNull;
+    line(`    (JSON absence total: ${jsonAbsenceTotal})`);
+    line();
+    line('  Top figure_paths by absence count (descending):');
+    const cByPath = new Map<string, number>();
+    for (const r of bktC) {
+      cByPath.set(r.figure_path, (cByPath.get(r.figure_path) ?? 0) + 1);
+    }
+    const cSorted = [...cByPath.entries()].sort((a, b) => b[1] - a[1]);
+    const CAP_C = 20;
+    for (const [fp, cnt] of cSorted.slice(0, CAP_C)) {
+      line(`    ${cnt}  ${fp}`);
+    }
+    if (cSorted.length > CAP_C) {
+      line(`  TRUNCATED AT ${CAP_C} OF ${cSorted.length}`);
+    }
+  }
+  line();
+
+  // ── 6.5 Bucket U ─────────────────────────────────────────────────────────
+  line('6.5 BUCKET U (unmapped figure_paths):');
+  if (bktU.length === 0) {
+    line('  NO UNMAPPED FIGURES');
+  } else {
+    // Group by reason string; collect distinct figure_paths per reason
+    const uByReason = new Map<string, Set<string>>();
+    for (const r of bktU) {
+      if (!uByReason.has(r.live_col_or_path)) uByReason.set(r.live_col_or_path, new Set());
+      uByReason.get(r.live_col_or_path)!.add(r.figure_path);
+    }
+    for (const [reason, paths] of uByReason) {
+      line(`  count=${paths.size}  reason: ${reason}`);
+      for (const p of [...paths].sort()) {
+        line(`    ${p}`);
+      }
+    }
+  }
+  line();
+
+  // ── 6.6 Bucket X ─────────────────────────────────────────────────────────
+  line('6.6 BUCKET X (table contradiction):');
+  if (bktX.length === 0) {
+    line('  0 — as expected. ✓');
+  } else {
+    line(`  *** ${bktX.length} CONTRADICTION(S) — mapping table and corpus disagree: ***`);
+    for (const r of bktX) {
+      line(`  tc=${r.target_company_id} fy=${r.fiscal_year} st=${r.statement_type} path=${r.figure_path} detail=${r.live_col_or_path}`);
+    }
+  }
+  line();
+
+  // ── 6.7 Scope caveat ─────────────────────────────────────────────────────
+  line('6.7 Scope: 316 of 335 canonical periods. The 19 excluded are 16 ambiguous (5.3), 2 with no live row (5.1c) and 1 displaced by a closer span match (5.3b). Their figures are counted at 6.0 and are NOT included in any bucket above.');
+
+  line();
+  line('='.repeat(70));
+  line('SECTION 7: SCOPE AND LIMITS');
+  line('='.repeat(70));
+  line();
+  line('Figure-level value comparison is in SECTION 6 above.');
+  line();
+  line('The primary join key used in Section 6:');
   line('  target_company_id + fiscal_year + statement_type');
   line('Span is used only as a discriminator. Bucket-b (ambiguous) and bucket-e');
   line('(displaced by injective resolution) periods are excluded from figure comparison.');
