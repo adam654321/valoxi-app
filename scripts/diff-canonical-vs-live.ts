@@ -1479,11 +1479,13 @@ async function main() {
   // ── Step 5: Per-figure comparison ─────────────────────────────────────────
   interface FigureResult {
     bucket: 'A' | 'B' | 'C' | 'U' | 'X';
+    canonical_period_id: string;
     target_company_id: string;
     fiscal_year: string;
     statement_type: string;
     figure_path: string;
     live_col_or_path: string;
+    live_target_key: string; // normalised key for 6.9 reverse lookup
     canonical_value: string;
     live_value: string | null;
     delta: number | null;
@@ -1509,9 +1511,11 @@ async function main() {
       if (target.table !== expectedTable) {
         figureResults.push({
           bucket: 'X',
+          canonical_period_id: fig.canonical_period_id,
           target_company_id, fiscal_year, statement_type,
           figure_path: fig.figure_path,
           live_col_or_path: `table mismatch: corpus=${statement_type}, map=${target.table}`,
+          live_target_key: '',
           canonical_value: fig.value,
           live_value: null,
           delta: null,
@@ -1526,9 +1530,11 @@ async function main() {
     if (target.kind === 'unmapped') {
       figureResults.push({
         bucket: 'U',
+        canonical_period_id: fig.canonical_period_id,
         target_company_id, fiscal_year, statement_type,
         figure_path: fig.figure_path,
         live_col_or_path: target.reason,
+        live_target_key: '',
         canonical_value: fig.value,
         live_value: null,
         delta: null,
@@ -1610,13 +1616,23 @@ async function main() {
       }
     }
 
+    // Normalised key for reverse-direction lookup (6.9).
+    // target.kind is 'scalar' or 'json' here; 'unmapped'/'contradiction' exited above.
+    const liveTargetKey: string = target.kind === 'json'
+      ? target.jsonPath.length === 2
+        ? `${target.column}::${target.jsonPath[0]}::${target.jsonPath[1]}`
+        : `${target.column}::${target.jsonPath[0]}`
+      : target.column; // scalar
+
     // STEP 4: Compare (no tolerance)
     if (liveValue === null) {
       figureResults.push({
         bucket: 'C',
+        canonical_period_id: fig.canonical_period_id,
         target_company_id, fiscal_year, statement_type,
         figure_path: fig.figure_path,
         live_col_or_path,
+        live_target_key: liveTargetKey,
         canonical_value: fig.value,
         live_value: null,
         delta: null,
@@ -1629,9 +1645,11 @@ async function main() {
       if (normCan === normLive) {
         figureResults.push({
           bucket: 'A',
+          canonical_period_id: fig.canonical_period_id,
           target_company_id, fiscal_year, statement_type,
           figure_path: fig.figure_path,
           live_col_or_path,
+          live_target_key: liveTargetKey,
           canonical_value: fig.value,
           live_value: liveValue,
           delta: 0,
@@ -1642,9 +1660,11 @@ async function main() {
         const delta = Math.abs(parseFloat(liveValue) - parseFloat(fig.value));
         figureResults.push({
           bucket: 'B',
+          canonical_period_id: fig.canonical_period_id,
           target_company_id, fiscal_year, statement_type,
           figure_path: fig.figure_path,
           live_col_or_path,
+          live_target_key: liveTargetKey,
           canonical_value: fig.value,
           live_value: liveValue,
           delta,
@@ -1793,6 +1813,363 @@ async function main() {
   line('6.7 Scope: 316 of 335 canonical periods. The 19 excluded are 16 ambiguous (5.3), 2 with no live row (5.1c) and 1 displaced by a closer span match (5.3b). Their figures are counted at 6.0 and are NOT included in any bucket above.');
 
   line();
+
+  // ── 6.8 Misalignment cross-tab ────────────────────────────────────────────
+  // ALIGNED   = period_end equal on both sides (5.5 equal=296)
+  // MISALIGNED = period_end differs OR canonical period_end is null (5.5 differ=18 + can_null=2 = 20)
+
+  const s68Result = await db.execute<{
+    canonical_period_id: string;
+    alignment: string;
+  }>(sql.raw(`
+    WITH ${SHARED_CTES_S6}
+    ${CAN_BUCKETS_EXT},
+    matched_a AS (
+      SELECT
+        cb.cp_id::text AS canonical_period_id,
+        CASE
+          WHEN cb.period_end IS NOT NULL AND la.period_end IS NOT NULL
+               AND cb.period_end::text = la.period_end::text
+          THEN 'ALIGNED'
+          ELSE 'MISALIGNED'
+        END AS alignment
+      FROM can_buckets cb
+      JOIN live_all la
+        ON la.target_company_id = cb.target_company_id
+        AND la.fiscal_year = cb.fiscal_year
+        AND la.statement_type = cb.statement_type
+        AND (
+          (cb.can_count = 1 AND cb.total_live = 1)
+          OR (cb.span_disambiguated = true AND la.derived_span = cb.span_kind)
+        )
+      WHERE cb.bucket = 'a'
+    )
+    SELECT canonical_period_id, alignment FROM matched_a
+  `));
+
+  type AlignKey = 'ALIGNED' | 'MISALIGNED';
+  const cpAlignment = new Map<string, AlignKey>();
+  for (const r of s68Result.rows) {
+    cpAlignment.set(r.canonical_period_id, r.alignment as AlignKey);
+  }
+
+  const cross: Record<string, Record<AlignKey, number>> = {
+    A: { ALIGNED: 0, MISALIGNED: 0 },
+    B: { ALIGNED: 0, MISALIGNED: 0 },
+    C: { ALIGNED: 0, MISALIGNED: 0 },
+    U: { ALIGNED: 0, MISALIGNED: 0 },
+    X: { ALIGNED: 0, MISALIGNED: 0 },
+  };
+  for (const fig of figureResults) {
+    const align = cpAlignment.get(fig.canonical_period_id) ?? 'MISALIGNED';
+    cross[fig.bucket][align]++;
+  }
+
+  const alignedTotal    = Object.values(cross).reduce((s, r) => s + r.ALIGNED,    0);
+  const misalignedTotal = Object.values(cross).reduce((s, r) => s + r.MISALIGNED, 0);
+
+  const pad = (n: number) => String(n).padStart(6);
+  line('6.8 MISALIGNMENT CROSS-TAB:');
+  line('  ALIGNED   = period_end equal on both sides.');
+  line('  MISALIGNED = period_end differs, or canonical period_end is null.');
+  line('  From 5.5: equal=296 → ALIGNED; differ=18 + canonical_null=2 → MISALIGNED=20.');
+  line();
+  line(`                ALIGNED  MISALIGNED   total`);
+  line(`  A equal      ${pad(cross.A.ALIGNED)} ${pad(cross.A.MISALIGNED)} ${pad(countA)}`);
+  line(`  B differ     ${pad(cross.B.ALIGNED)} ${pad(cross.B.MISALIGNED)} ${pad(countB)}`);
+  line(`  C live absent${pad(cross.C.ALIGNED)} ${pad(cross.C.MISALIGNED)} ${pad(countC)}`);
+  line(`  U unmapped   ${pad(cross.U.ALIGNED)} ${pad(cross.U.MISALIGNED)} ${pad(countU)}`);
+  line(`  X            ${pad(cross.X.ALIGNED)} ${pad(cross.X.MISALIGNED)} ${pad(countX)}`);
+  line(`  total        ${pad(alignedTotal)} ${pad(misalignedTotal)} ${pad(N)}`);
+  line();
+  const rowSumA = cross.A.ALIGNED + cross.A.MISALIGNED;
+  const rowSumB = cross.B.ALIGNED + cross.B.MISALIGNED;
+  const rowSumC = cross.C.ALIGNED + cross.C.MISALIGNED;
+  const rowSumU = cross.U.ALIGNED + cross.U.MISALIGNED;
+  const rowSumX = cross.X.ALIGNED + cross.X.MISALIGNED;
+  const colSumTotal = alignedTotal + misalignedTotal;
+  line(`  Row totals: A=${rowSumA}(exp ${countA}) B=${rowSumB}(exp ${countB}) C=${rowSumC}(exp ${countC}) U=${rowSumU}(exp ${countU}) X=${rowSumX}(exp ${countX})`);
+  line(`  Column totals: ALIGNED(${alignedTotal}) + MISALIGNED(${misalignedTotal}) = ${colSumTotal} (exp ${N})`);
+  const crossOk = rowSumA === countA && rowSumB === countB && rowSumC === countC &&
+                  rowSumU === countU && rowSumX === countX && colSumTotal === N;
+  line(crossOk ? '  All row and column sums reconcile. ✓' : '  *** CROSS-TAB RECONCILIATION FAILURE ***');
+  line();
+  const trueDriftCount = cross.B.ALIGNED;
+  line(`  TRUE VALUE DRIFT = ${trueDriftCount} of ${alignedTotal} figures on ALIGNED periods (${pct(trueDriftCount, alignedTotal)})`);
+  line('  A value difference on a MISALIGNED period is not value drift. The two sides are describing different accounting periods that share a fiscal year. Canonical and the live reconciler selected different source documents. That is a document-selection finding, reported at 6.10, not a fidelity failure.');
+  line();
+
+  // ── 6.9 Reverse direction ──────────────────────────────────────────────────
+
+  // Build covered targets per canonical period from bucket-A and bucket-B figures.
+  // live_target_key format:
+  //   scalar:     column_name
+  //   json 1-lvl: column::leaf
+  //   json 2-lvl: column::group::leaf
+  const cpCoveredTargets = new Map<string, Set<string>>();
+  for (const fig of figureResults) {
+    if (fig.bucket === 'A' || fig.bucket === 'B') {
+      if (!cpCoveredTargets.has(fig.canonical_period_id)) {
+        cpCoveredTargets.set(fig.canonical_period_id, new Set());
+      }
+      cpCoveredTargets.get(fig.canonical_period_id)!.add(fig.live_target_key);
+    }
+  }
+
+  // Column lists for enumeration — match LIVE_INCOME_COLUMNS and LIVE_BALANCE_COLUMNS
+  // from canonical-live-map.ts exactly. Not a mapping table: used only for iteration.
+  const INCOME_SCALAR_COLS_REV = [
+    'revenue', 'cost_of_sales', 'gross_profit', 'administrative_expenses',
+    'depreciation_amortisation', 'other_operating_income', 'operating_profit',
+    'interest_receivable', 'interest_payable', 'profit_before_tax', 'corporation_tax',
+    'net_profit', 'staff_costs', 'directors_remuneration', 'dividends_paid',
+  ];
+  const BALANCE_SCALAR_COLS_REV = [
+    'intangible_assets', 'tangible_fixed_assets', 'freehold_property', 'leasehold_property',
+    'plant_machinery', 'fixtures_fittings', 'motor_vehicles', 'computer_equipment',
+    'stock_inventory', 'trade_debtors', 'prepayments', 'amounts_owed_by_directors',
+    'amounts_owed_by_connected_companies', 'directors_current_account', 'other_debtors',
+    'cash_at_bank', 'total_current_assets', 'trade_creditors', 'taxation_social_security',
+    'vat_payable', 'corporation_tax_due', 'bank_loans_overdraft_current', 'hire_purchase_current',
+    'accruals', 'amounts_owed_to_directors', 'other_creditors', 'total_current_liabilities',
+    'bank_loans_long_term', 'hire_purchase_long_term', 'deferred_taxation', 'other_long_term_debt',
+    'total_long_term_liabilities', 'share_capital', 'retained_earnings', 'total_equity',
+  ];
+
+  let r1Count = 0;
+  let r2Count = 0;
+  const r2ByPath = new Map<string, number>();
+  const r2AlignCounts: Record<AlignKey, number> = { ALIGNED: 0, MISALIGNED: 0 };
+
+  for (const pair of matchedPairs) {
+    const { canonical_period_id, financial_period_id, statement_type } = pair;
+    const covered = cpCoveredTargets.get(canonical_period_id) ?? new Set<string>();
+    const alignment = cpAlignment.get(canonical_period_id) ?? 'MISALIGNED';
+
+    const countLiveValue = (targetKey: string, displayPath: string) => {
+      if (covered.has(targetKey)) { r1Count++; }
+      else {
+        r2Count++;
+        r2ByPath.set(displayPath, (r2ByPath.get(displayPath) ?? 0) + 1);
+        r2AlignCounts[alignment]++;
+      }
+    };
+
+    if (statement_type === 'income') {
+      const liveRow = incomeMap.get(financial_period_id);
+      if (!liveRow) continue;
+
+      for (const col of INCOME_SCALAR_COLS_REV) {
+        const v = liveRow[col];
+        if (v === null || v === undefined || String(v).trim() === '') continue;
+        countLiveValue(col, col);
+      }
+
+      // overheads_breakdown and cost_of_sales_breakdown: single-level JSON
+      for (const jsonCol of ['overheads_breakdown', 'cost_of_sales_breakdown'] as const) {
+        const colObj = resolveJsonColumn(liveRow[jsonCol]);
+        if (!colObj) continue;
+        for (const [leaf, leafVal] of Object.entries(colObj)) {
+          if (leafVal === null || leafVal === undefined) continue;
+          countLiveValue(`${jsonCol}::${leaf}`, `${jsonCol}['${leaf}']`);
+        }
+      }
+
+      // revenue_breakdown: two-level JSON (group → leaf)
+      const revObj = resolveJsonColumn(liveRow['revenue_breakdown']);
+      if (revObj) {
+        for (const [group, groupVal] of Object.entries(revObj)) {
+          const groupObj = resolveJsonColumn(groupVal);
+          if (!groupObj) continue;
+          for (const [leaf, leafVal] of Object.entries(groupObj)) {
+            if (leafVal === null || leafVal === undefined) continue;
+            countLiveValue(
+              `revenue_breakdown::${group}::${leaf}`,
+              `revenue_breakdown['${group}']['${leaf}']`,
+            );
+          }
+        }
+      }
+
+    } else {
+      const liveRow = balanceMap.get(financial_period_id);
+      if (!liveRow) continue;
+
+      for (const col of BALANCE_SCALAR_COLS_REV) {
+        const v = liveRow[col];
+        if (v === null || v === undefined || String(v).trim() === '') continue;
+        countLiveValue(col, col);
+      }
+    }
+  }
+
+  const expectedR1 = countA + countB;
+  line('6.9 REVERSE DIRECTION (live values canonical does not hold):');
+  line(`  R1. live value present, canonical maps to it:    ${r1Count}`);
+  line(`  R2. live value present, no canonical maps to it: ${r2Count}`);
+  line(`  Arithmetic: R1(${r1Count}) + R2(${r2Count}) = ${r1Count + r2Count}`);
+  if (r1Count === expectedR1) {
+    line(`  R1 = ${r1Count} = A(${countA}) + B(${countB}) = ${expectedR1}. MATCH ✓`);
+  } else {
+    line(`  *** R1 = ${r1Count}, EXPECTED A+B = ${expectedR1}. MISMATCH — this is a real defect. ***`);
+  }
+  line();
+  line(`  R2 split: ALIGNED=${r2AlignCounts.ALIGNED}, MISALIGNED=${r2AlignCounts.MISALIGNED}, sum=${r2AlignCounts.ALIGNED + r2AlignCounts.MISALIGNED}`);
+  line();
+
+  const r2Sorted = [...r2ByPath.entries()].sort((a, b) => b[1] - a[1]);
+  const CAP_R2 = 25;
+  line('  R2 by live column/path (count descending):');
+  for (const [path, cnt] of r2Sorted.slice(0, CAP_R2)) {
+    line(`    ${cnt}  ${path}`);
+  }
+  if (r2Sorted.length > CAP_R2) {
+    line(`  TRUNCATED AT ${CAP_R2} OF ${r2Sorted.length}`);
+  }
+  line();
+  line('  An R2 entry is a value the live system holds and canonical does not. On an ALIGNED period that is a genuine gap in the evidence layer. On a MISALIGNED period it is expected, because the two sides are different periods.');
+  line();
+
+  // ── 6.10 Document selection diagnostic ───────────────────────────────────
+  // The 18 pairs where BOTH period_ends are non-null and differ (from 5.5 differ=18).
+  // The 2 canonical-null cases are in MISALIGNED for 6.8 but not diagnosed here.
+
+  const s610 = await db.execute<{
+    canonical_period_id: string;
+    target_company_id: string;
+    fiscal_year: string;
+    statement_type: string;
+    canonical_end: string | null;
+    winning_evidence_id: string | null;
+    winning_period_id: string | null;
+    can_document_id: string | null;
+    live_end: string | null;
+    source_document_id: string | null;
+    source_tier: string | null;
+  }>(sql.raw(`
+    WITH ${SHARED_CTES_S6}
+    ${CAN_BUCKETS_EXT},
+    misaligned_18 AS (
+      SELECT
+        cb.cp_id AS canonical_period_id,
+        cb.target_company_id, cb.fiscal_year, cb.statement_type,
+        cb.period_end AS can_end,
+        la.period_end AS live_end,
+        la.financial_period_id
+      FROM can_buckets cb
+      JOIN live_all la
+        ON la.target_company_id = cb.target_company_id
+        AND la.fiscal_year = cb.fiscal_year
+        AND la.statement_type = cb.statement_type
+        AND (
+          (cb.can_count = 1 AND cb.total_live = 1)
+          OR (cb.span_disambiguated = true AND la.derived_span = cb.span_kind)
+        )
+      WHERE cb.bucket = 'a'
+        AND cb.period_end IS NOT NULL
+        AND la.period_end IS NOT NULL
+        AND cb.period_end::text != la.period_end::text
+    )
+    SELECT
+      m.canonical_period_id::text,
+      m.target_company_id::text,
+      m.fiscal_year::text,
+      m.statement_type,
+      m.can_end::text      AS canonical_end,
+      cp.winning_evidence_id::text,
+      cp.winning_period_id::text,
+      de.document_id::text AS can_document_id,
+      m.live_end::text,
+      fp.source_document_id::text,
+      fp.source_tier
+    FROM misaligned_18 m
+    JOIN canonical_period cp ON cp.id = m.canonical_period_id
+    LEFT JOIN document_evidence de ON de.id = cp.winning_evidence_id
+    JOIN financial_periods fp ON fp.id = m.financial_period_id
+    ORDER BY m.target_company_id::int, m.fiscal_year, m.statement_type
+  `));
+
+  // Count bucket-B figures per canonical_period_id
+  const bCountByPeriod = new Map<string, number>();
+  for (const fig of figureResults) {
+    if (fig.bucket === 'B') {
+      bCountByPeriod.set(fig.canonical_period_id, (bCountByPeriod.get(fig.canonical_period_id) ?? 0) + 1);
+    }
+  }
+
+  line(`6.10 DOCUMENT SELECTION DIAGNOSTIC (${s610.rows.length} MISALIGNED pairs where period_end differs):`);
+  line('  tc | fy | st | can_end | win_ev_id | win_pd_id | can_doc_id | live_end | src_doc_id | src_tier | B_figs');
+  for (const r of s610.rows) {
+    const bFigs = bCountByPeriod.get(r.canonical_period_id) ?? 0;
+    line(`  ${r.target_company_id} | ${r.fiscal_year} | ${r.statement_type} | ${r.canonical_end ?? 'NULL'} | ${r.winning_evidence_id ?? 'NULL'} | ${r.winning_period_id ?? 'NULL'} | ${r.can_document_id ?? 'NULL'} | ${r.live_end ?? 'NULL'} | ${r.source_document_id ?? 'NULL'} | ${r.source_tier ?? 'NULL'} | ${bFigs}`);
+  }
+  line();
+
+  let docDiffer = 0, docSame = 0, docEitherNull = 0;
+  for (const r of s610.rows) {
+    if (r.can_document_id === null || r.source_document_id === null) {
+      docEitherNull++;
+    } else if (r.can_document_id === r.source_document_id) {
+      docSame++;
+    } else {
+      docDiffer++;
+    }
+  }
+  const docSum = docDiffer + docSame + docEitherNull;
+  line(`  Of the ${s610.rows.length} misaligned pairs:`);
+  line(`    canonical doc_id DIFFERENT from live source_document_id: ${docDiffer}`);
+  line(`    canonical doc_id SAME as live source_document_id:        ${docSame}`);
+  line(`    either side null:                                        ${docEitherNull}`);
+  line(`    Sum: ${docDiffer} + ${docSame} + ${docEitherNull} = ${docSum} (exp ${s610.rows.length})`);
+  line(docSum === s610.rows.length ? '    Reconciles. ✓' : '    *** DOES NOT RECONCILE ***');
+  line();
+  line('  Where the two sides cite different documents, canonical\'s winner ladder and getReconciledFinancials\' first-row-wins ordering by period_end DESC have chosen differently. This is the first time that disagreement has been visible.');
+  line();
+
+  // ── 6.11 The #351 case ────────────────────────────────────────────────────
+
+  const s611 = await db.execute<{
+    trust_state: string;
+    conflict_detail: unknown;
+    canonical_period_id: string;
+  }>(sql.raw(`
+    SELECT cp.trust_state, cp.conflict_detail, cp.id::text AS canonical_period_id
+    FROM canonical_period cp
+    WHERE cp.target_company_id = 1880
+      AND cp.fiscal_year = 2025
+      AND cp.statement_type = 'income'
+      AND cp.canonical_run_id IN (
+        SELECT MAX(id) FROM canonical_run WHERE target_company_id = 1880
+      )
+  `));
+
+  line('6.11 THE #351 CASE (tc=1880, fy=2025, income):');
+  if (s611.rows.length === 0) {
+    line('  *** tc=1880, fy=2025, income not found in canonical. ***');
+  } else {
+    const r611 = s611.rows[0];
+    const rev611 = figureResults.find(
+      f => f.canonical_period_id === r611.canonical_period_id &&
+           f.figure_path === 'profit_and_loss.revenue',
+    );
+    const canRev = rev611?.canonical_value ?? null;
+    const liveRev = rev611?.live_value ?? null;
+    const delta611 = (canRev !== null && liveRev !== null)
+      ? Math.abs(parseFloat(liveRev) - parseFloat(canRev))
+      : null;
+    const pctDiv = (canRev !== null && liveRev !== null && parseFloat(canRev) !== 0)
+      ? ((Math.abs(parseFloat(liveRev) - parseFloat(canRev)) / Math.abs(parseFloat(canRev))) * 100).toFixed(1) + '%'
+      : 'N/A';
+    line(`  canonical revenue:     ${canRev ?? 'NULL'}`);
+    line(`  live revenue:          ${liveRev ?? 'NULL'}`);
+    line(`  delta:                 ${delta611 !== null ? delta611.toFixed(2) : 'N/A'}`);
+    line(`  percentage divergence: ${pctDiv}`);
+    line(`  trust_state:           ${r611.trust_state}`);
+    line(`  conflict_detail:       ${JSON.stringify(r611.conflict_detail)}`);
+    line('  Logged as #351. Canonical marks this CONFLICTED. The live system uses one of the two values with nothing surfaced to the user. This is the business case for the trust model in a single row.');
+  }
+  line();
+
   line('='.repeat(70));
   line('SECTION 7: SCOPE AND LIMITS');
   line('='.repeat(70));
