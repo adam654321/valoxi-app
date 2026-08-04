@@ -53,8 +53,8 @@ async function main() {
   // Canonical run counts
   const runCounts = await db.execute<{ total_runs: string; latest_runs: string; selected_ids: string }>(sql`
     SELECT
-      COUNT(*) AS total_runs,
-      COUNT(DISTINCT target_company_id) AS latest_runs,
+      (SELECT COUNT(*) FROM canonical_run) AS total_runs,
+      COUNT(*) AS latest_runs,
       STRING_AGG(latest_id::text, ', ' ORDER BY latest_id) AS selected_ids
     FROM (
       SELECT target_company_id, MAX(id) AS latest_id
@@ -543,10 +543,475 @@ async function main() {
   line();
 
   // ─────────────────────────────────────────────────────────────────────────
-  // SECTION 4: SCOPE AND LIMITS
+  // SECTION 5: PERIOD-LEVEL MATCHING
   // ─────────────────────────────────────────────────────────────────────────
   line('='.repeat(70));
-  line('SECTION 4: SCOPE AND LIMITS');
+  line('SECTION 5: PERIOD-LEVEL MATCHING');
+  line('='.repeat(70));
+  line();
+  line('Scope: 36 companies with both a canonical run and financial_periods rows.');
+  line('Company 76 (canonical-only) is excluded; it is reported at 1.2.');
+  line();
+  line('Canonical side: latest run per company only (same CTE as sections 1-3).');
+  line('Expected 335 periods: 175 income, 160 balance.');
+  line('Live side: financial_periods joined to income_statements (187 rows) and');
+  line('balance_sheets (169 rows) for these 36 companies. Total: 356 live rows.');
+  line();
+  line('Span derivation on live side uses financial_periods.is_full_year (PARENT),');
+  line('not income_statements.is_full_year (CHILD). Span is a property of the period.');
+  line('The parent-child disagreement is already reported at 3.2 and is not conflated here.');
+  line('Rules in order: months_covered=12 → full_year; months_covered IS NOT NULL AND !=12');
+  line('→ part_year; months_covered IS NULL AND is_full_year=true → full_year;');
+  line('months_covered IS NULL AND is_full_year=false → part_year.');
+  line('The live side can never produce span = \'unknown\'. Canonical can.');
+  line('That asymmetry is a finding, not a bug.');
+  line();
+  line('Join key: target_company_id + fiscal_year + statement_type + derived span.');
+  line('period_end is compared as a field (5.5), NOT used as a join key (see 3.1).');
+  line();
+
+  // Shared CTE fragment used across 5.x queries — defined as raw SQL string
+  // to avoid repeating. All queries below inline it.
+  //
+  // both_cos: 36 companies with both canonical run and financial_periods
+  // sel_runs: latest run id per company
+  // can_periods: 335 canonical periods from latest runs for those 36 companies
+  // live_income / live_balance / live_all: live rows with derived span
+  //
+  // SPAN derivation uses financial_periods.is_full_year (parent), never IS.is_full_year.
+
+  const SPAN_CASE = `
+    CASE
+      WHEN fp.months_covered = 12 THEN 'full_year'
+      WHEN fp.months_covered IS NOT NULL AND fp.months_covered != 12 THEN 'part_year'
+      WHEN fp.months_covered IS NULL AND fp.is_full_year = true THEN 'full_year'
+      WHEN fp.months_covered IS NULL AND fp.is_full_year = false THEN 'part_year'
+    END`;
+
+  const SHARED_CTES = `
+    both_cos AS (
+      SELECT DISTINCT cr.target_company_id
+      FROM canonical_run cr
+      WHERE cr.target_company_id IN (SELECT DISTINCT target_company_id FROM financial_periods)
+    ),
+    sel_runs AS (
+      SELECT MAX(id) AS rid, target_company_id FROM canonical_run GROUP BY target_company_id
+    ),
+    can_periods AS (
+      SELECT cp.id, cp.target_company_id, cp.fiscal_year, cp.statement_type,
+             cp.span_kind, cp.period_end
+      FROM canonical_period cp
+      JOIN sel_runs sr ON cp.canonical_run_id = sr.rid
+      WHERE cp.target_company_id IN (SELECT target_company_id FROM both_cos)
+    ),
+    live_income AS (
+      SELECT fp.target_company_id, fp.fiscal_year, 'income'::text AS statement_type,
+             fp.period_end,
+             ${SPAN_CASE} AS derived_span
+      FROM financial_periods fp
+      JOIN income_statements is_ ON is_.financial_period_id = fp.id
+      WHERE fp.target_company_id IN (SELECT target_company_id FROM both_cos)
+    ),
+    live_balance AS (
+      SELECT fp.target_company_id, fp.fiscal_year, 'balance'::text AS statement_type,
+             fp.period_end,
+             ${SPAN_CASE} AS derived_span
+      FROM financial_periods fp
+      JOIN balance_sheets bs ON bs.financial_period_id = fp.id
+      WHERE fp.target_company_id IN (SELECT target_company_id FROM both_cos)
+    ),
+    live_all AS (SELECT * FROM live_income UNION ALL SELECT * FROM live_balance)`;
+
+  // ── 5.1 Match outcomes, canonical side ────────────────────────────────────
+  const s51 = await db.execute<{
+    bucket_a: string; bucket_a_income: string; bucket_a_balance: string;
+    bucket_b: string; bucket_b_income: string; bucket_b_balance: string;
+    bucket_c: string; bucket_c_income: string; bucket_c_balance: string;
+    bucket_d: string; bucket_d_income: string; bucket_d_balance: string;
+    total: string;
+  }>(sql.raw(`
+    WITH ${SHARED_CTES},
+    match_counts AS (
+      SELECT cp.id, cp.target_company_id, cp.fiscal_year, cp.statement_type,
+             cp.span_kind, cp.period_end,
+             COUNT(la.target_company_id) AS exact_matches
+      FROM can_periods cp
+      LEFT JOIN live_all la
+        ON la.target_company_id = cp.target_company_id
+       AND la.fiscal_year = cp.fiscal_year
+       AND la.statement_type = cp.statement_type
+       AND la.derived_span = cp.span_kind
+      GROUP BY cp.id, cp.target_company_id, cp.fiscal_year, cp.statement_type,
+               cp.span_kind, cp.period_end
+    ),
+    live_fy_any AS (
+      SELECT DISTINCT target_company_id, fiscal_year, statement_type FROM live_all
+    )
+    SELECT
+      SUM(CASE WHEN exact_matches = 1 THEN 1 ELSE 0 END)::text AS bucket_a,
+      SUM(CASE WHEN exact_matches = 1 AND statement_type='income' THEN 1 ELSE 0 END)::text AS bucket_a_income,
+      SUM(CASE WHEN exact_matches = 1 AND statement_type='balance' THEN 1 ELSE 0 END)::text AS bucket_a_balance,
+      SUM(CASE WHEN exact_matches > 1 THEN 1 ELSE 0 END)::text AS bucket_b,
+      SUM(CASE WHEN exact_matches > 1 AND statement_type='income' THEN 1 ELSE 0 END)::text AS bucket_b_income,
+      SUM(CASE WHEN exact_matches > 1 AND statement_type='balance' THEN 1 ELSE 0 END)::text AS bucket_b_balance,
+      SUM(CASE WHEN exact_matches = 0
+        AND NOT EXISTS (SELECT 1 FROM live_fy_any lfa
+          WHERE lfa.target_company_id = mc.target_company_id
+            AND lfa.fiscal_year = mc.fiscal_year
+            AND lfa.statement_type = mc.statement_type)
+        THEN 1 ELSE 0 END)::text AS bucket_c,
+      SUM(CASE WHEN exact_matches = 0 AND statement_type='income'
+        AND NOT EXISTS (SELECT 1 FROM live_fy_any lfa
+          WHERE lfa.target_company_id = mc.target_company_id
+            AND lfa.fiscal_year = mc.fiscal_year
+            AND lfa.statement_type = mc.statement_type)
+        THEN 1 ELSE 0 END)::text AS bucket_c_income,
+      SUM(CASE WHEN exact_matches = 0 AND statement_type='balance'
+        AND NOT EXISTS (SELECT 1 FROM live_fy_any lfa
+          WHERE lfa.target_company_id = mc.target_company_id
+            AND lfa.fiscal_year = mc.fiscal_year
+            AND lfa.statement_type = mc.statement_type)
+        THEN 1 ELSE 0 END)::text AS bucket_c_balance,
+      SUM(CASE WHEN exact_matches = 0
+        AND EXISTS (SELECT 1 FROM live_fy_any lfa
+          WHERE lfa.target_company_id = mc.target_company_id
+            AND lfa.fiscal_year = mc.fiscal_year
+            AND lfa.statement_type = mc.statement_type)
+        THEN 1 ELSE 0 END)::text AS bucket_d,
+      SUM(CASE WHEN exact_matches = 0 AND statement_type='income'
+        AND EXISTS (SELECT 1 FROM live_fy_any lfa
+          WHERE lfa.target_company_id = mc.target_company_id
+            AND lfa.fiscal_year = mc.fiscal_year
+            AND lfa.statement_type = mc.statement_type)
+        THEN 1 ELSE 0 END)::text AS bucket_d_income,
+      SUM(CASE WHEN exact_matches = 0 AND statement_type='balance'
+        AND EXISTS (SELECT 1 FROM live_fy_any lfa
+          WHERE lfa.target_company_id = mc.target_company_id
+            AND lfa.fiscal_year = mc.fiscal_year
+            AND lfa.statement_type = mc.statement_type)
+        THEN 1 ELSE 0 END)::text AS bucket_d_balance,
+      COUNT(*)::text AS total
+    FROM match_counts mc
+  `));
+  const r51 = s51.rows[0];
+  const ba = parseInt(r51.bucket_a), bb = parseInt(r51.bucket_b);
+  const bc = parseInt(r51.bucket_c), bd = parseInt(r51.bucket_d);
+  const s51total = parseInt(r51.total);
+  const s51sum = ba + bb + bc + bd;
+
+  line('5.1 MATCH OUTCOMES, canonical side (335 canonical periods):');
+  line(`  a. matched to exactly one live row:          ${r51.bucket_a}  (income=${r51.bucket_a_income}, balance=${r51.bucket_a_balance})`);
+  line(`  b. matched to MORE THAN ONE live row:        ${r51.bucket_b}  (income=${r51.bucket_b_income}, balance=${r51.bucket_b_balance})`);
+  line(`  c. no live row for company+fiscal_year:      ${r51.bucket_c}  (income=${r51.bucket_c_income}, balance=${r51.bucket_c_balance})`);
+  line(`  d. live row exists, span does not match:     ${r51.bucket_d}  (income=${r51.bucket_d_income}, balance=${r51.bucket_d_balance})`);
+  line(`  Arithmetic: a(${ba}) + b(${bb}) + c(${bc}) + d(${bd}) = ${s51sum}`);
+  if (s51sum === 335) {
+    line(`  Sum = 335. Reconciles. ✓`);
+  } else {
+    line(`  *** SUM IS ${s51sum}, NOT 335. DOES NOT RECONCILE. ***`);
+  }
+  line();
+
+  // ── 5.2 Match outcomes, live side ─────────────────────────────────────────
+  const s52 = await db.execute<{
+    bucket_a: string; bucket_a_income: string; bucket_a_balance: string;
+    bucket_b: string; bucket_b_income: string; bucket_b_balance: string;
+    bucket_c: string; bucket_c_income: string; bucket_c_balance: string;
+    total: string; total_income: string; total_balance: string;
+  }>(sql.raw(`
+    WITH ${SHARED_CTES},
+    can_fy AS (
+      SELECT DISTINCT target_company_id, fiscal_year, statement_type FROM can_periods
+    )
+    SELECT
+      SUM(CASE WHEN EXISTS (
+        SELECT 1 FROM can_periods cp
+        WHERE cp.target_company_id = la.target_company_id
+          AND cp.fiscal_year = la.fiscal_year
+          AND cp.statement_type = la.statement_type
+          AND cp.span_kind = la.derived_span
+      ) THEN 1 ELSE 0 END)::text AS bucket_a,
+      SUM(CASE WHEN statement_type='income' AND EXISTS (
+        SELECT 1 FROM can_periods cp
+        WHERE cp.target_company_id = la.target_company_id
+          AND cp.fiscal_year = la.fiscal_year
+          AND cp.statement_type = la.statement_type
+          AND cp.span_kind = la.derived_span
+      ) THEN 1 ELSE 0 END)::text AS bucket_a_income,
+      SUM(CASE WHEN statement_type='balance' AND EXISTS (
+        SELECT 1 FROM can_periods cp
+        WHERE cp.target_company_id = la.target_company_id
+          AND cp.fiscal_year = la.fiscal_year
+          AND cp.statement_type = la.statement_type
+          AND cp.span_kind = la.derived_span
+      ) THEN 1 ELSE 0 END)::text AS bucket_a_balance,
+      SUM(CASE WHEN NOT EXISTS (
+        SELECT 1 FROM can_fy cf
+        WHERE cf.target_company_id = la.target_company_id
+          AND cf.fiscal_year = la.fiscal_year
+          AND cf.statement_type = la.statement_type
+      ) THEN 1 ELSE 0 END)::text AS bucket_b,
+      SUM(CASE WHEN statement_type='income' AND NOT EXISTS (
+        SELECT 1 FROM can_fy cf
+        WHERE cf.target_company_id = la.target_company_id
+          AND cf.fiscal_year = la.fiscal_year
+          AND cf.statement_type = la.statement_type
+      ) THEN 1 ELSE 0 END)::text AS bucket_b_income,
+      SUM(CASE WHEN statement_type='balance' AND NOT EXISTS (
+        SELECT 1 FROM can_fy cf
+        WHERE cf.target_company_id = la.target_company_id
+          AND cf.fiscal_year = la.fiscal_year
+          AND cf.statement_type = la.statement_type
+      ) THEN 1 ELSE 0 END)::text AS bucket_b_balance,
+      SUM(CASE WHEN
+        NOT EXISTS (
+          SELECT 1 FROM can_periods cp
+          WHERE cp.target_company_id = la.target_company_id
+            AND cp.fiscal_year = la.fiscal_year
+            AND cp.statement_type = la.statement_type
+            AND cp.span_kind = la.derived_span
+        )
+        AND EXISTS (
+          SELECT 1 FROM can_fy cf
+          WHERE cf.target_company_id = la.target_company_id
+            AND cf.fiscal_year = la.fiscal_year
+            AND cf.statement_type = la.statement_type
+        ) THEN 1 ELSE 0 END)::text AS bucket_c,
+      SUM(CASE WHEN statement_type='income'
+        AND NOT EXISTS (
+          SELECT 1 FROM can_periods cp
+          WHERE cp.target_company_id = la.target_company_id
+            AND cp.fiscal_year = la.fiscal_year
+            AND cp.statement_type = la.statement_type
+            AND cp.span_kind = la.derived_span
+        )
+        AND EXISTS (
+          SELECT 1 FROM can_fy cf
+          WHERE cf.target_company_id = la.target_company_id
+            AND cf.fiscal_year = la.fiscal_year
+            AND cf.statement_type = la.statement_type
+        ) THEN 1 ELSE 0 END)::text AS bucket_c_income,
+      SUM(CASE WHEN statement_type='balance'
+        AND NOT EXISTS (
+          SELECT 1 FROM can_periods cp
+          WHERE cp.target_company_id = la.target_company_id
+            AND cp.fiscal_year = la.fiscal_year
+            AND cp.statement_type = la.statement_type
+            AND cp.span_kind = la.derived_span
+        )
+        AND EXISTS (
+          SELECT 1 FROM can_fy cf
+          WHERE cf.target_company_id = la.target_company_id
+            AND cf.fiscal_year = la.fiscal_year
+            AND cf.statement_type = la.statement_type
+        ) THEN 1 ELSE 0 END)::text AS bucket_c_balance,
+      COUNT(*)::text AS total,
+      SUM(CASE WHEN statement_type='income' THEN 1 ELSE 0 END)::text AS total_income,
+      SUM(CASE WHEN statement_type='balance' THEN 1 ELSE 0 END)::text AS total_balance
+    FROM live_all la
+  `));
+  const r52 = s52.rows[0];
+  const la = parseInt(r52.bucket_a), lb = parseInt(r52.bucket_b), lc = parseInt(r52.bucket_c);
+  const s52total = parseInt(r52.total);
+  const s52sum = la + lb + lc;
+
+  line(`5.2 MATCH OUTCOMES, live side (${r52.total_income} income + ${r52.total_balance} balance = ${r52.total} total live rows):`);
+  line(`  a. matched to a canonical period:                ${r52.bucket_a}  (income=${r52.bucket_a_income}, balance=${r52.bucket_a_balance})`);
+  line(`  b. no canonical period for company+fiscal_year:  ${r52.bucket_b}  (income=${r52.bucket_b_income}, balance=${r52.bucket_b_balance})`);
+  line(`  c. canonical exists, span does not match:        ${r52.bucket_c}  (income=${r52.bucket_c_income}, balance=${r52.bucket_c_balance})`);
+  line(`  Arithmetic: a(${la}) + b(${lb}) + c(${lc}) = ${s52sum}`);
+  if (s52sum === s52total) {
+    line(`  Sum = ${s52total}. Reconciles. ✓`);
+  } else {
+    line(`  *** SUM IS ${s52sum}, NOT ${s52total}. DOES NOT RECONCILE. ***`);
+  }
+  line();
+
+  // ── 5.3 Multi-match list (canonical bucket b) ──────────────────────────────
+  const s53 = await db.execute<{
+    target_company_id: string; fiscal_year: string; statement_type: string;
+    span_kind: string; live_count: string; live_period_ends: string;
+  }>(sql.raw(`
+    WITH ${SHARED_CTES},
+    match_counts AS (
+      SELECT cp.target_company_id, cp.fiscal_year, cp.statement_type,
+             cp.span_kind, COUNT(la.target_company_id) AS exact_matches,
+             STRING_AGG(la.period_end::text, ', ' ORDER BY la.period_end::text) AS live_period_ends
+      FROM can_periods cp
+      LEFT JOIN live_all la
+        ON la.target_company_id = cp.target_company_id
+       AND la.fiscal_year = cp.fiscal_year
+       AND la.statement_type = cp.statement_type
+       AND la.derived_span = cp.span_kind
+      GROUP BY cp.target_company_id, cp.fiscal_year, cp.statement_type, cp.span_kind
+    )
+    SELECT target_company_id::text, fiscal_year::text, statement_type,
+           span_kind, exact_matches::text AS live_count, live_period_ends
+    FROM match_counts
+    WHERE exact_matches > 1
+    ORDER BY target_company_id, fiscal_year, statement_type
+  `));
+
+  line('5.3 THE MULTI-MATCH LIST (canonical periods in bucket b):');
+  if (s53.rows.length === 0) {
+    line('  NO MULTI-MATCHES');
+  } else {
+    line('  tc | fiscal_year | statement_type | span | live_count | live_period_ends');
+    for (const r of s53.rows) {
+      line(`  ${r.target_company_id} | ${r.fiscal_year} | ${r.statement_type} | ${r.span_kind} | ${r.live_count} | ${r.live_period_ends}`);
+    }
+  }
+  line();
+
+  // ── 5.4 Span mismatch list (canonical bucket d) ────────────────────────────
+  const s54 = await db.execute<{
+    target_company_id: string; fiscal_year: string; statement_type: string;
+    can_span: string; live_spans: string;
+  }>(sql.raw(`
+    WITH ${SHARED_CTES},
+    live_fy_any AS (
+      SELECT DISTINCT target_company_id, fiscal_year, statement_type FROM live_all
+    ),
+    match_counts AS (
+      SELECT cp.target_company_id, cp.fiscal_year, cp.statement_type,
+             cp.span_kind, COUNT(la.target_company_id) AS exact_matches
+      FROM can_periods cp
+      LEFT JOIN live_all la
+        ON la.target_company_id = cp.target_company_id
+       AND la.fiscal_year = cp.fiscal_year
+       AND la.statement_type = cp.statement_type
+       AND la.derived_span = cp.span_kind
+      GROUP BY cp.target_company_id, cp.fiscal_year, cp.statement_type, cp.span_kind
+    ),
+    bucket_d AS (
+      SELECT mc.target_company_id, mc.fiscal_year, mc.statement_type, mc.span_kind AS can_span
+      FROM match_counts mc
+      WHERE mc.exact_matches = 0
+        AND EXISTS (SELECT 1 FROM live_fy_any lfa
+          WHERE lfa.target_company_id = mc.target_company_id
+            AND lfa.fiscal_year = mc.fiscal_year
+            AND lfa.statement_type = mc.statement_type)
+    )
+    SELECT
+      bd.target_company_id::text, bd.fiscal_year::text, bd.statement_type,
+      bd.can_span,
+      STRING_AGG(DISTINCT la.derived_span, ', ' ORDER BY la.derived_span) AS live_spans
+    FROM bucket_d bd
+    JOIN live_all la
+      ON la.target_company_id = bd.target_company_id
+     AND la.fiscal_year = bd.fiscal_year
+     AND la.statement_type = bd.statement_type
+    GROUP BY bd.target_company_id, bd.fiscal_year, bd.statement_type, bd.can_span
+    ORDER BY bd.target_company_id, bd.fiscal_year, bd.statement_type
+  `));
+
+  const s54total = s54.rows.length;
+  const s54cap = 40;
+  line(`5.4 THE SPAN MISMATCH LIST (canonical bucket d, ${s54total} rows):`);
+  if (s54total === 0) {
+    line('  NO SPAN MISMATCHES');
+  } else {
+    line('  tc | fiscal_year | statement_type | canonical_span | live_span(s)');
+    const rowsToShow = s54.rows.slice(0, s54cap);
+    for (const r of rowsToShow) {
+      line(`  ${r.target_company_id} | ${r.fiscal_year} | ${r.statement_type} | ${r.can_span} | ${r.live_spans}`);
+    }
+    if (s54total > s54cap) {
+      line(`  TRUNCATED AT 40 OF ${s54total}`);
+    }
+  }
+  line();
+
+  // ── 5.5 period_end comparison, matched periods only (bucket a) ─────────────
+  const s55 = await db.execute<{
+    equal_count: string; differ_count: string; can_null_live_not: string; both_null: string; total_matched: string;
+  }>(sql.raw(`
+    WITH ${SHARED_CTES},
+    matched AS (
+      SELECT cp.target_company_id, cp.fiscal_year, cp.statement_type,
+             cp.span_kind, cp.period_end AS can_end,
+             la.period_end AS live_end,
+             COUNT(*) OVER (PARTITION BY cp.target_company_id, cp.fiscal_year, cp.statement_type, cp.span_kind) AS match_cnt
+      FROM can_periods cp
+      JOIN live_all la
+        ON la.target_company_id = cp.target_company_id
+       AND la.fiscal_year = cp.fiscal_year
+       AND la.statement_type = cp.statement_type
+       AND la.derived_span = cp.span_kind
+    ),
+    single_matched AS (
+      SELECT * FROM matched WHERE match_cnt = 1
+    )
+    SELECT
+      SUM(CASE WHEN can_end IS NOT NULL AND live_end IS NOT NULL AND can_end::text = live_end::text THEN 1 ELSE 0 END)::text AS equal_count,
+      SUM(CASE WHEN can_end IS NOT NULL AND live_end IS NOT NULL AND can_end::text != live_end::text THEN 1 ELSE 0 END)::text AS differ_count,
+      SUM(CASE WHEN can_end IS NULL AND live_end IS NOT NULL THEN 1 ELSE 0 END)::text AS can_null_live_not,
+      SUM(CASE WHEN can_end IS NULL AND live_end IS NULL THEN 1 ELSE 0 END)::text AS both_null,
+      COUNT(*)::text AS total_matched
+    FROM single_matched
+  `));
+
+  const r55 = s55.rows[0];
+  const eq = parseInt(r55.equal_count), diff = parseInt(r55.differ_count);
+  const cnull = parseInt(r55.can_null_live_not), bnull = parseInt(r55.both_null);
+  const s55total = parseInt(r55.total_matched);
+  const s55sum = eq + diff + cnull + bnull;
+
+  line(`5.5 PERIOD_END COMPARISON (bucket 5.1a only: ${r55.total_matched} matched periods):`);
+  line(`  equal:                              ${r55.equal_count}`);
+  line(`  differ:                             ${r55.differ_count}`);
+  line(`  canonical null, live not null:      ${r55.can_null_live_not}`);
+  line(`  both null:                          ${r55.both_null}`);
+  line(`  Arithmetic: ${eq} + ${diff} + ${cnull} + ${bnull} = ${s55sum}`);
+  if (s55sum === s55total) {
+    line(`  Sum = ${s55total} = 5.1a count. Reconciles. ✓`);
+  } else {
+    line(`  *** SUM IS ${s55sum}, NOT ${s55total}. DOES NOT RECONCILE. ***`);
+  }
+
+  if (diff > 0) {
+    // List every differing case
+    const s55diff = await db.execute<{
+      target_company_id: string; fiscal_year: string; statement_type: string;
+      can_end: string; live_end: string;
+    }>(sql.raw(`
+      WITH ${SHARED_CTES},
+      matched AS (
+        SELECT cp.target_company_id, cp.fiscal_year, cp.statement_type,
+               cp.span_kind, cp.period_end AS can_end, la.period_end AS live_end,
+               COUNT(*) OVER (PARTITION BY cp.target_company_id, cp.fiscal_year, cp.statement_type, cp.span_kind) AS match_cnt
+        FROM can_periods cp
+        JOIN live_all la
+          ON la.target_company_id = cp.target_company_id
+         AND la.fiscal_year = cp.fiscal_year
+         AND la.statement_type = cp.statement_type
+         AND la.derived_span = cp.span_kind
+      )
+      SELECT target_company_id::text, fiscal_year::text, statement_type,
+             can_end::text, live_end::text
+      FROM matched
+      WHERE match_cnt = 1
+        AND can_end IS NOT NULL AND live_end IS NOT NULL
+        AND can_end::text != live_end::text
+      ORDER BY target_company_id, fiscal_year, statement_type
+    `));
+    line('  Differing cases (tc | fiscal_year | statement_type | canonical_end | live_end):');
+    for (const r of s55diff.rows) {
+      line(`    ${r.target_company_id} | ${r.fiscal_year} | ${r.statement_type} | ${r.can_end} | ${r.live_end}`);
+    }
+  }
+  line('  A period_end disagreement is a FINDING, not a join failure. The live value may be the fabricated 31 December described in 3.1.');
+  line();
+
+  line('5.6 No canonical period was matched to a live row by picking one of several.');
+  line('Multi-matches are reported at 5.3 and excluded from figure-level comparison at 3d.3b.');
+  line();
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // SECTION 6: SCOPE AND LIMITS
+  // ─────────────────────────────────────────────────────────────────────────
+  line('='.repeat(70));
+  line('SECTION 6: SCOPE AND LIMITS');
   line('='.repeat(70));
   line();
   line('This report at 3d.2 does NOT yet perform any figure-level or period-level');
