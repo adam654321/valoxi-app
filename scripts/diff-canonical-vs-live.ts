@@ -1241,6 +1241,63 @@ async function main() {
   line('  Figure-level comparison at 3d.3b requires a one-to-one match. A live row read twice would double-count its values against two different canonical periods.');
   line();
 
+  // ── 5.8 Forced-pairing count (bucket 5.1a only) ───────────────────────────
+  const s58 = await db.execute<{
+    one_to_one: string;
+    span_disambiguated: string;
+    span_disambiguated_misaligned: string;
+    total_matched: string;
+  }>(sql.raw(`
+    WITH ${SHARED_CTES}
+    ${CAN_BUCKETS_EXT},
+    matched_a AS (
+      SELECT
+        CASE
+          WHEN cb.can_count = 1 AND cb.total_live = 1 THEN 'one_to_one'
+          ELSE 'span_disambiguated'
+        END AS match_method,
+        cb.period_end AS can_end,
+        la.period_end AS live_end
+      FROM can_buckets cb
+      JOIN live_all la
+        ON la.target_company_id = cb.target_company_id
+        AND la.fiscal_year = cb.fiscal_year
+        AND la.statement_type = cb.statement_type
+        AND (
+          (cb.can_count = 1 AND cb.total_live = 1)
+          OR (cb.span_disambiguated = true AND la.derived_span = cb.span_kind)
+        )
+      WHERE cb.bucket = 'a'
+    )
+    SELECT
+      SUM(CASE WHEN match_method = 'one_to_one' THEN 1 ELSE 0 END)::text AS one_to_one,
+      SUM(CASE WHEN match_method = 'span_disambiguated' THEN 1 ELSE 0 END)::text AS span_disambiguated,
+      SUM(CASE WHEN match_method = 'span_disambiguated'
+        AND can_end IS NOT NULL AND live_end IS NOT NULL
+        AND can_end::text != live_end::text THEN 1 ELSE 0 END)::text AS span_disambiguated_misaligned,
+      COUNT(*)::text AS total_matched
+    FROM matched_a
+  `));
+
+  const oto = parseInt(s58.rows[0].one_to_one);
+  const sdis = parseInt(s58.rows[0].span_disambiguated);
+  const sdisMis = parseInt(s58.rows[0].span_disambiguated_misaligned);
+  const s58total = parseInt(s58.rows[0].total_matched);
+  const s58sum = oto + sdis;
+
+  line('5.8 FORCED-PAIRING COUNT (bucket 5.1a only):');
+  line(`  Pairs matched by one-to-one shortcut (can_count=1 AND total_live=1): ${oto}`);
+  line(`  Pairs matched by span disambiguation:                                 ${sdis}`);
+  line(`  Of span-disambiguated pairs, MISALIGNED (period_end differs):         ${sdisMis}`);
+  line(`  Arithmetic: ${oto} (one-to-one) + ${sdis} (span-disambiguated) = ${s58sum} (exp ${ba})`);
+  if (s58sum === ba) {
+    line(`  Sum = ${s58sum} = 5.1a count (${ba}). Reconciles. ✓`);
+  } else {
+    line(`  *** SUM IS ${s58sum}, NOT 5.1a count (${ba}). DOES NOT RECONCILE. ***`);
+  }
+  line('  A span-disambiguated pair whose period_end disagrees was matched on a weak signal while a strong signal said the two periods differ. These are quarantined from the true-drift figure by the 6.8 cross-tab and are listed at 6.10.');
+  line();
+
   // ─────────────────────────────────────────────────────────────────────────
   // SECTION 6: FIGURE-LEVEL VALUE COMPARISON
   // ─────────────────────────────────────────────────────────────────────────
@@ -2126,48 +2183,108 @@ async function main() {
   line('  Where the two sides cite different documents, canonical\'s winner ladder and getReconciledFinancials\' first-row-wins ordering by period_end DESC have chosen differently. This is the first time that disagreement has been visible.');
   line();
 
-  // ── 6.11 The #351 case ────────────────────────────────────────────────────
+  // ── 6.11 THE #351 CASE — tc=1880, fy=2025, income ────────────────────────
+  // Selects EVERY canonical period for this company/year/statement_type from
+  // the latest run, ordered by id asc. No rows[0] pick; all rows are printed.
+  // Matched live row per period is resolved via the same span-disambiguation
+  // logic used throughout sections 5 and 6.
 
   const s611 = await db.execute<{
-    trust_state: string;
-    conflict_detail: unknown;
     canonical_period_id: string;
+    span_kind: string;
+    trust_state: string;
+    can_period_end: string | null;
+    winning_evidence_id: string | null;
+    winning_doc_id: string | null;
+    can_revenue: string | null;
+    canonical_bucket: string | null;
+    live_fp_id: string | null;
+    live_period_end: string | null;
+    live_source_doc_id: string | null;
+    live_derived_span: string | null;
+    live_revenue: string | null;
   }>(sql.raw(`
-    SELECT cp.trust_state, cp.conflict_detail, cp.id::text AS canonical_period_id
+    WITH ${SHARED_CTES_S6}
+    ${CAN_BUCKETS_EXT}
+    SELECT
+      cp.id::text AS canonical_period_id,
+      cp.span_kind,
+      cp.trust_state,
+      cp.period_end::text AS can_period_end,
+      cp.winning_evidence_id::text,
+      de.document_id::text AS winning_doc_id,
+      cf.value AS can_revenue,
+      cb.bucket AS canonical_bucket,
+      la.financial_period_id::text AS live_fp_id,
+      la.period_end::text AS live_period_end,
+      fp.source_document_id::text AS live_source_doc_id,
+      la.derived_span AS live_derived_span,
+      ist.revenue::text AS live_revenue
     FROM canonical_period cp
+    JOIN (SELECT MAX(id) AS rid FROM canonical_run WHERE target_company_id = 1880) lr
+      ON cp.canonical_run_id = lr.rid
+    LEFT JOIN document_evidence de ON de.id = cp.winning_evidence_id
+    LEFT JOIN canonical_figure cf
+      ON cf.canonical_period_id = cp.id
+      AND cf.figure_path = 'profit_and_loss.revenue'
+    LEFT JOIN can_buckets cb ON cb.cp_id = cp.id
+    LEFT JOIN live_all la
+      ON la.target_company_id = cb.target_company_id
+      AND la.fiscal_year = cb.fiscal_year
+      AND la.statement_type = cb.statement_type
+      AND cb.bucket = 'a'
+      AND (
+        (cb.can_count = 1 AND cb.total_live = 1)
+        OR (cb.span_disambiguated = true AND la.derived_span = cb.span_kind)
+      )
+    LEFT JOIN financial_periods fp ON fp.id = la.financial_period_id
+    LEFT JOIN income_statements ist ON ist.financial_period_id = la.financial_period_id
     WHERE cp.target_company_id = 1880
       AND cp.fiscal_year = 2025
       AND cp.statement_type = 'income'
-      AND cp.canonical_run_id IN (
-        SELECT MAX(id) FROM canonical_run WHERE target_company_id = 1880
-      )
+    ORDER BY cp.id ASC
   `));
 
-  line('6.11 THE #351 CASE (tc=1880, fy=2025, income):');
-  if (s611.rows.length === 0) {
-    line('  *** tc=1880, fy=2025, income not found in canonical. ***');
-  } else {
-    const r611 = s611.rows[0];
-    const rev611 = figureResults.find(
-      f => f.canonical_period_id === r611.canonical_period_id &&
-           f.figure_path === 'profit_and_loss.revenue',
-    );
-    const canRev = rev611?.canonical_value ?? null;
-    const liveRev = rev611?.live_value ?? null;
-    const delta611 = (canRev !== null && liveRev !== null)
-      ? Math.abs(parseFloat(liveRev) - parseFloat(canRev))
-      : null;
-    const pctDiv = (canRev !== null && liveRev !== null && parseFloat(canRev) !== 0)
-      ? ((Math.abs(parseFloat(liveRev) - parseFloat(canRev)) / Math.abs(parseFloat(canRev))) * 100).toFixed(1) + '%'
-      : 'N/A';
-    line(`  canonical revenue:     ${canRev ?? 'NULL'}`);
-    line(`  live revenue:          ${liveRev ?? 'NULL'}`);
-    line(`  delta:                 ${delta611 !== null ? delta611.toFixed(2) : 'N/A'}`);
-    line(`  percentage divergence: ${pctDiv}`);
-    line(`  trust_state:           ${r611.trust_state}`);
-    line(`  conflict_detail:       ${JSON.stringify(r611.conflict_detail)}`);
-    line('  Logged as #351. Canonical marks this CONFLICTED. The live system uses one of the two values with nothing surfaced to the user. This is the business case for the trust model in a single row.');
+  line(`6.11 THE #351 CASE — tc=1880, fy=2025, income (${s611.rows.length} canonical period(s) in latest run):`);
+  for (const r of s611.rows) {
+    const bFigsForPeriod = figureResults.filter(
+      f => f.canonical_period_id === r.canonical_period_id && f.bucket === 'B',
+    ).length;
+
+    line();
+    line(`  canonical_period_id:   ${r.canonical_period_id}`);
+    line(`  span_kind:             ${r.span_kind}`);
+    line(`  trust_state:           ${r.trust_state}`);
+    line(`  period_end:            ${r.can_period_end ?? 'NULL'}`);
+    line(`  winning_evidence_id:   ${r.winning_evidence_id ?? 'NULL'}`);
+    line(`  winning_doc_id:        ${r.winning_doc_id ?? 'NULL'}`);
+    line(`  canonical revenue:     ${r.can_revenue ?? 'NULL'}`);
+    line(`  5.1 bucket:            ${r.canonical_bucket ?? 'not in can_buckets'}`);
+
+    if (r.canonical_bucket === 'a') {
+      const canRev = r.can_revenue;
+      const liveRev = r.live_revenue;
+      const delta611 = (canRev !== null && liveRev !== null)
+        ? Math.abs(parseFloat(liveRev) - parseFloat(canRev))
+        : null;
+      const isAligned = (r.can_period_end !== null && r.live_period_end !== null &&
+                         r.can_period_end === r.live_period_end);
+      line(`  matched live_fp_id:    ${r.live_fp_id ?? 'NULL'}`);
+      line(`  live period_end:       ${r.live_period_end ?? 'NULL'}`);
+      line(`  live source_doc_id:    ${r.live_source_doc_id ?? 'NULL'}`);
+      line(`  live derived_span:     ${r.live_derived_span ?? 'NULL'}`);
+      line(`  live revenue:          ${liveRev ?? 'NULL'}`);
+      line(`  revenue delta:         ${delta611 !== null ? delta611.toFixed(0) : 'N/A'}`);
+      line(`  alignment:             ${isAligned ? 'ALIGNED' : 'MISALIGNED'}`);
+      line(`  bucket-B figures:      ${bFigsForPeriod}`);
+    } else {
+      line(`  (no matched live row — not in bucket a)`);
+      line(`  bucket-B figures:      ${bFigsForPeriod}`);
+    }
   }
+  line();
+  line('  #351 recorded revenue 361855 against 4509086 as a 91.98% divergence within one fiscal year. Canonical does not treat these as competing values for one period. It separates them by span_kind: 4509086 is the full year and 361855 is the part year. Spec 3.3 built span_kind for exactly this. #351 as written should be revised.');
+  line('  CAVEAT: the part_year period carries period_end 2025-12-31, which has the shape of the fabricated 31 December described at 3.1. Verify the date before revising #351.');
   line();
 
   line('='.repeat(70));
