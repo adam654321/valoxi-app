@@ -568,32 +568,30 @@ async function main() {
   line();
   line('Primary join key: target_company_id + fiscal_year + statement_type.');
   line('Span is NOT part of the primary join key. It is used only as a discriminator');
-  line('when the primary key yields more than one live row (see rule 4a below).');
+  line('when the primary key yields more than one live row, or when multiple canonical');
+  line('periods share a group and compete for the same live rows (see rules below).');
+  line('The match is INJECTIVE: a live row may be claimed by at most one canonical period.');
   line('Span is compared as a field and reported at 5.4.');
   line('period_end is compared as a field (5.5), NOT used as a join key (see 3.1).');
   line();
-  line('Matching rule per canonical period:');
-  line('  1. Find all live rows for that company+fiscal_year+statement_type.');
-  line('  2. If ZERO  → bucket c.');
-  line('  3. If ONE   → bucket a, matched.');
-  line('  4. If >1    → attempt span discrimination:');
-  line('     4a. canonical span in (full_year, part_year) AND exactly one live row');
-  line('         has that derived span → bucket a, span used to disambiguate.');
-  line('     4b. otherwise (including canonical span = unknown) → bucket b, ambiguous.');
+  line('Matching rules per canonical period in a group (company+fiscal_year+statement_type):');
+  line('  Single canonical in group:');
+  line('    1. No live rows → bucket c.');
+  line('    2. Exactly one live row → bucket a, matched.');
+  line('    3. Multiple live rows, canonical span known AND exactly one matches → bucket a.');
+  line('    4. Otherwise → bucket b, ambiguous.');
+  line('  Multiple canonicals in group (competition for live rows):');
+  line('    5. If this canonical\'s span matches live rows AND it is the only canonical');
+  line('       with that span match → WINNER → bucket a.');
+  line('    6. If another canonical wins (rule 5 applies to a peer, not to this period)');
+  line('       → bucket e (live row claimed by a closer span match).');
+  line('    7. Otherwise → bucket b, ambiguous.');
   line();
 
-  // Shared CTE fragment used across 5.x queries — defined as raw SQL string
-  // to avoid repeating. All queries below inline it.
-  //
-  // both_cos: 36 companies with both canonical run and financial_periods
-  // sel_runs: latest run id per company
-  // can_periods: 335 canonical periods from latest runs for those 36 companies
-  // live_income / live_balance / live_all: live rows with derived span + fp columns
+  // Shared CTE fragment used across 5.x queries.
   //
   // SPAN derivation uses financial_periods.is_full_year (parent), never IS.is_full_year.
-  //
-  // live_all includes fp.months_covered and fp.is_full_year so 5.4 can list them
-  // without a separate re-join.
+  // live_all includes fp.months_covered and fp.is_full_year for 5.4 detail listing.
 
   const SPAN_CASE = `
     CASE
@@ -637,10 +635,21 @@ async function main() {
     ),
     live_all AS (SELECT * FROM live_income UNION ALL SELECT * FROM live_balance)`;
 
-  // can_buckets_ext: appended to SHARED_CTES in every 5.x query.
-  // Computes live_total (all live rows on primary key), live_span_count
-  // (span-matching live rows, only for known canonical spans), and derives
-  // the canonical bucket (a / b / c) and whether span was used to disambiguate.
+  // CAN_BUCKETS_EXT: appended to SHARED_CTES in every 5.x query.
+  //
+  // live_total:           all live rows per canonical period (primary key only)
+  // live_span_count:      span-matching live rows per canonical period (for rule 3)
+  // can_count_per_group:  how many canonical periods share the same group
+  // multi_span_match_count: for multi-canonical groups, how many canonicals match
+  //                         each live derived_span (used for competition resolution)
+  // can_buckets:          final bucket assignment (a / b / c / e) per canonical period
+  //
+  // matched_a condition (used in 5.4, 5.5, 5.7 as a separate CTE each time):
+  //   Single canonical, total_live=1:  (can_count=1 AND total_live=1)
+  //   Span disambiguation (single or multi winner): (span_disambiguated=true AND derived_span=span_kind)
+  //
+  // live_classified condition (5.2): same two clauses in EXISTS check.
+
   const CAN_BUCKETS_EXT = `,
     live_total AS (
       SELECT cp.id AS cp_id, COUNT(la.target_company_id) AS total_live
@@ -662,6 +671,24 @@ async function main() {
       WHERE cp.span_kind IN ('full_year', 'part_year')
       GROUP BY cp.id
     ),
+    can_count_per_group AS (
+      SELECT target_company_id, fiscal_year, statement_type, COUNT(*) AS can_count
+      FROM can_periods
+      GROUP BY target_company_id, fiscal_year, statement_type
+    ),
+    multi_span_match_count AS (
+      SELECT cp.target_company_id, cp.fiscal_year, cp.statement_type,
+             la.derived_span AS live_derived_span,
+             COUNT(DISTINCT cp.id) AS matching_can_count
+      FROM can_periods cp
+      JOIN live_all la
+        ON la.target_company_id = cp.target_company_id
+        AND la.fiscal_year = cp.fiscal_year
+        AND la.statement_type = cp.statement_type
+        AND la.derived_span = cp.span_kind
+      WHERE cp.span_kind IN ('full_year', 'part_year')
+      GROUP BY cp.target_company_id, cp.fiscal_year, cp.statement_type, la.derived_span
+    ),
     can_buckets AS (
       SELECT
         cp.id AS cp_id,
@@ -669,8 +696,33 @@ async function main() {
         cp.span_kind, cp.period_end,
         lt.total_live,
         COALESCE(ls.span_matches, 0) AS span_matches,
+        ccg.can_count,
         CASE
           WHEN lt.total_live = 0 THEN 'c'
+          WHEN ccg.can_count > 1 THEN
+            CASE
+              WHEN cp.span_kind IN ('full_year', 'part_year')
+                AND COALESCE(ls.span_matches, 0) > 0
+                AND EXISTS (
+                  SELECT 1 FROM multi_span_match_count msmc
+                  WHERE msmc.target_company_id = cp.target_company_id
+                    AND msmc.fiscal_year = cp.fiscal_year
+                    AND msmc.statement_type = cp.statement_type
+                    AND msmc.live_derived_span = cp.span_kind
+                    AND msmc.matching_can_count = 1
+                )
+              THEN 'a'
+              WHEN EXISTS (
+                SELECT 1 FROM multi_span_match_count msmc
+                WHERE msmc.target_company_id = cp.target_company_id
+                  AND msmc.fiscal_year = cp.fiscal_year
+                  AND msmc.statement_type = cp.statement_type
+                  AND msmc.matching_can_count = 1
+                  AND msmc.live_derived_span != cp.span_kind
+              )
+              THEN 'e'
+              ELSE 'b'
+            END
           WHEN lt.total_live = 1 THEN 'a'
           WHEN lt.total_live > 1
             AND cp.span_kind IN ('full_year', 'part_year')
@@ -678,14 +730,32 @@ async function main() {
           ELSE 'b'
         END AS bucket,
         CASE
-          WHEN lt.total_live > 1
+          WHEN ccg.can_count = 1
+            AND lt.total_live > 1
             AND cp.span_kind IN ('full_year', 'part_year')
-            AND COALESCE(ls.span_matches, 0) = 1 THEN true
+            AND COALESCE(ls.span_matches, 0) = 1
+          THEN true
+          WHEN ccg.can_count > 1
+            AND cp.span_kind IN ('full_year', 'part_year')
+            AND COALESCE(ls.span_matches, 0) > 0
+            AND EXISTS (
+              SELECT 1 FROM multi_span_match_count msmc
+              WHERE msmc.target_company_id = cp.target_company_id
+                AND msmc.fiscal_year = cp.fiscal_year
+                AND msmc.statement_type = cp.statement_type
+                AND msmc.live_derived_span = cp.span_kind
+                AND msmc.matching_can_count = 1
+            )
+          THEN true
           ELSE false
         END AS span_disambiguated
       FROM can_periods cp
       JOIN live_total lt ON lt.cp_id = cp.id
       LEFT JOIN live_span_count ls ON ls.cp_id = cp.id
+      JOIN can_count_per_group ccg
+        ON ccg.target_company_id = cp.target_company_id
+        AND ccg.fiscal_year = cp.fiscal_year
+        AND ccg.statement_type = cp.statement_type
     )`;
 
   // ── 5.1 Match outcomes, canonical side ────────────────────────────────────
@@ -693,6 +763,7 @@ async function main() {
     bucket_a: string; bucket_a_income: string; bucket_a_balance: string;
     bucket_b: string; bucket_b_income: string; bucket_b_balance: string;
     bucket_c: string; bucket_c_income: string; bucket_c_balance: string;
+    bucket_e: string; bucket_e_income: string; bucket_e_balance: string;
     total: string;
   }>(sql.raw(`
     WITH ${SHARED_CTES}
@@ -707,20 +778,24 @@ async function main() {
       SUM(CASE WHEN bucket = 'c' THEN 1 ELSE 0 END)::text AS bucket_c,
       SUM(CASE WHEN bucket = 'c' AND statement_type = 'income' THEN 1 ELSE 0 END)::text AS bucket_c_income,
       SUM(CASE WHEN bucket = 'c' AND statement_type = 'balance' THEN 1 ELSE 0 END)::text AS bucket_c_balance,
+      SUM(CASE WHEN bucket = 'e' THEN 1 ELSE 0 END)::text AS bucket_e,
+      SUM(CASE WHEN bucket = 'e' AND statement_type = 'income' THEN 1 ELSE 0 END)::text AS bucket_e_income,
+      SUM(CASE WHEN bucket = 'e' AND statement_type = 'balance' THEN 1 ELSE 0 END)::text AS bucket_e_balance,
       COUNT(*)::text AS total
     FROM can_buckets
   `));
   const r51 = s51.rows[0];
   const ba = parseInt(r51.bucket_a), bb = parseInt(r51.bucket_b);
-  const bc = parseInt(r51.bucket_c);
+  const bc = parseInt(r51.bucket_c), be = parseInt(r51.bucket_e);
   const s51total = parseInt(r51.total);
-  const s51sum = ba + bb + bc;
+  const s51sum = ba + bb + bc + be;
 
   line('5.1 MATCH OUTCOMES, canonical side (335 canonical periods):');
-  line(`  a. matched to exactly one live row:                      ${r51.bucket_a}  (income=${r51.bucket_a_income}, balance=${r51.bucket_a_balance})`);
-  line(`  b. ambiguous, more than one live row, span did not help: ${r51.bucket_b}  (income=${r51.bucket_b_income}, balance=${r51.bucket_b_balance})`);
-  line(`  c. no live row for that company and fiscal_year:         ${r51.bucket_c}  (income=${r51.bucket_c_income}, balance=${r51.bucket_c_balance})`);
-  line(`  Arithmetic: a(${ba}) + b(${bb}) + c(${bc}) = ${s51sum}`);
+  line(`  a. matched to exactly one live row:                                ${r51.bucket_a}  (income=${r51.bucket_a_income}, balance=${r51.bucket_a_balance})`);
+  line(`  b. ambiguous, more than one live row, span did not help:           ${r51.bucket_b}  (income=${r51.bucket_b_income}, balance=${r51.bucket_b_balance})`);
+  line(`  c. no live row for that company and fiscal_year:                   ${r51.bucket_c}  (income=${r51.bucket_c_income}, balance=${r51.bucket_c_balance})`);
+  line(`  e. live row claimed by a closer span match (injective resolution): ${r51.bucket_e}  (income=${r51.bucket_e_income}, balance=${r51.bucket_e_balance})`);
+  line(`  Arithmetic: a(${ba}) + b(${bb}) + c(${bc}) + e(${be}) = ${s51sum}`);
   if (s51sum === 335) {
     line(`  Sum = 335. Reconciles. ✓`);
   } else {
@@ -729,12 +804,10 @@ async function main() {
   line();
 
   // ── 5.2 Match outcomes, live side ─────────────────────────────────────────
-  // For each live row:
-  //   a: this is the resolved match for a canonical bucket-a period
-  //      (either the only live row, or the one selected by span disambiguation)
-  //   b: no canonical period at all for this company+fiscal_year+statement_type
-  //   c: canonical exists but this live row is in an unresolved ambiguous group
-  //      (canonical bucket b), or is a non-selected row in a span-disambiguated group
+  // live_classified condition uses the updated matched_a logic:
+  //   (can_count=1 AND total_live=1): single canonical, single live row
+  //   (span_disambiguated=true AND derived_span=span_kind): span-selected (single or multi winner)
+  // Bucket e canonicals are excluded (bucket != 'a') so they never contribute to live bucket a.
   const s52 = await db.execute<{
     bucket_a: string; bucket_a_income: string; bucket_a_balance: string;
     bucket_b: string; bucket_b_income: string; bucket_b_balance: string;
@@ -762,7 +835,7 @@ async function main() {
               AND cb.statement_type = la.statement_type
               AND cb.bucket = 'a'
               AND (
-                cb.total_live = 1
+                (cb.can_count = 1 AND cb.total_live = 1)
                 OR (cb.span_disambiguated = true AND la.derived_span = cb.span_kind)
               )
           ) THEN 'a'
@@ -803,7 +876,6 @@ async function main() {
   line();
 
   // ── 5.3 Multi-match list (canonical bucket b) ──────────────────────────────
-  // Adds canonical span_kind and discriminator_status to the previous shape.
   const s53 = await db.execute<{
     target_company_id: string; fiscal_year: string; statement_type: string;
     span_kind: string; live_count: string; live_period_ends: string;
@@ -847,18 +919,59 @@ async function main() {
   }
   line();
 
+  // ── 5.3b Bucket-e list (canonical periods displaced by injective resolution) ─
+  const s53b = await db.execute<{
+    target_company_id: string; fiscal_year: string; statement_type: string;
+    this_span: string; winning_span: string; live_period_end: string;
+  }>(sql.raw(`
+    WITH ${SHARED_CTES}
+    ${CAN_BUCKETS_EXT},
+    winners AS (
+      SELECT msmc.target_company_id, msmc.fiscal_year, msmc.statement_type,
+             msmc.live_derived_span AS winning_span
+      FROM multi_span_match_count msmc
+      WHERE msmc.matching_can_count = 1
+    )
+    SELECT
+      cb.target_company_id::text,
+      cb.fiscal_year::text,
+      cb.statement_type,
+      cb.span_kind AS this_span,
+      w.winning_span,
+      la.period_end::text AS live_period_end
+    FROM can_buckets cb
+    JOIN winners w
+      ON w.target_company_id = cb.target_company_id
+      AND w.fiscal_year = cb.fiscal_year
+      AND w.statement_type = cb.statement_type
+    JOIN live_all la
+      ON la.target_company_id = cb.target_company_id
+      AND la.fiscal_year = cb.fiscal_year
+      AND la.statement_type = cb.statement_type
+      AND la.derived_span = w.winning_span
+    WHERE cb.bucket = 'e'
+    ORDER BY cb.target_company_id::int, cb.fiscal_year, cb.statement_type
+  `));
+
+  line('5.3b BUCKET-e LIST (canonical periods displaced by injective resolution):');
+  if (s53b.rows.length === 0) {
+    line('  NO BUCKET-e PERIODS');
+  } else {
+    line('  tc | fiscal_year | statement_type | this_span | winning_span | live_period_end');
+    for (const r of s53b.rows) {
+      line(`  ${r.target_company_id} | ${r.fiscal_year} | ${r.statement_type} | ${r.this_span} | ${r.winning_span} | ${r.live_period_end}`);
+    }
+  }
+  line('  Canonical distinguishes a full year from a part year where the live system holds');
+  line('  a single row. These canonical periods are real and are excluded from figure');
+  line('  comparison only because the live side has nothing separate to compare them against.');
+  line();
+
   // ── 5.4 Span compared as a field (over bucket 5.1a only) ──────────────────
-  // Four mutually exclusive categories:
-  //   equal:             canonical span_kind = live derived span
-  //   unknown_vs_known:  canonical span_kind = 'unknown', live has a span
-  //   fy_vs_py:          canonical says full_year, live says part_year
-  //   py_vs_fy:          canonical says part_year, live says full_year
-  // These four cover all possible combinations for bucket-a periods and must
-  // sum to the 5.1a count.
-  //
-  // The matched live row for a bucket-a canonical period is found by:
-  //   total_live = 1  → the one and only live row (any derived_span)
-  //   span_disambiguated = true → the live row where derived_span = span_kind
+  // matched_a uses updated condition:
+  //   (can_count=1 AND total_live=1): single canonical, single live row
+  //   (span_disambiguated=true AND derived_span=span_kind): span-selected (covers both
+  //     single-canonical disambiguation and multi-canonical winner)
   const s54counts = await db.execute<{
     span_equal: string; can_unknown: string; fy_vs_py: string; py_vs_fy: string; total: string;
   }>(sql.raw(`
@@ -879,7 +992,7 @@ async function main() {
         AND la.fiscal_year = cb.fiscal_year
         AND la.statement_type = cb.statement_type
         AND (
-          cb.total_live = 1
+          (cb.can_count = 1 AND cb.total_live = 1)
           OR (cb.span_disambiguated = true AND la.derived_span = cb.span_kind)
         )
       WHERE cb.bucket = 'a'
@@ -907,14 +1020,13 @@ async function main() {
   line(`  canonical says full_year, live says part_year:    ${r54.fy_vs_py}`);
   line(`  canonical says part_year, live says full_year:    ${r54.py_vs_fy}`);
   line(`  Arithmetic: ${spanEqual} + ${canUnknown} + ${fyVsPy} + ${pyVsFy} = ${s54sum}`);
-  if (s54sum === s54total) {
-    line(`  Sum = ${s54total} = 5.1a count. Reconciles. ✓`);
+  if (s54sum === ba) {
+    line(`  Sum = ${s54sum} = 5.1a count (${ba}). Reconciles. ✓`);
   } else {
-    line(`  *** SUM IS ${s54sum}, NOT ${s54total}. DOES NOT RECONCILE. ***`);
+    line(`  *** SUM IS ${s54sum}, NOT 5.1a count (${ba}). DOES NOT RECONCILE. ***`);
   }
 
   if (fyVsPy > 0 || pyVsFy > 0) {
-    // List every genuine span disagreement: fy_vs_py and py_vs_fy rows
     const s54detail = await db.execute<{
       target_company_id: string; fiscal_year: string; statement_type: string;
       can_span: string; live_span: string; months_covered: string | null; is_full_year: string;
@@ -934,7 +1046,7 @@ async function main() {
           AND la.fiscal_year = cb.fiscal_year
           AND la.statement_type = cb.statement_type
           AND (
-            cb.total_live = 1
+            (cb.can_count = 1 AND cb.total_live = 1)
             OR (cb.span_disambiguated = true AND la.derived_span = cb.span_kind)
           )
         WHERE cb.bucket = 'a'
@@ -957,9 +1069,7 @@ async function main() {
   line(`  canonical 'unknown' against a live span is NOT a disagreement. It is the live system asserting a full year by NOT NULL DEFAULT where canonical declined to guess. See #377.`);
   line();
 
-  // ── 5.5 period_end comparison, matched periods only (new bucket a) ─────────
-  // Runs over the new (larger) 5.1a set, which includes former bucket-d periods
-  // that were re-classified to bucket a under the new matching rule.
+  // ── 5.5 period_end comparison, matched periods only (bucket a) ─────────────
   const s55 = await db.execute<{
     equal_count: string; differ_count: string; can_null_live_not: string; both_null: string; total_matched: string;
   }>(sql.raw(`
@@ -976,7 +1086,7 @@ async function main() {
         AND la.fiscal_year = cb.fiscal_year
         AND la.statement_type = cb.statement_type
         AND (
-          cb.total_live = 1
+          (cb.can_count = 1 AND cb.total_live = 1)
           OR (cb.span_disambiguated = true AND la.derived_span = cb.span_kind)
         )
       WHERE cb.bucket = 'a'
@@ -1002,10 +1112,10 @@ async function main() {
   line(`  canonical null, live not null:      ${r55.can_null_live_not}`);
   line(`  both null:                          ${r55.both_null}`);
   line(`  Arithmetic: ${eq} + ${diff} + ${cnull} + ${bnull} = ${s55sum}`);
-  if (s55sum === s55total) {
-    line(`  Sum = ${s55total} = 5.1a count. Reconciles. ✓`);
+  if (s55sum === ba) {
+    line(`  Sum = ${s55sum} = 5.1a count (${ba}). Reconciles. ✓`);
   } else {
-    line(`  *** SUM IS ${s55sum}, NOT ${s55total}. DOES NOT RECONCILE. ***`);
+    line(`  *** SUM IS ${s55sum}, NOT 5.1a count (${ba}). DOES NOT RECONCILE. ***`);
   }
 
   if (diff > 0) {
@@ -1026,7 +1136,7 @@ async function main() {
           AND la.fiscal_year = cb.fiscal_year
           AND la.statement_type = cb.statement_type
           AND (
-            cb.total_live = 1
+            (cb.can_count = 1 AND cb.total_live = 1)
             OR (cb.span_disambiguated = true AND la.derived_span = cb.span_kind)
           )
         WHERE cb.bucket = 'a'
@@ -1048,7 +1158,86 @@ async function main() {
   line();
 
   line('5.6 No canonical period was matched to a live row by picking one of several.');
-  line('Multi-matches (bucket b) are reported at 5.3 and excluded from figure-level comparison at 3d.3b.');
+  line('Multi-matches (bucket b) and displaced periods (bucket e) are excluded from figure-level comparison at 3d.3b.');
+  line();
+
+  // ── 5.7 Injectivity assertion ──────────────────────────────────────────────
+  const s57 = await db.execute<{
+    can_a_count: string; distinct_live_count: string;
+  }>(sql.raw(`
+    WITH ${SHARED_CTES}
+    ${CAN_BUCKETS_EXT},
+    matched_a AS (
+      SELECT
+        cb.target_company_id, cb.fiscal_year, cb.statement_type,
+        la.period_end AS live_end, la.derived_span
+      FROM can_buckets cb
+      JOIN live_all la
+        ON la.target_company_id = cb.target_company_id
+        AND la.fiscal_year = cb.fiscal_year
+        AND la.statement_type = cb.statement_type
+        AND (
+          (cb.can_count = 1 AND cb.total_live = 1)
+          OR (cb.span_disambiguated = true AND la.derived_span = cb.span_kind)
+        )
+      WHERE cb.bucket = 'a'
+    )
+    SELECT
+      COUNT(*)::text AS can_a_count,
+      COUNT(DISTINCT
+        target_company_id::text || '~' || fiscal_year::text || '~' ||
+        statement_type || '~' || COALESCE(live_end::text, 'NULL') || '~' || derived_span
+      )::text AS distinct_live_count
+    FROM matched_a
+  `));
+
+  const r57 = s57.rows[0];
+  const canACount = parseInt(r57.can_a_count);
+  const distinctLiveCount = parseInt(r57.distinct_live_count);
+
+  line('5.7 INJECTIVITY:');
+  line(`  count of canonical periods in bucket a:          ${r57.can_a_count}`);
+  line(`  count of DISTINCT live rows claimed by bucket a: ${r57.distinct_live_count}`);
+  if (canACount === distinctLiveCount) {
+    line(`  MATCH`);
+  } else {
+    line(`  MISMATCH — ${canACount - distinctLiveCount} live row(s) are claimed by more than one canonical period.`);
+    // List every offending live row
+    const s57bad = await db.execute<{
+      target_company_id: string; fiscal_year: string; statement_type: string;
+      live_end: string | null; derived_span: string; claim_count: string;
+    }>(sql.raw(`
+      WITH ${SHARED_CTES}
+      ${CAN_BUCKETS_EXT},
+      matched_a AS (
+        SELECT
+          cb.target_company_id, cb.fiscal_year, cb.statement_type,
+          la.period_end AS live_end, la.derived_span
+        FROM can_buckets cb
+        JOIN live_all la
+          ON la.target_company_id = cb.target_company_id
+          AND la.fiscal_year = cb.fiscal_year
+          AND la.statement_type = cb.statement_type
+          AND (
+            (cb.can_count = 1 AND cb.total_live = 1)
+            OR (cb.span_disambiguated = true AND la.derived_span = cb.span_kind)
+          )
+        WHERE cb.bucket = 'a'
+      )
+      SELECT
+        target_company_id::text, fiscal_year::text, statement_type,
+        live_end::text, derived_span, COUNT(*)::text AS claim_count
+      FROM matched_a
+      GROUP BY target_company_id, fiscal_year, statement_type, live_end, derived_span
+      HAVING COUNT(*) > 1
+      ORDER BY target_company_id::int, fiscal_year, statement_type
+    `));
+    line('  Offending live rows (tc | fiscal_year | statement_type | live_end | derived_span | claim_count):');
+    for (const r of s57bad.rows) {
+      line(`    ${r.target_company_id} | ${r.fiscal_year} | ${r.statement_type} | ${r.live_end} | ${r.derived_span} | ${r.claim_count}`);
+    }
+  }
+  line('  Figure-level comparison at 3d.3b requires a one-to-one match. A live row read twice would double-count its values against two different canonical periods.');
   line();
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -1064,8 +1253,8 @@ async function main() {
   line();
   line('The primary join key that 3d.3b will use:');
   line('  target_company_id + fiscal_year + statement_type');
-  line('Span is used only as a discriminator (rule 4a) when the primary key is ambiguous.');
-  line('Bucket-b (ambiguous) periods are excluded from figure comparison at 3d.3b.');
+  line('Span is used only as a discriminator. Bucket-b (ambiguous) and bucket-e');
+  line('(displaced by injective resolution) periods are excluded from figure comparison.');
   line();
   line('period_end is deliberately compared rather than joined on, for the reason');
   line('given in 3.1: a fabricated Dec-31 date on the live side may disagree with');
