@@ -543,6 +543,12 @@ async function main() {
   line('  The difference is same company, same fiscal year, different period_end, which is part-year against full-year within one fiscal year. Canonical\'s span_kind dissolves those by construction. The groups surviving the tighter key are the genuine #332 duplicates.');
   line();
 
+  // ── SECTION 4: reserved ──────────────────────────────────────────────────
+  line('SECTION 4: RESERVED');
+  line('  Section 4 was removed during report drafting. Later section numbers are retained');
+  line('  deliberately so that 5.x and 6.x references in the action log and handovers stay stable.');
+  line();
+
   // ─────────────────────────────────────────────────────────────────────────
   // SECTION 5: PERIOD-LEVEL MATCHING
   // ─────────────────────────────────────────────────────────────────────────
@@ -2072,6 +2078,9 @@ async function main() {
   }
   line();
   line(`  R2 split: ALIGNED=${r2AlignCounts.ALIGNED}, MISALIGNED=${r2AlignCounts.MISALIGNED}, sum=${r2AlignCounts.ALIGNED + r2AlignCounts.MISALIGNED}`);
+  line('  The canonical-live mapping is bijective over all live scalar columns, so every live');
+  line('  column has a canonical path. An R2 gap on an ALIGNED period is therefore a genuine');
+  line('  evidence-layer gap, not an unmapped column.');
   line();
 
   const r2Sorted = [...r2ByPath.entries()].sort((a, b) => b[1] - a[1]);
@@ -2155,6 +2164,7 @@ async function main() {
   }
 
   line(`6.10 DOCUMENT SELECTION DIAGNOSTIC (${s610.rows.length} MISALIGNED pairs where period_end differs):`);
+  line(`  6.8 counts ${s610.rows.length + cnull} MISALIGNED pairs. The ${cnull} pairs with a null canonical period_end are excluded here because there is no canonical document to compare. See 5.5.`);
   line('  tc | fy | st | can_end | win_ev_id | win_pd_id | can_doc_id | live_end | src_doc_id | src_tier | B_figs');
   for (const r of s610.rows) {
     const bFigs = bCountByPeriod.get(r.canonical_period_id) ?? 0;
