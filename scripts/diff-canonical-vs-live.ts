@@ -1793,6 +1793,46 @@ async function main() {
   }
   line();
 
+  // ── 6.3 pre-reads: span and alignment lookup maps ────────────────────────
+  const s63Cp = await db.execute<{
+    cp_id: string;
+    span_kind: string;
+    period_end: string | null;
+  }>(sql.raw(`
+    SELECT id::text AS cp_id, span_kind, period_end::text AS period_end
+    FROM canonical_period
+    WHERE id IN (${matchedCpIdList})
+  `));
+
+  const matchedFpIdList = matchedPairs.map(r => r.financial_period_id).join(',');
+  const s63Fp = await db.execute<{
+    fp_id: string;
+    period_end: string | null;
+  }>(sql.raw(`
+    SELECT id::text AS fp_id, period_end::text AS period_end
+    FROM financial_periods
+    WHERE id IN (${matchedFpIdList})
+  `));
+
+  const spanByCp = new Map<string, { span_kind: string; period_end: string | null }>();
+  for (const r of s63Cp.rows) {
+    spanByCp.set(r.cp_id, { span_kind: r.span_kind, period_end: r.period_end });
+  }
+
+  const endByFp = new Map<string, string | null>();
+  for (const r of s63Fp.rows) {
+    endByFp.set(r.fp_id, r.period_end);
+  }
+
+  const alignByCp = new Map<string, 'ALIGNED' | 'MISALIGNED'>();
+  for (const pair of matchedPairs) {
+    const canEnd = spanByCp.get(pair.canonical_period_id)?.period_end ?? null;
+    const liveEnd = endByFp.get(pair.financial_period_id) ?? null;
+    const alignment: 'ALIGNED' | 'MISALIGNED' =
+      (canEnd !== null && liveEnd !== null && canEnd === liveEnd) ? 'ALIGNED' : 'MISALIGNED';
+    alignByCp.set(pair.canonical_period_id, alignment);
+  }
+
   // ── 6.3 Bucket B in full ─────────────────────────────────────────────────
   line('6.3 BUCKET B IN FULL (sorted by absolute delta descending):');
   if (bktB.length === 0) {
@@ -1801,10 +1841,15 @@ async function main() {
     const sortedB = [...bktB].sort((a, b) => (b.delta ?? 0) - (a.delta ?? 0));
     const CAP_B = 60;
     const toShowB = sortedB.slice(0, CAP_B);
-    line('  tc | fiscal_year | statement_type | figure_path | live_col/path | canonical | live | delta');
+    line('  tc | fiscal_year | statement_type | figure_path | live_col/path | canonical | live | delta | align | span');
+    const b63Tally = { ALIGNED: 0, MISALIGNED: 0 };
+    for (const r of sortedB) b63Tally[alignByCp.get(r.canonical_period_id) ?? 'MISALIGNED']++;
+    line(`  alignment tally over all ${sortedB.length} B rows: ALIGNED=${b63Tally.ALIGNED}, MISALIGNED=${b63Tally.MISALIGNED}`);
     for (const r of toShowB) {
       const deltaStr = r.delta !== null ? r.delta.toFixed(2) : 'N/A';
-      line(`  ${r.target_company_id} | ${r.fiscal_year} | ${r.statement_type} | ${r.figure_path} | ${r.live_col_or_path} | ${r.canonical_value} | ${r.live_value} | ${deltaStr}`);
+      const align = alignByCp.get(r.canonical_period_id) ?? 'MISALIGNED';
+      const span = spanByCp.get(r.canonical_period_id)?.span_kind ?? 'null';
+      line(`  ${r.target_company_id} | ${r.fiscal_year} | ${r.statement_type} | ${r.figure_path} | ${r.live_col_or_path} | ${r.canonical_value} | ${r.live_value} | ${deltaStr} | ${align} | ${span}`);
     }
     if (sortedB.length > CAP_B) {
       line(`TRUNCATED AT ${CAP_B} OF ${sortedB.length}`);

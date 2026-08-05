@@ -1,0 +1,573 @@
+======================================================================
+DIFF REPORT: canonical vs live
+======================================================================
+as-of date:          2026-08-05  [DEFAULTED]
+AS-OF DATE WAS NOT PINNED, DEFAULTED TO TODAY
+
+canonical_run total rows:         74
+canonical_run latest-per-company: 37
+selected run ids: 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74
+
+canonical_period  ALL runs: 670   SELECTED runs: 335
+canonical_figure  ALL runs: 12628   SELECTED runs: 6314
+
+document_evidence:               341
+document_evidence_period:        651
+document_evidence_figure:        14398
+
+financial_periods:               288
+income_statements:               239
+balance_sheets:                  216
+
+======================================================================
+SECTION 1: COVERAGE
+======================================================================
+
+1.1 Company coverage
+  Distinct companies with a canonical run:       37
+  Distinct companies with financial_periods:     55
+  Companies in both:                             36
+  Canonical-only (run, no FP):                  1
+  Live-only (FP, no run):                       19
+  Reconciliation: both 36 + canonical-only 1 = 37 = canonical total 37 ✓
+  Reconciliation: both 36 + live-only 19 = 55 = live total 55 ✓
+
+1.2 Canonical-only companies (run exists, no financial_periods):
+  tc | evidence_rows | evidence_periods | canonical_periods
+  76 | 3 | 0 | 0
+
+1.3 Live-only companies (financial_periods, no canonical run):
+  tc | financial_periods | income_statements | balance_sheets | document_evidence
+  137 | 5 | 5 | 5 | 0
+  138 | 4 | 4 | 4 | 0
+  139 | 3 | 3 | 3 | 0
+  140 | 5 | 5 | 5 | 0
+  384 | 1 | 1 | 0 | 0
+  385 | 1 | 1 | 0 | 0
+  386 | 3 | 3 | 0 | 0
+  388 | 1 | 1 | 0 | 0
+  389 | 1 | 0 | 0 | 0
+  390 | 3 | 3 | 0 | 0
+  391 | 2 | 1 | 0 | 0
+  392 | 1 | 1 | 0 | 0
+  393 | 2 | 1 | 1 | 0
+  545 | 2 | 0 | 2 | 0
+  732 | 7 | 7 | 7 | 0
+  790 | 10 | 5 | 5 | 0
+  818 | 11 | 5 | 5 | 0
+  819 | 7 | 6 | 6 | 0
+  1014 | 4 | 0 | 4 | 0
+  TOTALS: fp=73 | is=52 | bs=47 | de=0
+  ALL LIVE-ONLY COMPANIES HAVE ZERO EVIDENCE
+
+1.4 Comparable populations (companies with a canonical run only):
+  income_statements (live):        187
+  canonical income periods:        175   gap: 12
+  balance_sheets (live):           169
+  canonical balance periods:       160   gap: 9
+
+1.5 COVERAGE AND FIDELITY ARE DIFFERENT FAILURES. Rows counted above are absent from the diff because no evidence exists for them, not because the resolver lost them.
+
+======================================================================
+SECTION 2: HEADLINE NUMBERS
+======================================================================
+
+2.1 Income rows passing live eligibility predicate (predicate 1):
+  Rows with a canonical run:       134
+  Rows without a canonical run:    39
+  Total passing predicate 1:       173   (134 + 39 = 173)
+  Rows without run as % of total:  22.5%
+  These rows have no document_evidence of any kind. Under spec P3 they are unanchorable in principle, not merely unanchored today. This does not improve when 1c ships.
+  The predicate used was reconciled-financials.service.ts lines 126-136. The live system has THREE eligibility predicates which disagree. This number is predicate 1 only.
+
+2.2 anchor_complete (selected runs):
+  anchor_complete = true:  0 of 335
+  page_number and label_text_as_printed have never been written on any figure on either database. See #363.
+
+2.3 Full-year status:
+  income_statements.is_full_year = true:   218 of 239  (91.2%)
+  canonical span_kind = 'unknown':         128 of 335  (38.2%)
+    breakdown: balance=64  income=64  sum=128
+  income_statements.is_full_year is NOT NULL DEFAULT true. Every row asserts full-year status whether or not anything established it.
+
+2.4 valuation_eligible (selected runs) vs predicate 1 pass count:
+  valuation_eligible = true:       0 of 335
+  predicate 1 pass count:          173
+
+2.5 trust_state × statement_type (selected runs):
+  CONFLICTED / balance:  53  (15.8%)
+  CONFLICTED / income:  78  (23.3%)
+  TRUST_UNRESOLVED / balance:  107  (31.9%)
+  TRUST_UNRESOLVED / income:  97  (29.0%)
+  Sum: 335  of selected total 335  ✓
+  This is a DEV number and it is inflated by the clone cohort (see #349). It is NOT a user-load number and must not be quoted as one. Sizing on prod is blocked until prod canonical is populated. See #376.
+  TRUST_UNRESOLVED dominating is the CORRECT result, not a failure. It reflects that 1c has not shipped, and it will resolve when identity and signed/draft markers exist.
+
+======================================================================
+SECTION 3: STRUCTURAL FINDINGS ON THE LIVE SIDE
+======================================================================
+
+3.1 financial_periods rows with period_end ending in '-12-31':
+  Dec-31 rows:             21 of 288  (7.3%)
+  Of those, belonging to companies with a canonical run: 10
+  Of those, canonical period_end disagrees with live:    4
+  Of those, canonical period_end is null:                1
+  financial-data.service.ts lines 187, 268, 383 and 481 fall back to a fabricated 31 December when the extractor produced no period end. financial-data.repository.ts lines 48-54 then derive fiscal_year from that date unconditionally. No column anywhere in the system stores a company's true year end, so nothing can contradict a fabricated one.
+
+3.2 is_full_year disagreement between financial_periods and income_statements:
+  Disagreements:           12 of 239 periods with an income statement
+  financial_periods.is_full_year:  true=206  false=33
+  income_statements.is_full_year:  true=218  false=21
+  Two independent full-year assertions exist and nothing keeps them in step. The reconciler gates on the child, not the parent.
+
+3.3 financial_periods.source_tier distribution:
+  information_memorandum: 61
+  management: 35
+  statutory: 177
+  NULL:                    15
+  balance_sheets hanging off an IM period: 36
+  Predicate 1 excludes information memoranda from income. Predicate 2 applies no tier gate at all, so these balance sheets are admitted to valuation.
+
+3.4 Duplicate groups in financial_periods:
+  Key (company, fiscal_year):              51 duplicate groups, 103 rows covered
+  Singleton rows under this key:           185
+  Reconciliation: 103 dup rows + 185 singletons = 288 = total 288 ✓
+
+  Key (company, fiscal_year, period_end):  24 duplicate groups, 48 rows covered
+  Singleton rows under this key:           240
+  Reconciliation: 48 dup rows + 240 singletons = 288 = total 288 ✓
+
+  Difference in group counts: 51 - 24 = 27
+  The difference is same company, same fiscal year, different period_end, which is part-year against full-year within one fiscal year. Canonical's span_kind dissolves those by construction. The groups surviving the tighter key are the genuine #332 duplicates.
+
+SECTION 4: RESERVED
+  Section 4 was removed during report drafting. Later section numbers are retained
+  deliberately so that 5.x and 6.x references in the action log and handovers stay stable.
+
+======================================================================
+SECTION 5: PERIOD-LEVEL MATCHING
+======================================================================
+
+Scope: 36 companies with both a canonical run and financial_periods rows.
+Company 76 (canonical-only) is excluded; it is reported at 1.2.
+
+Canonical side: latest run per company only (same CTE as sections 1-3).
+Expected 335 periods: 175 income, 160 balance.
+Live side: financial_periods joined to income_statements (187 rows) and
+balance_sheets (169 rows) for these 36 companies. Total: 356 live rows.
+
+Span derivation on live side uses financial_periods.is_full_year (PARENT),
+not income_statements.is_full_year (CHILD). Span is a property of the period.
+The parent-child disagreement is already reported at 3.2 and is not conflated here.
+Rules in order: months_covered=12 → full_year; months_covered IS NOT NULL AND !=12
+→ part_year; months_covered IS NULL AND is_full_year=true → full_year;
+months_covered IS NULL AND is_full_year=false → part_year.
+The live side can never produce span = 'unknown'. Canonical can.
+That asymmetry is a finding, not a bug.
+
+Primary join key: target_company_id + fiscal_year + statement_type.
+Span is NOT part of the primary join key. It is used only as a discriminator
+when the primary key yields more than one live row, or when multiple canonical
+periods share a group and compete for the same live rows (see rules below).
+The match is INJECTIVE: a live row may be claimed by at most one canonical period.
+Span is compared as a field and reported at 5.4.
+period_end is compared as a field (5.5), NOT used as a join key (see 3.1).
+
+Matching rules per canonical period in a group (company+fiscal_year+statement_type):
+  Single canonical in group:
+    1. No live rows → bucket c.
+    2. Exactly one live row → bucket a, matched.
+    3. Multiple live rows, canonical span known AND exactly one matches → bucket a.
+    4. Otherwise → bucket b, ambiguous.
+  Multiple canonicals in group (competition for live rows):
+    5. If this canonical's span matches live rows AND it is the only canonical
+       with that span match → WINNER → bucket a.
+    6. If another canonical wins (rule 5 applies to a peer, not to this period)
+       → bucket e (live row claimed by a closer span match).
+    7. Otherwise → bucket b, ambiguous.
+
+5.1 MATCH OUTCOMES, canonical side (335 canonical periods):
+  a. matched to exactly one live row:                                316  (income=165, balance=151)
+  b. ambiguous, more than one live row, span did not help:           16  (income=8, balance=8)
+  c. no live row for that company and fiscal_year:                   2  (income=1, balance=1)
+  e. live row claimed by a closer span match (injective resolution): 1  (income=1, balance=0)
+  Arithmetic: a(316) + b(16) + c(2) + e(1) = 335
+  Sum = 335. Reconciles. ✓
+
+5.2 MATCH OUTCOMES, live side (187 income + 169 balance = 356 total live rows):
+  a. matched to a canonical period:                        316  (income=165, balance=151)
+  b. no canonical period for that company and fiscal_year: 6  (income=6, balance=0)
+  c. live row was one of several in an unresolved group:   34  (income=16, balance=18)
+  Arithmetic: a(316) + b(6) + c(34) = 356
+  Sum = 356. Reconciles. ✓
+
+5.3 THE MULTI-MATCH LIST (canonical periods in bucket b):
+  tc | fiscal_year | statement_type | canonical_span | live_count | discriminator_status | live_period_ends
+  45 | 2024 | balance | unknown | 2 | not attempted (span is unknown) | 2024-03-31, 2024-12-15
+  45 | 2024 | income | unknown | 2 | not attempted (span is unknown) | 2024-03-31, 2024-12-15
+  75 | 2024 | balance | unknown | 2 | not attempted (span is unknown) | 2024-03-31, 2024-12-15
+  75 | 2024 | income | unknown | 2 | not attempted (span is unknown) | 2024-03-31, 2024-12-15
+  81 | 2022 | balance | unknown | 2 | not attempted (span is unknown) | 2022-07-31, 2022-10-31
+  81 | 2022 | income | unknown | 2 | not attempted (span is unknown) | 2022-07-31, 2022-10-31
+  81 | 2023 | balance | unknown | 2 | not attempted (span is unknown) | 2023-08-31, 2023-10-31
+  81 | 2023 | income | unknown | 2 | not attempted (span is unknown) | 2023-08-31, 2023-10-31
+  1883 | 2025 | balance | full_year | 2 | attempted, span_matches=2 (not discriminating) | 2025-05-31, 2025-05-31
+  1883 | 2025 | income | full_year | 2 | attempted, span_matches=2 (not discriminating) | 2025-05-31, 2025-05-31
+  1883 | 2026 | balance | full_year | 2 | attempted, span_matches=2 (not discriminating) | 2026-05-31, 2026-05-31
+  1883 | 2026 | income | full_year | 2 | attempted, span_matches=2 (not discriminating) | 2026-05-31, 2026-05-31
+  1884 | 2025 | balance | full_year | 2 | attempted, span_matches=2 (not discriminating) | 2025-05-31, 2025-05-31
+  1884 | 2025 | income | full_year | 2 | attempted, span_matches=2 (not discriminating) | 2025-05-31, 2025-05-31
+  1884 | 2026 | balance | full_year | 2 | attempted, span_matches=2 (not discriminating) | 2026-05-31, 2026-05-31
+  1884 | 2026 | income | full_year | 2 | attempted, span_matches=2 (not discriminating) | 2026-05-31, 2026-05-31
+
+5.3b BUCKET-e LIST (canonical periods displaced by injective resolution):
+  tc | fiscal_year | statement_type | this_span | winning_span | live_period_end
+  1918 | 2024 | income | part_year | full_year | 2024-11-30
+  Canonical distinguishes a full year from a part year where the live system holds
+  a single row. These canonical periods are real and are excluded from figure
+  comparison only because the live side has nothing separate to compare them against.
+
+5.4 SPAN COMPARED AS A FIELD (bucket 5.1a only: 316 matched periods):
+  canonical span equals live derived span:          195
+  canonical span is 'unknown', live derived a span: 118
+  canonical says full_year, live says part_year:    3
+  canonical says part_year, live says full_year:    0
+  Arithmetic: 195 + 118 + 3 + 0 = 316
+  Sum = 316 = 5.1a count (316). Reconciles. ✓
+  Genuine span disagreements (tc | fiscal_year | statement_type | can_span | live_span | months_covered | is_full_year):
+    86 | 2026 | income | full_year | part_year | NULL | false
+    105 | 2026 | income | full_year | part_year | NULL | false
+    1877 | 2026 | income | full_year | part_year | NULL | false
+  canonical 'unknown' against a live span is NOT a disagreement. It is the live system asserting a full year by NOT NULL DEFAULT where canonical declined to guess. See #377.
+
+5.5 PERIOD_END COMPARISON (bucket 5.1a only: 316 matched periods):
+  equal:                              296
+  differ:                             18
+  canonical null, live not null:      2
+  both null:                          0
+  Arithmetic: 296 + 18 + 2 + 0 = 316
+  Sum = 316 = 5.1a count (316). Reconciles. ✓
+  Differing cases (tc | fiscal_year | statement_type | canonical_end | live_end):
+    70 | 2024 | balance | 2024-03-31 | 2024-12-15
+    70 | 2024 | income | 2024-03-31 | 2024-12-15
+    105 | 2025 | income | 2025-09-08 | 2025-03-31
+    133 | 2022 | income | 2022-12-31 | 2022-03-31
+    133 | 2023 | balance | 2023-12-31 | 2023-03-31
+    133 | 2023 | income | 2023-12-31 | 2023-03-31
+    1877 | 2026 | income | 2026-03-31 | 2026-07-30
+    1880 | 2025 | income | 2025-12-31 | 2025-10-31
+    1884 | 2023 | income | 2023-12-31 | 2023-05-31
+    1884 | 2024 | income | 2024-12-31 | 2024-05-31
+    1917 | 2023 | balance | 2023-05-31 | 2023-12-31
+    1917 | 2024 | balance | 2024-05-31 | 2024-12-31
+    1917 | 2025 | balance | 2025-05-31 | 2025-12-31
+    1918 | 2021 | income | 2021-03-31 | 2021-11-30
+    1918 | 2022 | balance | 2022-03-31 | 2022-11-30
+    1918 | 2022 | income | 2022-03-31 | 2022-11-30
+    1918 | 2023 | balance | 2023-03-31 | 2023-11-30
+    1918 | 2023 | income | 2023-03-31 | 2023-11-30
+  A period_end disagreement is a FINDING, not a join failure. The live value may be the fabricated 31 December described in 3.1.
+
+5.6 No canonical period was matched to a live row by picking one of several.
+Multi-matches (bucket b) and displaced periods (bucket e) are excluded from figure-level comparison at 3d.3b.
+
+5.7 INJECTIVITY:
+  count of canonical periods in bucket a:          316
+  count of DISTINCT live rows claimed by bucket a: 316
+  MATCH
+  Figure-level comparison at 3d.3b requires a one-to-one match. A live row read twice would double-count its values against two different canonical periods.
+
+5.8 FORCED-PAIRING COUNT (bucket 5.1a only):
+  Pairs matched by one-to-one shortcut (can_count=1 AND total_live=1): 287
+  Pairs matched by span disambiguation:                                 29
+  Of span-disambiguated pairs, MISALIGNED (period_end differs):         2
+  Arithmetic: 287 (one-to-one) + 29 (span-disambiguated) = 316 (exp 316)
+  Sum = 316 = 5.1a count (316). Reconciles. ✓
+  A span-disambiguated pair whose period_end disagrees was matched on a weak signal while a strong signal said the two periods differ. These are quarantined from the true-drift figure by the 6.8 cross-tab and are listed at 6.10.
+
+======================================================================
+SECTION 6: FIGURE-LEVEL VALUE COMPARISON
+======================================================================
+
+6.0 FIGURE DENOMINATOR
+  N (figures in 316 matched periods):             6026
+  Total figures across all 335 selected periods: 6314
+  Figures in the 19 unmatched periods:            288  (6314 - 6026)
+  canonical_figure.value nulls among N rows: 0 ✓
+
+6.1 FIGURE BUCKET COUNTS (N = 6026):
+  A. equal:                        5487  (91.1%)  [income=3437, balance=2050]
+  B. differ, both present:         332  (5.5%)  [income=232, balance=100]
+  C. live absent:                  204  (3.4%)  [income=129, balance=75]
+  U. unmapped:                     3  (0.0%)
+  X. table contradiction:          0  (0.0%)
+  Arithmetic: A(5487) + B(332) + C(204) + U(3) + X(0) = 6026
+  Sum = 6026 = N. MATCH ✓
+
+6.2 SCALAR VS JSON SPLIT (across all five buckets):
+  A scalar: 3670   A json: 1817
+  B scalar: 237   B json: 95
+  C scalar: 125   C json: 79
+  U (all unmapped, no target kind):  3
+  X (table contradiction):           0
+  Arithmetic: 3670+1817+237+95+125+79+3+0 = 6026
+  Sum = 6026 = N. ✓
+
+6.3 BUCKET B IN FULL (sorted by absolute delta descending):
+  tc | fiscal_year | statement_type | figure_path | live_col/path | canonical | live | delta | align | span
+  alignment tally over all 332 B rows: ALIGNED=156, MISALIGNED=176
+  70 | 2024 | income | profit_and_loss.revenue | revenue | 19045125 | 1587847 | 17457278.00 | MISALIGNED | unknown
+  70 | 2024 | income | profit_and_loss.cost_of_sales | cost_of_sales | 11427075 | 238177 | 11188898.00 | MISALIGNED | unknown
+  70 | 2024 | balance | balance_sheet.fixed_assets.tangible_assets | tangible_fixed_assets | 10090625 | 248900 | 9841725.00 | MISALIGNED | unknown
+  70 | 2024 | balance | balance_sheet.equity.total | total_equity | 11452337 | 1770050 | 9682287.00 | MISALIGNED | unknown
+  70 | 2024 | balance | balance_sheet.equity.retained_earnings | retained_earnings | 10452337 | 1769950 | 8682387.00 | MISALIGNED | unknown
+  70 | 2024 | income | profit_and_loss.gross_profit | gross_profit | 7618050 | 1349670 | 6268380.00 | MISALIGNED | unknown
+  70 | 2024 | balance | balance_sheet.current_assets.total | total_current_assets | 7620177 | 1568130 | 6052047.00 | MISALIGNED | unknown
+  1880 | 2025 | income | revenue_breakdown.by_product.Sales | revenue_breakdown['by_product']['Sales'] | 361864 | 4519795 | 4157931.00 | MISALIGNED | part_year
+  1880 | 2025 | income | profit_and_loss.revenue | revenue | 361855 | 4508976 | 4147121.00 | MISALIGNED | part_year
+  70 | 2024 | balance | balance_sheet.current_liabilities.total | total_current_liabilities | 3809025 | 342580 | 3466445.00 | MISALIGNED | unknown
+  70 | 2024 | balance | balance_sheet.long_term_liabilities.other_debt | other_long_term_debt | 3007125 | 0 | 3007125.00 | MISALIGNED | unknown
+  70 | 2024 | balance | balance_sheet.long_term_liabilities.total | total_long_term_liabilities | 3007125 | 0 | 3007125.00 | MISALIGNED | unknown
+  70 | 2024 | balance | balance_sheet.current_assets.trade_debtors | trade_debtors | 3174188 | 378450 | 2795738.00 | MISALIGNED | unknown
+  1880 | 2025 | income | profit_and_loss.cost_of_sales | cost_of_sales | 309235 | 3044637 | 2735402.00 | MISALIGNED | part_year
+  70 | 2024 | income | profit_and_loss.administrative_expenses | administrative_expenses | 3047220 | 842590 | 2204630.00 | MISALIGNED | unknown
+  70 | 2024 | income | profit_and_loss.operating_profit | operating_profit | 2285415 | 396132 | 1889283.00 | MISALIGNED | unknown
+  133 | 2023 | balance | balance_sheet.equity.total | total_equity | 2003000 | 168934 | 1834066.00 | MISALIGNED | full_year
+  70 | 2024 | income | profit_and_loss.profit_before_tax | profit_before_tax | 2094964 | 395182 | 1699782.00 | MISALIGNED | unknown
+  1880 | 2025 | income | profit_and_loss.gross_profit | gross_profit | 52420 | 1464340 | 1411920.00 | MISALIGNED | part_year
+  70 | 2024 | income | profit_and_loss.net_profit | net_profit | 1696921 | 320097 | 1376824.00 | MISALIGNED | unknown
+  1880 | 2025 | income | cost_of_sales_breakdown.direct_materials | cost_of_sales_breakdown['direct_materials'] | 64595 | 1302917 | 1238322.00 | MISALIGNED | part_year
+  1880 | 2025 | income | cost_of_sales_breakdown.subcontractor_costs | cost_of_sales_breakdown['subcontractor_costs'] | 129710 | 1308137 | 1178427.00 | MISALIGNED | part_year
+  1880 | 2025 | income | profit_and_loss.administrative_expenses | administrative_expenses | 217283 | 1303834 | 1086551.00 | MISALIGNED | part_year
+  70 | 2024 | balance | balance_sheet.equity.share_capital | share_capital | 1000000 | 100 | 999900.00 | MISALIGNED | unknown
+  133 | 2023 | income | profit_and_loss.revenue | revenue | 456548 | 1441671 | 985123.00 | MISALIGNED | full_year
+  1880 | 2022 | income | cost_of_sales_breakdown.other_direct_costs | cost_of_sales_breakdown['other_direct_costs'] | 1800194 | 980718 | 819476.00 | ALIGNED | full_year
+  133 | 2023 | income | profit_and_loss.gross_profit | gross_profit | 152002 | 902788 | 750786.00 | MISALIGNED | full_year
+  1880 | 2025 | income | overheads_breakdown.staff_wages_salaries | overheads_breakdown['staff_wages_salaries'] | 126166 | 724993 | 598827.00 | MISALIGNED | part_year
+  1880 | 2025 | income | total_staff_costs | staff_costs | 126166 | 724993 | 598827.00 | MISALIGNED | part_year
+  133 | 2023 | income | profit_and_loss.administrative_expenses | administrative_expenses | 158678 | 730019 | 571341.00 | MISALIGNED | full_year
+  133 | 2022 | income | profit_and_loss.revenue | revenue | 597078 | 1097307 | 500229.00 | MISALIGNED | full_year
+  133 | 2022 | income | profit_and_loss.gross_profit | gross_profit | 199610 | 656645 | 457035.00 | MISALIGNED | full_year
+  133 | 2023 | income | cost_of_sales_breakdown.direct_materials | cost_of_sales_breakdown['direct_materials'] | 1054 | 422194 | 421140.00 | MISALIGNED | full_year
+  70 | 2024 | balance | balance_sheet.current_assets.cash_at_bank | cash_at_bank | 1589220 | 1189680 | 399540.00 | MISALIGNED | unknown
+  133 | 2022 | income | profit_and_loss.administrative_expenses | administrative_expenses | 225031 | 554473 | 329442.00 | MISALIGNED | full_year
+  1880 | 2025 | income | profit_and_loss.operating_profit | operating_profit | -164863 | 160506 | 325369.00 | MISALIGNED | part_year
+  1880 | 2025 | income | profit_and_loss.profit_before_tax | profit_before_tax | -164863 | 160506 | 325369.00 | MISALIGNED | part_year
+  70 | 2024 | income | profit_and_loss.corporation_tax | corporation_tax | 398043 | 75085 | 322958.00 | MISALIGNED | unknown
+  1918 | 2025 | balance | balance_sheet.current_assets.trade_debtors | trade_debtors | 39535.42 | 358524.86 | 318989.44 | ALIGNED | full_year
+  1880 | 2025 | income | cost_of_sales_breakdown.direct_labour | cost_of_sales_breakdown['direct_labour'] | 90461 | 364967 | 274506.00 | MISALIGNED | part_year
+  133 | 2023 | income | total_staff_costs | staff_costs | 90671 | 361110 | 270439.00 | MISALIGNED | full_year
+  1918 | 2025 | balance | balance_sheet.current_assets.total | total_current_assets | 91744.32 | 358524.86 | 266780.54 | ALIGNED | full_year
+  70 | 2024 | balance | balance_sheet.fixed_assets.intangible_assets | intangible_assets | 557685 | 295600 | 262085.00 | MISALIGNED | unknown
+  133 | 2022 | income | cost_of_sales_breakdown.direct_materials | cost_of_sales_breakdown['direct_materials'] | 671 | 261649 | 260978.00 | MISALIGNED | full_year
+  133 | 2023 | income | overheads_breakdown.staff_wages_salaries | overheads_breakdown['staff_wages_salaries'] | 87370 | 327248 | 239878.00 | MISALIGNED | full_year
+  133 | 2023 | income | profit_and_loss.cost_of_sales | cost_of_sales | 304546 | 538883 | 234337.00 | MISALIGNED | full_year
+  1880 | 2025 | income | profit_and_loss.net_profit | net_profit | -164863 | 60624 | 225487.00 | MISALIGNED | part_year
+  133 | 2022 | income | total_staff_costs | staff_costs | 113191 | 315234 | 202043.00 | MISALIGNED | full_year
+  1917 | 2025 | balance | balance_sheet.fixed_assets.plant_machinery | plant_machinery | 12752.27 | 213328 | 200575.73 | MISALIGNED | full_year
+  1880 | 2025 | income | overheads_breakdown.rent_rates | overheads_breakdown['rent_rates'] | 40011 | 238125 | 198114.00 | MISALIGNED | part_year
+  70 | 2024 | income | profit_and_loss.interest_payable | interest_payable | 190451 | 950 | 189501.00 | MISALIGNED | unknown
+  879 | 2023 | balance | balance_sheet.current_liabilities.taxation_social_security | taxation_social_security | 5948 | 189650 | 183702.00 | ALIGNED | full_year
+  1918 | 2023 | income | total_directors_remuneration | directors_remuneration | 198012 | 18000 | 180012.00 | MISALIGNED | full_year
+  133 | 2023 | income | profit_and_loss.operating_profit | operating_profit | -6676 | 172769 | 179445.00 | MISALIGNED | full_year
+  133 | 2022 | income | overheads_breakdown.staff_wages_salaries | overheads_breakdown['staff_wages_salaries'] | 109528 | 287844 | 178316.00 | MISALIGNED | full_year
+  133 | 2023 | income | profit_and_loss.profit_before_tax | profit_before_tax | -7467 | 168306 | 175773.00 | MISALIGNED | full_year
+  879 | 2022 | balance | balance_sheet.current_liabilities.amounts_owed_to_directors | amounts_owed_to_directors | 15535 | 189317 | 173782.00 | ALIGNED | full_year
+  885 | 2025 | income | profit_and_loss.administrative_expenses | administrative_expenses | 220766 | 53647 | 167119.00 | ALIGNED | full_year
+  1881 | 2025 | income | profit_and_loss.administrative_expenses | administrative_expenses | 220766 | 53647 | 167119.00 | ALIGNED | full_year
+  885 | 2025 | income | profit_and_loss.cost_of_sales | cost_of_sales | 2383 | 166054 | 163671.00 | ALIGNED | full_year
+TRUNCATED AT 60 OF 332
+
+6.4 BUCKET C SUMMARY:
+  JSON absence sub-counts:
+    json column itself is null:                   0
+    grouping key is missing:                      0
+    leaf key is missing or its value is null:     79
+    (JSON absence total: 79)
+
+  Top figure_paths by absence count (descending):
+    10  total_staff_costs
+    10  balance_sheet.current_assets.stock
+    8  profit_and_loss.other_operating_income
+    7  total_directors_remuneration
+    7  balance_sheet.current_liabilities.corporation_tax
+    7  overheads_breakdown.staff_wages_salaries
+    6  profit_and_loss.depreciation_amortisation
+    6  balance_sheet.fixed_assets.tangible_assets
+    6  balance_sheet.current_liabilities.vat_payable
+    5  balance_sheet.current_assets.prepayments
+    4  dividends_paid
+    4  cost_of_sales_breakdown.direct_labour
+    4  cost_of_sales_breakdown.subcontractor_costs
+    4  profit_and_loss.interest_receivable
+    4  balance_sheet.fixed_assets.fixtures_fittings
+    4  balance_sheet.fixed_assets.motor_vehicles
+    3  overheads_breakdown.depreciation
+    3  profit_and_loss.interest_payable
+    3  revenue_breakdown.by_product.Sales
+    3  overheads_breakdown.staff_training_recruitment
+  TRUNCATED AT 20 OF 82
+
+6.5 BUCKET U (unmapped figure_paths):
+  count=1  reason: only long_term_liabilities.other_debt has a live column (other_long_term_debt); the current-liability variant has none
+    balance_sheet.current_liabilities.other_debt
+  count=1  reason: balance_sheets has no investments column; the concept was never modelled live
+    balance_sheet.fixed_assets.investments
+  count=1  reason: a debtor filed under liabilities; no live column and probably an extraction misfile
+    balance_sheet.current_liabilities.other_debtors
+
+6.6 BUCKET X (table contradiction):
+  0 — as expected. ✓
+
+6.7 Scope: 316 of 335 canonical periods. The 19 excluded are 16 ambiguous (5.3), 2 with no live row (5.1c) and 1 displaced by a closer span match (5.3b). Their figures are counted at 6.0 and are NOT included in any bucket above.
+
+6.8 MISALIGNMENT CROSS-TAB:
+  ALIGNED   = period_end equal on both sides.
+  MISALIGNED = period_end differs, or canonical period_end is null.
+  From 5.5: equal=296 → ALIGNED; differ=18 + canonical_null=2 → MISALIGNED=20.
+
+                ALIGNED  MISALIGNED   total
+  A equal        5399     88   5487
+  B differ        156    176    332
+  C live absent   147     57    204
+  U unmapped        3      0      3
+  X                 0      0      0
+  total          5705    321   6026
+
+  Row totals: A=5487(exp 5487) B=332(exp 332) C=204(exp 204) U=3(exp 3) X=0(exp 0)
+  Column totals: ALIGNED(5705) + MISALIGNED(321) = 6026 (exp 6026)
+  All row and column sums reconcile. ✓
+
+  TRUE VALUE DRIFT = 156 of 5705 figures on ALIGNED periods (2.7%)
+  A value difference on a MISALIGNED period is not value drift. The two sides are describing different accounting periods that share a fiscal year. Canonical and the live reconciler selected different source documents. That is a document-selection finding, reported at 6.10, not a fidelity failure.
+
+6.9 REVERSE DIRECTION (live values canonical does not hold):
+  R1. live value present, canonical maps to it:    5819
+  R2. live value present, no canonical maps to it: 595
+  Arithmetic: R1(5819) + R2(595) = 6414
+  R1 = 5819 = A(5487) + B(332) = 5819. MATCH ✓
+
+  R2 split: ALIGNED=448, MISALIGNED=147, sum=595
+  The canonical-live mapping is bijective over all live scalar columns, so every live
+  column has a canonical path. An R2 gap on an ALIGNED period is therefore a genuine
+  evidence-layer gap, not an unmapped column.
+
+  R2 by live column/path (count descending):
+    18  corporation_tax
+    18  cost_of_sales_breakdown['subcontractor_costs']
+    17  overheads_breakdown['travel_subsistence']
+    17  overheads_breakdown['printing_stationery']
+    17  overheads_breakdown['accountancy_bookkeeping']
+    17  overheads_breakdown['subscriptions_memberships']
+    17  overheads_breakdown['employers_national_insurance']
+    16  overheads_breakdown['professional_fees']
+    16  cost_of_sales_breakdown['other_direct_costs']
+    15  interest_receivable
+    15  overheads_breakdown['insurance']
+    15  overheads_breakdown['telecommunications']
+    15  overheads_breakdown['staff_training_recruitment']
+    15  overheads_breakdown['staff_pension_contributions']
+    14  interest_payable
+    14  dividends_paid
+    14  overheads_breakdown['rent_rates']
+    14  overheads_breakdown['motor_expenses']
+    14  overheads_breakdown['repairs_maintenance']
+    14  overheads_breakdown['staff_wages_salaries']
+    13  overheads_breakdown['computer_costs']
+    13  overheads_breakdown['advertising_marketing']
+    13  cost_of_sales_breakdown['direct_materials']
+    12  staff_costs
+    12  overheads_breakdown['bank_charges']
+  TRUNCATED AT 25 OF 85
+
+  An R2 entry is a value the live system holds and canonical does not. On an ALIGNED period that is a genuine gap in the evidence layer. On a MISALIGNED period it is expected, because the two sides are different periods.
+
+6.10 DOCUMENT SELECTION DIAGNOSTIC (18 MISALIGNED pairs where period_end differs):
+  6.8 counts 20 MISALIGNED pairs. The 2 pairs with a null canonical period_end are excluded here because there is no canonical document to compare. See 5.5.
+  tc | fy | st | can_end | win_ev_id | win_pd_id | can_doc_id | live_end | src_doc_id | src_tier | B_figs
+  70 | 2024 | balance | 2024-03-31 | 110 | 189 | 420 | 2024-12-15 | 401 | management | 11
+  70 | 2024 | income | 2024-03-31 | 109 | 187 | 420 | 2024-12-15 | 401 | management | 9
+  105 | 2025 | income | 2025-09-08 | 197 | 355 | 490 | 2025-03-31 | 488 | information_memorandum | 1
+  133 | 2022 | income | 2022-12-31 | 203 | 372 | 533 | 2022-03-31 | 529 | statutory | 25
+  133 | 2023 | balance | 2023-12-31 | 202 | 365 | 531 | 2023-03-31 | 529 | statutory | 1
+  133 | 2023 | income | 2023-12-31 | 203 | 373 | 533 | 2023-03-31 | 529 | statutory | 25
+  1877 | 2026 | income | 2026-03-31 | 237 | 439 | 5833 | 2026-07-30 | 5833 | management | 0
+  1880 | 2025 | income | 2025-12-31 | 267 | 497 | 5865 | 2025-10-31 | 5860 | management | 32
+  1884 | 2023 | income | 2023-12-31 | 317 | 598 | 5908 | 2023-05-31 | 5904 | information_memorandum | 0
+  1884 | 2024 | income | 2024-12-31 | 317 | 599 | 5908 | 2024-05-31 | 5904 | information_memorandum | 0
+  1917 | 2023 | balance | 2023-05-31 | 324 | 618 | 5941 | 2023-12-31 | 5936 | statutory | 13
+  1917 | 2024 | balance | 2024-05-31 | 324 | 619 | 5941 | 2024-12-31 | 5935 | statutory | 13
+  1917 | 2025 | balance | 2025-05-31 | 324 | 620 | 5941 | 2025-12-31 | 5934 | statutory | 14
+  1918 | 2021 | income | 2021-03-31 | 345 | 652 | 5942 | 2021-11-30 | 5953 | information_memorandum | 9
+  1918 | 2022 | balance | 2022-03-31 | 346 | 655 | 5942 | 2022-11-30 | 5952 | information_memorandum | 4
+  1918 | 2022 | income | 2022-03-31 | 345 | 653 | 5942 | 2022-11-30 | 5952 | information_memorandum | 8
+  1918 | 2023 | balance | 2023-03-31 | 346 | 656 | 5942 | 2023-11-30 | 5944 | statutory | 1
+  1918 | 2023 | income | 2023-03-31 | 345 | 654 | 5942 | 2023-11-30 | 5944 | statutory | 10
+
+  Of the 18 misaligned pairs:
+    canonical doc_id DIFFERENT from live source_document_id: 17
+    canonical doc_id SAME as live source_document_id:        1
+    either side null:                                        0
+    Sum: 17 + 1 + 0 = 18 (exp 18)
+    Reconciles. ✓
+
+  Where the two sides cite different documents, canonical's winner ladder and getReconciledFinancials' first-row-wins ordering by period_end DESC have chosen differently. This is the first time that disagreement has been visible.
+
+6.11 THE #351 CASE — tc=1880, fy=2025, income (2 canonical period(s) in latest run):
+
+  canonical_period_id:   603
+  span_kind:             full_year
+  trust_state:           CONFLICTED
+  period_end:            2025-10-31
+  winning_evidence_id:   269
+  winning_doc_id:        5867
+  canonical revenue:     4509086
+  5.1 bucket:            a
+  matched live_fp_id:    7974
+  live period_end:       2025-10-31
+  live source_doc_id:    5867
+  live derived_span:     full_year
+  live revenue:          4509086
+  revenue delta:         0
+  alignment:             ALIGNED
+  bucket-B figures:      0
+
+  canonical_period_id:   604
+  span_kind:             part_year
+  trust_state:           TRUST_UNRESOLVED
+  period_end:            2025-12-31
+  winning_evidence_id:   267
+  winning_doc_id:        5865
+  canonical revenue:     361855
+  5.1 bucket:            a
+  matched live_fp_id:    7975
+  live period_end:       2025-10-31
+  live source_doc_id:    5860
+  live derived_span:     part_year
+  live revenue:          4508976
+  revenue delta:         4147121
+  alignment:             MISALIGNED
+  bucket-B figures:      32
+
+  #351 recorded revenue 361855 against 4509086 as a 91.98% divergence within one fiscal year. Canonical does not treat these as competing values for one period. It separates them by span_kind: 4509086 is the full year and 361855 is the part year. Spec 3.3 built span_kind for exactly this. #351 as written should be revised.
+  CAVEAT: the part_year period carries period_end 2025-12-31, which has the shape of the fabricated 31 December described at 3.1. Verify the date before revising #351.
+
+======================================================================
+SECTION 7: SCOPE AND LIMITS
+======================================================================
+
+Figure-level value comparison is in SECTION 6 above.
+
+The primary join key used in Section 6:
+  target_company_id + fiscal_year + statement_type
+Span is used only as a discriminator. Bucket-b (ambiguous) and bucket-e
+(displaced by injective resolution) periods are excluded from figure comparison.
+
+period_end is deliberately compared rather than joined on, for the reason
+given in 3.1: a fabricated Dec-31 date on the live side may disagree with
+the canonical period_end derived from evidence, and that disagreement is
+itself a finding, not a key collision to be silently resolved.
+
+======================================================================
+END OF REPORT
+======================================================================
