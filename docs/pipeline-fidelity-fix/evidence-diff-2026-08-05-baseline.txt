@@ -46,6 +46,40 @@ with label_text:        0  (0.0%)
 with both:              0  (0.0%)
 
 ────────────────────────────────────────────────────────────────────────
+PRE-1c FIELD COVERAGE
+────────────────────────────────────────────────────────────────────────
+document_evidence:
+  company_names_found (jsonb array):        0 / 44  (0.0%)  [array: non-null + length >= 1]
+  registered_numbers_found (jsonb array):   0 / 44  (0.0%)  [array: non-null + length >= 1]
+  year_end_stated:                          0 / 44  (0.0%)
+  directors_named (jsonb array):            0 / 44  (0.0%)  [array: non-null + length >= 1]
+  accountant_name:                          0 / 44  (0.0%)
+  is_draft:                                 0 / 44  (0.0%)
+  is_abridged:                              0 / 44  (0.0%)
+  is_signed:                                0 / 44  (0.0%)
+  report_date:                              38 / 44  (86.4%)
+  identity_verdict:                         0 / 44  (0.0%)
+  content_hash:                             0 / 44  (0.0%)
+  extractor:                                0 / 44  (0.0%)
+
+document_evidence_period:
+  period_start:                             0 / 84  (0.0%)
+  period_end:                               84 / 84  (100.0%)
+  period_label_as_printed:                  0 / 84  (0.0%)
+  fiscal_year_stated:                       84 / 84  (100.0%)
+  months_covered_stated:                    82 / 84  (97.6%)
+  months_covered_computed:                  0 / 84  (0.0%)
+  is_full_year_computed:                    0 / 84  (0.0%)
+  provenance:                               0 / 84  (0.0%)
+  anomalies (jsonb array):                  0 / 84  (0.0%)  [array: non-null + length >= 1]
+
+document_evidence_figure:
+  page_number:                              0 / 2176  (0.0%)
+  label_text_as_printed:                    0 / 2176  (0.0%)
+  payload_path:                             2176 / 2176  (100.0%)
+  is_model_derived:                         2176 / 2176  (100.0%)
+
+────────────────────────────────────────────────────────────────────────
 DIFFER ROWS (0)
 ────────────────────────────────────────────────────────────────────────
 NONE

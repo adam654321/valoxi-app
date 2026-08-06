@@ -54,6 +54,13 @@ function pct(num: number, den: number): string {
   return ((num / den) * 100).toFixed(1) + '%';
 }
 
+/** Format a field-coverage count from string-typed DB counts. */
+function cov(count: string, total: string, note: string = ''): string {
+  const n = parseInt(count, 10);
+  const t = parseInt(total, 10);
+  return `${n} / ${t}  (${pct(n, t)})${note ? '  ' + note : ''}`;
+}
+
 // Raw shape returned by the database query (camelCase aliases)
 type RawRow = {
   documentId:           number;
@@ -256,6 +263,108 @@ async function main() {
   line(`with page_number:       ${totalWithPage}  (${pct(totalWithPage, totalAnchorTotal)})`);
   line(`with label_text:        ${totalWithLabel}  (${pct(totalWithLabel, totalAnchorTotal)})`);
   line(`with both:              ${totalWithBoth}  (${pct(totalWithBoth, totalAnchorTotal)})`);
+  line();
+
+  // ── PRE-1c field coverage ────────────────────────────────────────────────
+  const deFields = await db.execute<{
+    total: string;
+    company_names_found: string; registered_numbers_found: string; year_end_stated: string;
+    directors_named: string; accountant_name: string; is_draft: string; is_abridged: string;
+    is_signed: string; report_date: string; identity_verdict: string;
+    content_hash: string; extractor: string;
+  }>(sql`
+    SELECT
+      COUNT(*)::text AS total,
+      COUNT(CASE WHEN company_names_found IS NOT NULL AND jsonb_array_length(company_names_found) > 0 THEN 1 END)::text AS company_names_found,
+      COUNT(CASE WHEN registered_numbers_found IS NOT NULL AND jsonb_array_length(registered_numbers_found) > 0 THEN 1 END)::text AS registered_numbers_found,
+      COUNT(year_end_stated)::text AS year_end_stated,
+      COUNT(CASE WHEN directors_named IS NOT NULL AND jsonb_array_length(directors_named) > 0 THEN 1 END)::text AS directors_named,
+      COUNT(accountant_name)::text AS accountant_name,
+      COUNT(is_draft)::text AS is_draft,
+      COUNT(is_abridged)::text AS is_abridged,
+      COUNT(is_signed)::text AS is_signed,
+      COUNT(report_date)::text AS report_date,
+      COUNT(identity_verdict)::text AS identity_verdict,
+      COUNT(content_hash)::text AS content_hash,
+      COUNT(extractor)::text AS extractor
+    FROM document_evidence de
+    ${whereClause}
+  `);
+  const deF = deFields.rows[0];
+
+  const depFields = await db.execute<{
+    total: string;
+    period_start: string; period_end: string; period_label_as_printed: string;
+    fiscal_year_stated: string; months_covered_stated: string; months_covered_computed: string;
+    is_full_year_computed: string; provenance: string; anomalies: string;
+  }>(sql`
+    SELECT
+      COUNT(*)::text AS total,
+      COUNT(period_start)::text AS period_start,
+      COUNT(period_end)::text AS period_end,
+      COUNT(period_label_as_printed)::text AS period_label_as_printed,
+      COUNT(fiscal_year_stated)::text AS fiscal_year_stated,
+      COUNT(months_covered_stated)::text AS months_covered_stated,
+      COUNT(months_covered_computed)::text AS months_covered_computed,
+      COUNT(is_full_year_computed)::text AS is_full_year_computed,
+      COUNT(provenance)::text AS provenance,
+      COUNT(CASE WHEN anomalies IS NOT NULL AND jsonb_array_length(anomalies) > 0 THEN 1 END)::text AS anomalies
+    FROM document_evidence_period dep
+    JOIN document_evidence de ON de.id = dep.document_evidence_id
+    ${whereClause}
+  `);
+  const depF = depFields.rows[0];
+
+  const defFields = await db.execute<{
+    total: string;
+    page_number: string; label_text_as_printed: string; payload_path: string; is_model_derived: string;
+  }>(sql`
+    SELECT
+      COUNT(*)::text AS total,
+      COUNT(page_number)::text AS page_number,
+      COUNT(label_text_as_printed)::text AS label_text_as_printed,
+      COUNT(payload_path)::text AS payload_path,
+      COUNT(is_model_derived)::text AS is_model_derived
+    FROM document_evidence_figure def
+    JOIN document_evidence_period dep ON dep.id = def.document_evidence_period_id
+    JOIN document_evidence de ON de.id = dep.document_evidence_id
+    ${whereClause}
+  `);
+  const defF = defFields.rows[0];
+
+  line('─'.repeat(72));
+  line('PRE-1c FIELD COVERAGE');
+  line('─'.repeat(72));
+  line('document_evidence:');
+  line(`  company_names_found (jsonb array):        ${cov(deF.company_names_found, deF.total, '[array: non-null + length >= 1]')}`);
+  line(`  registered_numbers_found (jsonb array):   ${cov(deF.registered_numbers_found, deF.total, '[array: non-null + length >= 1]')}`);
+  line(`  year_end_stated:                          ${cov(deF.year_end_stated, deF.total)}`);
+  line(`  directors_named (jsonb array):            ${cov(deF.directors_named, deF.total, '[array: non-null + length >= 1]')}`);
+  line(`  accountant_name:                          ${cov(deF.accountant_name, deF.total)}`);
+  line(`  is_draft:                                 ${cov(deF.is_draft, deF.total)}`);
+  line(`  is_abridged:                              ${cov(deF.is_abridged, deF.total)}`);
+  line(`  is_signed:                                ${cov(deF.is_signed, deF.total)}`);
+  line(`  report_date:                              ${cov(deF.report_date, deF.total)}`);
+  line(`  identity_verdict:                         ${cov(deF.identity_verdict, deF.total)}`);
+  line(`  content_hash:                             ${cov(deF.content_hash, deF.total)}`);
+  line(`  extractor:                                ${cov(deF.extractor, deF.total)}`);
+  line();
+  line('document_evidence_period:');
+  line(`  period_start:                             ${cov(depF.period_start, depF.total)}`);
+  line(`  period_end:                               ${cov(depF.period_end, depF.total)}`);
+  line(`  period_label_as_printed:                  ${cov(depF.period_label_as_printed, depF.total)}`);
+  line(`  fiscal_year_stated:                       ${cov(depF.fiscal_year_stated, depF.total)}`);
+  line(`  months_covered_stated:                    ${cov(depF.months_covered_stated, depF.total)}`);
+  line(`  months_covered_computed:                  ${cov(depF.months_covered_computed, depF.total)}`);
+  line(`  is_full_year_computed:                    ${cov(depF.is_full_year_computed, depF.total)}`);
+  line(`  provenance:                               ${cov(depF.provenance, depF.total)}`);
+  line(`  anomalies (jsonb array):                  ${cov(depF.anomalies, depF.total, '[array: non-null + length >= 1]')}`);
+  line();
+  line('document_evidence_figure:');
+  line(`  page_number:                              ${cov(defF.page_number, defF.total)}`);
+  line(`  label_text_as_printed:                    ${cov(defF.label_text_as_printed, defF.total)}`);
+  line(`  payload_path:                             ${cov(defF.payload_path, defF.total)}`);
+  line(`  is_model_derived:                         ${cov(defF.is_model_derived, defF.total)}`);
   line();
 
   // ── DIFFER rows ───────────────────────────────────────────────────────────
