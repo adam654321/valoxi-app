@@ -1,4 +1,4 @@
-import { eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, or, isNull, sql } from 'drizzle-orm';
 import { db } from '../db';
 import {
   documentEvidence,
@@ -84,7 +84,18 @@ export class CanonicalRepository {
         documentAnalysisResultId: documentEvidence.documentAnalysisResultId,
       })
       .from(documentEvidence)
-      .where(eq(documentEvidence.targetCompanyId, input.targetCompanyId));
+      .where(
+        and(
+          eq(documentEvidence.targetCompanyId, input.targetCompanyId),
+          or(
+            isNull(documentEvidence.documentId),
+            eq(
+              documentEvidence.extractionVersion,
+              sql<number>`(SELECT MAX(de2.extraction_version) FROM document_evidence de2 WHERE de2.document_id = ${documentEvidence.documentId} AND de2.document_type = ${documentEvidence.documentType})`,
+            ),
+          ),
+        ),
+      );
 
     if (evidenceRows.length === 0) {
       return { resolved: false, reason: 'no_evidence' };
