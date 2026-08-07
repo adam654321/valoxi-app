@@ -86,6 +86,7 @@ function walkForFigures(
   obj: unknown,
   path: string,
   figures: EvidenceFigure[],
+  anchors: Record<string, unknown>,
 ): void {
   if (obj === null || obj === undefined) return;
   if (Array.isArray(obj)) return;
@@ -102,8 +103,8 @@ function walkForFigures(
         statementType: childPath.includes('.balance_sheet.') ? 'balance' : 'income',
         fieldKey: key,
         value: childVal,
-        labelTextAsPrinted: null,
-        pageNumber: null,
+        labelTextAsPrinted: readAnchorLabel(anchors, childPath),
+        pageNumber: readAnchorPage(anchors, childPath),
         payloadPath: childPath,
         isModelDerived: childPath.includes('.financial_ratios.'),
       });
@@ -113,7 +114,7 @@ function walkForFigures(
       !Array.isArray(childVal) &&
       typeof childVal === 'object'
     ) {
-      walkForFigures(childVal, childPath, figures);
+      walkForFigures(childVal, childPath, figures, anchors);
     }
     // null, array, non-finite number → skip
   }
@@ -180,6 +181,25 @@ function resolveReportDate(payload: Record<string, unknown>): string | null {
     }
   }
   return null;
+}
+
+/**
+ * Slice 1c.2b: read a figure anchor from the merged anchor map.
+ * A missing or malformed anchor resolves to null (spec P5): no coercion,
+ * no invention.
+ */
+function readAnchorLabel(anchors: Record<string, unknown>, path: string): string | null {
+  const a = anchors[path];
+  if (a === null || a === undefined || Array.isArray(a) || typeof a !== 'object') return null;
+  const label = (a as Record<string, unknown>).label;
+  return typeof label === 'string' && label.length > 0 ? label : null;
+}
+
+function readAnchorPage(anchors: Record<string, unknown>, path: string): number | null {
+  const a = anchors[path];
+  if (a === null || a === undefined || Array.isArray(a) || typeof a !== 'object') return null;
+  const page = (a as Record<string, unknown>).page;
+  return typeof page === 'number' && isFinite(page) ? page : null;
 }
 
 // --- Slice 2b.2: cast checks (spec 2.3) ------------------------------------
@@ -539,6 +559,18 @@ export function mapPayloadToEvidence(input: MapPayloadInput): MapPayloadOutput {
   };
 
   const containers = collectYearContainers(payload);
+  // Slice 1c.2b: merge per-container anchor maps under full payload path keys,
+  // so a wrapped sub-object's anchor entries align with the prefixed payload
+  // paths its figures are written under. Root shape keys pass through unchanged.
+  const anchorMap: Record<string, unknown> = {};
+  for (const { pathPrefix, container } of containers) {
+    const rawAnchors = container.anchors;
+    if (rawAnchors === null || rawAnchors === undefined || Array.isArray(rawAnchors) || typeof rawAnchors !== 'object') continue;
+    for (const key of Object.keys(rawAnchors as Record<string, unknown>)) {
+      const fullKey = pathPrefix ? `${pathPrefix}.${key}` : key;
+      anchorMap[fullKey] = (rawAnchors as Record<string, unknown>)[key];
+    }
+  }
   const periodMap = new Map<string, EvidencePeriod>();
   const periodOrder: string[] = [];
   const periodEndSource = new Map<string, string>();
@@ -642,7 +674,7 @@ export function mapPayloadToEvidence(input: MapPayloadInput): MapPayloadOutput {
 
       const yearData = yearsObj[yearKey];
       const basePath = pathPrefix ? `${pathPrefix}.years.${yearKey}` : `years.${yearKey}`;
-      walkForFigures(yearData, basePath, period.figures);
+      walkForFigures(yearData, basePath, period.figures, anchorMap);
     }
   }
 
