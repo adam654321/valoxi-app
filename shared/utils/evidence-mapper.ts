@@ -6,6 +6,7 @@
  * Values are preserved exactly as extracted. No abs(), no rounding,
  * no sign normalisation.
  */
+import { createHash } from 'node:crypto';
 
 export interface EvidenceFigure {
   statementType: string;
@@ -39,8 +40,8 @@ export interface EvidenceRow {
   documentAnalysisResultId: number | null;
   documentType: string;
   extractionVersion: number;
-  contentHash: null;
-  extractor: null;
+  contentHash: string | null;
+  extractor: string | null;
   companyNamesFound: null;
   registeredNumbersFound: null;
   yearEndStated: null;
@@ -60,6 +61,10 @@ export interface MapPayloadInput {
   documentType: string;
   extractionVersion: number;
   payload: Record<string, unknown>;
+  /** Resolved Gemini model string, e.g. 'gemini-2.5-flash'. */
+  model?: string;
+  /** Prompt generation identifier from shared/prompt-version.ts. */
+  promptVersion?: string;
 }
 
 export interface MapPayloadOutput {
@@ -465,6 +470,39 @@ function runCastChecks(figures: EvidenceFigure[]): EvidenceAnomaly[] {
   return out;
 }
 
+/**
+ * Build the extractor string: '<model>/<promptVersion>' truncated to 100 chars.
+ * If only one component is present, use it alone. Returns null if both are absent.
+ */
+function buildExtractor(model: string | undefined, promptVersion: string | undefined): string | null {
+  const m = model?.trim() || null;
+  const p = promptVersion?.trim() || null;
+  if (!m && !p) return null;
+  const raw = m && p ? `${m}/${p}` : (m ?? p)!;
+  return raw.length > 100 ? raw.slice(0, 100) : raw;
+}
+
+/**
+ * Compute a SHA-256 hex digest of the payload serialised with object keys sorted
+ * recursively, so that key ordering never changes the hash.
+ * Returns null (never throws) if the payload cannot be serialised.
+ */
+function sortedStringify(val: unknown): string {
+  if (val === null || typeof val !== 'object') return JSON.stringify(val);
+  if (Array.isArray(val)) return '[' + val.map(sortedStringify).join(',') + ']';
+  const sorted = Object.keys(val as object).sort();
+  return '{' + sorted.map((k) => JSON.stringify(k) + ':' + sortedStringify((val as Record<string, unknown>)[k])).join(',') + '}';
+}
+
+function computeContentHash(payload: Record<string, unknown>): string | null {
+  try {
+    const serialised = sortedStringify(payload);
+    return createHash('sha256').update(serialised, 'utf8').digest('hex');
+  } catch {
+    return null;
+  }
+}
+
 export function mapPayloadToEvidence(input: MapPayloadInput): MapPayloadOutput {
   const {
     targetCompanyId,
@@ -473,6 +511,8 @@ export function mapPayloadToEvidence(input: MapPayloadInput): MapPayloadOutput {
     documentType,
     extractionVersion,
     payload,
+    model,
+    promptVersion,
   } = input;
 
   const reportDate = resolveReportDate(payload);
@@ -483,8 +523,8 @@ export function mapPayloadToEvidence(input: MapPayloadInput): MapPayloadOutput {
     documentAnalysisResultId,
     documentType,
     extractionVersion,
-    contentHash: null,
-    extractor: null,
+    contentHash: computeContentHash(payload),
+    extractor: buildExtractor(model, promptVersion),
     companyNamesFound: null,
     registeredNumbersFound: null,
     yearEndStated: null,

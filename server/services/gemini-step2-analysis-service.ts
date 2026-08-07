@@ -32,6 +32,8 @@ export interface Step2AnalysisResult {
     thoughtsTokenCount?: number;
     promptTokensDetails?: Array<{ modality: string; tokenCount: number }>;
   };
+  /** Resolved Gemini model string, e.g. 'gemini-2.5-flash'. Present only when an API call was made. */
+  model?: string;
 }
 
 function getPromptForDocumentType(documentType: DocumentType): string {
@@ -175,6 +177,7 @@ export async function analyzeDocumentWithGemini(
       analysisData: response.json,
       processingTime,
       usageMetadata,
+      model: response.model,
     };
 
   } catch (error) {

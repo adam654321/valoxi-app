@@ -16,6 +16,10 @@ interface WriteFromPayloadInput {
   documentAnalysisResultId: number | null;
   documentType: string;
   payload: Record<string, unknown>;
+  /** Resolved Gemini model string, threaded from GeminiResponse.model. */
+  model?: string;
+  /** Prompt generation identifier from shared/prompt-version.ts. */
+  promptVersion?: string;
 }
 
 type WriteFromPayloadResult =
@@ -53,6 +57,8 @@ export class EvidenceRepository {
       documentType: input.documentType,
       extractionVersion,
       payload: input.payload,
+      model: input.model,
+      promptVersion: input.promptVersion,
     });
 
     // Step 4: insert evidence row

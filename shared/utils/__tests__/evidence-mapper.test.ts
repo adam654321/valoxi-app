@@ -359,3 +359,99 @@ describe('mapPayloadToEvidence — merge anomalies (spec 2.7)', () => {
     expect(types).toEqual(['months_covered_conflict', 'period_end_conflict']);
   });
 });
+
+// ─── extractor and contentHash (slice 1c.2a) ────────────────────────────────
+
+describe('mapPayloadToEvidence — extractor', () => {
+  const SIMPLE_PAYLOAD = { years: { '2023': { revenue: 100000 } }, period_ends: { '2023': '2023-12-31' } } as Record<string, unknown>;
+
+  it('composed from both model and promptVersion joined by slash', () => {
+    const { evidence } = mapPayloadToEvidence({
+      ...BASE_INPUT_1150,
+      payload: SIMPLE_PAYLOAD,
+      model: 'gemini-2.5-flash',
+      promptVersion: 'pre-1c',
+    });
+    expect(evidence.extractor).toBe('gemini-2.5-flash/pre-1c');
+  });
+
+  it('only model present: extractor equals model', () => {
+    const { evidence } = mapPayloadToEvidence({
+      ...BASE_INPUT_1150,
+      payload: SIMPLE_PAYLOAD,
+      model: 'gemini-2.5-flash',
+    });
+    expect(evidence.extractor).toBe('gemini-2.5-flash');
+  });
+
+  it('only promptVersion present: extractor equals promptVersion', () => {
+    const { evidence } = mapPayloadToEvidence({
+      ...BASE_INPUT_1150,
+      payload: SIMPLE_PAYLOAD,
+      promptVersion: 'pre-1c',
+    });
+    expect(evidence.extractor).toBe('pre-1c');
+  });
+
+  it('neither model nor promptVersion: extractor is null', () => {
+    const { evidence } = mapPayloadToEvidence({
+      ...BASE_INPUT_1150,
+      payload: SIMPLE_PAYLOAD,
+    });
+    expect(evidence.extractor).toBeNull();
+  });
+
+  it('truncated at 100 characters when combined string is longer', () => {
+    const longModel = 'a'.repeat(80);
+    const longVersion = 'b'.repeat(80);
+    const { evidence } = mapPayloadToEvidence({
+      ...BASE_INPUT_1150,
+      payload: SIMPLE_PAYLOAD,
+      model: longModel,
+      promptVersion: longVersion,
+    });
+    // combined is 161 chars (80 + '/' + 80), must be sliced to 100
+    expect(evidence.extractor).not.toBeNull();
+    expect(evidence.extractor!.length).toBe(100);
+    expect(evidence.extractor!.startsWith(longModel.slice(0, 80))).toBe(true);
+  });
+});
+
+describe('mapPayloadToEvidence — contentHash', () => {
+  const PAYLOAD_A = { years: { '2023': { revenue: 100000 } }, period_ends: { '2023': '2023-12-31' } } as Record<string, unknown>;
+  const PAYLOAD_B = { years: { '2023': { revenue: 999999 } }, period_ends: { '2023': '2023-12-31' } } as Record<string, unknown>;
+
+  it('stable across two calls with the same payload', () => {
+    const { evidence: r1 } = mapPayloadToEvidence({ ...BASE_INPUT_1150, payload: PAYLOAD_A });
+    const { evidence: r2 } = mapPayloadToEvidence({ ...BASE_INPUT_1150, payload: PAYLOAD_A });
+    expect(r1.contentHash).not.toBeNull();
+    expect(r1.contentHash).toBe(r2.contentHash);
+  });
+
+  it('identical for two payloads that differ only in key order', () => {
+    const payloadKeyOrder1 = { period_ends: { '2023': '2023-12-31' }, years: { '2023': { revenue: 100000 } } } as Record<string, unknown>;
+    const payloadKeyOrder2 = { years: { '2023': { revenue: 100000 } }, period_ends: { '2023': '2023-12-31' } } as Record<string, unknown>;
+    const { evidence: r1 } = mapPayloadToEvidence({ ...BASE_INPUT_1150, payload: payloadKeyOrder1 });
+    const { evidence: r2 } = mapPayloadToEvidence({ ...BASE_INPUT_1150, payload: payloadKeyOrder2 });
+    expect(r1.contentHash).not.toBeNull();
+    expect(r1.contentHash).toBe(r2.contentHash);
+  });
+
+  it('different for payloads differing in a value', () => {
+    const { evidence: r1 } = mapPayloadToEvidence({ ...BASE_INPUT_1150, payload: PAYLOAD_A });
+    const { evidence: r2 } = mapPayloadToEvidence({ ...BASE_INPUT_1150, payload: PAYLOAD_B });
+    expect(r1.contentHash).not.toBeNull();
+    expect(r2.contentHash).not.toBeNull();
+    expect(r1.contentHash).not.toBe(r2.contentHash);
+  });
+
+  it('null on an unserialisable payload, no throw', () => {
+    // Construct a payload with a circular reference, which JSON.stringify cannot serialise.
+    const circular: Record<string, unknown> = { a: 1 };
+    circular['self'] = circular;
+    expect(() => {
+      const { evidence } = mapPayloadToEvidence({ ...BASE_INPUT_1150, payload: circular });
+      expect(evidence.contentHash).toBeNull();
+    }).not.toThrow();
+  });
+});

@@ -26,6 +26,8 @@ export interface GeminiResponse {
     candidateTokens: number;
     totalTokens: number;
   } | null;
+  /** The resolved model string used for this call, e.g. 'gemini-2.5-flash'. */
+  model: string;
 }
 
 export type ThinkingLevel = "MINIMAL" | "LOW" | "MEDIUM" | "HIGH";
@@ -259,7 +261,7 @@ export class GeminiClient {
       }
     }
 
-    return { text, json, usage };
+    return { text, json, usage, model };
   }
 
   private async withRetry<T>(fn: () => Promise<T>): Promise<T> {

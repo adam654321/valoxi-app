@@ -48,6 +48,7 @@ function getMimeTypeForFile(fileType: string): string {
 }
 import { classifyDocumentWithGemini } from "./gemini-document-classification-service";
 import { runStep2AnalysisForTypes } from "./gemini-step2-analysis-service";
+import { PROMPT_VERSION } from "@shared/prompt-version";
 import { eventBus, type DocumentUpdateEvent } from "./event-bus.service";
 import { financialDataService } from "./financial-data.service";
 
@@ -323,6 +324,8 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
                 documentAnalysisResultId: darRow?.id ?? null,
                 documentType: result.documentType,
                 payload: result.analysisData as Record<string, unknown>,
+                model: result.model,
+                promptVersion: PROMPT_VERSION,
               });
             } catch (evidenceErr) {
               console.error('[FILE_ANALYSIS] evidence shadow write failed (non-fatal):', evidenceErr);
