@@ -12,8 +12,8 @@ export interface EvidenceFigure {
   statementType: string;
   fieldKey: string;
   value: number;
-  labelTextAsPrinted: null;
-  pageNumber: null;
+  labelTextAsPrinted: string | null;
+  pageNumber: number | null;
   payloadPath: string;
   isModelDerived: boolean;
 }
@@ -28,6 +28,7 @@ export interface EvidenceAnomaly {
 
 export interface EvidencePeriod {
   fiscalYearStated: number;
+  periodStart: string | null;
   periodEnd: string | null;
   monthsCoveredStated: number | null;
   anomalies: EvidenceAnomaly[];
@@ -42,14 +43,14 @@ export interface EvidenceRow {
   extractionVersion: number;
   contentHash: string | null;
   extractor: string | null;
-  companyNamesFound: null;
-  registeredNumbersFound: null;
-  yearEndStated: null;
-  directorsNamed: null;
-  accountantName: null;
-  isDraft: null;
-  isAbridged: null;
-  isSigned: null;
+  companyNamesFound: string[] | null;
+  registeredNumbersFound: string[] | null;
+  yearEndStated: string | null;
+  directorsNamed: string[] | null;
+  accountantName: string | null;
+  isDraft: boolean | null;
+  isAbridged: boolean | null;
+  isSigned: boolean | null;
   reportDate: string | null;
   identityVerdict: null;
 }
@@ -542,6 +543,7 @@ export function mapPayloadToEvidence(input: MapPayloadInput): MapPayloadOutput {
   const periodOrder: string[] = [];
   const periodEndSource = new Map<string, string>();
   const monthsSource = new Map<string, string>();
+  const periodStartSource = new Map<string, string>();
 
   for (const { pathPrefix, container } of containers) {
     const yearsObj = container.years as Record<string, unknown>;
@@ -555,12 +557,18 @@ export function mapPayloadToEvidence(input: MapPayloadInput): MapPayloadOutput {
         ? container.months_covered
         : {}
     ) as Record<string, number | null>;
+    const periodStarts = (
+      typeof container.period_starts === 'object' && container.period_starts !== null
+        ? container.period_starts
+        : {}
+    ) as Record<string, string | null>;
 
     for (const yearKey of Object.keys(yearsObj)) {
       let period = periodMap.get(yearKey);
       if (!period) {
         period = {
           fiscalYearStated: parseInt(yearKey, 10),
+          periodStart: null,
           periodEnd: null,
           monthsCoveredStated: null,
           anomalies: [],
@@ -607,6 +615,25 @@ export function mapPayloadToEvidence(input: MapPayloadInput): MapPayloadOutput {
               used: period.monthsCoveredStated,
               usedSource: monthsSource.get(yearKey) ?? null,
               discarded: rawMonths,
+              discardedSource: sourceLabel,
+            },
+          });
+        }
+      }
+      const rawPeriodStart = periodStarts[yearKey];
+      if (typeof rawPeriodStart === 'string') {
+        if (period.periodStart === null) {
+          period.periodStart = rawPeriodStart;
+          periodStartSource.set(yearKey, sourceLabel);
+        } else if (period.periodStart !== rawPeriodStart) {
+          period.anomalies.push({
+            type: 'period_start_conflict',
+            severity: 'trust_blocking',
+            detail: {
+              fiscalYear: yearKey,
+              used: period.periodStart,
+              usedSource: periodStartSource.get(yearKey) ?? null,
+              discarded: rawPeriodStart,
               discardedSource: sourceLabel,
             },
           });

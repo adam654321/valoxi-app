@@ -96,6 +96,7 @@ export class EvidenceRepository {
         .values({
           documentEvidenceId: evidenceId,
           fiscalYearStated: period.fiscalYearStated,
+          periodStart: period.periodStart,
           periodEnd: period.periodEnd,
           monthsCoveredStated: period.monthsCoveredStated,
           anomalies: period.anomalies,
