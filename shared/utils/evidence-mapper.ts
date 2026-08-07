@@ -202,6 +202,70 @@ function readAnchorPage(anchors: Record<string, unknown>, path: string): number 
   return typeof page === 'number' && isFinite(page) ? page : null;
 }
 
+/**
+ * Slice 1c.2b: resolve the identity block (spec 2.1). Field-level first
+ * non-null merge in the order root, balance_sheet, profit_and_loss, the same
+ * precedence as resolveReportDate. Empty arrays and empty strings carry no
+ * information and resolve to null.
+ */
+interface ResolvedIdentity {
+  companyNamesFound: string[] | null;
+  registeredNumbersFound: string[] | null;
+  yearEndStated: string | null;
+  directorsNamed: string[] | null;
+  accountantName: string | null;
+  isDraft: boolean | null;
+  isAbridged: boolean | null;
+  isSigned: boolean | null;
+}
+
+function readStringArray(v: unknown): string[] | null {
+  if (!Array.isArray(v)) return null;
+  const out = v.filter((x): x is string => typeof x === 'string' && x.length > 0);
+  return out.length > 0 ? out : null;
+}
+
+function readString(v: unknown): string | null {
+  return typeof v === 'string' && v.length > 0 ? v : null;
+}
+
+function readBoolean(v: unknown): boolean | null {
+  return typeof v === 'boolean' ? v : null;
+}
+
+function resolveIdentity(payload: Record<string, unknown>): ResolvedIdentity {
+  const out: ResolvedIdentity = {
+    companyNamesFound: null,
+    registeredNumbersFound: null,
+    yearEndStated: null,
+    directorsNamed: null,
+    accountantName: null,
+    isDraft: null,
+    isAbridged: null,
+    isSigned: null,
+  };
+  const sources: unknown[] = [payload.identity];
+  for (const key of ['balance_sheet', 'profit_and_loss']) {
+    const sub = payload[key];
+    if (sub !== null && sub !== undefined && !Array.isArray(sub) && typeof sub === 'object') {
+      sources.push((sub as Record<string, unknown>).identity);
+    }
+  }
+  for (const src of sources) {
+    if (src === null || src === undefined || Array.isArray(src) || typeof src !== 'object') continue;
+    const s = src as Record<string, unknown>;
+    if (out.companyNamesFound === null) out.companyNamesFound = readStringArray(s.company_names_found);
+    if (out.registeredNumbersFound === null) out.registeredNumbersFound = readStringArray(s.registered_numbers_found);
+    if (out.yearEndStated === null) out.yearEndStated = readString(s.year_end_stated);
+    if (out.directorsNamed === null) out.directorsNamed = readStringArray(s.directors_named);
+    if (out.accountantName === null) out.accountantName = readString(s.accountant_name);
+    if (out.isDraft === null) out.isDraft = readBoolean(s.is_draft);
+    if (out.isAbridged === null) out.isAbridged = readBoolean(s.is_abridged);
+    if (out.isSigned === null) out.isSigned = readBoolean(s.is_signed);
+  }
+  return out;
+}
+
 // --- Slice 2b.2: cast checks (spec 2.3) ------------------------------------
 // Calibrated 2/3 August 2026 over 514 deduplicated dev figure sets.
 // Severity split is evidence-based, not argued. Full record in
@@ -537,6 +601,7 @@ export function mapPayloadToEvidence(input: MapPayloadInput): MapPayloadOutput {
   } = input;
 
   const reportDate = resolveReportDate(payload);
+  const identity = resolveIdentity(payload);
 
   const evidence: EvidenceRow = {
     targetCompanyId,
@@ -546,14 +611,14 @@ export function mapPayloadToEvidence(input: MapPayloadInput): MapPayloadOutput {
     extractionVersion,
     contentHash: computeContentHash(payload),
     extractor: buildExtractor(model, promptVersion),
-    companyNamesFound: null,
-    registeredNumbersFound: null,
-    yearEndStated: null,
-    directorsNamed: null,
-    accountantName: null,
-    isDraft: null,
-    isAbridged: null,
-    isSigned: null,
+    companyNamesFound: identity.companyNamesFound,
+    registeredNumbersFound: identity.registeredNumbersFound,
+    yearEndStated: identity.yearEndStated,
+    directorsNamed: identity.directorsNamed,
+    accountantName: identity.accountantName,
+    isDraft: identity.isDraft,
+    isAbridged: identity.isAbridged,
+    isSigned: identity.isSigned,
     reportDate,
     identityVerdict: null,
   };

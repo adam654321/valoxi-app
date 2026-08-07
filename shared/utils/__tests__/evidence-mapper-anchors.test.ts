@@ -181,3 +181,73 @@ describe('mapPayloadToEvidence — figure anchors (1c.2b)', () => {
     expect(fig?.labelTextAsPrinted).toBe('Revenue');
   });
 });
+
+describe('mapPayloadToEvidence — identity block (1c.2b-A3)', () => {
+  it('root identity block: all eight fields mapped, identityVerdict remains null', () => {
+    const payload = {
+      identity: {
+        company_names_found: ['Acme Ltd'],
+        registered_numbers_found: ['12345678'],
+        year_end_stated: '2023-03-31',
+        directors_named: ['Jane Smith', 'Bob Jones'],
+        accountant_name: 'Big Four LLP',
+        is_draft: false,
+        is_abridged: false,
+        is_signed: true,
+      },
+    };
+    const { evidence } = mapPayloadToEvidence({ ...BASE, documentType: 'company_accounts', payload });
+    expect(evidence.companyNamesFound).toEqual(['Acme Ltd']);
+    expect(evidence.registeredNumbersFound).toEqual(['12345678']);
+    expect(evidence.yearEndStated).toBe('2023-03-31');
+    expect(evidence.directorsNamed).toEqual(['Jane Smith', 'Bob Jones']);
+    expect(evidence.accountantName).toBe('Big Four LLP');
+    expect(evidence.isDraft).toBe(false);
+    expect(evidence.isAbridged).toBe(false);
+    expect(evidence.isSigned).toBe(true);
+    expect(evidence.identityVerdict).toBeNull();
+  });
+
+  it('identity absent: all eight fields null', () => {
+    const payload = {};
+    const { evidence } = mapPayloadToEvidence({ ...BASE, documentType: 'company_accounts', payload });
+    expect(evidence.companyNamesFound).toBeNull();
+    expect(evidence.registeredNumbersFound).toBeNull();
+    expect(evidence.yearEndStated).toBeNull();
+    expect(evidence.directorsNamed).toBeNull();
+    expect(evidence.accountantName).toBeNull();
+    expect(evidence.isDraft).toBeNull();
+    expect(evidence.isAbridged).toBeNull();
+    expect(evidence.isSigned).toBeNull();
+  });
+
+  it('wrapped shape: identity on balance_sheet resolved via precedence; junk filtered', () => {
+    const payload = {
+      balance_sheet: {
+        identity: {
+          company_names_found: ['Beta Corp', '', 42],
+          registered_numbers_found: [],
+          year_end_stated: '',
+          directors_named: ['Alice'],
+          accountant_name: 'Small Firm',
+          is_draft: true,
+          is_abridged: false,
+          is_signed: 'true',
+        },
+      },
+    };
+    const { evidence } = mapPayloadToEvidence({ ...BASE, documentType: 'company_accounts', payload });
+    // Non-strings and empty strings dropped; 42 and '' removed → ['Beta Corp']
+    expect(evidence.companyNamesFound).toEqual(['Beta Corp']);
+    // Empty array → null
+    expect(evidence.registeredNumbersFound).toBeNull();
+    // Empty string → null
+    expect(evidence.yearEndStated).toBeNull();
+    expect(evidence.directorsNamed).toEqual(['Alice']);
+    expect(evidence.accountantName).toBe('Small Firm');
+    expect(evidence.isDraft).toBe(true);
+    expect(evidence.isAbridged).toBe(false);
+    // String 'true' is not a boolean → null
+    expect(evidence.isSigned).toBeNull();
+  });
+});
