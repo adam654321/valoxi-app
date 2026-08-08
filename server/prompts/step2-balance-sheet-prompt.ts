@@ -10,8 +10,22 @@ STAGE 1 — DATA EXTRACTION & CALCULATION
 1. Identify the financial years covered
 • Extract all consecutive financial years present (e.g. 2022, 2023, 2024).
 • Identify the period end dates if shown (e.g., "31 March 2024"). For a balance sheet this is the as-at date (the snapshot date).
+- period_start: for each year, the first day of the reported period as ISO format YYYY-MM-DD, ONLY when the document states it (e.g. 'for the period 1 April 2025 to 8 September 2025'). NEVER derive a start date from a period end or from a title such as 'year ended 31 March 2024'. If no start date is printed, omit that year from period_starts.
 • months_covered: for each year, the number of months the reported period covers, as an integer. A full statutory year is 12. Management accounts or year-to-date figures covering a partial year must state the actual months (e.g. April-only accounts = 1, January to May = 5). If the document states the period (e.g. 'for the period 1 April 2026 to 30 April 2026'), derive months from it. If genuinely unstated, omit that year from months_covered.
 • report_date: the date this document was generated, prepared, or printed — e.g. "Prepared 8 September 2025" or a footer date. Extract as ISO format YYYY-MM-DD. Set to null if no such date is visible in the document.
+- report_date_basis: the exact text the report_date was taken from, quoted verbatim (e.g. "Prepared 8 September 2025"). Set to null if report_date is null.
+
+1b. Extract the document identity block (document-level, not per year)
+- company_names_found: every company name variant printed in the document, as an array of strings, exactly as printed.
+- registered_numbers_found: every company registration number printed in the document, as an array of strings, preserving leading zeros.
+- year_end_stated: the company's accounting year end date if stated, ISO format YYYY-MM-DD.
+- directors_named: every director named in the document, as an array of strings.
+- accountant_name: the accountancy firm or accountant named in the document, if any.
+- is_draft: true if the document is marked draft, false if clearly final, null if unclear.
+- is_abridged: true if marked abridged or filleted, false if clearly full accounts, null if unclear.
+- is_signed: true if a signature or board approval statement is present, false if clearly unsigned, null if unclear.
+Use null for any field not present. Never guess or infer identity facts.
+Do NOT renumber the existing sections 2 to 5.
 
 2. Extract the following Balance Sheet fields per year
 Only extract or calculate numeric values:
@@ -104,6 +118,14 @@ Using only the extracted and calculated balance sheet data above:
   ◦ Positive signals (e.g. stronger liquidity, growing net assets)
   ◦ Red flags (e.g. weakening working capital, rising leverage)
 
+FIGURE ANCHORS
+For every figure you extract in the years object (not calculated ratios), add an entry to a top-level anchors object.
+The key is the figure's exact path in the output JSON, e.g. years.2024.balance_sheet.current_assets.cash_at_bank.
+The value is: { "page": <1-based page number where the figure is printed>, "label": "<the row label exactly as printed, e.g. Cash at bank and in hand>" }
+If the page cannot be determined, set page to null. If the label cannot be determined, set label to null.
+Do NOT create anchors for financial_ratios entries or for any value you calculated rather than read.
+Never invent a page number or a label.
+
 STRICT OUTPUT REQUIREMENTS
 • Return ONLY valid JSON
 • No markdown, emojis, headings, or commentary outside the JSON
@@ -124,7 +146,19 @@ FINAL OUTPUT FORMAT
     "2023": 12,
     "2024": 12
   },
+  "period_starts": {},
   "report_date": null,
+  "report_date_basis": null,
+  "identity": {
+    "company_names_found": [],
+    "registered_numbers_found": [],
+    "year_end_stated": null,
+    "directors_named": [],
+    "accountant_name": null,
+    "is_draft": null,
+    "is_abridged": null,
+    "is_signed": null
+  },
   "years": {
     "2022": {
       "year": 2022,
@@ -182,6 +216,9 @@ FINAL OUTPUT FORMAT
         "gearing_ratio_percent": null
       }
     }
+  },
+  "anchors": {
+    "years.2022.balance_sheet.current_assets.cash_at_bank": { "page": 3, "label": "Cash at bank and in hand" }
   },
   "summary_insights": [
     "The balance sheet shows a strengthening asset base year-on-year.",
