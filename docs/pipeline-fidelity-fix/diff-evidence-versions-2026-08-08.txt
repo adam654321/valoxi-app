@@ -1,0 +1,751 @@
+========================================================================
+DIFF REPORT: evidence version comparator
+========================================================================
+companies:    1877, 1880, 1881
+base:         version 1
+compare:      max (highest extraction_version per document_id + document_type)
+rows fetched: 4187
+
+────────────────────────────────────────────────────────────────────────
+PER-COMPANY SUMMARY
+────────────────────────────────────────────────────────────────────────
+company 1877:
+  baseCount=502  compareCount=502  equal=459  differ=41  baseOnly=2  compareOnly=2
+company 1880:
+  baseCount=1031  compareCount=977  equal=814  differ=154  baseOnly=63  compareOnly=9
+company 1881:
+  baseCount=643  compareCount=596  equal=525  differ=48  baseOnly=70  compareOnly=23
+
+────────────────────────────────────────────────────────────────────────
+TOTALS
+────────────────────────────────────────────────────────────────────────
+baseCount:    2176
+compareCount: 2075
+equal:        1798
+differ:       243
+baseOnly:     135
+compareOnly:  34
+
+Identity 1: baseCount = equal + differ + baseOnly
+  2176 = 1798 + 243 + 135 = 2176  → MATCH
+Identity 2: compareCount = equal + differ + compareOnly
+  2075 = 1798 + 243 + 34 = 2075  → MATCH
+
+────────────────────────────────────────────────────────────────────────
+DUPLICATE KEY REPORT
+────────────────────────────────────────────────────────────────────────
+duplicateBaseKeys:    NONE
+duplicateCompareKeys: NONE
+
+────────────────────────────────────────────────────────────────────────
+ANCHOR COVERAGE (over COMPARE set)
+────────────────────────────────────────────────────────────────────────
+compareTotal:           2075
+with page_number:       722  (34.8%)
+with label_text:        722  (34.8%)
+with both:              722  (34.8%)
+
+────────────────────────────────────────────────────────────────────────
+PRE-1c FIELD COVERAGE
+────────────────────────────────────────────────────────────────────────
+document_evidence:
+  company_names_found (jsonb array):        39 / 87  (44.8%)  [array: non-null + length >= 1]
+  registered_numbers_found (jsonb array):   27 / 87  (31.0%)  [array: non-null + length >= 1]
+  year_end_stated:                          34 / 87  (39.1%)
+  directors_named (jsonb array):            28 / 87  (32.2%)  [array: non-null + length >= 1]
+  accountant_name:                          23 / 87  (26.4%)
+  is_draft:                                 37 / 87  (42.5%)
+  is_abridged:                              34 / 87  (39.1%)
+  is_signed:                                34 / 87  (39.1%)
+  report_date:                              74 / 87  (85.1%)
+  identity_verdict:                         0 / 87  (0.0%)
+  content_hash:                             43 / 87  (49.4%)
+  extractor:                                43 / 87  (49.4%)
+
+document_evidence_period:
+  period_start:                             9 / 165  (5.5%)
+  period_end:                               165 / 165  (100.0%)
+  period_label_as_printed:                  0 / 165  (0.0%)
+  fiscal_year_stated:                       165 / 165  (100.0%)
+  months_covered_stated:                    160 / 165  (97.0%)
+  months_covered_computed:                  0 / 165  (0.0%)
+  is_full_year_computed:                    0 / 165  (0.0%)
+  provenance:                               0 / 165  (0.0%)
+  anomalies (jsonb array):                  44 / 165  (26.7%)  [array: non-null + length >= 1]
+
+document_evidence_figure:
+  page_number:                              774 / 4187  (18.5%)
+  label_text_as_printed:                    774 / 4187  (18.5%)
+  payload_path:                             4187 / 4187  (100.0%)
+  is_model_derived:                         4187 / 4187  (100.0%)
+
+────────────────────────────────────────────────────────────────────────
+DIFFER ROWS (243)
+────────────────────────────────────────────────────────────────────────
+  document_id=5830  fiscal_year=2024  payload_path=years.2024.financial_ratios.net_assets_growth_percent
+    baseValue=0.779  compareValue=0.7793313069908815  absoluteDifference=0.00033130699088146365
+  document_id=5830  fiscal_year=2024  payload_path=years.2024.financial_ratios.current_ratio
+    baseValue=1.52  compareValue=1.520298308133632  absoluteDifference=0.00029830813363207476
+  document_id=5830  fiscal_year=2024  payload_path=years.2024.financial_ratios.quick_ratio
+    baseValue=1.004  compareValue=1.003607838594722  absoluteDifference=0.0003921614052779798
+  document_id=5830  fiscal_year=2023  payload_path=years.2023.financial_ratios.gearing_ratio_percent
+    baseValue=30.078  compareValue=30.077811550151974  absoluteDifference=0.00018844984802512954
+  document_id=5830  fiscal_year=2024  payload_path=years.2024.financial_ratios.gearing_ratio_percent
+    baseValue=192.663  compareValue=192.66325656585153  absoluteDifference=0.0002565658515152336
+  document_id=5830  fiscal_year=2023  payload_path=years.2023.financial_ratios.current_ratio
+    baseValue=1.756  compareValue=1.756000053881044  absoluteDifference=5.388104407089145e-8
+  document_id=5830  fiscal_year=2023  payload_path=years.2023.financial_ratios.quick_ratio
+    baseValue=1.339  compareValue=1.3393515394071298  absoluteDifference=0.00035153940712984166
+  document_id=5830  fiscal_year=2023  payload_path=years.2023.overheads_breakdown.depreciation
+    baseValue=10824  compareValue=51910  absoluteDifference=41086
+  document_id=5830  fiscal_year=2023  payload_path=years.2023.overheads_breakdown.other_overheads
+    baseValue=15403  compareValue=15811  absoluteDifference=408
+  document_id=5830  fiscal_year=2023  payload_path=years.2023.total_staff_costs
+    baseValue=361110  compareValue=358011  absoluteDifference=3099
+  document_id=5830  fiscal_year=2024  payload_path=years.2024.overheads_breakdown.other_overheads
+    baseValue=45155  compareValue=44212  absoluteDifference=943
+  document_id=5830  fiscal_year=2024  payload_path=years.2024.total_staff_costs
+    baseValue=531652  compareValue=516240  absoluteDifference=15412
+  document_id=5830  fiscal_year=2023  payload_path=years.2023.profit_and_loss.depreciation_amortisation
+    baseValue=10824  compareValue=51910  absoluteDifference=41086
+  document_id=5831  fiscal_year=2023  payload_path=years.2023.financial_ratios.gearing_ratio_percent
+    baseValue=26.66366740857376  compareValue=26.6636674085738  absoluteDifference=3.907985046680551e-14
+  document_id=5831  fiscal_year=2023  payload_path=years.2023.financial_ratios.net_assets_growth_percent
+    baseValue=116.83780869743799  compareValue=116.837808697438  absoluteDifference=1.4210854715202004e-14
+  document_id=5831  fiscal_year=2023  payload_path=years.2023.financial_ratios.quick_ratio
+    baseValue=1.339351451417293  compareValue=1.34384151530881  absoluteDifference=0.004490063891516849
+  document_id=5831  fiscal_year=2023  payload_path=years.2023.financial_ratios.current_ratio
+    baseValue=1.7560000089801673  compareValue=1.75600005388104  absoluteDifference=4.4900872797626334e-8
+  document_id=5831  fiscal_year=2022  payload_path=years.2022.financial_ratios.gearing_ratio_percent
+    baseValue=97.33275145042872  compareValue=97.3327514504287  absoluteDifference=1.4210854715202004e-14
+  document_id=5831  fiscal_year=2022  payload_path=years.2022.financial_ratios.quick_ratio
+    baseValue=1.1917581115512481  compareValue=1.19175811150106  absoluteDifference=5.018807591739005e-11
+  document_id=5831  fiscal_year=2022  payload_path=years.2022.financial_ratios.current_ratio
+    baseValue=1.481080431331433  compareValue=1.48108043134573  absoluteDifference=1.4297008021912916e-11
+  document_id=5831  fiscal_year=2022  payload_path=years.2022.overheads_breakdown.depreciation
+    baseValue=10960  compareValue=10962  absoluteDifference=2
+  document_id=5831  fiscal_year=2022  payload_path=years.2022.total_staff_costs
+    baseValue=315234  compareValue=313144  absoluteDifference=2090
+  document_id=5831  fiscal_year=2023  payload_path=years.2023.total_staff_costs
+    baseValue=361110  compareValue=358011  absoluteDifference=3099
+  document_id=5832  fiscal_year=2025  payload_path=years.2025.cost_of_sales_breakdown.subcontractor_costs
+    baseValue=155733.88  compareValue=155733.86  absoluteDifference=0.02000000001862645
+  document_id=5832  fiscal_year=2025  payload_path=years.2025.cost_of_sales_breakdown.other_direct_costs
+    baseValue=28752.69  compareValue=28752.71  absoluteDifference=0.020000000000436557
+  document_id=5832  fiscal_year=2025  payload_path=years.2025.overheads_breakdown.professional_fees
+    baseValue=36281.27  compareValue=35753.27  absoluteDifference=528
+  document_id=5832  fiscal_year=2025  payload_path=years.2025.overheads_breakdown.motor_expenses
+    baseValue=126444.1  compareValue=41476.91  absoluteDifference=84967.19
+  document_id=5832  fiscal_year=2025  payload_path=years.2025.overheads_breakdown.repairs_maintenance
+    baseValue=13165.77  compareValue=9978.7  absoluteDifference=3187.0699999999997
+  document_id=5832  fiscal_year=2025  payload_path=years.2025.overheads_breakdown.other_overheads
+    baseValue=18700.74  compareValue=42782  absoluteDifference=24081.26
+  document_id=5832  fiscal_year=2025  payload_path=years.2025.total_staff_costs
+    baseValue=213364.43  compareValue=231906.45  absoluteDifference=18542.02000000002
+  document_id=5833  fiscal_year=2026  payload_path=years.2026.overheads_breakdown.employers_national_insurance
+    baseValue=13541.71  compareValue=11803.19  absoluteDifference=1738.5199999999986
+  document_id=5833  fiscal_year=2026  payload_path=years.2026.overheads_breakdown.travel_subsistence
+    baseValue=1611.29  compareValue=1827.45  absoluteDifference=216.16000000000008
+  document_id=5833  fiscal_year=2026  payload_path=years.2026.overheads_breakdown.motor_expenses
+    baseValue=19351.05  compareValue=19361.35  absoluteDifference=10.299999999999272
+  document_id=5833  fiscal_year=2026  payload_path=years.2026.overheads_breakdown.other_overheads
+    baseValue=21403.36  compareValue=25275.92  absoluteDifference=3872.5599999999977
+  document_id=5833  fiscal_year=2026  payload_path=years.2026.total_staff_costs
+    baseValue=124811.62  compareValue=123073.1  absoluteDifference=1738.5199999999895
+  document_id=5835  fiscal_year=2022  payload_path=years.2022.financial_ratios.current_ratio
+    baseValue=1.481080431364715  compareValue=1.481080431331411  absoluteDifference=3.3304026203495596e-11
+  document_id=5836  fiscal_year=2025  payload_path=years.2025.financial_ratios.gearing_ratio_percent
+    baseValue=32.65255055  compareValue=32.65255045545114  absoluteDifference=9.45488594084054e-8
+  document_id=5836  fiscal_year=2025  payload_path=years.2025.financial_ratios.quick_ratio
+    baseValue=4.320970000000001  compareValue=4.320970003128903  absoluteDifference=3.128902470450612e-9
+  document_id=5836  fiscal_year=2025  payload_path=years.2025.financial_ratios.current_ratio
+    baseValue=4.379785730000001  compareValue=4.379785740181118  absoluteDifference=1.018111728257054e-8
+  document_id=5836  fiscal_year=2025  payload_path=years.2025.balance_sheet.current_liabilities.amounts_owed_to_directors
+    baseValue=-16056.67  compareValue=-91197.52  absoluteDifference=75140.85
+  document_id=5836  fiscal_year=2025  payload_path=years.2025.balance_sheet.current_liabilities.other_creditors
+    baseValue=58803.27  compareValue=133944.12  absoluteDifference=75140.85
+  document_id=5857  fiscal_year=2025  payload_path=years.2025.financial_ratios.net_assets_growth_percent
+    baseValue=0.385296107074005  compareValue=0.3852961070710114  absoluteDifference=2.993605363599272e-12
+  document_id=5857  fiscal_year=2025  payload_path=years.2025.financial_ratios.quick_ratio
+    baseValue=1.266698755264237  compareValue=1.2667003550683733  absoluteDifference=0.0000015998041362763615
+  document_id=5857  fiscal_year=2025  payload_path=years.2025.financial_ratios.current_ratio
+    baseValue=1.847700281598367  compareValue=1.847700314247414  absoluteDifference=3.2649047021493516e-8
+  document_id=5857  fiscal_year=2024  payload_path=years.2024.financial_ratios.gearing_ratio_percent
+    baseValue=8.854056863301663  compareValue=8.854056863301656  absoluteDifference=7.105427357601002e-15
+  document_id=5857  fiscal_year=2024  payload_path=years.2024.financial_ratios.quick_ratio
+    baseValue=1.320220217734272  compareValue=1.320490784395022  absoluteDifference=0.0002705666607500934
+  document_id=5857  fiscal_year=2024  payload_path=years.2024.cost_of_sales_breakdown.other_direct_costs
+    baseValue=99354  compareValue=11169  absoluteDifference=88185
+  document_id=5857  fiscal_year=2025  payload_path=years.2025.cost_of_sales_breakdown.other_direct_costs
+    baseValue=81485  compareValue=13144  absoluteDifference=68341
+  document_id=5857  fiscal_year=2025  payload_path=years.2025.overheads_breakdown.other_overheads
+    baseValue=24042  compareValue=20063  absoluteDifference=3979
+  document_id=5857  fiscal_year=2025  payload_path=years.2025.total_staff_costs
+    baseValue=712676  compareValue=716147  absoluteDifference=3471
+  document_id=5857  fiscal_year=2024  payload_path=years.2024.total_staff_costs
+    baseValue=556781  compareValue=567682  absoluteDifference=10901
+  document_id=5860  fiscal_year=2025  payload_path=years.2025.profit_and_loss.revenue
+    baseValue=4508976  compareValue=4519795  absoluteDifference=10819
+  document_id=5860  fiscal_year=2025  payload_path=years.2025.cost_of_sales_breakdown.other_direct_costs
+    baseValue=68616  compareValue=877547  absoluteDifference=808931
+  document_id=5860  fiscal_year=2025  payload_path=years.2025.financial_ratios.gross_margin_percent
+    baseValue=32.48  compareValue=32.4  absoluteDifference=0.0799999999999983
+  document_id=5860  fiscal_year=2025  payload_path=years.2025.overheads_breakdown.other_overheads
+    baseValue=30224  compareValue=35693  absoluteDifference=5469
+  document_id=5860  fiscal_year=2025  payload_path=years.2025.cost_of_sales_breakdown.direct_materials
+    baseValue=1302917  compareValue=493986  absoluteDifference=808931
+  document_id=5861  fiscal_year=2024  payload_path=years.2024.financial_ratios.current_ratio
+    baseValue=1.6787  compareValue=1.6786988227082547  absoluteDifference=0.0000011772917454244691
+  document_id=5861  fiscal_year=2024  payload_path=years.2024.financial_ratios.quick_ratio
+    baseValue=1.320506  compareValue=1.3203692254604535  absoluteDifference=0.00013677453954641372
+  document_id=5861  fiscal_year=2024  payload_path=years.2024.financial_ratios.net_assets_growth_percent
+    baseValue=46.528984  compareValue=46.52896177123419  absoluteDifference=0.000022228765814702456
+  document_id=5861  fiscal_year=2024  payload_path=years.2024.financial_ratios.gearing_ratio_percent
+    baseValue=8.854057  compareValue=8.854056863301066  absoluteDifference=1.366989330620072e-7
+  document_id=5861  fiscal_year=2023  payload_path=years.2023.financial_ratios.current_ratio
+    baseValue=1.434118  compareValue=1.434118033566185  absoluteDifference=3.3566184942657173e-8
+  document_id=5861  fiscal_year=2023  payload_path=years.2023.financial_ratios.quick_ratio
+    baseValue=0.706389  compareValue=0.7063888372797293  absoluteDifference=1.6272027070218797e-7
+  document_id=5861  fiscal_year=2023  payload_path=years.2023.financial_ratios.gearing_ratio_percent
+    baseValue=18.864828  compareValue=18.86482870111845  absoluteDifference=7.011184521843461e-7
+  document_id=5861  fiscal_year=2024  payload_path=years.2024.balance_sheet.current_assets.other_debtors
+    baseValue=1564  compareValue=850  absoluteDifference=714
+  document_id=5861  fiscal_year=2023  payload_path=years.2023.cost_of_sales_breakdown.other_direct_costs
+    baseValue=58319  compareValue=12160  absoluteDifference=46159
+  document_id=5861  fiscal_year=2023  payload_path=years.2023.overheads_breakdown.professional_fees
+    baseValue=5809  compareValue=8148  absoluteDifference=2339
+  document_id=5861  fiscal_year=2023  payload_path=years.2023.overheads_breakdown.other_overheads
+    baseValue=22243  compareValue=24141  absoluteDifference=1898
+  document_id=5861  fiscal_year=2023  payload_path=years.2023.total_staff_costs
+    baseValue=547148  compareValue=544000  absoluteDifference=3148
+  document_id=5861  fiscal_year=2023  payload_path=years.2023.financial_ratios.gross_margin_percent
+    baseValue=27.01  compareValue=27.0077  absoluteDifference=0.002300000000001745
+  document_id=5861  fiscal_year=2023  payload_path=years.2023.financial_ratios.net_margin_percent
+    baseValue=1.99  compareValue=1.9887  absoluteDifference=0.0013000000000000789
+  document_id=5861  fiscal_year=2023  payload_path=years.2023.financial_ratios.interest_coverage_ratio
+    baseValue=8.12  compareValue=8.1238  absoluteDifference=0.0038000000000000256
+  document_id=5861  fiscal_year=2024  payload_path=years.2024.cost_of_sales_breakdown.other_direct_costs
+    baseValue=88185  compareValue=11169  absoluteDifference=77016
+  document_id=5861  fiscal_year=2024  payload_path=years.2024.overheads_breakdown.staff_training_recruitment
+    baseValue=13373  compareValue=10901  absoluteDifference=2472
+  document_id=5861  fiscal_year=2024  payload_path=years.2024.overheads_breakdown.other_overheads
+    baseValue=44937  compareValue=50632  absoluteDifference=5695
+  document_id=5861  fiscal_year=2024  payload_path=years.2024.total_staff_costs
+    baseValue=570154  compareValue=556781  absoluteDifference=13373
+  document_id=5861  fiscal_year=2024  payload_path=years.2024.financial_ratios.gross_margin_percent
+    baseValue=32.08  compareValue=32.0799  absoluteDifference=0.00009999999999621423
+  document_id=5861  fiscal_year=2024  payload_path=years.2024.financial_ratios.net_margin_percent
+    baseValue=5.51  compareValue=5.5075  absoluteDifference=0.0024999999999995026
+  document_id=5861  fiscal_year=2024  payload_path=years.2024.financial_ratios.interest_coverage_ratio
+    baseValue=20.79  compareValue=20.7878  absoluteDifference=0.0021999999999984254
+  document_id=5862  fiscal_year=2023  payload_path=years.2023.financial_ratios.gearing_ratio_percent
+    baseValue=18.86482896242751  compareValue=18.8648289624275  absoluteDifference=1.0658141036401503e-14
+  document_id=5862  fiscal_year=2023  payload_path=years.2023.financial_ratios.net_assets_growth_percent
+    baseValue=6.641363129064351  compareValue=6.641363129062022  absoluteDifference=2.3296919948734285e-12
+  document_id=5862  fiscal_year=2023  payload_path=years.2023.financial_ratios.quick_ratio
+    baseValue=0.8233801396826835  compareValue=0.823385803317039  absoluteDifference=0.000005663634355501657
+  document_id=5862  fiscal_year=2023  payload_path=years.2023.financial_ratios.current_ratio
+    baseValue=1.4341180335661001  compareValue=1.434118033566185  absoluteDifference=8.482103908136196e-14
+  document_id=5862  fiscal_year=2023  payload_path=years.2023.financial_ratios.interest_coverage_ratio
+    baseValue=8.12  compareValue=8.123818770226537  absoluteDifference=0.003818770226537538
+  document_id=5862  fiscal_year=2023  payload_path=years.2023.financial_ratios.net_margin_percent
+    baseValue=1.99  compareValue=1.988729246119175  absoluteDifference=0.0012707538808249819
+  document_id=5862  fiscal_year=2023  payload_path=years.2023.financial_ratios.gross_margin_percent
+    baseValue=27.01  compareValue=27.00772243717794  absoluteDifference=0.0022775628220621513
+  document_id=5862  fiscal_year=2023  payload_path=years.2023.total_staff_costs
+    baseValue=498233  compareValue=543998  absoluteDifference=45765
+  document_id=5862  fiscal_year=2023  payload_path=years.2023.overheads_breakdown.other_overheads
+    baseValue=14534  compareValue=45426  absoluteDifference=30892
+  document_id=5862  fiscal_year=2023  payload_path=years.2023.cost_of_sales_breakdown.other_direct_costs
+    baseValue=723073  compareValue=260068  absoluteDifference=463005
+  document_id=5862  fiscal_year=2023  payload_path=years.2023.cost_of_sales_breakdown.direct_materials
+    baseValue=620875  compareValue=1083880  absoluteDifference=463005
+  document_id=5862  fiscal_year=2022  payload_path=years.2022.financial_ratios.interest_coverage_ratio
+    baseValue=4.89  compareValue=4.889036504108245  absoluteDifference=0.0009634958917548175
+  document_id=5862  fiscal_year=2022  payload_path=years.2022.financial_ratios.net_margin_percent
+    baseValue=3.65  compareValue=3.647999848113347  absoluteDifference=0.0020001518866528123
+  document_id=5862  fiscal_year=2022  payload_path=years.2022.financial_ratios.gross_margin_percent
+    baseValue=22.89  compareValue=22.89176100113428  absoluteDifference=0.0017610011342803489
+  document_id=5862  fiscal_year=2022  payload_path=years.2022.total_staff_costs
+    baseValue=506800  compareValue=538301  absoluteDifference=31501
+  document_id=5862  fiscal_year=2022  payload_path=years.2022.overheads_breakdown.other_overheads
+    baseValue=18121  compareValue=35847  absoluteDifference=17726
+  document_id=5862  fiscal_year=2022  payload_path=years.2022.cost_of_sales_breakdown.other_direct_costs
+    baseValue=1582248  compareValue=124599  absoluteDifference=1457649
+  document_id=5862  fiscal_year=2022  payload_path=years.2022.cost_of_sales_breakdown.direct_materials
+    baseValue=819476  compareValue=1477070  absoluteDifference=657594
+  document_id=5863  fiscal_year=2021  payload_path=years.2021.financial_ratios.quick_ratio
+    baseValue=0.5342616810971444  compareValue=0.5342682492512304  absoluteDifference=0.000006568154085950795
+  document_id=5863  fiscal_year=2021  payload_path=years.2021.financial_ratios.gearing_ratio_percent
+    baseValue=50.99559221512375  compareValue=50.99559221512378  absoluteDifference=2.842170943040401e-14
+  document_id=5863  fiscal_year=2022  payload_path=years.2022.balance_sheet.current_assets.cash_at_bank
+    baseValue=21316  compareValue=213116  absoluteDifference=191800
+  document_id=5863  fiscal_year=2022  payload_path=years.2022.financial_ratios.quick_ratio
+    baseValue=0.7261244212832813  compareValue=0.8801811411442286  absoluteDifference=0.15405671986094738
+  document_id=5863  fiscal_year=2022  payload_path=years.2022.financial_ratios.net_assets_growth_percent
+    baseValue=37.88229005499916  compareValue=37.88229008391375  absoluteDifference=2.8914591609918716e-8
+  document_id=5863  fiscal_year=2021  payload_path=years.2021.cost_of_sales_breakdown.other_direct_costs
+    baseValue=549323  compareValue=9545  absoluteDifference=539778
+  document_id=5863  fiscal_year=2021  payload_path=years.2021.overheads_breakdown.professional_fees
+    baseValue=25689  compareValue=25091  absoluteDifference=598
+  document_id=5863  fiscal_year=2021  payload_path=years.2021.overheads_breakdown.other_overheads
+    baseValue=43894  compareValue=15828  absoluteDifference=28066
+  document_id=5863  fiscal_year=2021  payload_path=years.2021.total_staff_costs
+    baseValue=469908  compareValue=477300  absoluteDifference=7392
+  document_id=5863  fiscal_year=2021  payload_path=years.2021.financial_ratios.gross_margin_percent
+    baseValue=23.57  compareValue=23.57107942912117  absoluteDifference=0.0010794291211695395
+  document_id=5863  fiscal_year=2021  payload_path=years.2021.financial_ratios.net_margin_percent
+    baseValue=3.35  compareValue=3.349410434479044  absoluteDifference=0.0005895655209560147
+  document_id=5863  fiscal_year=2021  payload_path=years.2021.financial_ratios.interest_coverage_ratio
+    baseValue=4.58  compareValue=4.57653743315508  absoluteDifference=0.0034625668449201896
+  document_id=5863  fiscal_year=2022  payload_path=years.2022.cost_of_sales_breakdown.other_direct_costs
+    baseValue=980718  compareValue=18315  absoluteDifference=962403
+  document_id=5863  fiscal_year=2022  payload_path=years.2022.overheads_breakdown.other_overheads
+    baseValue=33723  compareValue=12612  absoluteDifference=21111
+  document_id=5863  fiscal_year=2022  payload_path=years.2022.total_staff_costs
+    baseValue=538301  compareValue=559834  absoluteDifference=21533
+  document_id=5863  fiscal_year=2022  payload_path=years.2022.financial_ratios.gross_margin_percent
+    baseValue=22.89  compareValue=22.89176100146117  absoluteDifference=0.0017610014611690872
+  document_id=5863  fiscal_year=2022  payload_path=years.2022.financial_ratios.net_margin_percent
+    baseValue=3.65  compareValue=3.647999848113441  absoluteDifference=0.0020001518865591095
+  document_id=5863  fiscal_year=2022  payload_path=years.2022.financial_ratios.interest_coverage_ratio
+    baseValue=4.89  compareValue=4.889036504108245  absoluteDifference=0.0009634958917548175
+  document_id=5865  fiscal_year=2026  payload_path=years.2026.profit_and_loss.net_profit
+    baseValue=140900  compareValue=-23963  absoluteDifference=164863
+  document_id=5865  fiscal_year=2026  payload_path=years.2026.revenue_breakdown.by_product.Sales
+    baseValue=1538620  compareValue=1902369  absoluteDifference=363749
+  document_id=5865  fiscal_year=2026  payload_path=years.2026.revenue_breakdown.by_product.Discounts Allowed
+    baseValue=-457  compareValue=-667  absoluteDifference=210
+  document_id=5865  fiscal_year=2026  payload_path=years.2026.revenue_breakdown.by_product.Other Income
+    baseValue=8289  compareValue=153  absoluteDifference=8136
+  document_id=5865  fiscal_year=2026  payload_path=years.2026.cost_of_sales_breakdown.direct_materials
+    baseValue=253422  compareValue=318017  absoluteDifference=64595
+  document_id=5865  fiscal_year=2026  payload_path=years.2026.cost_of_sales_breakdown.direct_labour
+    baseValue=307162  compareValue=397623  absoluteDifference=90461
+  document_id=5865  fiscal_year=2026  payload_path=years.2026.cost_of_sales_breakdown.subcontractor_costs
+    baseValue=125270  compareValue=254980  absoluteDifference=129710
+  document_id=5865  fiscal_year=2026  payload_path=years.2026.cost_of_sales_breakdown.other_direct_costs
+    baseValue=137169  compareValue=161638  absoluteDifference=24469
+  document_id=5865  fiscal_year=2026  payload_path=years.2026.overheads_breakdown.staff_wages_salaries
+    baseValue=339232  compareValue=465398  absoluteDifference=126166
+  document_id=5865  fiscal_year=2026  payload_path=years.2026.overheads_breakdown.rent_rates
+    baseValue=93966  compareValue=133977  absoluteDifference=40011
+  document_id=5865  fiscal_year=2026  payload_path=years.2026.overheads_breakdown.utilities
+    baseValue=20639  compareValue=15234  absoluteDifference=5405
+  document_id=5865  fiscal_year=2026  payload_path=years.2026.overheads_breakdown.insurance
+    baseValue=16142  compareValue=16870  absoluteDifference=728
+  document_id=5865  fiscal_year=2026  payload_path=years.2026.overheads_breakdown.professional_fees
+    baseValue=21177  compareValue=23089  absoluteDifference=1912
+  document_id=5865  fiscal_year=2026  payload_path=years.2026.overheads_breakdown.computer_costs
+    baseValue=18270  compareValue=23547  absoluteDifference=5277
+  document_id=5865  fiscal_year=2026  payload_path=years.2026.overheads_breakdown.telecommunications
+    baseValue=3298  compareValue=4495  absoluteDifference=1197
+  document_id=5865  fiscal_year=2026  payload_path=years.2026.overheads_breakdown.printing_stationery
+    baseValue=3927  compareValue=5782  absoluteDifference=1855
+  document_id=5865  fiscal_year=2026  payload_path=years.2026.overheads_breakdown.bank_charges
+    baseValue=6855  compareValue=8775  absoluteDifference=1920
+  document_id=5865  fiscal_year=2026  payload_path=years.2026.overheads_breakdown.advertising_marketing
+    baseValue=24194  compareValue=33182  absoluteDifference=8988
+  document_id=5865  fiscal_year=2026  payload_path=years.2026.overheads_breakdown.travel_subsistence
+    baseValue=9437  compareValue=15506  absoluteDifference=6069
+  document_id=5865  fiscal_year=2026  payload_path=years.2026.overheads_breakdown.repairs_maintenance
+    baseValue=2312  compareValue=3220  absoluteDifference=908
+  document_id=5865  fiscal_year=2026  payload_path=years.2026.overheads_breakdown.depreciation
+    baseValue=26663  compareValue=34789  absoluteDifference=8126
+  document_id=5865  fiscal_year=2026  payload_path=years.2026.overheads_breakdown.other_overheads
+    baseValue=11743  compareValue=9274  absoluteDifference=2469
+  document_id=5865  fiscal_year=2026  payload_path=years.2026.total_staff_costs
+    baseValue=339232  compareValue=465398  absoluteDifference=126166
+  document_id=5865  fiscal_year=2026  payload_path=years.2026.financial_ratios.gross_margin_percent
+    baseValue=46.57  compareValue=40.45  absoluteDifference=6.119999999999997
+  document_id=5865  fiscal_year=2026  payload_path=years.2026.financial_ratios.net_margin_percent
+    baseValue=9.15  compareValue=-1.26  absoluteDifference=10.41
+  document_id=5865  fiscal_year=2026  payload_path=years.2026.profit_and_loss.revenue
+    baseValue=1540000  compareValue=1902369  absoluteDifference=362369
+  document_id=5865  fiscal_year=2026  payload_path=years.2026.profit_and_loss.cost_of_sales
+    baseValue=823023  compareValue=1132258  absoluteDifference=309235
+  document_id=5865  fiscal_year=2026  payload_path=years.2026.profit_and_loss.gross_profit
+    baseValue=717177  compareValue=769597  absoluteDifference=52420
+  document_id=5865  fiscal_year=2026  payload_path=years.2026.profit_and_loss.administrative_expenses
+    baseValue=576277  compareValue=793560  absoluteDifference=217283
+  document_id=5865  fiscal_year=2026  payload_path=years.2026.profit_and_loss.depreciation_amortisation
+    baseValue=26663  compareValue=34789  absoluteDifference=8126
+  document_id=5865  fiscal_year=2026  payload_path=years.2026.profit_and_loss.other_operating_income
+    baseValue=8289  compareValue=153  absoluteDifference=8136
+  document_id=5865  fiscal_year=2026  payload_path=years.2026.profit_and_loss.operating_profit
+    baseValue=149189  compareValue=-23963  absoluteDifference=173152
+  document_id=5865  fiscal_year=2026  payload_path=years.2026.profit_and_loss.profit_before_tax
+    baseValue=149189  compareValue=-23963  absoluteDifference=173152
+  document_id=5866  fiscal_year=2026  payload_path=years.2026.financial_ratios.quick_ratio
+    baseValue=1.1829698722517683  compareValue=1.1831429217600333  absoluteDifference=0.00017304950826502186
+  document_id=5866  fiscal_year=2026  payload_path=years.2026.balance_sheet.current_liabilities.other_creditors
+    baseValue=34350  compareValue=5319  absoluteDifference=29031
+  document_id=5867  fiscal_year=2025  payload_path=years.2025.financial_ratios.current_ratio
+    baseValue=1.8477002815714174  compareValue=1.8477002816014365  absoluteDifference=3.001909831823468e-11
+  document_id=5867  fiscal_year=2025  payload_path=years.2025.financial_ratios.quick_ratio
+    baseValue=1.2666988039995104  compareValue=1.2666988040321547  absoluteDifference=3.264433168226333e-11
+  document_id=5867  fiscal_year=2025  payload_path=years.2025.financial_ratios.net_assets_growth_percent
+    baseValue=0.385296107074005  compareValue=0.385295957968436  absoluteDifference=1.4910556900282756e-7
+  document_id=5867  fiscal_year=2025  payload_path=years.2025.financial_ratios.gearing_ratio_percent
+    baseValue=7.984557880143249  compareValue=7.984557801130921  absoluteDifference=7.901232734752739e-8
+  document_id=5867  fiscal_year=2024  payload_path=years.2024.financial_ratios.quick_ratio
+    baseValue=1.3204947056509193  compareValue=1.3204999339921915  absoluteDifference=0.0000052283412721454425
+  document_id=5867  fiscal_year=2024  payload_path=years.2024.overheads_breakdown.professional_fees
+    baseValue=37619  compareValue=28524  absoluteDifference=9095
+  document_id=5867  fiscal_year=2024  payload_path=years.2024.cost_of_sales_breakdown.other_direct_costs
+    baseValue=99354  compareValue=11169  absoluteDifference=88185
+  document_id=5867  fiscal_year=2025  payload_path=years.2025.overheads_breakdown.professional_fees
+    baseValue=12885  compareValue=12835  absoluteDifference=50
+  document_id=5867  fiscal_year=2025  payload_path=years.2025.overheads_breakdown.other_overheads
+    baseValue=24084  compareValue=11405  absoluteDifference=12679
+  document_id=5867  fiscal_year=2025  payload_path=years.2025.cost_of_sales_breakdown.other_direct_costs
+    baseValue=81485  compareValue=13144  absoluteDifference=68341
+  document_id=5867  fiscal_year=2024  payload_path=years.2024.overheads_breakdown.other_overheads
+    baseValue=13718  compareValue=7294  absoluteDifference=6424
+  document_id=5868  fiscal_year=2024  payload_path=years.2024.financial_ratios.current_ratio
+    baseValue=1.67869882793686  compareValue=1.6786988227082547  absoluteDifference=5.228605326479396e-9
+  document_id=5868  fiscal_year=2024  payload_path=years.2024.financial_ratios.quick_ratio
+    baseValue=1.32037183701666  compareValue=1.3205038552481436  absoluteDifference=0.00013201823148367708
+  document_id=5868  fiscal_year=2024  payload_path=years.2024.financial_ratios.net_assets_growth_percent
+    baseValue=46.5289626453046  compareValue=46.52898339241386  absoluteDifference=0.000020747109260810248
+  document_id=5868  fiscal_year=2024  payload_path=years.2024.financial_ratios.gearing_ratio_percent
+    baseValue=8.85405686330167  compareValue=8.854056863301663  absoluteDifference=7.105427357601002e-15
+  document_id=5868  fiscal_year=2023  payload_path=years.2023.financial_ratios.current_ratio
+    baseValue=1.43411803356618  compareValue=1.4341180335661001  absoluteDifference=7.993605777301127e-14
+  document_id=5868  fiscal_year=2023  payload_path=years.2023.financial_ratios.quick_ratio
+    baseValue=0.706020629549113  compareValue=0.7063888372826876  absoluteDifference=0.00036820773357459924
+  document_id=5868  fiscal_year=2023  payload_path=years.2023.financial_ratios.gearing_ratio_percent
+    baseValue=18.8648287640453  compareValue=18.86482876033018  absoluteDifference=3.7151188791995082e-9
+  document_id=5868  fiscal_year=2024  payload_path=years.2024.balance_sheet.current_liabilities.other_creditors
+    baseValue=5896  compareValue=6610  absoluteDifference=714
+  document_id=5868  fiscal_year=2023  payload_path=years.2023.cost_of_sales_breakdown.other_direct_costs
+    baseValue=58319  compareValue=12160  absoluteDifference=46159
+  document_id=5868  fiscal_year=2024  payload_path=years.2024.overheads_breakdown.staff_training_recruitment
+    baseValue=13373  compareValue=10901  absoluteDifference=2472
+  document_id=5868  fiscal_year=2024  payload_path=years.2024.overheads_breakdown.other_overheads
+    baseValue=44937  compareValue=14839  absoluteDifference=30098
+  document_id=5868  fiscal_year=2024  payload_path=years.2024.total_staff_costs
+    baseValue=570154  compareValue=567682  absoluteDifference=2472
+  document_id=5868  fiscal_year=2024  payload_path=years.2024.financial_ratios.gross_margin_percent
+    baseValue=32.08  compareValue=32.07999853919058  absoluteDifference=0.0000014608094147661177
+  document_id=5868  fiscal_year=2024  payload_path=years.2024.financial_ratios.net_margin_percent
+    baseValue=5.51  compareValue=5.50749749856491  absoluteDifference=0.002502501435089677
+  document_id=5868  fiscal_year=2024  payload_path=years.2024.financial_ratios.interest_coverage_ratio
+    baseValue=20.79  compareValue=20.787814457063998  absoluteDifference=0.002185542936000928
+  document_id=5868  fiscal_year=2024  payload_path=years.2024.cost_of_sales_breakdown.other_direct_costs
+    baseValue=88185  compareValue=11169  absoluteDifference=77016
+  document_id=5868  fiscal_year=2023  payload_path=years.2023.financial_ratios.interest_coverage_ratio
+    baseValue=8.12  compareValue=8.123818770226537  absoluteDifference=0.003818770226537538
+  document_id=5868  fiscal_year=2023  payload_path=years.2023.financial_ratios.net_margin_percent
+    baseValue=1.99  compareValue=1.988729246108165  absoluteDifference=0.0012707538918350636
+  document_id=5868  fiscal_year=2023  payload_path=years.2023.financial_ratios.gross_margin_percent
+    baseValue=27.01  compareValue=27.007722437151422  absoluteDifference=0.0022775628485796062
+  document_id=5868  fiscal_year=2023  payload_path=years.2023.total_staff_costs
+    baseValue=547148  compareValue=544000  absoluteDifference=3148
+  document_id=5868  fiscal_year=2023  payload_path=years.2023.overheads_breakdown.other_overheads
+    baseValue=22243  compareValue=14441  absoluteDifference=7802
+  document_id=5869  fiscal_year=2023  payload_path=years.2023.financial_ratios.gearing_ratio_percent
+    baseValue=18.86482890131378  compareValue=18.86482876033018  absoluteDifference=1.4098359812919625e-7
+  document_id=5869  fiscal_year=2023  payload_path=years.2023.financial_ratios.quick_ratio
+    baseValue=0.0397835090459541  compareValue=0.8233801396826835  absoluteDifference=0.7835966306367295
+  document_id=5869  fiscal_year=2022  payload_path=years.2022.financial_ratios.quick_ratio
+    baseValue=0.01712134014888401  compareValue=0.7261244212832813  absoluteDifference=0.7090030811343973
+  document_id=5869  fiscal_year=2023  payload_path=years.2023.overheads_breakdown.other_overheads
+    baseValue=14472  compareValue=8015  absoluteDifference=6457
+  document_id=5869  fiscal_year=2023  payload_path=years.2023.total_staff_costs
+    baseValue=547038  compareValue=547148  absoluteDifference=110
+  document_id=5869  fiscal_year=2023  payload_path=years.2023.financial_ratios.gross_margin_percent
+    baseValue=27.01  compareValue=27.00772019012718  absoluteDifference=0.002279809872820948
+  document_id=5869  fiscal_year=2023  payload_path=years.2023.financial_ratios.net_margin_percent
+    baseValue=1.99  compareValue=1.988729246119175  absoluteDifference=0.0012707538808249819
+  document_id=5869  fiscal_year=2023  payload_path=years.2023.financial_ratios.interest_coverage_ratio
+    baseValue=8.12  compareValue=8.123818770226537  absoluteDifference=0.003818770226537538
+  document_id=5869  fiscal_year=2022  payload_path=years.2022.cost_of_sales_breakdown.other_direct_costs
+    baseValue=1800194  compareValue=18315  absoluteDifference=1781879
+  document_id=5869  fiscal_year=2022  payload_path=years.2022.overheads_breakdown.other_overheads
+    baseValue=18158  compareValue=12612  absoluteDifference=5546
+  document_id=5869  fiscal_year=2022  payload_path=years.2022.financial_ratios.gross_margin_percent
+    baseValue=22.89  compareValue=22.89176101133465  absoluteDifference=0.001761011334650675
+  document_id=5869  fiscal_year=2022  payload_path=years.2022.financial_ratios.net_margin_percent
+    baseValue=3.65  compareValue=3.647999848113347  absoluteDifference=0.0020001518866528123
+  document_id=5869  fiscal_year=2022  payload_path=years.2022.financial_ratios.interest_coverage_ratio
+    baseValue=4.89  compareValue=4.889036504108245  absoluteDifference=0.0009634958917548175
+  document_id=5869  fiscal_year=2023  payload_path=years.2023.cost_of_sales_breakdown.other_direct_costs
+    baseValue=1343948  compareValue=12160  absoluteDifference=1331788
+  document_id=5873  fiscal_year=2025  payload_path=years.2025.financial_ratios.net_assets_growth_percent
+    baseValue=64.7562536546333  compareValue=64.75625519342628  absoluteDifference=0.0000015387929863663885
+  document_id=5874  fiscal_year=2023  payload_path=years.2023.profit_and_loss.administrative_expenses
+    baseValue=135820  compareValue=135829  absoluteDifference=9
+  document_id=5874  fiscal_year=2023  payload_path=years.2023.overheads_breakdown.other_overheads
+    baseValue=68155  compareValue=68914  absoluteDifference=759
+  document_id=5874  fiscal_year=2023  payload_path=years.2023.financial_ratios.gross_margin_percent
+    baseValue=99.77  compareValue=99.77484120547885  absoluteDifference=0.004841205478854249
+  document_id=5874  fiscal_year=2023  payload_path=years.2023.financial_ratios.net_margin_percent
+    baseValue=24.69  compareValue=24.69286293551003  absoluteDifference=0.0028629355100271425
+  document_id=5874  fiscal_year=2023  payload_path=years.2023.financial_ratios.interest_coverage_ratio
+    baseValue=37.23  compareValue=37.23086124401914  absoluteDifference=0.0008612440191413384
+  document_id=5874  fiscal_year=2024  payload_path=years.2024.financial_ratios.net_margin_percent
+    baseValue=27.93  compareValue=27.934536353517338  absoluteDifference=0.004536353517337943
+  document_id=5874  fiscal_year=2024  payload_path=years.2024.financial_ratios.gross_margin_percent
+    baseValue=98.71  compareValue=98.70611568018587  absoluteDifference=0.003884319814119408
+  document_id=5875  fiscal_year=2024  payload_path=years.2024.overheads_breakdown.other_overheads
+    baseValue=12860.87  compareValue=12930.87  absoluteDifference=70
+  document_id=5875  fiscal_year=2024  payload_path=years.2024.total_staff_costs
+    baseValue=0  compareValue=388.67  absoluteDifference=388.67
+  document_id=5875  fiscal_year=2024  payload_path=years.2024.total_directors_remuneration
+    baseValue=41388.67  compareValue=41000  absoluteDifference=388.66999999999825
+  document_id=5876  fiscal_year=2025  payload_path=years.2025.balance_sheet.current_liabilities.total
+    baseValue=-180251.17  compareValue=-178221.17  absoluteDifference=2030
+  document_id=5876  fiscal_year=2025  payload_path=years.2025.financial_ratios.current_ratio
+    baseValue=-1.005489174444444  compareValue=-1.016942039544444  absoluteDifference=0.011452865099999876
+  document_id=5876  fiscal_year=2025  payload_path=years.2025.financial_ratios.quick_ratio
+    baseValue=-0.994227103333333  compareValue=-1.005552819144444  absoluteDifference=0.011325715811111081
+  document_id=5876  fiscal_year=2025  payload_path=years.2025.financial_ratios.net_margin_percent
+    baseValue=53.09  compareValue=53.08598  absoluteDifference=0.004020000000004131
+  document_id=5876  fiscal_year=2025  payload_path=years.2025.financial_ratios.gross_margin_percent
+    baseValue=62.35  compareValue=62.348138  absoluteDifference=0.0018620000000026948
+  document_id=5876  fiscal_year=2025  payload_path=years.2025.overheads_breakdown.other_overheads
+    baseValue=2157.87  compareValue=1220.92  absoluteDifference=936.9499999999998
+  document_id=5877  fiscal_year=2024  payload_path=years.2024.financial_ratios.current_ratio
+    baseValue=3.7555645833778786  compareValue=3.712159763946204  absoluteDifference=0.043404819431674735
+  document_id=5877  fiscal_year=2025  payload_path=years.2025.balance_sheet.current_assets.total
+    baseValue=302622  compareValue=295005  absoluteDifference=7617
+  document_id=5877  fiscal_year=2025  payload_path=years.2025.financial_ratios.current_ratio
+    baseValue=3.099777725414076  compareValue=3.021756276449138  absoluteDifference=0.07802144896493779
+  document_id=5877  fiscal_year=2025  payload_path=years.2025.financial_ratios.net_assets_growth_percent
+    baseValue=64.7562552088142  compareValue=64.75625519342628  absoluteDifference=1.5387911389552755e-8
+  document_id=5877  fiscal_year=2024  payload_path=years.2024.balance_sheet.current_assets.total
+    baseValue=175644  compareValue=173614  absoluteDifference=2030
+  document_id=5877  fiscal_year=2024  payload_path=years.2024.overheads_breakdown.other_overheads
+    baseValue=900  compareValue=300  absoluteDifference=600
+  document_id=5877  fiscal_year=2024  payload_path=years.2024.financial_ratios.gross_margin_percent
+    baseValue=57.3  compareValue=98.70611568018587  absoluteDifference=41.40611568018588
+  document_id=5877  fiscal_year=2024  payload_path=years.2024.financial_ratios.net_margin_percent
+    baseValue=27.9  compareValue=27.93453638104755  absoluteDifference=0.034536381047551856
+  document_id=5877  fiscal_year=2024  payload_path=years.2024.financial_ratios.interest_coverage_ratio
+    baseValue=479.8  compareValue=479.82995951417  absoluteDifference=0.02995951417000242
+  document_id=5877  fiscal_year=2025  payload_path=years.2025.profit_and_loss.cost_of_sales
+    baseValue=166054  compareValue=2383  absoluteDifference=163671
+  document_id=5877  fiscal_year=2025  payload_path=years.2025.profit_and_loss.gross_profit
+    baseValue=275019  compareValue=438690  absoluteDifference=163671
+  document_id=5877  fiscal_year=2025  payload_path=years.2025.profit_and_loss.administrative_expenses
+    baseValue=53647  compareValue=220766  absoluteDifference=167119
+  document_id=5877  fiscal_year=2025  payload_path=years.2025.overheads_breakdown.depreciation
+    baseValue=299  compareValue=1680  absoluteDifference=1381
+  document_id=5877  fiscal_year=2025  payload_path=years.2025.overheads_breakdown.other_overheads
+    baseValue=-1284  compareValue=97  absoluteDifference=1381
+  document_id=5877  fiscal_year=2025  payload_path=years.2025.financial_ratios.gross_margin_percent
+    baseValue=62.3  compareValue=99.45972435111467  absoluteDifference=37.159724351114676
+  document_id=5877  fiscal_year=2025  payload_path=years.2025.financial_ratios.net_margin_percent
+    baseValue=38.4  compareValue=38.35306014605315  absoluteDifference=0.046939853946845744
+  document_id=5877  fiscal_year=2024  payload_path=years.2024.profit_and_loss.administrative_expenses
+    baseValue=68396  compareValue=204228  absoluteDifference=135832
+  document_id=5877  fiscal_year=2024  payload_path=years.2024.profit_and_loss.gross_profit
+    baseValue=186914  compareValue=322006  absoluteDifference=135092
+  document_id=5877  fiscal_year=2024  payload_path=years.2024.profit_and_loss.cost_of_sales
+    baseValue=139313  compareValue=4221  absoluteDifference=135092
+  document_id=5879  fiscal_year=2026  payload_path=years.2026.total_staff_costs
+    baseValue=121874  compareValue=150  absoluteDifference=121724
+  document_id=5879  fiscal_year=2025  payload_path=years.2025.financial_ratios.net_margin_percent
+    baseValue=38.35  compareValue=38.35306014650749  absoluteDifference=0.0030601465074866496
+  document_id=5879  fiscal_year=2025  payload_path=years.2025.financial_ratios.gross_margin_percent
+    baseValue=99.46  compareValue=99.45972453210243  absoluteDifference=0.00027546789756627277
+  document_id=5879  fiscal_year=2025  payload_path=years.2025.total_staff_costs
+    baseValue=163671  compareValue=1089  absoluteDifference=162582
+  document_id=5879  fiscal_year=2025  payload_path=years.2025.overheads_breakdown.other_overheads
+    baseValue=1257  compareValue=97  absoluteDifference=1160
+  document_id=5879  fiscal_year=2026  payload_path=years.2026.financial_ratios.net_margin_percent
+    baseValue=18.65  compareValue=18.647830835616194  absoluteDifference=0.002169164383804656
+  document_id=5880  fiscal_year=2026  payload_path=years.2026.financial_ratios.quick_ratio
+    baseValue=-0.49812088  compareValue=-0.4702527917146  absoluteDifference=0.027868088285399994
+  document_id=5880  fiscal_year=2026  payload_path=years.2026.financial_ratios.current_ratio
+    baseValue=-0.76128381  compareValue=-0.71869268814444  absoluteDifference=0.04259112185556002
+  document_id=5880  fiscal_year=2026  payload_path=years.2026.balance_sheet.equity.retained_earnings
+    baseValue=377972.93  compareValue=292972.93  absoluteDifference=85000
+  document_id=5880  fiscal_year=2026  payload_path=years.2026.balance_sheet.current_liabilities.total
+    baseValue=-151193.18  compareValue=-160153.18  absoluteDifference=8960
+  document_id=5880  fiscal_year=2026  payload_path=years.2026.balance_sheet.current_liabilities.other_creditors
+    baseValue=-16633.34  compareValue=-24515.21  absoluteDifference=7881.869999999999
+  document_id=5880  fiscal_year=2026  payload_path=years.2026.balance_sheet.current_liabilities.vat_payable
+    baseValue=7379.09  compareValue=15260.96  absoluteDifference=7881.869999999999
+
+────────────────────────────────────────────────────────────────────────
+BASE_ONLY ROWS (135)
+────────────────────────────────────────────────────────────────────────
+  document_id=5833  fiscal_year=2026  payload_path=years.2026.profit_and_loss.other_operating_income  baseValue=121.94
+  document_id=5836  fiscal_year=2025  payload_path=years.2025.balance_sheet.current_assets.amounts_owed_by_connected_companies  baseValue=122038.22
+  document_id=5860  fiscal_year=2025  payload_path=years.2025.revenue_breakdown.by_product.Other Income  baseValue=109
+  document_id=5861  fiscal_year=2023  payload_path=years.2023.overheads_breakdown.use_of_home_as_office  baseValue=1800
+  document_id=5861  fiscal_year=2023  payload_path=years.2023.overheads_breakdown.motor_expenses  baseValue=8668
+  document_id=5861  fiscal_year=2024  payload_path=years.2024.cost_of_sales_breakdown.direct_materials  baseValue=1121586
+  document_id=5861  fiscal_year=2024  payload_path=years.2024.overheads_breakdown.use_of_home_as_office  baseValue=1800
+  document_id=5861  fiscal_year=2024  payload_path=years.2024.overheads_breakdown.motor_expenses  baseValue=5929
+  document_id=5861  fiscal_year=2023  payload_path=years.2023.cost_of_sales_breakdown.direct_materials  baseValue=1083880
+  document_id=5862  fiscal_year=2022  payload_path=years.2022.profit_and_loss.interest_receivable  baseValue=0
+  document_id=5862  fiscal_year=2022  payload_path=years.2022.overheads_breakdown.postage_courier  baseValue=17417
+  document_id=5862  fiscal_year=2023  payload_path=years.2023.overheads_breakdown.postage_courier  baseValue=11012
+  document_id=5863  fiscal_year=2021  payload_path=years.2021.cost_of_sales_breakdown.direct_materials  baseValue=588332
+  document_id=5863  fiscal_year=2022  payload_path=years.2022.cost_of_sales_breakdown.direct_materials  baseValue=819476
+  document_id=5865  fiscal_year=2025  payload_path=years.2025.revenue_breakdown.by_product.Sales  baseValue=361864
+  document_id=5865  fiscal_year=2025  payload_path=years.2025.profit_and_loss.revenue  baseValue=361855
+  document_id=5865  fiscal_year=2025  payload_path=years.2025.profit_and_loss.cost_of_sales  baseValue=309235
+  document_id=5865  fiscal_year=2025  payload_path=years.2025.profit_and_loss.gross_profit  baseValue=52420
+  document_id=5865  fiscal_year=2025  payload_path=years.2025.profit_and_loss.administrative_expenses  baseValue=217283
+  document_id=5865  fiscal_year=2025  payload_path=years.2025.profit_and_loss.depreciation_amortisation  baseValue=8126
+  document_id=5865  fiscal_year=2025  payload_path=years.2025.profit_and_loss.other_operating_income  baseValue=0
+  document_id=5865  fiscal_year=2025  payload_path=years.2025.profit_and_loss.operating_profit  baseValue=-164863
+  document_id=5865  fiscal_year=2025  payload_path=years.2025.profit_and_loss.profit_before_tax  baseValue=-164863
+  document_id=5865  fiscal_year=2025  payload_path=years.2025.profit_and_loss.corporation_tax  baseValue=0
+  document_id=5865  fiscal_year=2025  payload_path=years.2025.profit_and_loss.net_profit  baseValue=-164863
+  document_id=5865  fiscal_year=2025  payload_path=years.2025.revenue_breakdown.by_product.Discounts Allowed  baseValue=-209
+  document_id=5865  fiscal_year=2025  payload_path=years.2025.cost_of_sales_breakdown.direct_materials  baseValue=64595
+  document_id=5865  fiscal_year=2025  payload_path=years.2025.cost_of_sales_breakdown.direct_labour  baseValue=90461
+  document_id=5865  fiscal_year=2025  payload_path=years.2025.cost_of_sales_breakdown.subcontractor_costs  baseValue=129710
+  document_id=5865  fiscal_year=2025  payload_path=years.2025.cost_of_sales_breakdown.other_direct_costs  baseValue=24469
+  document_id=5865  fiscal_year=2025  payload_path=years.2025.overheads_breakdown.staff_wages_salaries  baseValue=126166
+  document_id=5865  fiscal_year=2025  payload_path=years.2025.overheads_breakdown.rent_rates  baseValue=40011
+  document_id=5865  fiscal_year=2025  payload_path=years.2025.overheads_breakdown.utilities  baseValue=10300
+  document_id=5865  fiscal_year=2025  payload_path=years.2025.overheads_breakdown.insurance  baseValue=728
+  document_id=5865  fiscal_year=2025  payload_path=years.2025.overheads_breakdown.professional_fees  baseValue=1912
+  document_id=5865  fiscal_year=2025  payload_path=years.2025.overheads_breakdown.computer_costs  baseValue=5277
+  document_id=5865  fiscal_year=2025  payload_path=years.2025.overheads_breakdown.telecommunications  baseValue=1197
+  document_id=5865  fiscal_year=2025  payload_path=years.2025.overheads_breakdown.printing_stationery  baseValue=1855
+  document_id=5865  fiscal_year=2025  payload_path=years.2025.overheads_breakdown.bank_charges  baseValue=1920
+  document_id=5865  fiscal_year=2025  payload_path=years.2025.overheads_breakdown.advertising_marketing  baseValue=8988
+  document_id=5865  fiscal_year=2025  payload_path=years.2025.overheads_breakdown.travel_subsistence  baseValue=6069
+  document_id=5865  fiscal_year=2025  payload_path=years.2025.overheads_breakdown.motor_expenses  baseValue=0
+  document_id=5865  fiscal_year=2025  payload_path=years.2025.overheads_breakdown.repairs_maintenance  baseValue=908
+  document_id=5865  fiscal_year=2025  payload_path=years.2025.overheads_breakdown.depreciation  baseValue=8126
+  document_id=5865  fiscal_year=2025  payload_path=years.2025.overheads_breakdown.other_overheads  baseValue=3826
+  document_id=5865  fiscal_year=2025  payload_path=years.2025.total_staff_costs  baseValue=126166
+  document_id=5865  fiscal_year=2025  payload_path=years.2025.financial_ratios.gross_margin_percent  baseValue=14.49
+  document_id=5865  fiscal_year=2025  payload_path=years.2025.financial_ratios.net_margin_percent  baseValue=-45.56
+  document_id=5868  fiscal_year=2023  payload_path=years.2023.cost_of_sales_breakdown.direct_materials  baseValue=1083880
+  document_id=5868  fiscal_year=2024  payload_path=years.2024.cost_of_sales_breakdown.direct_materials  baseValue=1121586
+  document_id=5869  fiscal_year=2022  payload_path=years.2022.balance_sheet.long_term_liabilities.other_debt  baseValue=68623
+  document_id=5869  fiscal_year=2022  payload_path=years.2022.balance_sheet.long_term_liabilities.hire_purchase_long_term  baseValue=12790
+  document_id=5869  fiscal_year=2022  payload_path=years.2022.balance_sheet.current_liabilities.other_creditors  baseValue=1177045
+  document_id=5869  fiscal_year=2022  payload_path=years.2022.balance_sheet.current_liabilities.hire_purchase_current  baseValue=67951
+  document_id=5869  fiscal_year=2022  payload_path=years.2022.balance_sheet.current_assets.other_debtors  baseValue=882706
+  document_id=5869  fiscal_year=2023  payload_path=years.2023.balance_sheet.long_term_liabilities.other_debt  baseValue=58623
+  document_id=5869  fiscal_year=2023  payload_path=years.2023.balance_sheet.long_term_liabilities.hire_purchase_long_term  baseValue=27720
+  document_id=5869  fiscal_year=2023  payload_path=years.2023.balance_sheet.current_liabilities.other_creditors  baseValue=590332
+  document_id=5869  fiscal_year=2023  payload_path=years.2023.balance_sheet.current_liabilities.hire_purchase_current  baseValue=115840
+  document_id=5869  fiscal_year=2023  payload_path=years.2023.balance_sheet.current_assets.other_debtors  baseValue=553354
+  document_id=5869  fiscal_year=2023  payload_path=years.2023.overheads_breakdown.postage_courier  baseValue=11012
+  document_id=5869  fiscal_year=2023  payload_path=years.2023.overheads_breakdown.motor_expenses  baseValue=8668
+  document_id=5869  fiscal_year=2022  payload_path=years.2022.profit_and_loss.interest_receivable  baseValue=0
+  document_id=5869  fiscal_year=2022  payload_path=years.2022.overheads_breakdown.postage_courier  baseValue=17417
+  document_id=5869  fiscal_year=2022  payload_path=years.2022.overheads_breakdown.motor_expenses  baseValue=10347
+  document_id=5873  fiscal_year=2022  payload_path=years.2022.balance_sheet.long_term_liabilities.total  baseValue=0
+  document_id=5873  fiscal_year=2022  payload_path=years.2022.financial_ratios.gearing_ratio_percent  baseValue=0
+  document_id=5873  fiscal_year=2025  payload_path=years.2025.financial_ratios.gearing_ratio_percent  baseValue=0
+  document_id=5873  fiscal_year=2025  payload_path=years.2025.balance_sheet.long_term_liabilities.total  baseValue=0
+  document_id=5873  fiscal_year=2024  payload_path=years.2024.financial_ratios.gearing_ratio_percent  baseValue=0
+  document_id=5873  fiscal_year=2024  payload_path=years.2024.balance_sheet.long_term_liabilities.total  baseValue=0
+  document_id=5873  fiscal_year=2023  payload_path=years.2023.total_directors_remuneration  baseValue=0
+  document_id=5873  fiscal_year=2023  payload_path=years.2023.total_staff_costs  baseValue=0
+  document_id=5873  fiscal_year=2022  payload_path=years.2022.total_staff_costs  baseValue=0
+  document_id=5873  fiscal_year=2022  payload_path=years.2022.total_directors_remuneration  baseValue=0
+  document_id=5874  fiscal_year=2024  payload_path=years.2024.financial_ratios.quick_ratio  baseValue=3.712043787817237
+  document_id=5874  fiscal_year=2024  payload_path=years.2024.balance_sheet.equity.retained_earnings  baseValue=129972
+  document_id=5874  fiscal_year=2024  payload_path=years.2024.balance_sheet.current_liabilities.other_creditors  baseValue=16476
+  document_id=5874  fiscal_year=2024  payload_path=years.2024.balance_sheet.current_liabilities.accruals  baseValue=2421
+  document_id=5874  fiscal_year=2024  payload_path=years.2024.balance_sheet.current_liabilities.corporation_tax  baseValue=27388
+  document_id=5874  fiscal_year=2024  payload_path=years.2024.balance_sheet.current_liabilities.taxation_social_security  baseValue=486
+  document_id=5874  fiscal_year=2024  payload_path=years.2024.balance_sheet.fixed_assets.computer_equipment  baseValue=1098
+  document_id=5874  fiscal_year=2023  payload_path=years.2023.financial_ratios.quick_ratio  baseValue=2.616517745563609
+  document_id=5874  fiscal_year=2023  payload_path=years.2023.balance_sheet.equity.retained_earnings  baseValue=123842
+  document_id=5874  fiscal_year=2023  payload_path=years.2023.balance_sheet.long_term_liabilities.bank_loans  baseValue=38
+  document_id=5874  fiscal_year=2023  payload_path=years.2023.balance_sheet.current_liabilities.other_creditors  baseValue=49508
+  document_id=5874  fiscal_year=2023  payload_path=years.2023.balance_sheet.current_liabilities.accruals  baseValue=2421
+  document_id=5874  fiscal_year=2023  payload_path=years.2023.balance_sheet.current_liabilities.corporation_tax  baseValue=11735
+  document_id=5874  fiscal_year=2023  payload_path=years.2023.balance_sheet.current_liabilities.taxation_social_security  baseValue=352
+  document_id=5874  fiscal_year=2023  payload_path=years.2023.balance_sheet.fixed_assets.computer_equipment  baseValue=1223
+  document_id=5874  fiscal_year=2023  payload_path=years.2023.balance_sheet.fixed_assets.fixtures_fittings  baseValue=105
+  document_id=5876  fiscal_year=2025  payload_path=years.2025.overheads_breakdown.it_support_hosting  baseValue=60
+  document_id=5876  fiscal_year=2025  payload_path=years.2025.overheads_breakdown.software_subscriptions  baseValue=1258.63
+  document_id=5877  fiscal_year=2024  payload_path=years.2024.balance_sheet.current_liabilities.other_creditors  baseValue=18647
+  document_id=5877  fiscal_year=2024  payload_path=years.2024.balance_sheet.long_term_liabilities.total  baseValue=0
+  document_id=5877  fiscal_year=2024  payload_path=years.2024.balance_sheet.equity.retained_earnings  baseValue=129972
+  document_id=5877  fiscal_year=2024  payload_path=years.2024.financial_ratios.quick_ratio  baseValue=3.712159763946204
+  document_id=5877  fiscal_year=2024  payload_path=years.2024.financial_ratios.gearing_ratio_percent  baseValue=0
+  document_id=5877  fiscal_year=2025  payload_path=years.2025.balance_sheet.fixed_assets.computer_equipment  baseValue=1680
+  document_id=5877  fiscal_year=2025  payload_path=years.2025.balance_sheet.current_assets.cash_at_bank  baseValue=295005
+  document_id=5877  fiscal_year=2025  payload_path=years.2025.balance_sheet.current_liabilities.taxation_social_security  baseValue=434
+  document_id=5877  fiscal_year=2025  payload_path=years.2025.balance_sheet.current_liabilities.corporation_tax  baseValue=52782
+  document_id=5877  fiscal_year=2025  payload_path=years.2025.balance_sheet.current_liabilities.other_creditors  baseValue=44411
+  document_id=5877  fiscal_year=2025  payload_path=years.2025.balance_sheet.long_term_liabilities.total  baseValue=0
+  document_id=5877  fiscal_year=2025  payload_path=years.2025.balance_sheet.equity.retained_earnings  baseValue=214137
+  document_id=5877  fiscal_year=2025  payload_path=years.2025.financial_ratios.quick_ratio  baseValue=3.021756276440944
+  document_id=5877  fiscal_year=2025  payload_path=years.2025.financial_ratios.gearing_ratio_percent  baseValue=0
+  document_id=5877  fiscal_year=2024  payload_path=years.2024.balance_sheet.fixed_assets.computer_equipment  baseValue=640
+  document_id=5877  fiscal_year=2024  payload_path=years.2024.balance_sheet.current_assets.cash_at_bank  baseValue=173614
+  document_id=5877  fiscal_year=2024  payload_path=years.2024.balance_sheet.current_liabilities.taxation_social_security  baseValue=487
+  document_id=5877  fiscal_year=2024  payload_path=years.2024.balance_sheet.current_liabilities.corporation_tax  baseValue=27388
+  document_id=5877  fiscal_year=2024  payload_path=years.2024.balance_sheet.current_liabilities.bank_loans_current  baseValue=247
+  document_id=5877  fiscal_year=2025  payload_path=years.2025.cost_of_sales_breakdown.direct_materials  baseValue=2383
+  document_id=5877  fiscal_year=2025  payload_path=years.2025.overheads_breakdown.staff_wages_salaries  baseValue=1089
+  document_id=5877  fiscal_year=2025  payload_path=years.2025.overheads_breakdown.subscriptions_memberships  baseValue=1259
+  document_id=5877  fiscal_year=2024  payload_path=years.2024.overheads_breakdown.staff_wages_salaries  baseValue=289
+  document_id=5877  fiscal_year=2024  payload_path=years.2024.cost_of_sales_breakdown.direct_materials  baseValue=4221
+  document_id=5879  fiscal_year=2026  payload_path=years.2026.balance_sheet.equity.retained_earnings  baseValue=200547
+  document_id=5879  fiscal_year=2026  payload_path=years.2026.balance_sheet.long_term_liabilities.total  baseValue=0
+  document_id=5879  fiscal_year=2026  payload_path=years.2026.balance_sheet.current_liabilities.other_creditors  baseValue=4732
+  document_id=5879  fiscal_year=2026  payload_path=years.2026.balance_sheet.current_assets.cash_at_bank  baseValue=195634
+  document_id=5879  fiscal_year=2026  payload_path=years.2026.balance_sheet.current_assets.prepayments  baseValue=0
+  document_id=5879  fiscal_year=2025  payload_path=years.2025.financial_ratios.gearing_ratio_percent  baseValue=0
+  document_id=5879  fiscal_year=2025  payload_path=years.2025.financial_ratios.quick_ratio  baseValue=3.021756276440022
+  document_id=5879  fiscal_year=2025  payload_path=years.2025.balance_sheet.fixed_assets.computer_equipment  baseValue=1680
+  document_id=5879  fiscal_year=2025  payload_path=years.2025.balance_sheet.current_assets.cash_at_bank  baseValue=295005
+  document_id=5879  fiscal_year=2025  payload_path=years.2025.balance_sheet.equity.retained_earnings  baseValue=214137
+  document_id=5879  fiscal_year=2025  payload_path=years.2025.balance_sheet.current_liabilities.other_creditors  baseValue=44845
+  document_id=5879  fiscal_year=2025  payload_path=years.2025.balance_sheet.long_term_liabilities.total  baseValue=0
+  document_id=5879  fiscal_year=2026  payload_path=years.2026.financial_ratios.gearing_ratio_percent  baseValue=0
+  document_id=5879  fiscal_year=2026  payload_path=years.2026.financial_ratios.quick_ratio  baseValue=15.587124531909808
+  document_id=5879  fiscal_year=2026  payload_path=years.2026.profit_and_loss.interest_payable  baseValue=0
+  document_id=5879  fiscal_year=2025  payload_path=years.2025.overheads_breakdown.employers_national_insurance  baseValue=434
+  document_id=5879  fiscal_year=2025  payload_path=years.2025.cost_of_sales_breakdown.direct_materials  baseValue=2383
+  document_id=5879  fiscal_year=2025  payload_path=years.2025.profit_and_loss.interest_payable  baseValue=0
+
+────────────────────────────────────────────────────────────────────────
+COMPARE_ONLY ROWS (34)
+────────────────────────────────────────────────────────────────────────
+  document_id=5830  fiscal_year=2023  payload_path=years.2023.overheads_breakdown.directors_pension  compareValue=0
+  document_id=5836  fiscal_year=2025  payload_path=years.2025.balance_sheet.fixed_assets.freehold_property  compareValue=16761.29
+  document_id=5861  fiscal_year=2024  payload_path=years.2024.revenue_breakdown.by_product.Sales  compareValue=4956153
+  document_id=5861  fiscal_year=2023  payload_path=years.2023.revenue_breakdown.by_product.Sales  compareValue=4450279
+  document_id=5866  fiscal_year=2026  payload_path=years.2026.balance_sheet.current_liabilities.amounts_owed_to_directors  compareValue=29032
+  document_id=5867  fiscal_year=2025  payload_path=years.2025.revenue_breakdown.by_product.Sales  compareValue=4509086
+  document_id=5867  fiscal_year=2024  payload_path=years.2024.revenue_breakdown.by_product.Sales  compareValue=4956153
+  document_id=5868  fiscal_year=2023  payload_path=years.2023.revenue_breakdown.by_product.Sales  compareValue=4450279
+  document_id=5868  fiscal_year=2024  payload_path=years.2024.revenue_breakdown.by_product.Sales  compareValue=4956153
+  document_id=5869  fiscal_year=2023  payload_path=years.2023.balance_sheet.current_assets.trade_debtors  compareValue=553354
+  document_id=5869  fiscal_year=2022  payload_path=years.2022.balance_sheet.current_assets.trade_debtors  compareValue=882706
+  document_id=5873  fiscal_year=2022  payload_path=years.2022.balance_sheet.current_liabilities.other_creditors  compareValue=85142
+  document_id=5873  fiscal_year=2023  payload_path=years.2023.balance_sheet.current_liabilities.other_creditors  compareValue=64016
+  document_id=5873  fiscal_year=2023  payload_path=years.2023.balance_sheet.long_term_liabilities.other_debt  compareValue=38
+  document_id=5873  fiscal_year=2024  payload_path=years.2024.balance_sheet.current_liabilities.other_creditors  compareValue=46771
+  document_id=5873  fiscal_year=2025  payload_path=years.2025.balance_sheet.current_liabilities.other_creditors  compareValue=97627
+  document_id=5873  fiscal_year=2025  payload_path=years.2025.financial_ratios.net_margin_percent  compareValue=50.19
+  document_id=5873  fiscal_year=2025  payload_path=years.2025.profit_and_loss.net_profit  compareValue=221372
+  document_id=5873  fiscal_year=2024  payload_path=years.2024.financial_ratios.net_margin_percent  compareValue=36.33
+  document_id=5873  fiscal_year=2024  payload_path=years.2024.profit_and_loss.net_profit  compareValue=118518
+  document_id=5873  fiscal_year=2023  payload_path=years.2023.financial_ratios.net_margin_percent  compareValue=30.6
+  document_id=5873  fiscal_year=2023  payload_path=years.2023.profit_and_loss.net_profit  compareValue=60757
+  document_id=5873  fiscal_year=2022  payload_path=years.2022.financial_ratios.net_margin_percent  compareValue=37.49
+  document_id=5873  fiscal_year=2022  payload_path=years.2022.profit_and_loss.net_profit  compareValue=111774
+  document_id=5874  fiscal_year=2023  payload_path=years.2023.balance_sheet.long_term_liabilities.other_debt  compareValue=38
+  document_id=5876  fiscal_year=2025  payload_path=years.2025.balance_sheet.long_term_liabilities.total  compareValue=0
+  document_id=5876  fiscal_year=2025  payload_path=years.2025.financial_ratios.gearing_ratio_percent  compareValue=0
+  document_id=5876  fiscal_year=2025  payload_path=years.2025.overheads_breakdown.subscriptions_memberships  compareValue=1258.63
+  document_id=5877  fiscal_year=2024  payload_path=years.2024.profit_and_loss.other_operating_income  compareValue=740
+  document_id=5877  fiscal_year=2025  payload_path=years.2025.profit_and_loss.other_operating_income  compareValue=3448
+  document_id=5877  fiscal_year=2025  payload_path=years.2025.overheads_breakdown.software_subscriptions  compareValue=1259
+  document_id=5879  fiscal_year=2026  payload_path=years.2026.cost_of_sales_breakdown.subcontractor_costs  compareValue=120601
+  document_id=5879  fiscal_year=2025  payload_path=years.2025.cost_of_sales_breakdown.subcontractor_costs  compareValue=163671
+  document_id=5880  fiscal_year=2026  payload_path=years.2026.balance_sheet.current_assets.amounts_owed_by_directors  compareValue=0
+
+========================================================================
+END OF REPORT
+========================================================================
