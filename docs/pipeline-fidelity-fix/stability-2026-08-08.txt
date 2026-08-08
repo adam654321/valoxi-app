@@ -1,0 +1,676 @@
+========================================================================
+STABILITY-1 REPORT
+doc_id:    5830
+type:      profit_and_loss
+runs:      5
+filePath:  companies/228/doc-1784214789681-342348647.pdf
+fileName:  Signed - Full Accounts - 31032024_230330.pdf
+mimeType:  application/pdf
+promptVersion: 1c
+started:   2026-08-08T23:07:55.584Z
+========================================================================
+
+────────────────────────────────────────────────────────────────
+RUN 1/5  started: 2026-08-08T23:07:55.592Z
+RUN 1: OK  model=gemini-3-flash-preview  elapsed=12598ms
+────────────────────────────────────────────────────────────────
+RUN 2/5  started: 2026-08-08T23:08:08.193Z
+RUN 2: OK  model=gemini-3-flash-preview  elapsed=13085ms
+────────────────────────────────────────────────────────────────
+RUN 3/5  started: 2026-08-08T23:08:21.280Z
+RUN 3: OK  model=gemini-3-flash-preview  elapsed=13067ms
+────────────────────────────────────────────────────────────────
+RUN 4/5  started: 2026-08-08T23:08:34.347Z
+RUN 4: OK  model=gemini-3-flash-preview  elapsed=107333ms
+────────────────────────────────────────────────────────────────
+RUN 5/5  started: 2026-08-08T23:10:21.682Z
+RUN 5: OK  model=gemini-3-flash-preview  elapsed=127156ms
+
+========================================================================
+STABILITY ANALYSIS
+========================================================================
+
+doc 5830  type=profit_and_loss  runs=5
+total keys compared:        95  (figures: 88  period: 7)
+keys with 1 distinct value: 89
+keys with > 1 distinct:     6
+arithmetic check:           89 + 6 = 95  (should equal 95)
+
+────────────────────────────────────────────────────────────────────────
+GROUP A — VALUATION CRITICAL
+────────────────────────────────────────────────────────────────────────
+  STABLE   2023|years.2023.profit_and_loss.administrative_expenses  = 730019
+  STABLE   2023|years.2023.profit_and_loss.corporation_tax  = 36214
+  STABLE   2023|years.2023.profit_and_loss.cost_of_sales  = 538883
+  STABLE   2023|years.2023.profit_and_loss.depreciation_amortisation  = 51910
+  STABLE   2023|years.2023.profit_and_loss.gross_profit  = 902788
+  STABLE   2023|years.2023.profit_and_loss.interest_payable  = 4524
+  STABLE   2023|years.2023.profit_and_loss.interest_receivable  = 61
+  STABLE   2023|years.2023.profit_and_loss.net_profit  = 132092
+  STABLE   2023|years.2023.profit_and_loss.operating_profit  = 172769
+  STABLE   2023|years.2023.profit_and_loss.profit_before_tax  = 168306
+  STABLE   2023|years.2023.profit_and_loss.revenue  = 1441671
+  STABLE   2024|years.2024.profit_and_loss.administrative_expenses  = 985102
+  STABLE   2024|years.2024.profit_and_loss.corporation_tax  = 17148
+  STABLE   2024|years.2024.profit_and_loss.cost_of_sales  = 632814
+  STABLE   2024|years.2024.profit_and_loss.depreciation_amortisation  = 51911
+  STABLE   2024|years.2024.profit_and_loss.gross_profit  = 1062389
+  STABLE   2024|years.2024.profit_and_loss.interest_payable  = 6761
+  STABLE   2024|years.2024.profit_and_loss.interest_receivable  = 512
+  STABLE   2024|years.2024.profit_and_loss.net_profit  = 53890
+  STABLE   2024|years.2024.profit_and_loss.operating_profit  = 77287
+  STABLE   2024|years.2024.profit_and_loss.profit_before_tax  = 71038
+  STABLE   2024|years.2024.profit_and_loss.revenue  = 1695203
+
+GROUP A entirely stable. 22 keys, all with 1 distinct value.
+
+────────────────────────────────────────────────────────────────────────
+GROUP B — SPAN CRITICAL
+────────────────────────────────────────────────────────────────────────
+  STABLE   2023|months_covered  = 12
+  STABLE   2023|period_end  = 2023-03-31
+  STABLE   2023|period_start  = null
+  STABLE   2024|months_covered  = 12
+  STABLE   2024|period_end  = 2024-03-31
+  STABLE   2024|period_start  = null
+  STABLE   doc|report_date  = 2024-12-19
+
+GROUP B entirely stable. 7 keys, all with 1 distinct value.
+
+────────────────────────────────────────────────────────────────────────
+GROUP C — EVERYTHING ELSE
+────────────────────────────────────────────────────────────────────────
+total GROUP C keys:   66
+stable (1 distinct):  60
+unstable (> 1):       6
+
+Top 10 most variable GROUP C keys:
+  2023|years.2023.overheads_breakdown.other_overheads  distinct=3  values=[15811, 10824, 15411]
+  2024|years.2024.overheads_breakdown.other_overheads  distinct=3  values=[44212, 12415, 43007]
+  2023|years.2023.overheads_breakdown.motor_expenses  distinct=2  values=[65303, 35718]
+  2023|years.2023.total_staff_costs  distinct=2  values=[358011, 361110]
+  2024|years.2024.overheads_breakdown.motor_expenses  distinct=2  values=[69978, 30344]
+  2024|years.2024.total_staff_costs  distinct=2  values=[516240, 531652]
+  2023|years.2023.cost_of_sales_breakdown.direct_labour  distinct=1  value=24307
+  2023|years.2023.cost_of_sales_breakdown.direct_materials  distinct=1  value=422194
+  2023|years.2023.cost_of_sales_breakdown.other_direct_costs  distinct=1  value=24307
+  2023|years.2023.cost_of_sales_breakdown.subcontractor_costs  distinct=1  value=92382
+
+────────────────────────────────────────────────────────────────────────
+depreciation_amortisation — special report
+────────────────────────────────────────────────────────────────────────
+  STABLE   2023|years.2023.profit_and_loss.depreciation_amortisation  = 51910
+           values across 5 runs: [51910, 51910, 51910, 51910, 51910]
+  STABLE   2024|years.2024.profit_and_loss.depreciation_amortisation  = 51911
+           values across 5 runs: [51911, 51911, 51911, 51911, 51911]
+
+────────────────────────────────────────────────────────────────────────
+ROW COUNT PROOF (writes-nothing check)
+────────────────────────────────────────────────────────────────────────
+  document_analysis_results: before=548  after=548  → UNCHANGED
+  document_evidence: before=391  after=391  → UNCHANGED
+  document_evidence_period: before=743  after=743  → UNCHANGED
+  document_evidence_figure: before=16712  after=16712  → UNCHANGED
+
+completed: 2026-08-08T23:12:28.880Z
+========================================================================
+
+========================================================================
+STABILITY-1 REPORT
+doc_id:    5830
+type:      balance_sheet
+runs:      5
+filePath:  companies/228/doc-1784214789681-342348647.pdf
+fileName:  Signed - Full Accounts - 31032024_230330.pdf
+mimeType:  application/pdf
+promptVersion: 1c
+started:   2026-08-08T23:13:04.111Z
+========================================================================
+
+────────────────────────────────────────────────────────────────
+RUN 1/5  started: 2026-08-08T23:13:04.117Z
+RUN 1: OK  model=gemini-3-flash-preview  elapsed=28590ms
+────────────────────────────────────────────────────────────────
+RUN 2/5  started: 2026-08-08T23:13:32.711Z
+RUN 2: OK  model=gemini-3-flash-preview  elapsed=26823ms
+────────────────────────────────────────────────────────────────
+RUN 3/5  started: 2026-08-08T23:13:59.535Z
+RUN 3: OK  model=gemini-3-flash-preview  elapsed=38287ms
+────────────────────────────────────────────────────────────────
+RUN 4/5  started: 2026-08-08T23:14:37.824Z
+RUN 4: OK  model=gemini-3-flash-preview  elapsed=33526ms
+────────────────────────────────────────────────────────────────
+RUN 5/5  started: 2026-08-08T23:15:11.352Z
+RUN 5: OK  model=gemini-3-flash-preview  elapsed=15081ms
+
+========================================================================
+STABILITY ANALYSIS
+========================================================================
+
+doc 5830  type=balance_sheet  runs=5
+total keys compared:        53  (figures: 46  period: 7)
+keys with 1 distinct value: 52
+keys with > 1 distinct:     1
+arithmetic check:           52 + 1 = 53  (should equal 53)
+
+────────────────────────────────────────────────────────────────────────
+GROUP A — VALUATION CRITICAL
+────────────────────────────────────────────────────────────────────────
+  STABLE   2023|years.2023.balance_sheet.current_assets.cash_at_bank  = 139509
+  STABLE   2023|years.2023.balance_sheet.current_assets.total  = 391084
+  STABLE   2023|years.2023.balance_sheet.current_assets.trade_debtors  = 158782
+  STABLE   2023|years.2023.balance_sheet.current_liabilities.bank_loans_current  = 20000
+  STABLE   2023|years.2023.balance_sheet.current_liabilities.total  = 222713
+  STABLE   2023|years.2023.balance_sheet.current_liabilities.trade_creditors  = 112146
+  STABLE   2023|years.2023.balance_sheet.equity.retained_earnings  = 164400
+  STABLE   2023|years.2023.balance_sheet.equity.share_capital  = 100
+  STABLE   2023|years.2023.balance_sheet.equity.total  = 164500
+  STABLE   2023|years.2023.balance_sheet.fixed_assets.tangible_assets  = 45607
+  STABLE   2023|years.2023.balance_sheet.long_term_liabilities.bank_loans  = 43333
+  STABLE   2023|years.2023.balance_sheet.long_term_liabilities.hire_purchase_long_term  = 1711
+  STABLE   2023|years.2023.balance_sheet.long_term_liabilities.total  = 49478
+  STABLE   2024|years.2024.balance_sheet.current_assets.cash_at_bank  = 154281
+  STABLE   2024|years.2024.balance_sheet.current_assets.total  = 446241
+  STABLE   2024|years.2024.balance_sheet.current_assets.trade_debtors  = 140300
+  STABLE   2024|years.2024.balance_sheet.current_liabilities.bank_loans_current  = 20000
+  STABLE   2024|years.2024.balance_sheet.current_liabilities.total  = 293522
+  STABLE   2024|years.2024.balance_sheet.current_liabilities.trade_creditors  = 108277
+  STABLE   2024|years.2024.balance_sheet.equity.retained_earnings  = 165682
+  STABLE   2024|years.2024.balance_sheet.equity.share_capital  = 100
+  STABLE   2024|years.2024.balance_sheet.equity.total  = 165782
+  STABLE   2024|years.2024.balance_sheet.fixed_assets.tangible_assets  = 332464
+  STABLE   2024|years.2024.balance_sheet.long_term_liabilities.bank_loans  = 23333
+  STABLE   2024|years.2024.balance_sheet.long_term_liabilities.hire_purchase_long_term  = 249133
+  STABLE   2024|years.2024.balance_sheet.long_term_liabilities.total  = 319401
+
+GROUP A entirely stable. 26 keys, all with 1 distinct value.
+
+────────────────────────────────────────────────────────────────────────
+GROUP B — SPAN CRITICAL
+────────────────────────────────────────────────────────────────────────
+  STABLE   2023|months_covered  = 12
+  STABLE   2023|period_end  = 2023-03-31
+  STABLE   2023|period_start  = null
+  STABLE   2024|months_covered  = 12
+  STABLE   2024|period_end  = 2024-03-31
+  STABLE   2024|period_start  = null
+  STABLE   doc|report_date  = 2024-12-19
+
+GROUP B entirely stable. 7 keys, all with 1 distinct value.
+
+────────────────────────────────────────────────────────────────────────
+GROUP C — EVERYTHING ELSE
+────────────────────────────────────────────────────────────────────────
+total GROUP C keys:   20
+stable (1 distinct):  19
+unstable (> 1):       1
+
+Top 10 most variable GROUP C keys:
+  2023|years.2023.financial_ratios.quick_ratio  distinct=2  values=[1.3393515394071298, 1.33935145141729]
+  2023|years.2023.balance_sheet.current_assets.other_debtors  distinct=1  value=92793
+  2023|years.2023.balance_sheet.current_liabilities.other_creditors  distinct=1  value=36449
+  2023|years.2023.balance_sheet.current_liabilities.taxation_social_security  distinct=1  value=54118
+  2023|years.2023.balance_sheet.fixed_assets.leasehold_property  distinct=1  value=10231
+  2023|years.2023.balance_sheet.fixed_assets.plant_machinery  distinct=1  value=35376
+  2023|years.2023.balance_sheet.long_term_liabilities.deferred_taxation  distinct=1  value=4434
+  2023|years.2023.financial_ratios.current_ratio  distinct=1  value=1.756000053881044
+  2023|years.2023.financial_ratios.gearing_ratio_percent  distinct=1  value=30.077811550151974
+  2024|years.2024.balance_sheet.current_assets.other_debtors  distinct=1  value=151660
+
+────────────────────────────────────────────────────────────────────────
+depreciation_amortisation — special report
+────────────────────────────────────────────────────────────────────────
+  No depreciation_amortisation keys found in GROUP A for this doc/type.
+
+────────────────────────────────────────────────────────────────────────
+ROW COUNT PROOF (writes-nothing check)
+────────────────────────────────────────────────────────────────────────
+  document_analysis_results: before=548  after=548  → UNCHANGED
+  document_evidence: before=391  after=391  → UNCHANGED
+  document_evidence_period: before=743  after=743  → UNCHANGED
+  document_evidence_figure: before=16712  after=16712  → UNCHANGED
+
+completed: 2026-08-08T23:15:26.478Z
+========================================================================
+
+========================================================================
+STABILITY-1 REPORT
+doc_id:    5877
+type:      profit_and_loss
+runs:      5
+filePath:  companies/138/doc-1778838798393-104382606.pdf
+fileName:  FS_Cooper-GibsonLimited_28022025.pdf
+mimeType:  application/pdf
+promptVersion: 1c
+started:   2026-08-08T23:19:32.851Z
+========================================================================
+
+────────────────────────────────────────────────────────────────
+RUN 1/5  started: 2026-08-08T23:19:32.857Z
+RUN 1: OK  model=gemini-3-flash-preview  elapsed=13015ms
+────────────────────────────────────────────────────────────────
+RUN 2/5  started: 2026-08-08T23:19:45.875Z
+RUN 2: OK  model=gemini-3-flash-preview  elapsed=16022ms
+────────────────────────────────────────────────────────────────
+RUN 3/5  started: 2026-08-08T23:20:01.900Z
+RUN 3: OK  model=gemini-3-flash-preview  elapsed=16384ms
+────────────────────────────────────────────────────────────────
+RUN 4/5  started: 2026-08-08T23:20:18.286Z
+RUN 4: OK  model=gemini-3-flash-preview  elapsed=12113ms
+────────────────────────────────────────────────────────────────
+RUN 5/5  started: 2026-08-08T23:20:30.400Z
+RUN 5: OK  model=gemini-3-flash-preview  elapsed=16442ms
+
+========================================================================
+STABILITY ANALYSIS
+========================================================================
+
+doc 5877  type=profit_and_loss  runs=5
+total keys compared:        76  (figures: 69  period: 7)
+keys with 1 distinct value: 71
+keys with > 1 distinct:     5
+arithmetic check:           71 + 5 = 76  (should equal 76)
+
+────────────────────────────────────────────────────────────────────────
+GROUP A — VALUATION CRITICAL
+────────────────────────────────────────────────────────────────────────
+  STABLE   2024|years.2024.profit_and_loss.administrative_expenses  = 204228
+  STABLE   2024|years.2024.profit_and_loss.corporation_tax  = 27388
+  STABLE   2024|years.2024.profit_and_loss.cost_of_sales  = 4221
+  STABLE   2024|years.2024.profit_and_loss.depreciation_amortisation  = 640
+  STABLE   2024|years.2024.profit_and_loss.gross_profit  = 322006
+  STABLE   2024|years.2024.profit_and_loss.interest_payable  = 247
+  STABLE   2024|years.2024.profit_and_loss.interest_receivable  = 740
+  STABLE   2024|years.2024.profit_and_loss.net_profit  = 91130
+  STABLE   2024|years.2024.profit_and_loss.operating_profit  = 118518
+  STABLE   2024|years.2024.profit_and_loss.other_operating_income  = 740
+  STABLE   2024|years.2024.profit_and_loss.profit_before_tax  = 118518
+  STABLE   2024|years.2024.profit_and_loss.revenue  = 326227
+  STABLE   2025|years.2025.profit_and_loss.administrative_expenses  = 220766
+  STABLE   2025|years.2025.profit_and_loss.corporation_tax  = 52207
+  STABLE   2025|years.2025.profit_and_loss.cost_of_sales  = 2383
+  STABLE   2025|years.2025.profit_and_loss.depreciation_amortisation  = 299
+  STABLE   2025|years.2025.profit_and_loss.gross_profit  = 438690
+  STABLE   2025|years.2025.profit_and_loss.interest_receivable  = 3448
+  STABLE   2025|years.2025.profit_and_loss.net_profit  = 169165
+  STABLE   2025|years.2025.profit_and_loss.operating_profit  = 221372
+  STABLE   2025|years.2025.profit_and_loss.other_operating_income  = 3448
+  STABLE   2025|years.2025.profit_and_loss.profit_before_tax  = 221372
+  STABLE   2025|years.2025.profit_and_loss.revenue  = 441073
+
+GROUP A entirely stable. 23 keys, all with 1 distinct value.
+
+────────────────────────────────────────────────────────────────────────
+GROUP B — SPAN CRITICAL
+────────────────────────────────────────────────────────────────────────
+  STABLE   2024|months_covered  = 12
+  STABLE   2024|period_end  = 2024-02-29
+  STABLE   2024|period_start  = null
+  STABLE   2025|months_covered  = 12
+  STABLE   2025|period_end  = 2025-02-28
+  STABLE   2025|period_start  = null
+  STABLE   doc|report_date  = 2025-08-28
+
+GROUP B entirely stable. 7 keys, all with 1 distinct value.
+
+────────────────────────────────────────────────────────────────────────
+GROUP C — EVERYTHING ELSE
+────────────────────────────────────────────────────────────────────────
+total GROUP C keys:   46
+stable (1 distinct):  41
+unstable (> 1):       5
+
+Top 10 most variable GROUP C keys:
+  2024|years.2024.financial_ratios.gross_margin_percent  distinct=2  values=[98.70611568018587, 98.71]
+  2024|years.2024.financial_ratios.net_margin_percent  distinct=2  values=[27.93453638104755, 27.93]
+  2024|years.2024.overheads_breakdown.other_overheads  distinct=2  values=[300, 900]
+  2025|years.2025.financial_ratios.gross_margin_percent  distinct=2  values=[99.45972661911205, 99.46]
+  2025|years.2025.financial_ratios.net_margin_percent  distinct=2  values=[38.35305924413104, 38.35]
+  2024|years.2024.cost_of_sales_breakdown.subcontractor_costs  distinct=1  value=135092
+  2024|years.2024.financial_ratios.interest_coverage_ratio  distinct=1  value=479.83
+  2024|years.2024.overheads_breakdown.accountancy_bookkeeping  distinct=1  value=2421
+  2024|years.2024.overheads_breakdown.bank_charges  distinct=1  value=247
+  2024|years.2024.overheads_breakdown.computer_costs  distinct=1  value=2407
+
+────────────────────────────────────────────────────────────────────────
+depreciation_amortisation — special report
+────────────────────────────────────────────────────────────────────────
+  STABLE   2024|years.2024.profit_and_loss.depreciation_amortisation  = 640
+           values across 5 runs: [640, 640, 640, 640, 640]
+  STABLE   2025|years.2025.profit_and_loss.depreciation_amortisation  = 299
+           values across 5 runs: [299, 299, 299, 299, 299]
+
+────────────────────────────────────────────────────────────────────────
+ROW COUNT PROOF (writes-nothing check)
+────────────────────────────────────────────────────────────────────────
+  document_analysis_results: before=548  after=548  → UNCHANGED
+  document_evidence: before=391  after=391  → UNCHANGED
+  document_evidence_period: before=743  after=743  → UNCHANGED
+  document_evidence_figure: before=16712  after=16712  → UNCHANGED
+
+completed: 2026-08-08T23:20:46.891Z
+========================================================================
+
+========================================================================
+STABILITY-1 REPORT
+doc_id:    5877
+type:      balance_sheet
+runs:      5
+filePath:  companies/138/doc-1778838798393-104382606.pdf
+fileName:  FS_Cooper-GibsonLimited_28022025.pdf
+mimeType:  application/pdf
+promptVersion: 1c
+started:   2026-08-08T23:21:25.994Z
+========================================================================
+
+────────────────────────────────────────────────────────────────
+RUN 1/5  started: 2026-08-08T23:21:25.997Z
+RUN 1: OK  model=gemini-3-flash-preview  elapsed=9744ms
+────────────────────────────────────────────────────────────────
+RUN 2/5  started: 2026-08-08T23:21:35.744Z
+RUN 2: OK  model=gemini-3-flash-preview  elapsed=9814ms
+────────────────────────────────────────────────────────────────
+RUN 3/5  started: 2026-08-08T23:21:45.560Z
+RUN 3: OK  model=gemini-3-flash-preview  elapsed=9653ms
+────────────────────────────────────────────────────────────────
+RUN 4/5  started: 2026-08-08T23:21:55.214Z
+RUN 4: OK  model=gemini-3-flash-preview  elapsed=9393ms
+────────────────────────────────────────────────────────────────
+RUN 5/5  started: 2026-08-08T23:22:04.608Z
+RUN 5: OK  model=gemini-3-flash-preview  elapsed=9571ms
+
+========================================================================
+STABILITY ANALYSIS
+========================================================================
+
+doc 5877  type=balance_sheet  runs=5
+total keys compared:        20  (figures: 13  period: 7)
+keys with 1 distinct value: 19
+keys with > 1 distinct:     1
+arithmetic check:           19 + 1 = 20  (should equal 20)
+
+────────────────────────────────────────────────────────────────────────
+GROUP A — VALUATION CRITICAL
+────────────────────────────────────────────────────────────────────────
+  STABLE   2024|years.2024.balance_sheet.current_assets.total  = 173614
+  STABLE   2024|years.2024.balance_sheet.current_liabilities.total  = 46769
+  STABLE   2024|years.2024.balance_sheet.equity.total  = 129972
+  STABLE   2024|years.2024.balance_sheet.fixed_assets.tangible_assets  = 1097
+  STABLE   2025|years.2025.balance_sheet.current_assets.total  = 295005
+  STABLE   2025|years.2025.balance_sheet.current_liabilities.total  = 97627
+  STABLE   2025|years.2025.balance_sheet.equity.total  = 214137
+  STABLE   2025|years.2025.balance_sheet.fixed_assets.tangible_assets  = 9142
+
+GROUP A entirely stable. 8 keys, all with 1 distinct value.
+
+────────────────────────────────────────────────────────────────────────
+GROUP B — SPAN CRITICAL
+────────────────────────────────────────────────────────────────────────
+  STABLE   2024|months_covered  = 12
+  STABLE   2024|period_end  = 2024-02-29
+  STABLE   2024|period_start  = null
+  STABLE   2025|months_covered  = 12
+  STABLE   2025|period_end  = 2025-02-28
+  STABLE   2025|period_start  = null
+  STABLE   doc|report_date  = 2025-08-28
+
+GROUP B entirely stable. 7 keys, all with 1 distinct value.
+
+────────────────────────────────────────────────────────────────────────
+GROUP C — EVERYTHING ELSE
+────────────────────────────────────────────────────────────────────────
+total GROUP C keys:   5
+stable (1 distinct):  4
+unstable (> 1):       1
+
+Top 10 most variable GROUP C keys:
+  2025|years.2025.financial_ratios.current_ratio  distinct=2  values=[3.021756276449138, 3.021756276440944]
+  2024|years.2024.balance_sheet.current_assets.prepayments  distinct=1  value=2030
+  2024|years.2024.financial_ratios.current_ratio  distinct=1  value=3.712159763946204
+  2025|years.2025.balance_sheet.current_assets.prepayments  distinct=1  value=7617
+  2025|years.2025.financial_ratios.net_assets_growth_percent  distinct=1  value=64.75625519342628
+
+────────────────────────────────────────────────────────────────────────
+depreciation_amortisation — special report
+────────────────────────────────────────────────────────────────────────
+  No depreciation_amortisation keys found in GROUP A for this doc/type.
+
+────────────────────────────────────────────────────────────────────────
+ROW COUNT PROOF (writes-nothing check)
+────────────────────────────────────────────────────────────────────────
+  document_analysis_results: before=548  after=548  → UNCHANGED
+  document_evidence: before=391  after=391  → UNCHANGED
+  document_evidence_period: before=743  after=743  → UNCHANGED
+  document_evidence_figure: before=16712  after=16712  → UNCHANGED
+
+completed: 2026-08-08T23:22:14.208Z
+========================================================================
+
+========================================================================
+STABILITY-1 REPORT
+doc_id:    5862
+type:      profit_and_loss
+runs:      5
+filePath:  companies/89/doc-1777320972331-861910426.pdf
+fileName:  doc-1777320972331-861910426.pdf
+mimeType:  application/pdf
+promptVersion: 1c
+started:   2026-08-08T23:27:56.575Z
+========================================================================
+
+────────────────────────────────────────────────────────────────
+RUN 1/5  started: 2026-08-08T23:27:56.581Z
+RUN 1: OK  model=gemini-3-flash-preview  elapsed=14599ms
+────────────────────────────────────────────────────────────────
+RUN 2/5  started: 2026-08-08T23:28:11.183Z
+RUN 2: OK  model=gemini-3-flash-preview  elapsed=14807ms
+────────────────────────────────────────────────────────────────
+RUN 3/5  started: 2026-08-08T23:28:25.992Z
+RUN 3: OK  model=gemini-3-flash-preview  elapsed=15174ms
+────────────────────────────────────────────────────────────────
+RUN 4/5  started: 2026-08-08T23:28:41.168Z
+RUN 4: OK  model=gemini-3-flash-preview  elapsed=15029ms
+────────────────────────────────────────────────────────────────
+RUN 5/5  started: 2026-08-08T23:28:56.198Z
+RUN 5: OK  model=gemini-3-flash-preview  elapsed=14441ms
+
+========================================================================
+STABILITY ANALYSIS
+========================================================================
+
+doc 5862  type=profit_and_loss  runs=5
+total keys compared:        91  (figures: 84  period: 7)
+keys with 1 distinct value: 82
+keys with > 1 distinct:     9
+arithmetic check:           82 + 9 = 91  (should equal 91)
+
+────────────────────────────────────────────────────────────────────────
+GROUP A — VALUATION CRITICAL
+────────────────────────────────────────────────────────────────────────
+  STABLE   2022|years.2022.profit_and_loss.administrative_expenses  = 1078058
+  STABLE   2022|years.2022.profit_and_loss.corporation_tax  = -19642
+  STABLE   2022|years.2022.profit_and_loss.cost_of_sales  = 4437034
+  STABLE   2022|years.2022.profit_and_loss.depreciation_amortisation  = 61034
+  STABLE   2022|years.2022.profit_and_loss.gross_profit  = 1317259
+  STABLE   2022|years.2022.profit_and_loss.interest_payable  = 48926
+  STABLE   2022|years.2022.profit_and_loss.interest_receivable  = 0
+  STABLE   2022|years.2022.profit_and_loss.net_profit  = 209917
+  STABLE   2022|years.2022.profit_and_loss.operating_profit  = 239201
+  STABLE   2022|years.2022.profit_and_loss.profit_before_tax  = 190275
+  STABLE   2022|years.2022.profit_and_loss.revenue  = 5754293
+  STABLE   2023|years.2023.profit_and_loss.administrative_expenses  = 1076406
+  STABLE   2023|years.2023.profit_and_loss.corporation_tax  = 22101
+  STABLE   2023|years.2023.profit_and_loss.cost_of_sales  = 3248360
+  STABLE   2023|years.2023.profit_and_loss.depreciation_amortisation  = 54527
+  STABLE   2023|years.2023.profit_and_loss.gross_profit  = 1201919
+  STABLE   2023|years.2023.profit_and_loss.interest_payable  = 15450
+  STABLE   2023|years.2023.profit_and_loss.interest_receivable  = 542
+  STABLE   2023|years.2023.profit_and_loss.net_profit  = 88504
+  STABLE   2023|years.2023.profit_and_loss.operating_profit  = 125513
+  STABLE   2023|years.2023.profit_and_loss.profit_before_tax  = 110605
+  STABLE   2023|years.2023.profit_and_loss.revenue  = 4450279
+
+GROUP A entirely stable. 22 keys, all with 1 distinct value.
+
+────────────────────────────────────────────────────────────────────────
+GROUP B — SPAN CRITICAL
+────────────────────────────────────────────────────────────────────────
+  STABLE   2022|months_covered  = 12
+  STABLE   2022|period_end  = 2022-10-31
+  STABLE   2022|period_start  = null
+  STABLE   2023|months_covered  = 12
+  STABLE   2023|period_end  = 2023-10-31
+  STABLE   2023|period_start  = null
+  STABLE   doc|report_date  = 2024-02-22
+
+GROUP B entirely stable. 7 keys, all with 1 distinct value.
+
+────────────────────────────────────────────────────────────────────────
+GROUP C — EVERYTHING ELSE
+────────────────────────────────────────────────────────────────────────
+total GROUP C keys:   62
+stable (1 distinct):  53
+unstable (> 1):       9
+
+Top 10 most variable GROUP C keys:
+  2022|years.2022.cost_of_sales_breakdown.other_direct_costs  distinct=3  values=[124523, 124599, 124648]
+  2022|years.2022.financial_ratios.gross_margin_percent  distinct=3  values=[22.89176101312951, 22.89176100113428, 22.89176101310535]
+  2022|years.2022.overheads_breakdown.other_overheads  distinct=3  values=[34301, 35847, 37448]
+  2022|years.2022.total_staff_costs  distinct=3  values=[561663, 538301, 559834]
+  2023|years.2023.financial_ratios.net_margin_percent  distinct=3  values=[1.988729246119179, 1.988729246119175, 1.988729246100071]
+  2023|years.2023.overheads_breakdown.other_overheads  distinct=3  values=[24027, 45426, 39026]
+  2023|years.2023.total_staff_costs  distinct=3  values=[548950, 543998, 547148]
+  2022|years.2022.financial_ratios.net_margin_percent  distinct=2  values=[3.647999848113347, 3.647999848113174]
+  2023|years.2023.financial_ratios.gross_margin_percent  distinct=2  values=[27.00772020810383, 27.00772243717794]
+  2022|years.2022.cost_of_sales_breakdown.direct_labour  distinct=1  value=252380
+
+────────────────────────────────────────────────────────────────────────
+depreciation_amortisation — special report
+────────────────────────────────────────────────────────────────────────
+  STABLE   2022|years.2022.profit_and_loss.depreciation_amortisation  = 61034
+           values across 5 runs: [61034, 61034, 61034, 61034, 61034]
+  STABLE   2023|years.2023.profit_and_loss.depreciation_amortisation  = 54527
+           values across 5 runs: [54527, 54527, 54527, 54527, 54527]
+
+────────────────────────────────────────────────────────────────────────
+ROW COUNT PROOF (writes-nothing check)
+────────────────────────────────────────────────────────────────────────
+  document_analysis_results: before=548  after=548  → UNCHANGED
+  document_evidence: before=391  after=391  → UNCHANGED
+  document_evidence_period: before=743  after=743  → UNCHANGED
+  document_evidence_figure: before=16712  after=16712  → UNCHANGED
+
+completed: 2026-08-08T23:29:10.670Z
+========================================================================
+
+========================================================================
+STABILITY-1 REPORT
+doc_id:    5862
+type:      balance_sheet
+runs:      5
+filePath:  companies/89/doc-1777320972331-861910426.pdf
+fileName:  doc-1777320972331-861910426.pdf
+mimeType:  application/pdf
+promptVersion: 1c
+started:   2026-08-08T23:29:46.413Z
+========================================================================
+
+────────────────────────────────────────────────────────────────
+RUN 1/5  started: 2026-08-08T23:29:46.418Z
+RUN 1: OK  model=gemini-3-flash-preview  elapsed=103440ms
+────────────────────────────────────────────────────────────────
+RUN 2/5  started: 2026-08-08T23:31:29.860Z
+RUN 2: OK  model=gemini-3-flash-preview  elapsed=12175ms
+────────────────────────────────────────────────────────────────
+RUN 3/5  started: 2026-08-08T23:31:42.037Z
+RUN 3: OK  model=gemini-3-flash-preview  elapsed=13352ms
+────────────────────────────────────────────────────────────────
+RUN 4/5  started: 2026-08-08T23:31:55.390Z
+RUN 4: OK  model=gemini-3-flash-preview  elapsed=103783ms
+────────────────────────────────────────────────────────────────
+RUN 5/5  started: 2026-08-08T23:33:39.174Z
+RUN 5: OK  model=gemini-3-flash-preview  elapsed=13009ms
+
+========================================================================
+STABILITY ANALYSIS
+========================================================================
+
+doc 5862  type=balance_sheet  runs=5
+total keys compared:        36  (figures: 29  period: 7)
+keys with 1 distinct value: 32
+keys with > 1 distinct:     4
+arithmetic check:           32 + 4 = 36  (should equal 36)
+
+────────────────────────────────────────────────────────────────────────
+GROUP A — VALUATION CRITICAL
+────────────────────────────────────────────────────────────────────────
+  STABLE   2022|years.2022.balance_sheet.current_assets.cash_at_bank  = 21316
+  STABLE   2022|years.2022.balance_sheet.current_assets.total  = 1524897
+  STABLE   2022|years.2022.balance_sheet.current_assets.trade_debtors  = 882706
+  STABLE   2022|years.2022.balance_sheet.current_liabilities.total  = 1244996
+  STABLE   2022|years.2022.balance_sheet.equity.retained_earnings  = 429089
+  STABLE   2022|years.2022.balance_sheet.equity.share_capital  = 100
+  STABLE   2022|years.2022.balance_sheet.equity.total  = 429189
+  STABLE   2022|years.2022.balance_sheet.fixed_assets.tangible_assets  = 230701
+  STABLE   2022|years.2022.balance_sheet.long_term_liabilities.hire_purchase_long_term  = 81413
+  STABLE   2022|years.2022.balance_sheet.long_term_liabilities.total  = 81413
+  STABLE   2023|years.2023.balance_sheet.current_assets.cash_at_bank  = 28094
+  STABLE   2023|years.2023.balance_sheet.current_assets.total  = 1012734
+  STABLE   2023|years.2023.balance_sheet.current_assets.trade_debtors  = 553354
+  STABLE   2023|years.2023.balance_sheet.current_liabilities.total  = 706172
+  STABLE   2023|years.2023.balance_sheet.equity.retained_earnings  = 457593
+  STABLE   2023|years.2023.balance_sheet.equity.share_capital  = 100
+  STABLE   2023|years.2023.balance_sheet.equity.total  = 457693
+  STABLE   2023|years.2023.balance_sheet.fixed_assets.tangible_assets  = 237474
+  STABLE   2023|years.2023.balance_sheet.long_term_liabilities.hire_purchase_long_term  = 86343
+  STABLE   2023|years.2023.balance_sheet.long_term_liabilities.total  = 86343
+
+GROUP A entirely stable. 20 keys, all with 1 distinct value.
+
+────────────────────────────────────────────────────────────────────────
+GROUP B — SPAN CRITICAL
+────────────────────────────────────────────────────────────────────────
+  STABLE   2022|months_covered  = 12
+  STABLE   2022|period_end  = 2022-10-31
+  STABLE   2022|period_start  = null
+  STABLE   2023|months_covered  = 12
+  STABLE   2023|period_end  = 2023-10-31
+  STABLE   2023|period_start  = null
+  STABLE   doc|report_date  = 2024-02-22
+
+GROUP B entirely stable. 7 keys, all with 1 distinct value.
+
+────────────────────────────────────────────────────────────────────────
+GROUP C — EVERYTHING ELSE
+────────────────────────────────────────────────────────────────────────
+total GROUP C keys:   9
+stable (1 distinct):  5
+unstable (> 1):       4
+
+Top 10 most variable GROUP C keys:
+  2023|years.2023.financial_ratios.gearing_ratio_percent  distinct=3  values=[18.8648289624275, 18.86482897944254, 18.86482895347081]
+  2023|years.2023.financial_ratios.quick_ratio  distinct=3  values=[0.823385803317039, 0.8233801396826821, 0.8233942949904555]
+  2022|years.2022.financial_ratios.quick_ratio  distinct=2  values=[0.7261236180678492, 0.7261244212832813]
+  2023|years.2023.financial_ratios.net_assets_growth_percent  distinct=2  values=[6.641363129062022, 6.641363129064352]
+  2022|years.2022.balance_sheet.current_assets.stock  distinct=1  value=620875
+  2022|years.2022.financial_ratios.current_ratio  distinct=1  value=1.2248208026371168
+  2022|years.2022.financial_ratios.gearing_ratio_percent  distinct=1  value=18.96903229113514
+  2023|years.2023.balance_sheet.current_assets.stock  distinct=1  value=431286
+  2023|years.2023.financial_ratios.current_ratio  distinct=1  value=1.434118033566185
+
+────────────────────────────────────────────────────────────────────────
+depreciation_amortisation — special report
+────────────────────────────────────────────────────────────────────────
+  No depreciation_amortisation keys found in GROUP A for this doc/type.
+
+────────────────────────────────────────────────────────────────────────
+ROW COUNT PROOF (writes-nothing check)
+────────────────────────────────────────────────────────────────────────
+  document_analysis_results: before=548  after=548  → UNCHANGED
+  document_evidence: before=391  after=391  → UNCHANGED
+  document_evidence_period: before=743  after=743  → UNCHANGED
+  document_evidence_figure: before=16712  after=16712  → UNCHANGED
+
+completed: 2026-08-08T23:33:52.333Z
+========================================================================
+
