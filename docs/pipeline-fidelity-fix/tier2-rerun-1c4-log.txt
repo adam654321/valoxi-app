@@ -218,3 +218,48 @@ verdict: COMPLETE
 
 Batch G-retry finished: 2026-08-08T15:18:05.326Z
 
+════════════════════════════════════════════════════════════════
+BATCH ctrl-1  docs: [5830]  started: 2026-08-08T21:52:22.591Z
+
+────────────────────────────────────────────────────────────────
+doc_id: 5830
+event_id: 602
+cleanup: DARs deleted, financial data deleted, event reset to 'pending'
+retrigger fired: 2026-08-08T21:52:23.287Z  (analyzeUploadedFileWithGemini inline)
+completion confirmed: 2026-08-08T21:52:56.457Z  elapsed: 33170ms
+new DAR type set: [balance_sheet, company_accounts, profit_and_loss]
+v2 evidence rows written: 2
+verdict: COMPLETE
+
+Batch ctrl-1 finished: 2026-08-08T21:52:56.461Z
+
+════════════════════════════════════════════════════════════════
+BATCH ctrl-2  docs: [5862]  started: 2026-08-08T21:53:31.258Z
+
+────────────────────────────────────────────────────────────────
+doc_id: 5862
+event_id: 634
+cleanup: DARs deleted, financial data deleted, event reset to 'pending'
+retrigger fired: 2026-08-08T21:53:31.405Z  (analyzeUploadedFileWithGemini inline)
+completion confirmed: 2026-08-08T21:54:03.431Z  elapsed: 32026ms
+new DAR type set: [balance_sheet, company_accounts, profit_and_loss]
+v2 evidence rows written: 2
+verdict: COMPLETE
+
+Batch ctrl-2 finished: 2026-08-08T21:54:03.434Z
+
+════════════════════════════════════════════════════════════════
+BATCH ctrl-3  docs: [5865]  started: 2026-08-08T21:54:39.879Z
+
+────────────────────────────────────────────────────────────────
+doc_id: 5865
+event_id: 637
+cleanup: DARs deleted, financial data deleted, event reset to 'pending'
+retrigger fired: 2026-08-08T21:54:40.007Z  (analyzeUploadedFileWithGemini inline)
+completion confirmed: 2026-08-08T21:54:49.478Z  elapsed: 9471ms
+new DAR type set: [profit_and_loss]
+v2 evidence rows written: 1
+verdict: COMPLETE
+
+Batch ctrl-3 finished: 2026-08-08T21:54:49.481Z
+
