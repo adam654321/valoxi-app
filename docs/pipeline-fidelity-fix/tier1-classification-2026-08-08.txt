@@ -1,0 +1,479 @@
+TIER 1 CLASSIFICATION STABILITY RUN
+Date: 2026-08-08
+PROMPT_VERSION: 1c
+HEAD SHA: d7444d2
+mimeType source field: file_upload_events.file_name
+Corpus: 38 documents (5830-5840, 5857-5872, 5873-5883)
+Skipped: doc_id 5878 — SKIPPED_MISSING_BYTES (YE23 Accounts.pdf, NotFound in R2)
+
+────────────────────────────────────────────────────────────────
+doc_id: 5830
+fileName: Signed - Full Accounts - 31032024_230330.pdf
+filePath: companies/228/doc-1784214789681-342348647.pdf
+mimeType: application/pdf
+storedDarTypes: [balance_sheet, company_accounts, profit_and_loss]
+rawResult: {"success":true,"documentTypes":["company_accounts"],"confidence":"high","reasoning":"The document is a full set of annual report and unaudited financial statements for Midland Air Conditioning for the year ended 31 March 2024, including a director's report, profit and loss account, balance sheet, and notes to the financial statements.","isInformationMemorandum":false,"processingTime":3859,"usageMetadata":{"promptTokenCount":8697,"candidatesTokenCount":106,"totalTokenCount":8803}}
+verdict: PASS
+expectedDarSet: [balance_sheet, company_accounts, profit_and_loss]
+
+────────────────────────────────────────────────────────────────
+doc_id: 5831
+fileName: Year Ending 31.03.2023.pdf
+filePath: companies/228/doc-1784216448649-638236711.pdf
+mimeType: application/pdf
+storedDarTypes: [balance_sheet, company_accounts, profit_and_loss]
+rawResult: {"success":true,"documentTypes":["company_accounts"],"confidence":"high","reasoning":"The document is a full set of unaudited financial statements for Midland Air Conditioning & Facility Management Ltd for the year ended 31 March 2023. It includes a Director's Report, Income Statement, Balance Sheet, and Notes to the Financial Statements.","isInformationMemorandum":false,"processingTime":3636,"usageMetadata":{"promptTokenCount":8697,"candidatesTokenCount":111,"totalTokenCount":8808}}
+verdict: PASS
+expectedDarSet: [balance_sheet, company_accounts, profit_and_loss]
+
+────────────────────────────────────────────────────────────────
+doc_id: 5832
+fileName: Midland_Air_Conditioning___Facility_Management_Ltd_-_Profit_and_Loss (31) DRAFT.pdf
+filePath: companies/228/doc-1784216927322-99318749.pdf
+mimeType: application/pdf
+storedDarTypes: [balance_sheet, company_accounts, profit_and_loss]
+rawResult: {"success":true,"documentTypes":["profit_and_loss"],"confidence":"high","reasoning":"The document is a standalone Profit and Loss statement for the year ended 31 March 2025, containing detailed turnover, cost of sales, and administrative expenses. It does not contain a balance sheet or statutory notes required for company_accounts classification.","isInformationMemorandum":false,"processingTime":2550,"usageMetadata":{"promptTokenCount":2845,"candidatesTokenCount":110,"totalTokenCount":2955}}
+verdict: CHANGE
+expectedDarSet: [profit_and_loss]
+storedDarSet:   [balance_sheet, company_accounts, profit_and_loss]
+
+────────────────────────────────────────────────────────────────
+doc_id: 5833
+fileName: P&L YE 31.03.2026.pdf
+filePath: companies/228/doc-1784216942561-584515673.pdf
+mimeType: application/pdf
+storedDarTypes: [profit_and_loss]
+rawResult: {"success":true,"documentTypes":["profit_and_loss"],"confidence":"high","reasoning":"The document is a standalone Profit and Loss statement for Midland Air Conditioning & Facility Management Ltd for the year ended 31 March 2026, containing detailed turnover, cost of sales, and administrative expenses.","isInformationMemorandum":false,"processingTime":2451,"usageMetadata":{"promptTokenCount":2313,"candidatesTokenCount":102,"totalTokenCount":2415}}
+verdict: PASS
+expectedDarSet: [profit_and_loss]
+
+────────────────────────────────────────────────────────────────
+doc_id: 5834
+fileName: MI Presentation 06-25.pptx
+filePath: companies/228/doc-1784217011240-707079318.pptx
+mimeType: application/vnd.openxmlformats-officedocument.presentationml.presentation
+storedDarTypes: []
+attempt 1 failed — retrying: Gemini API error 400: {
+  "error": {
+    "code": 400,
+    "message": "Unsupported MIME type: application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "status": "INVALID_ARGUMENT"
+  }
+}
+
+verdict: ERROR
+error: Gemini API error 400: {
+  "error": {
+    "code": 400,
+    "message": "Unsupported MIME type: application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "status": "INVALID_ARGUMENT"
+  }
+}
+
+rawResult: {"success":false,"documentTypes":[],"error":"Gemini API error 400: {\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"Unsupported MIME type: application/vnd.openxmlformats-officedocument.presentationml.presentation\",\n    \"status\": \"INVALID_ARGUMENT\"\n  }\n}\n","processingTime":685}
+
+────────────────────────────────────────────────────────────────
+doc_id: 5835
+fileName: 154764 - Midland Air Conditioning & Facility Management Ltd.pdf
+filePath: companies/228/doc-1784217025842-596919980.pdf
+mimeType: application/pdf
+storedDarTypes: [balance_sheet, company_accounts, profit_and_loss]
+rawResult: {"success":true,"documentTypes":["company_accounts"],"confidence":"high","reasoning":"The document contains multi-year financial statements including both Profit and Loss and Balance Sheet data for the years YE21 through YE25.","isInformationMemorandum":true,"imReason":"The document is explicitly titled 'INFORMATION MEMORANDUM' and contains broker branding, an executive summary, and growth opportunities.","processingTime":8118,"usageMetadata":{"promptTokenCount":11889,"candidatesTokenCount":103,"totalTokenCount":11992}}
+verdict: PASS
+expectedDarSet: [balance_sheet, company_accounts, profit_and_loss]
+
+────────────────────────────────────────────────────────────────
+doc_id: 5836
+fileName: Balance Sheet.pdf
+filePath: companies/228/doc-1784222385163-591978777.pdf
+mimeType: application/pdf
+storedDarTypes: [balance_sheet, company_accounts, profit_and_loss]
+rawResult: {"success":true,"documentTypes":["balance_sheet"],"confidence":"high","reasoning":"The document is a standalone Balance Sheet for Midland Air Conditioning & Facility Management Ltd as at 8 September 2025, containing detailed asset and liability breakdowns.","isInformationMemorandum":false,"processingTime":2464,"usageMetadata":{"promptTokenCount":2313,"candidatesTokenCount":89,"totalTokenCount":2402}}
+verdict: CHANGE
+expectedDarSet: [balance_sheet]
+storedDarSet:   [balance_sheet, company_accounts, profit_and_loss]
+
+────────────────────────────────────────────────────────────────
+doc_id: 5837
+fileName: MAC Sales Ledger 01.04.25 to 08.09.25.csv
+filePath: companies/228/doc-1784226449803-712664815.csv
+mimeType: text/csv
+storedDarTypes: [sales_ledger]
+rawResult: {"success":true,"documentTypes":["sales_ledger"],"confidence":"high","reasoning":"The document is a detailed list of invoices for Midland Air Conditioning & Facility Management Ltd, including invoice numbers, dates, customer names, net/VAT/gross amounts, payments made, outstanding balances, and payment status. This matches the structure and purpose of a sales ledger.","isInformationMemorandum":false,"processingTime":1975,"usageMetadata":{"promptTokenCount":28464,"candidatesTokenCount":110,"totalTokenCount":28574}}
+verdict: PASS
+expectedDarSet: [sales_ledger]
+
+────────────────────────────────────────────────────────────────
+doc_id: 5838
+fileName: MAC Staff Matrix - Sept 2025.csv
+filePath: companies/228/doc-1784226459457-262851834.csv
+mimeType: text/csv
+storedDarTypes: [staff_matrix]
+rawResult: {"success":true,"documentTypes":["staff_matrix"],"confidence":"high","reasoning":"The document is explicitly titled 'Staff Matrix' and contains a detailed breakdown of employees, their roles, start dates, annual salaries, FTE status, and qualifications, which aligns perfectly with the staff matrix category.","isInformationMemorandum":false,"processingTime":1653,"usageMetadata":{"promptTokenCount":2939,"candidatesTokenCount":97,"totalTokenCount":3036}}
+verdict: PASS
+expectedDarSet: [staff_matrix]
+
+────────────────────────────────────────────────────────────────
+doc_id: 5839
+fileName: MAC Fixed Asset Register 08.09.25.csv
+filePath: companies/228/doc-1784226472422-618799378.csv
+mimeType: text/csv
+storedDarTypes: [asset_register]
+rawResult: {"success":true,"documentTypes":["asset_register"],"confidence":"high","reasoning":"The document is a detailed list of company assets including Asset IDs, categories, purchase dates, costs, accumulated depreciation, and net book values, which matches the Asset Register type.","isInformationMemorandum":false,"processingTime":1685,"usageMetadata":{"promptTokenCount":4211,"candidatesTokenCount":91,"totalTokenCount":4302}}
+verdict: PASS
+expectedDarSet: [asset_register]
+
+────────────────────────────────────────────────────────────────
+doc_id: 5840
+fileName: signed_nda_228_2026-07-16T18-58-57-118Z.pdf
+filePath: signed-ndas/doc-1784228337118-311080624.pdf
+mimeType: application/pdf
+storedDarTypes: []
+rawResult: {"success":true,"documentTypes":["none"],"confidence":"high","reasoning":"The document is a Non-Disclosure Agreement (NDA) between Thor-CON and Valoxi.ai. It does not contain financial statements, asset registers, sales ledgers, or staff matrices.","isInformationMemorandum":false,"processingTime":1639,"usageMetadata":{"promptTokenCount":2845,"candidatesTokenCount":87,"totalTokenCount":2932}}
+verdict: PASS
+expectedDarSet: []
+
+────────────────────────────────────────────────────────────────
+doc_id: 5857
+fileName: doc-1777320748873-193749054.pdf
+filePath: companies/89/doc-1777320748873-193749054.pdf
+mimeType: application/pdf
+storedDarTypes: [balance_sheet, company_accounts, profit_and_loss]
+rawResult: {"success":true,"documentTypes":["company_accounts"],"confidence":"high","reasoning":"The document is a complete set of unaudited financial statements for Innova Design Group Limited, including a Directors' Report, Accountant's Report, Profit and Loss Account, Balance Sheet, and Notes to the Financial Statements for the year ended 31 October 2025.","isInformationMemorandum":false,"processingTime":3324,"usageMetadata":{"promptTokenCount":7633,"candidatesTokenCount":108,"totalTokenCount":7741}}
+verdict: PASS
+expectedDarSet: [balance_sheet, company_accounts, profit_and_loss]
+
+────────────────────────────────────────────────────────────────
+doc_id: 5858
+fileName: doc-1777320831981-40650166.xlsx
+filePath: companies/89/doc-1777320831981-40650166.xlsx
+mimeType: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+storedDarTypes: [asset_register]
+rawResult: {"success":true,"documentTypes":["asset_register"],"confidence":"high","reasoning":"The document is a detailed Fixed Asset Register (FAR) for Innova Design Group Limited, spanning multiple months (Oct 25 to Mar 26). It provides a granular breakdown of assets including cost, accumulated depreciation, net book value, depreciation rates (20% Reducing Balance and 3-year straight line), and specific asset categories like Plant & Machinery and Office Equipment.","isInformationMemorandum":false,"processingTime":2733,"usageMetadata":{"promptTokenCount":49765,"candidatesTokenCount":127,"totalTokenCount":49892}}
+verdict: PASS
+expectedDarSet: [asset_register]
+
+────────────────────────────────────────────────────────────────
+doc_id: 5859
+fileName: doc-1777320863799-891328168.pdf
+filePath: companies/89/doc-1777320863799-891328168.pdf
+mimeType: application/pdf
+storedDarTypes: []
+rawResult: {"success":true,"documentTypes":["none"],"confidence":"high","reasoning":"The document is an organizational chart for Innova Design Group, showing the reporting structure and staff roles. It does not contain financial data, salary information, or asset details required for the specified categories.","isInformationMemorandum":false,"processingTime":3098,"usageMetadata":{"promptTokenCount":1781,"candidatesTokenCount":87,"totalTokenCount":1868}}
+verdict: PASS
+expectedDarSet: []
+
+────────────────────────────────────────────────────────────────
+doc_id: 5860
+fileName: doc-1777320908889-481369088.pdf
+filePath: companies/89/doc-1777320908889-481369088.pdf
+mimeType: application/pdf
+storedDarTypes: [profit_and_loss]
+rawResult: {"success":true,"documentTypes":["profit_and_loss"],"confidence":"high","reasoning":"The document is a detailed P&L Summary showing monthly performance for a full year, including revenue, cost of sales, gross profit, and a breakdown of overheads.","isInformationMemorandum":false,"processingTime":2491,"usageMetadata":{"promptTokenCount":1781,"candidatesTokenCount":92,"totalTokenCount":1873}}
+verdict: PASS
+expectedDarSet: [profit_and_loss]
+
+────────────────────────────────────────────────────────────────
+doc_id: 5861
+fileName: doc-1777320937794-82781259.pdf
+filePath: companies/89/doc-1777320937794-82781259.pdf
+mimeType: application/pdf
+storedDarTypes: [balance_sheet, company_accounts, profit_and_loss]
+rawResult: {"success":true,"documentTypes":["company_accounts"],"confidence":"high","reasoning":"The document is a full set of unaudited financial statements for Innova Design Group Limited for the year ended 31 October 2024, including a Directors' Report, Profit and Loss Account, Balance Sheet, and Notes to the Financial Statements.","isInformationMemorandum":false,"processingTime":3270,"usageMetadata":{"promptTokenCount":8697,"candidatesTokenCount":109,"totalTokenCount":8806}}
+verdict: PASS
+expectedDarSet: [balance_sheet, company_accounts, profit_and_loss]
+
+────────────────────────────────────────────────────────────────
+doc_id: 5862
+fileName: doc-1777320972331-861910426.pdf
+filePath: companies/89/doc-1777320972331-861910426.pdf
+mimeType: application/pdf
+storedDarTypes: [balance_sheet, company_accounts, profit_and_loss]
+rawResult: {"success":true,"documentTypes":["company_accounts"],"confidence":"high","reasoning":"The document is a full set of unaudited abridged financial statements for Innova Design Group Limited, including a Directors' Report, Profit and Loss Account, Balance Sheet, and Notes to the Accounts for the year ended 31 October 2023.","isInformationMemorandum":false,"processingTime":3263,"usageMetadata":{"promptTokenCount":8165,"candidatesTokenCount":110,"totalTokenCount":8275}}
+verdict: PASS
+expectedDarSet: [balance_sheet, company_accounts, profit_and_loss]
+
+────────────────────────────────────────────────────────────────
+doc_id: 5863
+fileName: doc-1777321003082-792026998.pdf
+filePath: companies/89/doc-1777321003082-792026998.pdf
+mimeType: application/pdf
+storedDarTypes: [balance_sheet, company_accounts, profit_and_loss]
+rawResult: {"success":true,"documentTypes":["company_accounts"],"confidence":"high","reasoning":"The document is a complete set of unaudited abridged financial statements for Innova Design Group Limited, including a Directors' Report, Profit and Loss Account, Balance Sheet, and Notes to the Financial Statements for the year ended 31 October 2022.","isInformationMemorandum":false,"processingTime":2766,"usageMetadata":{"promptTokenCount":8165,"candidatesTokenCount":107,"totalTokenCount":8272}}
+verdict: PASS
+expectedDarSet: [balance_sheet, company_accounts, profit_and_loss]
+
+────────────────────────────────────────────────────────────────
+doc_id: 5864
+fileName: doc-1777321108865-628961648.pdf
+filePath: companies/89/doc-1777321108865-628961648.pdf
+mimeType: application/pdf
+storedDarTypes: [sales_ledger]
+rawResult: {"success":true,"documentTypes":["sales_ledger"],"confidence":"high","reasoning":"The document is an 'Aged Debtor List' which provides a detailed breakdown of outstanding invoices by customer, including invoice dates, due dates, balances, and aging buckets (1-30 days, 31-60 days, etc.). This is a standard sales ledger report.","isInformationMemorandum":false,"processingTime":3459,"usageMetadata":{"promptTokenCount":4441,"candidatesTokenCount":115,"totalTokenCount":4556}}
+verdict: PASS
+expectedDarSet: [sales_ledger]
+
+────────────────────────────────────────────────────────────────
+doc_id: 5865
+fileName: doc-1783152904384-594607571.pdf
+filePath: companies/89/doc-1783152904384-594607571.pdf
+mimeType: application/pdf
+storedDarTypes: [profit_and_loss]
+rawResult: {"success":true,"documentTypes":["profit_and_loss"],"confidence":"high","reasoning":"The document is a standalone 'P&L SUMMARY' showing monthly and year-to-date financial performance including sales, cost of sales, gross profit, overheads, and net profit.","isInformationMemorandum":false,"processingTime":2830,"usageMetadata":{"promptTokenCount":1781,"candidatesTokenCount":97,"totalTokenCount":1878}}
+verdict: PASS
+expectedDarSet: [profit_and_loss]
+
+────────────────────────────────────────────────────────────────
+doc_id: 5866
+fileName: doc-1783152919710-270636692.pdf
+filePath: companies/89/doc-1783152919710-270636692.pdf
+mimeType: application/pdf
+storedDarTypes: [balance_sheet]
+rawResult: {"success":true,"documentTypes":["balance_sheet"],"confidence":"high","reasoning":"The document is explicitly titled 'Balance Sheet' and contains standard balance sheet components such as Fixed Assets, Current Assets, Current Liabilities, and Net Assets for a single period (YTD May 2026).","isInformationMemorandum":false,"processingTime":2667,"usageMetadata":{"promptTokenCount":1781,"candidatesTokenCount":100,"totalTokenCount":1881}}
+verdict: PASS
+expectedDarSet: [balance_sheet]
+
+────────────────────────────────────────────────────────────────
+doc_id: 5867
+fileName: doc-1783152961971-950185558.pdf
+filePath: companies/89/doc-1783152961971-950185558.pdf
+mimeType: application/pdf
+storedDarTypes: [balance_sheet, company_accounts, profit_and_loss]
+rawResult: {"success":true,"documentTypes":["company_accounts"],"confidence":"high","reasoning":"The document is a complete set of unaudited financial statements for the year ended 31 October 2025, including a Directors' Report, Accountant's Report, Profit and Loss Account, Balance Sheet, and Notes to the Financial Statements.","isInformationMemorandum":false,"processingTime":2833,"usageMetadata":{"promptTokenCount":7633,"candidatesTokenCount":108,"totalTokenCount":7741}}
+verdict: PASS
+expectedDarSet: [balance_sheet, company_accounts, profit_and_loss]
+
+────────────────────────────────────────────────────────────────
+doc_id: 5868
+fileName: doc-1783152989923-333352671.pdf
+filePath: companies/89/doc-1783152989923-333352671.pdf
+mimeType: application/pdf
+storedDarTypes: [balance_sheet, company_accounts, profit_and_loss]
+rawResult: {"success":true,"documentTypes":["company_accounts"],"confidence":"high","reasoning":"The document is a full set of unaudited financial statements for Innova Design Group Limited, including a Directors' Report, Profit and Loss Account, Balance Sheet, and Notes to the Financial Statements for the year ended 31 October 2024.","isInformationMemorandum":false,"processingTime":2296,"usageMetadata":{"promptTokenCount":8697,"candidatesTokenCount":109,"totalTokenCount":8806}}
+verdict: PASS
+expectedDarSet: [balance_sheet, company_accounts, profit_and_loss]
+
+────────────────────────────────────────────────────────────────
+doc_id: 5869
+fileName: doc-1783153004056-936850820.pdf
+filePath: companies/89/doc-1783153004056-936850820.pdf
+mimeType: application/pdf
+storedDarTypes: [balance_sheet, company_accounts, profit_and_loss]
+rawResult: {"success":true,"documentTypes":["company_accounts"],"confidence":"high","reasoning":"The document is a complete set of unaudited abridged financial statements for the year ended 31 October 2023, including a Directors' Report, Profit and Loss Account, Balance Sheet, and Notes to the Accounts.","isInformationMemorandum":false,"processingTime":3417,"usageMetadata":{"promptTokenCount":8165,"candidatesTokenCount":104,"totalTokenCount":8269}}
+verdict: PASS
+expectedDarSet: [balance_sheet, company_accounts, profit_and_loss]
+
+────────────────────────────────────────────────────────────────
+doc_id: 5870
+fileName: doc-1783153025122-485578271.pdf
+filePath: companies/89/doc-1783153025122-485578271.pdf
+mimeType: application/pdf
+storedDarTypes: []
+rawResult: {"success":true,"documentTypes":["none"],"confidence":"high","reasoning":"The document is an organizational chart showing the company's management structure and reporting lines. It does not contain financial data, salary information, or asset lists required for the specified categories.","isInformationMemorandum":false,"processingTime":2185,"usageMetadata":{"promptTokenCount":1781,"candidatesTokenCount":90,"totalTokenCount":1871}}
+verdict: PASS
+expectedDarSet: []
+
+────────────────────────────────────────────────────────────────
+doc_id: 5871
+fileName: doc-1783153036464-32715274.xlsx
+filePath: companies/89/doc-1783153036464-32715274.xlsx
+mimeType: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+storedDarTypes: [asset_register]
+rawResult: {"success":true,"documentTypes":["asset_register"],"confidence":"high","reasoning":"The document is a detailed Fixed Asset Register containing multiple monthly sheets (Oct 25 to Mar 26). It includes asset descriptions, purchase dates, historical costs, depreciation rates (20% Reducing Balance and 3-year straight line), accumulated depreciation, and net book values (NBV). It also provides nominal account breakdowns for Plant & Machinery (0020) and Office Equipment (0030).","isInformationMemorandum":false,"processingTime":2370,"usageMetadata":{"promptTokenCount":49735,"candidatesTokenCount":137,"totalTokenCount":49872}}
+verdict: PASS
+expectedDarSet: [asset_register]
+
+────────────────────────────────────────────────────────────────
+doc_id: 5872
+fileName: doc-1783153142469-611908424.xlsx
+filePath: companies/89/doc-1783153142469-611908424.xlsx
+mimeType: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+storedDarTypes: []
+rawResult: {"success":true,"documentTypes":["none"],"confidence":"high","reasoning":"The document is a sales projection and pipeline forecast for the year ending October 2026. It lists invoiced sales, open sales orders, and various project bids categorized by probability (known wins, expected wins, etc.). It does not contain the historical ledger detail required for a Sales Ledger, nor does it match the statutory formats for P&L, Balance Sheet, Asset Register, or Staff Matrix.","isInformationMemorandum":true,"imReason":"The document includes forecast and projected years alongside management summaries of sales performance and pipeline.","processingTime":1744,"usageMetadata":{"promptTokenCount":2439,"candidatesTokenCount":146,"totalTokenCount":2585}}
+verdict: PASS
+expectedDarSet: []
+
+────────────────────────────────────────────────────────────────
+doc_id: 5873
+fileName: IM - 163009.pdf
+filePath: companies/138/doc-1778838673399-328152625.pdf
+mimeType: application/pdf
+storedDarTypes: [balance_sheet, company_accounts, profit_and_loss]
+rawResult: {"success":true,"documentTypes":["company_accounts"],"confidence":"high","reasoning":"The document contains multi-year financial statements including Profit and Loss and Balance Sheet data for YE22 through YE25. Since it contains both, it is classified as company accounts.","isInformationMemorandum":true,"imReason":"The document is explicitly titled 'INFORMATION MEMORANDUM' and contains broker branding, an executive summary, and growth opportunities.","processingTime":6966,"usageMetadata":{"promptTokenCount":9761,"candidatesTokenCount":112,"totalTokenCount":9873}}
+verdict: PASS
+expectedDarSet: [balance_sheet, company_accounts, profit_and_loss]
+
+────────────────────────────────────────────────────────────────
+doc_id: 5874
+fileName: Cooper-Gibson Limited AC and CT ye 29.02.2024.pdf
+filePath: companies/138/doc-1778838689011-823319302.pdf
+mimeType: application/pdf
+storedDarTypes: [balance_sheet, company_accounts, profit_and_loss]
+rawResult: {"success":true,"documentTypes":["company_accounts"],"confidence":"high","reasoning":"The document is a complete set of annual report and unaudited financial statements for Cooper-Gibson Limited, including a Director's Report, Profit and Loss Account, Balance Sheet, and Notes to the accounts.","isInformationMemorandum":false,"processingTime":3394,"usageMetadata":{"promptTokenCount":7633,"candidatesTokenCount":98,"totalTokenCount":7731}}
+verdict: PASS
+expectedDarSet: [balance_sheet, company_accounts, profit_and_loss]
+
+────────────────────────────────────────────────────────────────
+doc_id: 5875
+fileName: CGRProfitandLoss1Mar24.pdf
+filePath: companies/138/doc-1778838746863-404999227.pdf
+mimeType: application/pdf
+storedDarTypes: [balance_sheet, company_accounts, profit_and_loss]
+rawResult: {"success":true,"documentTypes":["profit_and_loss"],"confidence":"high","reasoning":"The document is a standalone Management Report specifically containing a Profit and Loss statement for the period March 2023 - February 2024, without a balance sheet or statutory account disclosures.","isInformationMemorandum":false,"processingTime":2730,"usageMetadata":{"promptTokenCount":2845,"candidatesTokenCount":98,"totalTokenCount":2943}}
+verdict: CHANGE
+expectedDarSet: [profit_and_loss]
+storedDarSet:   [balance_sheet, company_accounts, profit_and_loss]
+
+────────────────────────────────────────────────────────────────
+doc_id: 5876
+fileName: CompanyOverview-end28.2.25.pdf
+filePath: companies/138/doc-1778838776011-725630720.pdf
+mimeType: application/pdf
+storedDarTypes: [balance_sheet, company_accounts, profit_and_loss]
+rawResult: {"success":true,"documentTypes":["company_accounts"],"confidence":"high","reasoning":"The document is a management report containing both a Profit and Loss statement and a Balance Sheet for Cooper-Gibson Ltd for the period ended 28 February 2025.","isInformationMemorandum":false,"processingTime":3072,"usageMetadata":{"promptTokenCount":3377,"candidatesTokenCount":92,"totalTokenCount":3469}}
+verdict: PASS
+expectedDarSet: [balance_sheet, company_accounts, profit_and_loss]
+
+────────────────────────────────────────────────────────────────
+doc_id: 5877
+fileName: FS_Cooper-GibsonLimited_28022025.pdf
+filePath: companies/138/doc-1778838798393-104382606.pdf
+mimeType: application/pdf
+storedDarTypes: [balance_sheet, company_accounts, profit_and_loss]
+rawResult: {"success":true,"documentTypes":["company_accounts"],"confidence":"high","reasoning":"The document is a complete set of unaudited financial statements for Cooper-Gibson Limited, including a Profit and Loss Account, Balance Sheet, and detailed Trading Profit and Loss Account for the year ended 28 February 2025.","isInformationMemorandum":false,"processingTime":3651,"usageMetadata":{"promptTokenCount":4973,"candidatesTokenCount":106,"totalTokenCount":5079}}
+verdict: PASS
+expectedDarSet: [balance_sheet, company_accounts, profit_and_loss]
+
+────────────────────────────────────────────────────────────────
+doc_id: 5878
+verdict: SKIPPED_MISSING_BYTES
+reason: SKIPPED_MISSING_BYTES — YE23 Accounts.pdf NotFound in R2: companies/138/doc-1778838811755-535012742.pdf
+
+────────────────────────────────────────────────────────────────
+doc_id: 5879
+fileName: Cooper-Gibson Ltd AC and CT ye 29.02.26._final.pdf
+filePath: companies/138/doc-1782036715100-291703953.pdf
+mimeType: application/pdf
+storedDarTypes: [balance_sheet, company_accounts, profit_and_loss]
+rawResult: {"success":true,"documentTypes":["company_accounts"],"confidence":"high","reasoning":"The document is a complete set of unaudited financial statements for Cooper-Gibson Limited for the year ended 28 February 2026, including a Profit and Loss Account, Balance Sheet, and Corporation Tax Computation.","isInformationMemorandum":false,"processingTime":2831,"usageMetadata":{"promptTokenCount":7633,"candidatesTokenCount":102,"totalTokenCount":7735}}
+verdict: PASS
+expectedDarSet: [balance_sheet, company_accounts, profit_and_loss]
+
+────────────────────────────────────────────────────────────────
+doc_id: 5880
+fileName: FYTDBalanceSheet_25.6.26.pdf
+filePath: companies/138/doc-1782760216464-656399555.pdf
+mimeType: application/pdf
+storedDarTypes: [balance_sheet]
+rawResult: {"success":true,"documentTypes":["balance_sheet"],"confidence":"high","reasoning":"The document is explicitly titled 'Balance Sheet' and contains standard balance sheet components such as Fixed Assets, Current Assets, Creditors, and Capital and Reserves for a single point in time.","isInformationMemorandum":false,"processingTime":2316,"usageMetadata":{"promptTokenCount":2313,"candidatesTokenCount":93,"totalTokenCount":2406}}
+verdict: PASS
+expectedDarSet: [balance_sheet]
+
+────────────────────────────────────────────────────────────────
+doc_id: 5881
+fileName: FYTD_ProfitandLoss_25.6.26.pdf
+filePath: companies/138/doc-1782760240362-645911187.pdf
+mimeType: application/pdf
+storedDarTypes: [profit_and_loss]
+rawResult: {"success":true,"documentTypes":["profit_and_loss"],"confidence":"high","reasoning":"The document is a standalone Profit and Loss statement for Cooper-Gibson Ltd for the period 1 March to 25 June 2026, containing revenue, cost of sales, gross profit, expenses, and net income.","isInformationMemorandum":false,"processingTime":2513,"usageMetadata":{"promptTokenCount":1781,"candidatesTokenCount":106,"totalTokenCount":1887}}
+verdict: PASS
+expectedDarSet: [profit_and_loss]
+
+────────────────────────────────────────────────────────────────
+doc_id: 5882
+fileName: Cooper-Gibson Ltd_Sales by Customer Summary_LastFYto28.2.26.xlsx
+filePath: companies/138/doc-1782760262433-615318484.xlsx
+mimeType: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+storedDarTypes: [sales_ledger]
+rawResult: {"success":true,"documentTypes":["sales_ledger"],"confidence":"high","reasoning":"The document is a 'Sales by Customer Summary' listing specific clients, projects, and their respective invoice totals, which aligns with the structure of a sales ledger.","isInformationMemorandum":false,"processingTime":1559,"usageMetadata":{"promptTokenCount":1575,"candidatesTokenCount":88,"totalTokenCount":1663}}
+verdict: PASS
+expectedDarSet: [sales_ledger]
+
+────────────────────────────────────────────────────────────────
+doc_id: 5883
+fileName: Cooper-Gibson Ltd_Sales by Customer Summary_1.3.26-25.6.26.xlsx
+filePath: companies/138/doc-1782760273763-234847667.xlsx
+mimeType: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+storedDarTypes: [sales_ledger]
+rawResult: {"success":true,"documentTypes":["sales_ledger"],"confidence":"high","reasoning":"The document is a 'Sales by Customer Summary' showing a breakdown of revenue/invoiced amounts per client and project, which aligns with the sales ledger category.","isInformationMemorandum":false,"processingTime":1677,"usageMetadata":{"promptTokenCount":1455,"candidatesTokenCount":88,"totalTokenCount":1543}}
+verdict: PASS
+expectedDarSet: [sales_ledger]
+
+════════════════════════════════════════════════════════════════
+SUMMARY
+Attempted: 37  Skipped: 1  Total corpus: 38
+PASS:   33
+CHANGE: 3
+ERROR:  1
+PASS + CHANGE + ERROR = 37  (must equal 37)
+
+VERDICT TABLE
+5830   | PASS   | stored=[balance_sheet, company_accounts, profit_and_loss]
+5831   | PASS   | stored=[balance_sheet, company_accounts, profit_and_loss]
+5832   | CHANGE | stored=[balance_sheet, company_accounts, profit_and_loss] expected=[profit_and_loss]
+5833   | PASS   | stored=[profit_and_loss]
+5834   | ERROR
+5835   | PASS   | stored=[balance_sheet, company_accounts, profit_and_loss]
+5836   | CHANGE | stored=[balance_sheet, company_accounts, profit_and_loss] expected=[balance_sheet]
+5837   | PASS   | stored=[sales_ledger]
+5838   | PASS   | stored=[staff_matrix]
+5839   | PASS   | stored=[asset_register]
+5840   | PASS   | stored=[]
+5857   | PASS   | stored=[balance_sheet, company_accounts, profit_and_loss]
+5858   | PASS   | stored=[asset_register]
+5859   | PASS   | stored=[]
+5860   | PASS   | stored=[profit_and_loss]
+5861   | PASS   | stored=[balance_sheet, company_accounts, profit_and_loss]
+5862   | PASS   | stored=[balance_sheet, company_accounts, profit_and_loss]
+5863   | PASS   | stored=[balance_sheet, company_accounts, profit_and_loss]
+5864   | PASS   | stored=[sales_ledger]
+5865   | PASS   | stored=[profit_and_loss]
+5866   | PASS   | stored=[balance_sheet]
+5867   | PASS   | stored=[balance_sheet, company_accounts, profit_and_loss]
+5868   | PASS   | stored=[balance_sheet, company_accounts, profit_and_loss]
+5869   | PASS   | stored=[balance_sheet, company_accounts, profit_and_loss]
+5870   | PASS   | stored=[]
+5871   | PASS   | stored=[asset_register]
+5872   | PASS   | stored=[]
+5873   | PASS   | stored=[balance_sheet, company_accounts, profit_and_loss]
+5874   | PASS   | stored=[balance_sheet, company_accounts, profit_and_loss]
+5875   | CHANGE | stored=[balance_sheet, company_accounts, profit_and_loss] expected=[profit_and_loss]
+5876   | PASS   | stored=[balance_sheet, company_accounts, profit_and_loss]
+5877   | PASS   | stored=[balance_sheet, company_accounts, profit_and_loss]
+5878   | SKIPPED_MISSING_BYTES
+5879   | PASS   | stored=[balance_sheet, company_accounts, profit_and_loss]
+5880   | PASS   | stored=[balance_sheet]
+5881   | PASS   | stored=[profit_and_loss]
+5882   | PASS   | stored=[sales_ledger]
+5883   | PASS   | stored=[sales_ledger]
+
+CHANGE / ERROR DETAIL
+════ CHANGE doc_id 5832 ════
+fileName: Midland_Air_Conditioning___Facility_Management_Ltd_-_Profit_and_Loss (31) DRAFT.pdf
+storedDarSet:   [balance_sheet, company_accounts, profit_and_loss]
+expectedDarSet: [profit_and_loss]
+rawResult: {"success":true,"documentTypes":["profit_and_loss"],"confidence":"high","reasoning":"The document is a standalone Profit and Loss statement for the year ended 31 March 2025, containing detailed turnover, cost of sales, and administrative expenses. It does not contain a balance sheet or statutory notes required for company_accounts classification.","isInformationMemorandum":false,"processingTime":2550,"usageMetadata":{"promptTokenCount":2845,"candidatesTokenCount":110,"totalTokenCount":2955}}
+
+════ ERROR doc_id 5834 ════
+fileName: MI Presentation 06-25.pptx
+error: Gemini API error 400: {
+  "error": {
+    "code": 400,
+    "message": "Unsupported MIME type: application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "status": "INVALID_ARGUMENT"
+  }
+}
+
+rawResult: {"success":false,"documentTypes":[],"error":"Gemini API error 400: {\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"Unsupported MIME type: application/vnd.openxmlformats-officedocument.presentationml.presentation\",\n    \"status\": \"INVALID_ARGUMENT\"\n  }\n}\n","processingTime":685}
+
+════ CHANGE doc_id 5836 ════
+fileName: Balance Sheet.pdf
+storedDarSet:   [balance_sheet, company_accounts, profit_and_loss]
+expectedDarSet: [balance_sheet]
+rawResult: {"success":true,"documentTypes":["balance_sheet"],"confidence":"high","reasoning":"The document is a standalone Balance Sheet for Midland Air Conditioning & Facility Management Ltd as at 8 September 2025, containing detailed asset and liability breakdowns.","isInformationMemorandum":false,"processingTime":2464,"usageMetadata":{"promptTokenCount":2313,"candidatesTokenCount":89,"totalTokenCount":2402}}
+
+════ CHANGE doc_id 5875 ════
+fileName: CGRProfitandLoss1Mar24.pdf
+storedDarSet:   [balance_sheet, company_accounts, profit_and_loss]
+expectedDarSet: [profit_and_loss]
+rawResult: {"success":true,"documentTypes":["profit_and_loss"],"confidence":"high","reasoning":"The document is a standalone Management Report specifically containing a Profit and Loss statement for the period March 2023 - February 2024, without a balance sheet or statutory account disclosures.","isInformationMemorandum":false,"processingTime":2730,"usageMetadata":{"promptTokenCount":2845,"candidatesTokenCount":98,"totalTokenCount":2943}}
