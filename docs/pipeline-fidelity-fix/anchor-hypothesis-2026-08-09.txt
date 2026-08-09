@@ -1,0 +1,313 @@
+========================================================================
+ANCHOR-TEST REPORT
+doc_id:    5830
+type:      profit_and_loss
+variant:   A
+runs:      5
+filePath:  companies/228/doc-1784214789681-342348647.pdf
+fileName:  Signed - Full Accounts - 31032024_230330.pdf
+mimeType:  application/pdf
+started:   2026-08-09T17:56:09.448Z
+========================================================================
+
+fileBytes:  397088
+
+────────────────────────────────────────────────────────────────
+RUN 1/5  started: 2026-08-09T17:56:09.931Z
+RUN 1: OK  elapsed=10916ms
+────────────────────────────────────────────────────────────────
+RUN 2/5  started: 2026-08-09T17:56:20.847Z
+RUN 2: OK  elapsed=9791ms
+────────────────────────────────────────────────────────────────
+RUN 3/5  started: 2026-08-09T17:56:30.638Z
+RUN 3: OK  elapsed=9720ms
+────────────────────────────────────────────────────────────────
+RUN 4/5  started: 2026-08-09T17:56:40.359Z
+RUN 4: OK  elapsed=10030ms
+────────────────────────────────────────────────────────────────
+RUN 5/5  started: 2026-08-09T17:56:50.390Z
+RUN 5: OK  elapsed=9700ms
+
+========================================================================
+VARIANT A — GROUP A RESULTS
+========================================================================
+
+  STABLE    2023|administrative_expenses
+           runs: [730019, 730019, 730019, 730019, 730019]
+  STABLE    2023|corporation_tax
+           runs: [36214, 36214, 36214, 36214, 36214]
+  STABLE    2023|cost_of_sales
+           runs: [538883, 538883, 538883, 538883, 538883]
+  STABLE    2023|depreciation_amortisation
+           runs: [10824, 10824, 10824, 10824, 10824]
+  STABLE    2023|gross_profit
+           runs: [902788, 902788, 902788, 902788, 902788]
+  STABLE    2023|interest_payable
+           runs: [4524, 4524, 4524, 4524, 4524]
+  STABLE    2023|interest_receivable
+           runs: [61, 61, 61, 61, 61]
+  STABLE    2023|net_profit
+           runs: [132092, 132092, 132092, 132092, 132092]
+  STABLE    2023|operating_profit
+           runs: [172769, 172769, 172769, 172769, 172769]
+  STABLE    2023|other_operating_income
+           runs: [null, null, null, null, null]
+  STABLE    2023|profit_before_tax
+           runs: [168306, 168306, 168306, 168306, 168306]
+  STABLE    2023|revenue
+           runs: [1441671, 1441671, 1441671, 1441671, 1441671]
+  STABLE    2024|administrative_expenses
+           runs: [985102, 985102, 985102, 985102, 985102]
+  STABLE    2024|corporation_tax
+           runs: [17148, 17148, 17148, 17148, 17148]
+  STABLE    2024|cost_of_sales
+           runs: [632814, 632814, 632814, 632814, 632814]
+  STABLE    2024|depreciation_amortisation
+           runs: [51911, 51911, 51911, 51911, 51911]
+  STABLE    2024|gross_profit
+           runs: [1062389, 1062389, 1062389, 1062389, 1062389]
+  STABLE    2024|interest_payable
+           runs: [6761, 6761, 6761, 6761, 6761]
+  STABLE    2024|interest_receivable
+           runs: [512, 512, 512, 512, 512]
+  STABLE    2024|net_profit
+           runs: [53890, 53890, 53890, 53890, 53890]
+  STABLE    2024|operating_profit
+           runs: [77287, 77287, 77287, 77287, 77287]
+  STABLE    2024|other_operating_income
+           runs: [null, null, null, null, null]
+  STABLE    2024|profit_before_tax
+           runs: [71038, 71038, 71038, 71038, 71038]
+  STABLE    2024|revenue
+           runs: [1695203, 1695203, 1695203, 1695203, 1695203]
+
+────────────────────────────────────────────────────────────────────────
+ROW COUNT PROOF (writes-nothing check)
+────────────────────────────────────────────────────────────────────────
+  document_analysis_results: before=548  after=548  → UNCHANGED
+  document_evidence: before=391  after=391  → UNCHANGED
+  document_evidence_period: before=743  after=743  → UNCHANGED
+  document_evidence_figure: before=16712  after=16712  → UNCHANGED
+
+completed: 2026-08-09T17:57:00.131Z
+========================================================================
+
+========================================================================
+ANCHOR-TEST REPORT
+doc_id:    5830
+type:      profit_and_loss
+variant:   B
+runs:      5
+filePath:  companies/228/doc-1784214789681-342348647.pdf
+fileName:  Signed - Full Accounts - 31032024_230330.pdf
+mimeType:  application/pdf
+started:   2026-08-09T17:57:35.731Z
+========================================================================
+
+fileBytes:  397088
+
+────────────────────────────────────────────────────────────────
+RUN 1/5  started: 2026-08-09T17:57:36.130Z
+RUN 1: OK  elapsed=13044ms
+────────────────────────────────────────────────────────────────
+RUN 2/5  started: 2026-08-09T17:57:49.177Z
+RUN 2: OK  elapsed=13512ms
+────────────────────────────────────────────────────────────────
+RUN 3/5  started: 2026-08-09T17:58:02.691Z
+RUN 3: OK  elapsed=17566ms
+────────────────────────────────────────────────────────────────
+RUN 4/5  started: 2026-08-09T17:58:20.257Z
+RUN 4: OK  elapsed=13506ms
+────────────────────────────────────────────────────────────────
+RUN 5/5  started: 2026-08-09T17:58:33.764Z
+RUN 5: OK  elapsed=17594ms
+
+========================================================================
+VARIANT B — GROUP A RESULTS
+========================================================================
+
+  STABLE    2023|administrative_expenses
+           runs: [730019, 730019, 730019, 730019, 730019]
+  STABLE    2023|corporation_tax
+           runs: [36214, 36214, 36214, 36214, 36214]
+  STABLE    2023|cost_of_sales
+           runs: [538883, 538883, 538883, 538883, 538883]
+  STABLE    2023|depreciation_amortisation
+           runs: [51910, 51910, 51910, 51910, 51910]
+  STABLE    2023|gross_profit
+           runs: [902788, 902788, 902788, 902788, 902788]
+  STABLE    2023|interest_payable
+           runs: [4524, 4524, 4524, 4524, 4524]
+  STABLE    2023|interest_receivable
+           runs: [61, 61, 61, 61, 61]
+  STABLE    2023|net_profit
+           runs: [132092, 132092, 132092, 132092, 132092]
+  STABLE    2023|operating_profit
+           runs: [172769, 172769, 172769, 172769, 172769]
+  STABLE    2023|other_operating_income
+           runs: [null, null, null, null, null]
+  STABLE    2023|profit_before_tax
+           runs: [168306, 168306, 168306, 168306, 168306]
+  STABLE    2023|revenue
+           runs: [1441671, 1441671, 1441671, 1441671, 1441671]
+  STABLE    2024|administrative_expenses
+           runs: [985102, 985102, 985102, 985102, 985102]
+  STABLE    2024|corporation_tax
+           runs: [17148, 17148, 17148, 17148, 17148]
+  STABLE    2024|cost_of_sales
+           runs: [632814, 632814, 632814, 632814, 632814]
+  STABLE    2024|depreciation_amortisation
+           runs: [51911, 51911, 51911, 51911, 51911]
+  STABLE    2024|gross_profit
+           runs: [1062389, 1062389, 1062389, 1062389, 1062389]
+  STABLE    2024|interest_payable
+           runs: [6761, 6761, 6761, 6761, 6761]
+  STABLE    2024|interest_receivable
+           runs: [512, 512, 512, 512, 512]
+  STABLE    2024|net_profit
+           runs: [53890, 53890, 53890, 53890, 53890]
+  STABLE    2024|operating_profit
+           runs: [77287, 77287, 77287, 77287, 77287]
+  STABLE    2024|other_operating_income
+           runs: [null, null, null, null, null]
+  STABLE    2024|profit_before_tax
+           runs: [71038, 71038, 71038, 71038, 71038]
+  STABLE    2024|revenue
+           runs: [1695203, 1695203, 1695203, 1695203, 1695203]
+
+========================================================================
+VARIANT B — DEPRECIATION ANCHORS (smoking gun section)
+========================================================================
+
+  Key: years.2023.profit_and_loss.depreciation_amortisation
+    run 1: NO ANCHOR
+    run 2: NO ANCHOR
+    run 3: NO ANCHOR
+    run 4: NO ANCHOR
+    run 5: NO ANCHOR
+
+  Key: years.2024.profit_and_loss.depreciation_amortisation
+    run 1: NO ANCHOR
+    run 2: NO ANCHOR
+    run 3: NO ANCHOR
+    run 4: NO ANCHOR
+    run 5: NO ANCHOR
+
+────────────────────────────────────────────────────────────────────────
+ROW COUNT PROOF (writes-nothing check)
+────────────────────────────────────────────────────────────────────────
+  document_analysis_results: before=548  after=548  → UNCHANGED
+  document_evidence: before=391  after=391  → UNCHANGED
+  document_evidence_period: before=743  after=743  → UNCHANGED
+  document_evidence_figure: before=16712  after=16712  → UNCHANGED
+
+completed: 2026-08-09T17:58:51.390Z
+========================================================================
+
+========================================================================
+ANCHOR-TEST REPORT
+doc_id:    5830
+type:      profit_and_loss
+variant:   C
+runs:      5
+filePath:  companies/228/doc-1784214789681-342348647.pdf
+fileName:  Signed - Full Accounts - 31032024_230330.pdf
+mimeType:  application/pdf
+started:   2026-08-09T17:59:26.645Z
+========================================================================
+
+FIGURE ANCHORS BLOCK REMOVED FROM VARIANT C (exact text):
+────────────────────────────────────────────────────────────────────────
+  | FIGURE ANCHORS
+  | For every figure you extract in the years object (not calculated ratios), add an entry to a top-level anchors object.
+  | The key is the figure's exact path in the output JSON, e.g. years.2024.profit_and_loss.revenue.
+  | The value is: { "page": <1-based page number where the figure is printed>, "label": "<the row label exactly as printed, e.g. Turnover>" }
+  | If the page cannot be determined, set page to null. If the label cannot be determined, set label to null.
+  | Do NOT create anchors for financial_ratios entries or for any value you calculated rather than read.
+  | Never invent a page number or a label.
+  | 
+  | 
+────────────────────────────────────────────────────────────────────────
+
+fileBytes:  397088
+
+────────────────────────────────────────────────────────────────
+RUN 1/5  started: 2026-08-09T17:59:27.031Z
+RUN 1: OK  elapsed=11190ms
+────────────────────────────────────────────────────────────────
+RUN 2/5  started: 2026-08-09T17:59:38.221Z
+RUN 2: OK  elapsed=10996ms
+────────────────────────────────────────────────────────────────
+RUN 3/5  started: 2026-08-09T17:59:49.217Z
+RUN 3: OK  elapsed=11068ms
+────────────────────────────────────────────────────────────────
+RUN 4/5  started: 2026-08-09T18:00:00.285Z
+RUN 4: OK  elapsed=10918ms
+────────────────────────────────────────────────────────────────
+RUN 5/5  started: 2026-08-09T18:00:11.203Z
+RUN 5: OK  elapsed=69889ms
+
+========================================================================
+VARIANT C — GROUP A RESULTS
+========================================================================
+
+  STABLE    2023|administrative_expenses
+           runs: [730019, 730019, 730019, 730019, 730019]
+  STABLE    2023|corporation_tax
+           runs: [36214, 36214, 36214, 36214, 36214]
+  STABLE    2023|cost_of_sales
+           runs: [538883, 538883, 538883, 538883, 538883]
+  STABLE    2023|depreciation_amortisation
+           runs: [10824, 10824, 10824, 10824, 10824]
+  STABLE    2023|gross_profit
+           runs: [902788, 902788, 902788, 902788, 902788]
+  STABLE    2023|interest_payable
+           runs: [4524, 4524, 4524, 4524, 4524]
+  STABLE    2023|interest_receivable
+           runs: [61, 61, 61, 61, 61]
+  STABLE    2023|net_profit
+           runs: [132092, 132092, 132092, 132092, 132092]
+  STABLE    2023|operating_profit
+           runs: [172769, 172769, 172769, 172769, 172769]
+  STABLE    2023|other_operating_income
+           runs: [null, null, null, null, null]
+  STABLE    2023|profit_before_tax
+           runs: [168306, 168306, 168306, 168306, 168306]
+  STABLE    2023|revenue
+           runs: [1441671, 1441671, 1441671, 1441671, 1441671]
+  STABLE    2024|administrative_expenses
+           runs: [985102, 985102, 985102, 985102, 985102]
+  STABLE    2024|corporation_tax
+           runs: [17148, 17148, 17148, 17148, 17148]
+  STABLE    2024|cost_of_sales
+           runs: [632814, 632814, 632814, 632814, 632814]
+  STABLE    2024|depreciation_amortisation
+           runs: [51911, 51911, 51911, 51911, 51911]
+  STABLE    2024|gross_profit
+           runs: [1062389, 1062389, 1062389, 1062389, 1062389]
+  STABLE    2024|interest_payable
+           runs: [6761, 6761, 6761, 6761, 6761]
+  STABLE    2024|interest_receivable
+           runs: [512, 512, 512, 512, 512]
+  STABLE    2024|net_profit
+           runs: [53890, 53890, 53890, 53890, 53890]
+  STABLE    2024|operating_profit
+           runs: [77287, 77287, 77287, 77287, 77287]
+  STABLE    2024|other_operating_income
+           runs: [null, null, null, null, null]
+  STABLE    2024|profit_before_tax
+           runs: [71038, 71038, 71038, 71038, 71038]
+  STABLE    2024|revenue
+           runs: [1695203, 1695203, 1695203, 1695203, 1695203]
+
+────────────────────────────────────────────────────────────────────────
+ROW COUNT PROOF (writes-nothing check)
+────────────────────────────────────────────────────────────────────────
+  document_analysis_results: before=548  after=548  → UNCHANGED
+  document_evidence: before=391  after=391  → UNCHANGED
+  document_evidence_period: before=743  after=743  → UNCHANGED
+  document_evidence_figure: before=16712  after=16712  → UNCHANGED
+
+completed: 2026-08-09T18:01:21.126Z
+========================================================================
+
