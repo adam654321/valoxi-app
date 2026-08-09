@@ -209,6 +209,9 @@ FINAL OUTPUT FORMAT
       }
     }
   },
+  "anchors": {
+    "years.2022.balance_sheet.current_assets.cash_at_bank": { "page": 3, "label": "Cash at bank and in hand" }
+  },
   "summary_insights": [
     "The balance sheet shows a strengthening asset base year-on-year.",
     "Liquidity improved materially, with the current ratio above prudent thresholds.",

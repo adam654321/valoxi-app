@@ -223,6 +223,9 @@ FINAL OUTPUT FORMAT
       }
     }
   },
+  "anchors": {
+    "years.2022.profit_and_loss.revenue": { "page": 2, "label": "Turnover" }
+  },
   "summary_insights": [
     "Revenue increased year-on-year, indicating sustained top-line growth.",
     "Gross margin improved materially, suggesting enhanced cost efficiency.",
