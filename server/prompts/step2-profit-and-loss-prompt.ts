@@ -123,14 +123,6 @@ Using only the extracted and calculated data above:
   ◦ Red flags (e.g. margin compression, declining revenues)
 • Treat movements over ±3% as significant
 
-FIGURE ANCHORS
-For every figure you extract in the years object (not calculated ratios), add an entry to a top-level anchors object.
-The key is the figure's exact path in the output JSON, e.g. years.2024.profit_and_loss.revenue.
-The value is: { "page": <1-based page number where the figure is printed>, "label": "<the row label exactly as printed, e.g. Turnover>" }
-If the page cannot be determined, set page to null. If the label cannot be determined, set label to null.
-Do NOT create anchors for financial_ratios entries or for any value you calculated rather than read.
-Never invent a page number or a label.
-
 STRICT OUTPUT REQUIREMENTS
 • Return ONLY valid JSON
 • No commentary, markdown, emojis, or explanatory text outside the JSON
@@ -230,9 +222,6 @@ FINAL OUTPUT FORMAT
         "interest_coverage_ratio": null
       }
     }
-  },
-  "anchors": {
-    "years.2022.profit_and_loss.revenue": { "page": 2, "label": "Turnover" }
   },
   "summary_insights": [
     "Revenue increased year-on-year, indicating sustained top-line growth.",

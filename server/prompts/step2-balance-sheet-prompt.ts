@@ -118,14 +118,6 @@ Using only the extracted and calculated balance sheet data above:
   ◦ Positive signals (e.g. stronger liquidity, growing net assets)
   ◦ Red flags (e.g. weakening working capital, rising leverage)
 
-FIGURE ANCHORS
-For every figure you extract in the years object (not calculated ratios), add an entry to a top-level anchors object.
-The key is the figure's exact path in the output JSON, e.g. years.2024.balance_sheet.current_assets.cash_at_bank.
-The value is: { "page": <1-based page number where the figure is printed>, "label": "<the row label exactly as printed, e.g. Cash at bank and in hand>" }
-If the page cannot be determined, set page to null. If the label cannot be determined, set label to null.
-Do NOT create anchors for financial_ratios entries or for any value you calculated rather than read.
-Never invent a page number or a label.
-
 STRICT OUTPUT REQUIREMENTS
 • Return ONLY valid JSON
 • No markdown, emojis, headings, or commentary outside the JSON
@@ -216,9 +208,6 @@ FINAL OUTPUT FORMAT
         "gearing_ratio_percent": null
       }
     }
-  },
-  "anchors": {
-    "years.2022.balance_sheet.current_assets.cash_at_bank": { "page": 3, "label": "Cash at bank and in hand" }
   },
   "summary_insights": [
     "The balance sheet shows a strengthening asset base year-on-year.",
