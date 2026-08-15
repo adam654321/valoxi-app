@@ -1,0 +1,2107 @@
+================================================================================
+AUDIT-1.apply-1 — EXTRACTION CAPTURE
+promptVersion: 1c-noanchor
+started:       2026-08-15T16:00:02.872Z
+documents:     24
+================================================================================
+
+BEFORE row counts:
+  document_analysis_results: 548
+  document_evidence: 391
+  document_evidence_period: 743
+  document_evidence_figure: 16712
+
+================================================================================
+CAPTURE DETAIL — grouped by company / document / fiscal year
+================================================================================
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+COMPANY 1877
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ┌─ DOC 5830
+  │  filename:    Signed - Full Accounts - 31032024_230330.pdf
+  │  category:    Company Accounts  [NOT AUTHORITATIVE — tier must be assigned from content]
+  │  company_id:  1877
+  │  r2_key:      companies/228/doc-1784214789681-342348647.pdf
+  │  types:       [balance_sheet, profit_and_loss]
+  │  ── balance_sheet started: 2026-08-15T16:00:03.212Z
+  │  ── balance_sheet OK  model=gemini-3-flash-preview  elapsed=9894ms
+  │  ── profit_and_loss started: 2026-08-15T16:00:13.109Z
+  │  ── profit_and_loss OK  model=gemini-3-flash-preview  elapsed=10895ms
+  │
+  │  ┌─ FY 2023  (types contributed: [balance_sheet, profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2023-03-31
+  │  │    months_covered: 12
+  │  │    report_date:    2024-12-19
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = 139509
+  │  │    balance_sheet.current_assets.total                     = 391084
+  │  │    balance_sheet.current_assets.trade_debtors             = 158782
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = null
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = 20000
+  │  │    balance_sheet.current_liabilities.corporation_tax      = null
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = null
+  │  │    balance_sheet.current_liabilities.total                = 222713
+  │  │    balance_sheet.current_liabilities.trade_creditors      = 112146
+  │  │    balance_sheet.equity.retained_earnings                 = 164400
+  │  │    balance_sheet.equity.share_capital                     = 100
+  │  │    balance_sheet.equity.total                             = 164500
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = 45607
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = 43333
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = null
+  │  │    balance_sheet.long_term_liabilities.total              = 49478
+  │  │    profit_and_loss.administrative_expenses                = 730019
+  │  │    profit_and_loss.corporation_tax                        = 36214
+  │  │    profit_and_loss.cost_of_sales                          = 538883
+  │  │    profit_and_loss.depreciation_amortisation              = 10824
+  │  │    profit_and_loss.gross_profit                           = 902788
+  │  │    profit_and_loss.interest_payable                       = 4524
+  │  │    profit_and_loss.interest_receivable                    = 61
+  │  │    profit_and_loss.net_profit                             = 132092
+  │  │    profit_and_loss.operating_profit                       = 172769
+  │  │    profit_and_loss.other_operating_income                 = null
+  │  │    profit_and_loss.profit_before_tax                      = 168306
+  │  │    profit_and_loss.revenue                                = 1441671
+  │  └─
+  │  ┌─ FY 2024  (types contributed: [balance_sheet, profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2024-03-31
+  │  │    months_covered: 12
+  │  │    report_date:    2024-12-19
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = 154281
+  │  │    balance_sheet.current_assets.total                     = 446241
+  │  │    balance_sheet.current_assets.trade_debtors             = 140300
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = null
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = 20000
+  │  │    balance_sheet.current_liabilities.corporation_tax      = null
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = null
+  │  │    balance_sheet.current_liabilities.total                = 293522
+  │  │    balance_sheet.current_liabilities.trade_creditors      = 108277
+  │  │    balance_sheet.equity.retained_earnings                 = 165682
+  │  │    balance_sheet.equity.share_capital                     = 100
+  │  │    balance_sheet.equity.total                             = 165782
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = 332464
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = 23333
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = null
+  │  │    balance_sheet.long_term_liabilities.total              = 319401
+  │  │    profit_and_loss.administrative_expenses                = 985102
+  │  │    profit_and_loss.corporation_tax                        = 17148
+  │  │    profit_and_loss.cost_of_sales                          = 632814
+  │  │    profit_and_loss.depreciation_amortisation              = 51911
+  │  │    profit_and_loss.gross_profit                           = 1062389
+  │  │    profit_and_loss.interest_payable                       = 6761
+  │  │    profit_and_loss.interest_receivable                    = 512
+  │  │    profit_and_loss.net_profit                             = 53890
+  │  │    profit_and_loss.operating_profit                       = 77287
+  │  │    profit_and_loss.other_operating_income                 = null
+  │  │    profit_and_loss.profit_before_tax                      = 71038
+  │  │    profit_and_loss.revenue                                = 1695203
+  │  └─
+  └─
+
+  ┌─ DOC 5831
+  │  filename:    Year Ending 31.03.2023.pdf
+  │  category:    Company Accounts  [NOT AUTHORITATIVE — tier must be assigned from content]
+  │  company_id:  1877
+  │  r2_key:      companies/228/doc-1784216448649-638236711.pdf
+  │  types:       [balance_sheet, profit_and_loss]
+  │  ── balance_sheet started: 2026-08-15T16:00:24.011Z
+  │  ── balance_sheet OK  model=gemini-3-flash-preview  elapsed=10417ms
+  │  ── profit_and_loss started: 2026-08-15T16:00:34.429Z
+  │  ── profit_and_loss OK  model=gemini-3-flash-preview  elapsed=10361ms
+  │
+  │  ┌─ FY 2022  (types contributed: [balance_sheet, profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2022-03-31
+  │  │    months_covered: 12
+  │  │    report_date:    2023-10-02
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = 144776
+  │  │    balance_sheet.current_assets.total                     = 321236
+  │  │    balance_sheet.current_assets.trade_debtors             = 113707
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = null
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = 20000
+  │  │    balance_sheet.current_liabilities.corporation_tax      = 29820
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = 5770
+  │  │    balance_sheet.current_liabilities.total                = 216893
+  │  │    balance_sheet.current_liabilities.trade_creditors      = 96522
+  │  │    balance_sheet.equity.retained_earnings                 = 77808
+  │  │    balance_sheet.equity.share_capital                     = 100
+  │  │    balance_sheet.equity.total                             = 77908
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = 49395
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = 63333
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = 12497
+  │  │    balance_sheet.long_term_liabilities.total              = 75830
+  │  │    profit_and_loss.administrative_expenses                = 554473
+  │  │    profit_and_loss.corporation_tax                        = 29820
+  │  │    profit_and_loss.cost_of_sales                          = 440662
+  │  │    profit_and_loss.depreciation_amortisation              = 10960
+  │  │    profit_and_loss.gross_profit                           = 656645
+  │  │    profit_and_loss.interest_payable                       = 7720
+  │  │    profit_and_loss.interest_receivable                    = 3
+  │  │    profit_and_loss.net_profit                             = 89242
+  │  │    profit_and_loss.operating_profit                       = 126779
+  │  │    profit_and_loss.other_operating_income                 = 24607
+  │  │    profit_and_loss.profit_before_tax                      = 119062
+  │  │    profit_and_loss.revenue                                = 1097307
+  │  └─
+  │  ┌─ FY 2023  (types contributed: [balance_sheet, profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2023-03-31
+  │  │    months_covered: 12
+  │  │    report_date:    2023-10-02
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = 139509
+  │  │    balance_sheet.current_assets.total                     = 391084
+  │  │    balance_sheet.current_assets.trade_debtors             = 158782
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = null
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = 20000
+  │  │    balance_sheet.current_liabilities.corporation_tax      = 31780
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = 2677
+  │  │    balance_sheet.current_liabilities.total                = 222713
+  │  │    balance_sheet.current_liabilities.trade_creditors      = 112146
+  │  │    balance_sheet.equity.retained_earnings                 = 168834
+  │  │    balance_sheet.equity.share_capital                     = 100
+  │  │    balance_sheet.equity.total                             = 168934
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = 45607
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = 43333
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = 1711
+  │  │    balance_sheet.long_term_liabilities.total              = 45044
+  │  │    profit_and_loss.administrative_expenses                = 730019
+  │  │    profit_and_loss.corporation_tax                        = 31780
+  │  │    profit_and_loss.cost_of_sales                          = 538883
+  │  │    profit_and_loss.depreciation_amortisation              = 10824
+  │  │    profit_and_loss.gross_profit                           = 902788
+  │  │    profit_and_loss.interest_payable                       = 4524
+  │  │    profit_and_loss.interest_receivable                    = 61
+  │  │    profit_and_loss.net_profit                             = 136526
+  │  │    profit_and_loss.operating_profit                       = 172769
+  │  │    profit_and_loss.other_operating_income                 = 0
+  │  │    profit_and_loss.profit_before_tax                      = 168306
+  │  │    profit_and_loss.revenue                                = 1441671
+  │  └─
+  └─
+
+  ┌─ DOC 5832
+  │  filename:    Midland_Air_Conditioning___Facility_Management_Ltd_-_Profit_and_Loss (31) DRAFT.pdf
+  │  category:    Company Accounts  [NOT AUTHORITATIVE — tier must be assigned from content]
+  │  company_id:  1877
+  │  r2_key:      companies/228/doc-1784216927322-99318749.pdf
+  │  types:       [balance_sheet, profit_and_loss]
+  │  ── balance_sheet started: 2026-08-15T16:00:44.797Z
+  │  ── balance_sheet OK  model=gemini-3-flash-preview  elapsed=5153ms
+  │  ── profit_and_loss started: 2026-08-15T16:00:49.950Z
+  │  ── profit_and_loss OK  model=gemini-3-flash-preview  elapsed=6573ms
+  │
+  │  ┌─ FY 2025  (types contributed: [balance_sheet, profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2025-03-31
+  │  │    months_covered: 12
+  │  │    report_date:    2025-06-30
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = null
+  │  │    balance_sheet.current_assets.total                     = null
+  │  │    balance_sheet.current_assets.trade_debtors             = null
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = null
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = null
+  │  │    balance_sheet.current_liabilities.corporation_tax      = null
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = null
+  │  │    balance_sheet.current_liabilities.total                = null
+  │  │    balance_sheet.current_liabilities.trade_creditors      = null
+  │  │    balance_sheet.equity.retained_earnings                 = 279164.69
+  │  │    balance_sheet.equity.share_capital                     = null
+  │  │    balance_sheet.equity.total                             = 279164.69
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = null
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = null
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = null
+  │  │    balance_sheet.long_term_liabilities.total              = null
+  │  │    profit_and_loss.administrative_expenses                = 538499.64
+  │  │    profit_and_loss.corporation_tax                        = null
+  │  │    profit_and_loss.cost_of_sales                          = 1127175.46
+  │  │    profit_and_loss.depreciation_amortisation              = null
+  │  │    profit_and_loss.gross_profit                           = 816903.54
+  │  │    profit_and_loss.interest_payable                       = 3254.93
+  │  │    profit_and_loss.interest_receivable                    = 760.79
+  │  │    profit_and_loss.net_profit                             = 279164.69
+  │  │    profit_and_loss.operating_profit                       = 278403.9
+  │  │    profit_and_loss.other_operating_income                 = null
+  │  │    profit_and_loss.profit_before_tax                      = 279164.69
+  │  │    profit_and_loss.revenue                                = 1944079
+  │  └─
+  └─
+
+  ┌─ DOC 5833
+  │  filename:    P&L YE 31.03.2026.pdf
+  │  category:    YTD Profit & Loss  [NOT AUTHORITATIVE — tier must be assigned from content]
+  │  company_id:  1877
+  │  r2_key:      companies/228/doc-1784216942561-584515673.pdf
+  │  types:       [profit_and_loss]
+  │  ── profit_and_loss started: 2026-08-15T16:00:56.526Z
+  │  ── profit_and_loss OK  model=gemini-3-flash-preview  elapsed=7378ms
+  │
+  │  ┌─ FY 2026  (types contributed: [profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2026-03-31
+  │  │    months_covered: 12
+  │  │    report_date:    2025-09-08
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = null
+  │  │    balance_sheet.current_assets.total                     = null
+  │  │    balance_sheet.current_assets.trade_debtors             = null
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = null
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = null
+  │  │    balance_sheet.current_liabilities.corporation_tax      = null
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = null
+  │  │    balance_sheet.current_liabilities.total                = null
+  │  │    balance_sheet.current_liabilities.trade_creditors      = null
+  │  │    balance_sheet.equity.retained_earnings                 = null
+  │  │    balance_sheet.equity.share_capital                     = null
+  │  │    balance_sheet.equity.total                             = null
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = null
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = null
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = null
+  │  │    balance_sheet.long_term_liabilities.total              = null
+  │  │    profit_and_loss.administrative_expenses                = 269379.63
+  │  │    profit_and_loss.corporation_tax                        = null
+  │  │    profit_and_loss.cost_of_sales                          = 372850.39
+  │  │    profit_and_loss.depreciation_amortisation              = null
+  │  │    profit_and_loss.gross_profit                           = 452384.26
+  │  │    profit_and_loss.interest_payable                       = 4613.79
+  │  │    profit_and_loss.interest_receivable                    = 121.94
+  │  │    profit_and_loss.net_profit                             = 183126.57
+  │  │    profit_and_loss.operating_profit                       = 183004.63
+  │  │    profit_and_loss.other_operating_income                 = null
+  │  │    profit_and_loss.profit_before_tax                      = 183126.57
+  │  │    profit_and_loss.revenue                                = 825234.65
+  │  └─
+  └─
+
+  ┌─ DOC 5835
+  │  filename:    154764 - Midland Air Conditioning & Facility Management Ltd.pdf
+  │  category:    Deal Documents  [NOT AUTHORITATIVE — tier must be assigned from content]
+  │  company_id:  1877
+  │  r2_key:      companies/228/doc-1784217025842-596919980.pdf
+  │  types:       [balance_sheet, profit_and_loss]
+  │  ── balance_sheet started: 2026-08-15T16:01:03.905Z
+  │  ── balance_sheet OK  model=gemini-3-flash-preview  elapsed=14676ms
+  │  ── profit_and_loss started: 2026-08-15T16:01:18.582Z
+  │  ── profit_and_loss OK  model=gemini-3-flash-preview  elapsed=18931ms
+  │
+  │  ┌─ FY 2021  (types contributed: [balance_sheet, profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2021-03-31
+  │  │    months_covered: 12
+  │  │    report_date:    null
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = null
+  │  │    balance_sheet.current_assets.total                     = 194994
+  │  │    balance_sheet.current_assets.trade_debtors             = null
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = null
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = null
+  │  │    balance_sheet.current_liabilities.corporation_tax      = null
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = null
+  │  │    balance_sheet.current_liabilities.total                = 136629
+  │  │    balance_sheet.current_liabilities.trade_creditors      = null
+  │  │    balance_sheet.equity.retained_earnings                 = 33166
+  │  │    balance_sheet.equity.share_capital                     = 0
+  │  │    balance_sheet.equity.total                             = 33166
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = 0
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = null
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = null
+  │  │    balance_sheet.long_term_liabilities.total              = 120131
+  │  │    profit_and_loss.administrative_expenses                = 432058
+  │  │    profit_and_loss.corporation_tax                        = null
+  │  │    profit_and_loss.cost_of_sales                          = 127439
+  │  │    profit_and_loss.depreciation_amortisation              = 25307
+  │  │    profit_and_loss.gross_profit                           = 316523
+  │  │    profit_and_loss.interest_payable                       = null
+  │  │    profit_and_loss.interest_receivable                    = null
+  │  │    profit_and_loss.net_profit                             = -2200
+  │  │    profit_and_loss.operating_profit                       = -2200
+  │  │    profit_and_loss.other_operating_income                 = 113335
+  │  │    profit_and_loss.profit_before_tax                      = -2200
+  │  │    profit_and_loss.revenue                                = 443962
+  │  └─
+  │  ┌─ FY 2022  (types contributed: [balance_sheet, profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2022-03-31
+  │  │    months_covered: 12
+  │  │    report_date:    null
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = null
+  │  │    balance_sheet.current_assets.total                     = 321236
+  │  │    balance_sheet.current_assets.trade_debtors             = null
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = null
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = null
+  │  │    balance_sheet.current_liabilities.corporation_tax      = null
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = null
+  │  │    balance_sheet.current_liabilities.total                = 216893
+  │  │    balance_sheet.current_liabilities.trade_creditors      = null
+  │  │    balance_sheet.equity.retained_earnings                 = 77808
+  │  │    balance_sheet.equity.share_capital                     = 100
+  │  │    balance_sheet.equity.total                             = 77908
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = 49395
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = null
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = null
+  │  │    balance_sheet.long_term_liabilities.total              = 75830
+  │  │    profit_and_loss.administrative_expenses                = 554473
+  │  │    profit_and_loss.corporation_tax                        = null
+  │  │    profit_and_loss.cost_of_sales                          = 440662
+  │  │    profit_and_loss.depreciation_amortisation              = 10962
+  │  │    profit_and_loss.gross_profit                           = 656645
+  │  │    profit_and_loss.interest_payable                       = null
+  │  │    profit_and_loss.interest_receivable                    = null
+  │  │    profit_and_loss.net_profit                             = 126779
+  │  │    profit_and_loss.operating_profit                       = 126779
+  │  │    profit_and_loss.other_operating_income                 = 24607
+  │  │    profit_and_loss.profit_before_tax                      = 126779
+  │  │    profit_and_loss.revenue                                = 1097307
+  │  └─
+  │  ┌─ FY 2023  (types contributed: [balance_sheet, profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2023-03-31
+  │  │    months_covered: 12
+  │  │    report_date:    null
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = null
+  │  │    balance_sheet.current_assets.total                     = 391084
+  │  │    balance_sheet.current_assets.trade_debtors             = null
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = null
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = null
+  │  │    balance_sheet.current_liabilities.corporation_tax      = null
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = null
+  │  │    balance_sheet.current_liabilities.total                = 222713
+  │  │    balance_sheet.current_liabilities.trade_creditors      = null
+  │  │    balance_sheet.equity.retained_earnings                 = 164400
+  │  │    balance_sheet.equity.share_capital                     = 100
+  │  │    balance_sheet.equity.total                             = 164500
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = 45607
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = null
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = null
+  │  │    balance_sheet.long_term_liabilities.total              = 45044
+  │  │    profit_and_loss.administrative_expenses                = 730019
+  │  │    profit_and_loss.corporation_tax                        = null
+  │  │    profit_and_loss.cost_of_sales                          = 538883
+  │  │    profit_and_loss.depreciation_amortisation              = 10824
+  │  │    profit_and_loss.gross_profit                           = 902788
+  │  │    profit_and_loss.interest_payable                       = null
+  │  │    profit_and_loss.interest_receivable                    = null
+  │  │    profit_and_loss.net_profit                             = 172769
+  │  │    profit_and_loss.operating_profit                       = 172769
+  │  │    profit_and_loss.other_operating_income                 = 0
+  │  │    profit_and_loss.profit_before_tax                      = 172769
+  │  │    profit_and_loss.revenue                                = 1441671
+  │  └─
+  │  ┌─ FY 2024  (types contributed: [balance_sheet, profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2024-03-31
+  │  │    months_covered: 12
+  │  │    report_date:    null
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = null
+  │  │    balance_sheet.current_assets.total                     = 446241
+  │  │    balance_sheet.current_assets.trade_debtors             = null
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = null
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = null
+  │  │    balance_sheet.current_liabilities.corporation_tax      = null
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = null
+  │  │    balance_sheet.current_liabilities.total                = 293522
+  │  │    balance_sheet.current_liabilities.trade_creditors      = null
+  │  │    balance_sheet.equity.retained_earnings                 = 165682
+  │  │    balance_sheet.equity.share_capital                     = 100
+  │  │    balance_sheet.equity.total                             = 165782
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = 332464
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = null
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = null
+  │  │    balance_sheet.long_term_liabilities.total              = 272466
+  │  │    profit_and_loss.administrative_expenses                = 985102
+  │  │    profit_and_loss.corporation_tax                        = null
+  │  │    profit_and_loss.cost_of_sales                          = 632814
+  │  │    profit_and_loss.depreciation_amortisation              = 51911
+  │  │    profit_and_loss.gross_profit                           = 1062389
+  │  │    profit_and_loss.interest_payable                       = null
+  │  │    profit_and_loss.interest_receivable                    = null
+  │  │    profit_and_loss.net_profit                             = 77287
+  │  │    profit_and_loss.operating_profit                       = 77287
+  │  │    profit_and_loss.other_operating_income                 = 0
+  │  │    profit_and_loss.profit_before_tax                      = 77287
+  │  │    profit_and_loss.revenue                                = 1695203
+  │  └─
+  │  ┌─ FY 2025  (types contributed: [profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2025-03-31
+  │  │    months_covered: 12
+  │  │    report_date:    null
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = null
+  │  │    balance_sheet.current_assets.total                     = null
+  │  │    balance_sheet.current_assets.trade_debtors             = null
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = null
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = null
+  │  │    balance_sheet.current_liabilities.corporation_tax      = null
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = null
+  │  │    balance_sheet.current_liabilities.total                = null
+  │  │    balance_sheet.current_liabilities.trade_creditors      = null
+  │  │    balance_sheet.equity.retained_earnings                 = null
+  │  │    balance_sheet.equity.share_capital                     = null
+  │  │    balance_sheet.equity.total                             = null
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = null
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = null
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = null
+  │  │    balance_sheet.long_term_liabilities.total              = null
+  │  │    profit_and_loss.administrative_expenses                = 538500
+  │  │    profit_and_loss.corporation_tax                        = null
+  │  │    profit_and_loss.cost_of_sales                          = 1127175
+  │  │    profit_and_loss.depreciation_amortisation              = 0
+  │  │    profit_and_loss.gross_profit                           = 816904
+  │  │    profit_and_loss.interest_payable                       = null
+  │  │    profit_and_loss.interest_receivable                    = null
+  │  │    profit_and_loss.net_profit                             = 278404
+  │  │    profit_and_loss.operating_profit                       = 278404
+  │  │    profit_and_loss.other_operating_income                 = 0
+  │  │    profit_and_loss.profit_before_tax                      = 278404
+  │  │    profit_and_loss.revenue                                = 1944079
+  │  └─
+  └─
+
+  ┌─ DOC 5836
+  │  filename:    Balance Sheet.pdf
+  │  category:    Company Accounts  [NOT AUTHORITATIVE — tier must be assigned from content]
+  │  company_id:  1877
+  │  r2_key:      companies/228/doc-1784222385163-591978777.pdf
+  │  types:       [balance_sheet, profit_and_loss]
+  │  ── balance_sheet started: 2026-08-15T16:01:37.519Z
+  │  ── balance_sheet OK  model=gemini-3-flash-preview  elapsed=8272ms
+  │  ── profit_and_loss started: 2026-08-15T16:01:45.791Z
+  │  ── profit_and_loss OK  model=gemini-3-flash-preview  elapsed=5871ms
+  │
+  │  ┌─ FY 2025  (types contributed: [balance_sheet, profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2025-09-08
+  │  │    months_covered: null
+  │  │    report_date:    2025-09-08
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = 187479.57
+  │  │    balance_sheet.current_assets.total                     = 419921.68
+  │  │    balance_sheet.current_assets.trade_debtors             = 226803.01
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = -91197.52
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = null
+  │  │    balance_sheet.current_liabilities.corporation_tax      = 1208.26
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = null
+  │  │    balance_sheet.current_liabilities.total                = 95877.22
+  │  │    balance_sheet.current_liabilities.trade_creditors      = 14122.57
+  │  │    balance_sheet.equity.retained_earnings                 = 622863.28
+  │  │    balance_sheet.equity.share_capital                     = 100
+  │  │    balance_sheet.equity.total                             = 622963.28
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = 502332.22
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = 5140.73
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = -29996.88
+  │  │    balance_sheet.long_term_liabilities.total              = 203413.4
+  │  │    profit_and_loss.administrative_expenses                = null
+  │  │    profit_and_loss.corporation_tax                        = 1208.26
+  │  │    profit_and_loss.cost_of_sales                          = null
+  │  │    profit_and_loss.depreciation_amortisation              = null
+  │  │    profit_and_loss.gross_profit                           = null
+  │  │    profit_and_loss.interest_payable                       = null
+  │  │    profit_and_loss.interest_receivable                    = null
+  │  │    profit_and_loss.net_profit                             = 183126.57
+  │  │    profit_and_loss.operating_profit                       = null
+  │  │    profit_and_loss.other_operating_income                 = null
+  │  │    profit_and_loss.profit_before_tax                      = null
+  │  │    profit_and_loss.revenue                                = null
+  │  └─
+  └─
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+COMPANY 1880
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ┌─ DOC 5857
+  │  filename:    doc-1777320748873-193749054.pdf
+  │  category:    Restored  [NOT AUTHORITATIVE — tier must be assigned from content]
+  │  company_id:  1880
+  │  r2_key:      companies/89/doc-1777320748873-193749054.pdf
+  │  types:       [balance_sheet, profit_and_loss]
+  │  ── balance_sheet started: 2026-08-15T16:01:51.663Z
+  │  ── balance_sheet OK  model=gemini-3-flash-preview  elapsed=10841ms
+  │  ── profit_and_loss started: 2026-08-15T16:02:02.507Z
+  │  ── profit_and_loss OK  model=gemini-3-flash-preview  elapsed=11077ms
+  │
+  │  ┌─ FY 2024  (types contributed: [balance_sheet, profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2024-10-31
+  │  │    months_covered: 12
+  │  │    report_date:    2026-01-23
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = 346697
+  │  │    balance_sheet.current_assets.total                     = 1284307
+  │  │    balance_sheet.current_assets.trade_debtors             = 663569
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = null
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = 10000
+  │  │    balance_sheet.current_liabilities.corporation_tax      = null
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = 80840
+  │  │    balance_sheet.current_liabilities.total                = 765061
+  │  │    balance_sheet.current_liabilities.trade_creditors      = 295953
+  │  │    balance_sheet.equity.retained_earnings                 = 670553
+  │  │    balance_sheet.equity.share_capital                     = 100
+  │  │    balance_sheet.equity.total                             = 670653
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = 210787
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = 7500
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = 11880
+  │  │    balance_sheet.long_term_liabilities.total              = 59380
+  │  │    profit_and_loss.administrative_expenses                = 1198254
+  │  │    profit_and_loss.corporation_tax                        = 99882
+  │  │    profit_and_loss.cost_of_sales                          = 3366215
+  │  │    profit_and_loss.depreciation_amortisation              = 52606
+  │  │    profit_and_loss.gross_profit                           = 1589938
+  │  │    profit_and_loss.interest_payable                       = 19699
+  │  │    profit_and_loss.interest_receivable                    = 857
+  │  │    profit_and_loss.net_profit                             = 272960
+  │  │    profit_and_loss.operating_profit                       = 391684
+  │  │    profit_and_loss.other_operating_income                 = null
+  │  │    profit_and_loss.profit_before_tax                      = 372842
+  │  │    profit_and_loss.revenue                                = 4956153
+  │  └─
+  │  ┌─ FY 2025  (types contributed: [balance_sheet, profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2025-10-31
+  │  │    months_covered: 12
+  │  │    report_date:    2026-01-23
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = 346281
+  │  │    balance_sheet.current_assets.total                     = 1131855
+  │  │    balance_sheet.current_assets.trade_debtors             = 429667
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = null
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = 7500
+  │  │    balance_sheet.current_liabilities.corporation_tax      = null
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = null
+  │  │    balance_sheet.current_liabilities.total                = 612575
+  │  │    balance_sheet.current_liabilities.trade_creditors      = 347074
+  │  │    balance_sheet.equity.retained_earnings                 = 673137
+  │  │    balance_sheet.equity.share_capital                     = 100
+  │  │    balance_sheet.equity.total                             = 673237
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = 207712
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = null
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = 33755
+  │  │    balance_sheet.long_term_liabilities.total              = 53755
+  │  │    profit_and_loss.administrative_expenses                = 1361040
+  │  │    profit_and_loss.corporation_tax                        = 39122
+  │  │    profit_and_loss.cost_of_sales                          = 2979013
+  │  │    profit_and_loss.depreciation_amortisation              = 49005
+  │  │    profit_and_loss.gross_profit                           = 1530073
+  │  │    profit_and_loss.interest_payable                       = 10327
+  │  │    profit_and_loss.interest_receivable                    = 3
+  │  │    profit_and_loss.net_profit                             = 119584
+  │  │    profit_and_loss.operating_profit                       = 169033
+  │  │    profit_and_loss.other_operating_income                 = null
+  │  │    profit_and_loss.profit_before_tax                      = 158706
+  │  │    profit_and_loss.revenue                                = 4509086
+  │  └─
+  └─
+
+  ┌─ DOC 5860
+  │  filename:    doc-1777320908889-481369088.pdf
+  │  category:    Restored  [NOT AUTHORITATIVE — tier must be assigned from content]
+  │  company_id:  1880
+  │  r2_key:      companies/89/doc-1777320908889-481369088.pdf
+  │  types:       [profit_and_loss]
+  │  ── profit_and_loss started: 2026-08-15T16:02:13.587Z
+  │  ── profit_and_loss OK  model=gemini-3-flash-preview  elapsed=6330ms
+  │
+  │  ┌─ FY 2025  (types contributed: [profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2025-10-31
+  │  │    months_covered: 12
+  │  │    report_date:    null
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = null
+  │  │    balance_sheet.current_assets.total                     = null
+  │  │    balance_sheet.current_assets.trade_debtors             = null
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = null
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = null
+  │  │    balance_sheet.current_liabilities.corporation_tax      = null
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = null
+  │  │    balance_sheet.current_liabilities.total                = null
+  │  │    balance_sheet.current_liabilities.trade_creditors      = null
+  │  │    balance_sheet.equity.retained_earnings                 = null
+  │  │    balance_sheet.equity.share_capital                     = null
+  │  │    balance_sheet.equity.total                             = null
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = null
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = null
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = null
+  │  │    balance_sheet.long_term_liabilities.total              = null
+  │  │    profit_and_loss.administrative_expenses                = 1303834
+  │  │    profit_and_loss.corporation_tax                        = 99882
+  │  │    profit_and_loss.cost_of_sales                          = 3044637
+  │  │    profit_and_loss.depreciation_amortisation              = 49005
+  │  │    profit_and_loss.gross_profit                           = 1464340
+  │  │    profit_and_loss.interest_payable                       = null
+  │  │    profit_and_loss.interest_receivable                    = null
+  │  │    profit_and_loss.net_profit                             = 160506
+  │  │    profit_and_loss.operating_profit                       = 160506
+  │  │    profit_and_loss.other_operating_income                 = 109
+  │  │    profit_and_loss.profit_before_tax                      = 160506
+  │  │    profit_and_loss.revenue                                = 4508976
+  │  └─
+  └─
+
+  ┌─ DOC 5861
+  │  filename:    doc-1777320937794-82781259.pdf
+  │  category:    Restored  [NOT AUTHORITATIVE — tier must be assigned from content]
+  │  company_id:  1880
+  │  r2_key:      companies/89/doc-1777320937794-82781259.pdf
+  │  types:       [balance_sheet, profit_and_loss]
+  │  ── balance_sheet started: 2026-08-15T16:02:19.921Z
+  │  ── balance_sheet OK  model=gemini-3-flash-preview  elapsed=10817ms
+  │  ── profit_and_loss started: 2026-08-15T16:02:30.739Z
+  │  ── profit_and_loss OK  model=gemini-3-flash-preview  elapsed=11130ms
+  │
+  │  ┌─ FY 2023  (types contributed: [balance_sheet, profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2023-10-31
+  │  │    months_covered: 12
+  │  │    report_date:    2024-12-13
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = 28094
+  │  │    balance_sheet.current_assets.total                     = 1012734
+  │  │    balance_sheet.current_assets.trade_debtors             = 470739
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = 24607
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = 10000
+  │  │    balance_sheet.current_liabilities.corporation_tax      = 22101
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = 115840
+  │  │    balance_sheet.current_liabilities.total                = 706172
+  │  │    balance_sheet.current_liabilities.trade_creditors      = 291986
+  │  │    balance_sheet.equity.retained_earnings                 = 457593
+  │  │    balance_sheet.equity.share_capital                     = 100
+  │  │    balance_sheet.equity.total                             = 457693
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = 237474
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = 17500
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = 27720
+  │  │    balance_sheet.long_term_liabilities.total              = 86343
+  │  │    profit_and_loss.administrative_expenses                = 1076406
+  │  │    profit_and_loss.corporation_tax                        = 22101
+  │  │    profit_and_loss.cost_of_sales                          = 3248360
+  │  │    profit_and_loss.depreciation_amortisation              = 54527
+  │  │    profit_and_loss.gross_profit                           = 1201919
+  │  │    profit_and_loss.interest_payable                       = 15450
+  │  │    profit_and_loss.interest_receivable                    = 542
+  │  │    profit_and_loss.net_profit                             = 88504
+  │  │    profit_and_loss.operating_profit                       = 125513
+  │  │    profit_and_loss.other_operating_income                 = null
+  │  │    profit_and_loss.profit_before_tax                      = 110605
+  │  │    profit_and_loss.revenue                                = 4450279
+  │  └─
+  │  ┌─ FY 2024  (types contributed: [balance_sheet, profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2024-10-31
+  │  │    months_covered: 12
+  │  │    report_date:    2024-12-13
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = 346697
+  │  │    balance_sheet.current_assets.total                     = 1284307
+  │  │    balance_sheet.current_assets.trade_debtors             = 663569
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = 3098
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = 10000
+  │  │    balance_sheet.current_liabilities.corporation_tax      = 99882
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = 80840
+  │  │    balance_sheet.current_liabilities.total                = 765061
+  │  │    balance_sheet.current_liabilities.trade_creditors      = 295953
+  │  │    balance_sheet.equity.retained_earnings                 = 670553
+  │  │    balance_sheet.equity.share_capital                     = 100
+  │  │    balance_sheet.equity.total                             = 670653
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = 210787
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = 7500
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = 11880
+  │  │    balance_sheet.long_term_liabilities.total              = 59380
+  │  │    profit_and_loss.administrative_expenses                = 1198254
+  │  │    profit_and_loss.corporation_tax                        = 99882
+  │  │    profit_and_loss.cost_of_sales                          = 3366215
+  │  │    profit_and_loss.depreciation_amortisation              = 52606
+  │  │    profit_and_loss.gross_profit                           = 1589938
+  │  │    profit_and_loss.interest_payable                       = 18842
+  │  │    profit_and_loss.interest_receivable                    = 0
+  │  │    profit_and_loss.net_profit                             = 272960
+  │  │    profit_and_loss.operating_profit                       = 391684
+  │  │    profit_and_loss.other_operating_income                 = null
+  │  │    profit_and_loss.profit_before_tax                      = 372842
+  │  │    profit_and_loss.revenue                                = 4956153
+  │  └─
+  └─
+
+  ┌─ DOC 5862
+  │  filename:    doc-1777320972331-861910426.pdf
+  │  category:    Restored  [NOT AUTHORITATIVE — tier must be assigned from content]
+  │  company_id:  1880
+  │  r2_key:      companies/89/doc-1777320972331-861910426.pdf
+  │  types:       [balance_sheet, profit_and_loss]
+  │  ── balance_sheet started: 2026-08-15T16:02:41.872Z
+  │  ── balance_sheet OK  model=gemini-3-flash-preview  elapsed=10831ms
+  │  ── profit_and_loss started: 2026-08-15T16:02:52.704Z
+  │  ── profit_and_loss OK  model=gemini-3-flash-preview  elapsed=10753ms
+  │
+  │  ┌─ FY 2022  (types contributed: [balance_sheet, profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2022-10-31
+  │  │    months_covered: 12
+  │  │    report_date:    2024-02-22
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = 21316
+  │  │    balance_sheet.current_assets.total                     = 1524897
+  │  │    balance_sheet.current_assets.trade_debtors             = 882706
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = null
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = null
+  │  │    balance_sheet.current_liabilities.corporation_tax      = null
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = 67951
+  │  │    balance_sheet.current_liabilities.total                = 1244996
+  │  │    balance_sheet.current_liabilities.trade_creditors      = null
+  │  │    balance_sheet.equity.retained_earnings                 = 429089
+  │  │    balance_sheet.equity.share_capital                     = 100
+  │  │    balance_sheet.equity.total                             = 429189
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = 230701
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = null
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = 12790
+  │  │    balance_sheet.long_term_liabilities.total              = 81413
+  │  │    profit_and_loss.administrative_expenses                = 1078058
+  │  │    profit_and_loss.corporation_tax                        = -19642
+  │  │    profit_and_loss.cost_of_sales                          = 4437034
+  │  │    profit_and_loss.depreciation_amortisation              = 61034
+  │  │    profit_and_loss.gross_profit                           = 1317259
+  │  │    profit_and_loss.interest_payable                       = 48926
+  │  │    profit_and_loss.interest_receivable                    = 0
+  │  │    profit_and_loss.net_profit                             = 209917
+  │  │    profit_and_loss.operating_profit                       = 239201
+  │  │    profit_and_loss.other_operating_income                 = null
+  │  │    profit_and_loss.profit_before_tax                      = 190275
+  │  │    profit_and_loss.revenue                                = 5754293
+  │  └─
+  │  ┌─ FY 2023  (types contributed: [balance_sheet, profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2023-10-31
+  │  │    months_covered: 12
+  │  │    report_date:    2024-02-22
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = 28094
+  │  │    balance_sheet.current_assets.total                     = 1012734
+  │  │    balance_sheet.current_assets.trade_debtors             = 553354
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = null
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = null
+  │  │    balance_sheet.current_liabilities.corporation_tax      = null
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = 115840
+  │  │    balance_sheet.current_liabilities.total                = 706172
+  │  │    balance_sheet.current_liabilities.trade_creditors      = null
+  │  │    balance_sheet.equity.retained_earnings                 = 457593
+  │  │    balance_sheet.equity.share_capital                     = 100
+  │  │    balance_sheet.equity.total                             = 457693
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = 237474
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = null
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = 27720
+  │  │    balance_sheet.long_term_liabilities.total              = 86343
+  │  │    profit_and_loss.administrative_expenses                = 1076406
+  │  │    profit_and_loss.corporation_tax                        = 22101
+  │  │    profit_and_loss.cost_of_sales                          = 3248360
+  │  │    profit_and_loss.depreciation_amortisation              = 54527
+  │  │    profit_and_loss.gross_profit                           = 1201919
+  │  │    profit_and_loss.interest_payable                       = 15450
+  │  │    profit_and_loss.interest_receivable                    = 542
+  │  │    profit_and_loss.net_profit                             = 88504
+  │  │    profit_and_loss.operating_profit                       = 125513
+  │  │    profit_and_loss.other_operating_income                 = null
+  │  │    profit_and_loss.profit_before_tax                      = 110605
+  │  │    profit_and_loss.revenue                                = 4450279
+  │  └─
+  └─
+
+  ┌─ DOC 5863
+  │  filename:    doc-1777321003082-792026998.pdf
+  │  category:    Restored  [NOT AUTHORITATIVE — tier must be assigned from content]
+  │  company_id:  1880
+  │  r2_key:      companies/89/doc-1777321003082-792026998.pdf
+  │  types:       [balance_sheet, profit_and_loss]
+  │  ── balance_sheet started: 2026-08-15T16:03:03.460Z
+  │  ── balance_sheet OK  model=gemini-3-flash-preview  elapsed=10137ms
+  │  ── profit_and_loss started: 2026-08-15T16:03:13.598Z
+  │  ── profit_and_loss OK  model=gemini-3-flash-preview  elapsed=10778ms
+  │
+  │  ┌─ FY 2021  (types contributed: [balance_sheet, profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2021-10-31
+  │  │    months_covered: 12
+  │  │    report_date:    2023-04-28
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = 133417
+  │  │    balance_sheet.current_assets.total                     = 1551556
+  │  │    balance_sheet.current_assets.trade_debtors             = 598663
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = null
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = null
+  │  │    balance_sheet.current_liabilities.corporation_tax      = 30522
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = 93418
+  │  │    balance_sheet.current_liabilities.total                = 1370248
+  │  │    balance_sheet.current_liabilities.trade_creditors      = null
+  │  │    balance_sheet.equity.retained_earnings                 = 311172
+  │  │    balance_sheet.equity.share_capital                     = 100
+  │  │    balance_sheet.equity.total                             = 311272
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = 288699
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = null
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = 80112
+  │  │    balance_sheet.long_term_liabilities.total              = 158735
+  │  │    profit_and_loss.administrative_expenses                = 960613
+  │  │    profit_and_loss.corporation_tax                        = 48949
+  │  │    profit_and_loss.cost_of_sales                          = 3558769
+  │  │    profit_and_loss.depreciation_amortisation              = 76175
+  │  │    profit_and_loss.gross_profit                           = 1097543
+  │  │    profit_and_loss.interest_payable                       = 29920
+  │  │    profit_and_loss.interest_receivable                    = null
+  │  │    profit_and_loss.net_profit                             = 155959
+  │  │    profit_and_loss.operating_profit                       = 136930
+  │  │    profit_and_loss.other_operating_income                 = null
+  │  │    profit_and_loss.profit_before_tax                      = 107010
+  │  │    profit_and_loss.revenue                                = 4656312
+  │  └─
+  │  ┌─ FY 2022  (types contributed: [balance_sheet, profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2022-10-31
+  │  │    months_covered: 12
+  │  │    report_date:    2023-04-28
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = 21316
+  │  │    balance_sheet.current_assets.total                     = 1524897
+  │  │    balance_sheet.current_assets.trade_debtors             = 882706
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = null
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = null
+  │  │    balance_sheet.current_liabilities.corporation_tax      = 46999
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = 67951
+  │  │    balance_sheet.current_liabilities.total                = 1244996
+  │  │    balance_sheet.current_liabilities.trade_creditors      = null
+  │  │    balance_sheet.equity.retained_earnings                 = 429089
+  │  │    balance_sheet.equity.share_capital                     = 100
+  │  │    balance_sheet.equity.total                             = 429189
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = 230701
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = null
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = 12790
+  │  │    balance_sheet.long_term_liabilities.total              = 81413
+  │  │    profit_and_loss.administrative_expenses                = 1078058
+  │  │    profit_and_loss.corporation_tax                        = 19642
+  │  │    profit_and_loss.cost_of_sales                          = 4437034
+  │  │    profit_and_loss.depreciation_amortisation              = 61034
+  │  │    profit_and_loss.gross_profit                           = 1317259
+  │  │    profit_and_loss.interest_payable                       = 48926
+  │  │    profit_and_loss.interest_receivable                    = null
+  │  │    profit_and_loss.net_profit                             = 209917
+  │  │    profit_and_loss.operating_profit                       = 239201
+  │  │    profit_and_loss.other_operating_income                 = null
+  │  │    profit_and_loss.profit_before_tax                      = 190275
+  │  │    profit_and_loss.revenue                                = 5754293
+  │  └─
+  └─
+
+  ┌─ DOC 5865
+  │  filename:    doc-1783152904384-594607571.pdf
+  │  category:    Restored  [NOT AUTHORITATIVE — tier must be assigned from content]
+  │  company_id:  1880
+  │  r2_key:      companies/89/doc-1783152904384-594607571.pdf
+  │  types:       [profit_and_loss]
+  │  ── profit_and_loss started: 2026-08-15T16:03:24.382Z
+  │  ── profit_and_loss OK  model=gemini-3-flash-preview  elapsed=9011ms
+  │
+  │  ┌─ FY 2025  (types contributed: [profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2025-05-31
+  │  │    months_covered: 7
+  │  │    report_date:    null
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = null
+  │  │    balance_sheet.current_assets.total                     = null
+  │  │    balance_sheet.current_assets.trade_debtors             = null
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = null
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = null
+  │  │    balance_sheet.current_liabilities.corporation_tax      = null
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = null
+  │  │    balance_sheet.current_liabilities.total                = null
+  │  │    balance_sheet.current_liabilities.trade_creditors      = null
+  │  │    balance_sheet.equity.retained_earnings                 = null
+  │  │    balance_sheet.equity.share_capital                     = null
+  │  │    balance_sheet.equity.total                             = null
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = null
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = null
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = null
+  │  │    balance_sheet.long_term_liabilities.total              = null
+  │  │    profit_and_loss.administrative_expenses                = 728178
+  │  │    profit_and_loss.corporation_tax                        = null
+  │  │    profit_and_loss.cost_of_sales                          = 846820
+  │  │    profit_and_loss.depreciation_amortisation              = 27436
+  │  │    profit_and_loss.gross_profit                           = 558548
+  │  │    profit_and_loss.interest_payable                       = null
+  │  │    profit_and_loss.interest_receivable                    = null
+  │  │    profit_and_loss.net_profit                             = -169631
+  │  │    profit_and_loss.operating_profit                       = -169631
+  │  │    profit_and_loss.other_operating_income                 = 109
+  │  │    profit_and_loss.profit_before_tax                      = -169631
+  │  │    profit_and_loss.revenue                                = 1405368
+  │  └─
+  │  ┌─ FY 2026  (types contributed: [profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2026-05-31
+  │  │    months_covered: 7
+  │  │    report_date:    null
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = null
+  │  │    balance_sheet.current_assets.total                     = null
+  │  │    balance_sheet.current_assets.trade_debtors             = null
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = null
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = null
+  │  │    balance_sheet.current_liabilities.corporation_tax      = null
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = null
+  │  │    balance_sheet.current_liabilities.total                = null
+  │  │    balance_sheet.current_liabilities.trade_creditors      = null
+  │  │    balance_sheet.equity.retained_earnings                 = null
+  │  │    balance_sheet.equity.share_capital                     = null
+  │  │    balance_sheet.equity.total                             = null
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = null
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = null
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = null
+  │  │    balance_sheet.long_term_liabilities.total              = null
+  │  │    profit_and_loss.administrative_expenses                = 793560
+  │  │    profit_and_loss.corporation_tax                        = null
+  │  │    profit_and_loss.cost_of_sales                          = 1132258
+  │  │    profit_and_loss.depreciation_amortisation              = 34789
+  │  │    profit_and_loss.gross_profit                           = 769597
+  │  │    profit_and_loss.interest_payable                       = null
+  │  │    profit_and_loss.interest_receivable                    = null
+  │  │    profit_and_loss.net_profit                             = -23963
+  │  │    profit_and_loss.operating_profit                       = -23963
+  │  │    profit_and_loss.other_operating_income                 = 153
+  │  │    profit_and_loss.profit_before_tax                      = -23963
+  │  │    profit_and_loss.revenue                                = 1901855
+  │  └─
+  └─
+
+  ┌─ DOC 5866
+  │  filename:    doc-1783152919710-270636692.pdf
+  │  category:    Restored  [NOT AUTHORITATIVE — tier must be assigned from content]
+  │  company_id:  1880
+  │  r2_key:      companies/89/doc-1783152919710-270636692.pdf
+  │  types:       [balance_sheet]
+  │  ── balance_sheet started: 2026-08-15T16:03:33.397Z
+  │  ── balance_sheet OK  model=gemini-3-flash-preview  elapsed=6099ms
+  │
+  │  ┌─ FY 2026  (types contributed: [balance_sheet])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2026-05-31
+  │  │    months_covered: 7
+  │  │    report_date:    null
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = 210202
+  │  │    balance_sheet.current_assets.total                     = 1145049
+  │  │    balance_sheet.current_assets.trade_debtors             = 480236
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = 29032
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = null
+  │  │    balance_sheet.current_liabilities.corporation_tax      = 39122
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = null
+  │  │    balance_sheet.current_liabilities.total                = 583648
+  │  │    balance_sheet.current_liabilities.trade_creditors      = 248574
+  │  │    balance_sheet.equity.retained_earnings                 = 648247
+  │  │    balance_sheet.equity.share_capital                     = 100
+  │  │    balance_sheet.equity.total                             = 648347
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = 269921
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = null
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = null
+  │  │    balance_sheet.long_term_liabilities.total              = 182975
+  │  │    profit_and_loss.administrative_expenses                = null
+  │  │    profit_and_loss.corporation_tax                        = null
+  │  │    profit_and_loss.cost_of_sales                          = null
+  │  │    profit_and_loss.depreciation_amortisation              = null
+  │  │    profit_and_loss.gross_profit                           = null
+  │  │    profit_and_loss.interest_payable                       = null
+  │  │    profit_and_loss.interest_receivable                    = null
+  │  │    profit_and_loss.net_profit                             = null
+  │  │    profit_and_loss.operating_profit                       = null
+  │  │    profit_and_loss.other_operating_income                 = null
+  │  │    profit_and_loss.profit_before_tax                      = null
+  │  │    profit_and_loss.revenue                                = null
+  │  └─
+  └─
+
+  ┌─ DOC 5867
+  │  filename:    doc-1783152961971-950185558.pdf
+  │  category:    Restored  [NOT AUTHORITATIVE — tier must be assigned from content]
+  │  company_id:  1880
+  │  r2_key:      companies/89/doc-1783152961971-950185558.pdf
+  │  types:       [balance_sheet, profit_and_loss]
+  │  ── balance_sheet started: 2026-08-15T16:03:39.498Z
+  │  ── balance_sheet OK  model=gemini-3-flash-preview  elapsed=10846ms
+  │  ── profit_and_loss started: 2026-08-15T16:03:50.345Z
+  │  ── profit_and_loss OK  model=gemini-3-flash-preview  elapsed=10796ms
+  │
+  │  ┌─ FY 2024  (types contributed: [balance_sheet, profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2024-10-31
+  │  │    months_covered: 12
+  │  │    report_date:    2026-01-23
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = 346697
+  │  │    balance_sheet.current_assets.total                     = 1284307
+  │  │    balance_sheet.current_assets.trade_debtors             = 663569
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = null
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = 10000
+  │  │    balance_sheet.current_liabilities.corporation_tax      = null
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = 80840
+  │  │    balance_sheet.current_liabilities.total                = 765061
+  │  │    balance_sheet.current_liabilities.trade_creditors      = 295953
+  │  │    balance_sheet.equity.retained_earnings                 = 670553
+  │  │    balance_sheet.equity.share_capital                     = 100
+  │  │    balance_sheet.equity.total                             = 670653
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = 210787
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = 7500
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = 11880
+  │  │    balance_sheet.long_term_liabilities.total              = 59380
+  │  │    profit_and_loss.administrative_expenses                = 1198254
+  │  │    profit_and_loss.corporation_tax                        = 99882
+  │  │    profit_and_loss.cost_of_sales                          = 3366215
+  │  │    profit_and_loss.depreciation_amortisation              = 52606
+  │  │    profit_and_loss.gross_profit                           = 1589938
+  │  │    profit_and_loss.interest_payable                       = 18842
+  │  │    profit_and_loss.interest_receivable                    = null
+  │  │    profit_and_loss.net_profit                             = 272960
+  │  │    profit_and_loss.operating_profit                       = 391684
+  │  │    profit_and_loss.other_operating_income                 = null
+  │  │    profit_and_loss.profit_before_tax                      = 372842
+  │  │    profit_and_loss.revenue                                = 4956153
+  │  └─
+  │  ┌─ FY 2025  (types contributed: [balance_sheet, profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2025-10-31
+  │  │    months_covered: 12
+  │  │    report_date:    2026-01-23
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = 346281
+  │  │    balance_sheet.current_assets.total                     = 1131855
+  │  │    balance_sheet.current_assets.trade_debtors             = 429667
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = null
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = 7500
+  │  │    balance_sheet.current_liabilities.corporation_tax      = null
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = 0
+  │  │    balance_sheet.current_liabilities.total                = 612575
+  │  │    balance_sheet.current_liabilities.trade_creditors      = 347074
+  │  │    balance_sheet.equity.retained_earnings                 = 673137
+  │  │    balance_sheet.equity.share_capital                     = 100
+  │  │    balance_sheet.equity.total                             = 673237
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = 207712
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = 0
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = 33755
+  │  │    balance_sheet.long_term_liabilities.total              = 53755
+  │  │    profit_and_loss.administrative_expenses                = 1361040
+  │  │    profit_and_loss.corporation_tax                        = 39122
+  │  │    profit_and_loss.cost_of_sales                          = 2979013
+  │  │    profit_and_loss.depreciation_amortisation              = 49005
+  │  │    profit_and_loss.gross_profit                           = 1530073
+  │  │    profit_and_loss.interest_payable                       = 10327
+  │  │    profit_and_loss.interest_receivable                    = null
+  │  │    profit_and_loss.net_profit                             = 119584
+  │  │    profit_and_loss.operating_profit                       = 169033
+  │  │    profit_and_loss.other_operating_income                 = null
+  │  │    profit_and_loss.profit_before_tax                      = 158706
+  │  │    profit_and_loss.revenue                                = 4509086
+  │  └─
+  └─
+
+  ┌─ DOC 5868
+  │  filename:    doc-1783152989923-333352671.pdf
+  │  category:    Restored  [NOT AUTHORITATIVE — tier must be assigned from content]
+  │  company_id:  1880
+  │  r2_key:      companies/89/doc-1783152989923-333352671.pdf
+  │  types:       [balance_sheet, profit_and_loss]
+  │  ── balance_sheet started: 2026-08-15T16:04:01.144Z
+  │  ── balance_sheet OK  model=gemini-3-flash-preview  elapsed=9714ms
+  │  ── profit_and_loss started: 2026-08-15T16:04:10.859Z
+  │  ── profit_and_loss OK  model=gemini-3-flash-preview  elapsed=10981ms
+  │
+  │  ┌─ FY 2023  (types contributed: [balance_sheet, profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2023-10-31
+  │  │    months_covered: 12
+  │  │    report_date:    2024-12-13
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = 28094
+  │  │    balance_sheet.current_assets.total                     = 1012734
+  │  │    balance_sheet.current_assets.trade_debtors             = 470739
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = 24607
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = 10000
+  │  │    balance_sheet.current_liabilities.corporation_tax      = 22101
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = 115840
+  │  │    balance_sheet.current_liabilities.total                = 706172
+  │  │    balance_sheet.current_liabilities.trade_creditors      = 291986
+  │  │    balance_sheet.equity.retained_earnings                 = 457593
+  │  │    balance_sheet.equity.share_capital                     = 100
+  │  │    balance_sheet.equity.total                             = 457693
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = 237474
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = 17500
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = 27720
+  │  │    balance_sheet.long_term_liabilities.total              = 86343
+  │  │    profit_and_loss.administrative_expenses                = 1076406
+  │  │    profit_and_loss.corporation_tax                        = 22101
+  │  │    profit_and_loss.cost_of_sales                          = 3248360
+  │  │    profit_and_loss.depreciation_amortisation              = 54527
+  │  │    profit_and_loss.gross_profit                           = 1201919
+  │  │    profit_and_loss.interest_payable                       = 15450
+  │  │    profit_and_loss.interest_receivable                    = 542
+  │  │    profit_and_loss.net_profit                             = 88504
+  │  │    profit_and_loss.operating_profit                       = 125513
+  │  │    profit_and_loss.other_operating_income                 = null
+  │  │    profit_and_loss.profit_before_tax                      = 110605
+  │  │    profit_and_loss.revenue                                = 4450279
+  │  └─
+  │  ┌─ FY 2024  (types contributed: [balance_sheet, profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2024-10-31
+  │  │    months_covered: 12
+  │  │    report_date:    2024-12-13
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = 346697
+  │  │    balance_sheet.current_assets.total                     = 1284307
+  │  │    balance_sheet.current_assets.trade_debtors             = 663569
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = 3098
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = 10000
+  │  │    balance_sheet.current_liabilities.corporation_tax      = 99882
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = 80840
+  │  │    balance_sheet.current_liabilities.total                = 765061
+  │  │    balance_sheet.current_liabilities.trade_creditors      = 295953
+  │  │    balance_sheet.equity.retained_earnings                 = 670553
+  │  │    balance_sheet.equity.share_capital                     = 100
+  │  │    balance_sheet.equity.total                             = 670653
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = 210787
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = 7500
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = 11880
+  │  │    balance_sheet.long_term_liabilities.total              = 59380
+  │  │    profit_and_loss.administrative_expenses                = 1198254
+  │  │    profit_and_loss.corporation_tax                        = 99882
+  │  │    profit_and_loss.cost_of_sales                          = 3366215
+  │  │    profit_and_loss.depreciation_amortisation              = 52606
+  │  │    profit_and_loss.gross_profit                           = 1589938
+  │  │    profit_and_loss.interest_payable                       = 18842
+  │  │    profit_and_loss.interest_receivable                    = 0
+  │  │    profit_and_loss.net_profit                             = 272960
+  │  │    profit_and_loss.operating_profit                       = 391684
+  │  │    profit_and_loss.other_operating_income                 = null
+  │  │    profit_and_loss.profit_before_tax                      = 372842
+  │  │    profit_and_loss.revenue                                = 4956153
+  │  └─
+  └─
+
+  ┌─ DOC 5869
+  │  filename:    doc-1783153004056-936850820.pdf
+  │  category:    Restored  [NOT AUTHORITATIVE — tier must be assigned from content]
+  │  company_id:  1880
+  │  r2_key:      companies/89/doc-1783153004056-936850820.pdf
+  │  types:       [balance_sheet, profit_and_loss]
+  │  ── balance_sheet started: 2026-08-15T16:04:21.843Z
+  │  ── balance_sheet OK  model=gemini-3-flash-preview  elapsed=10157ms
+  │  ── profit_and_loss started: 2026-08-15T16:04:32.002Z
+  │  ── profit_and_loss OK  model=gemini-3-flash-preview  elapsed=12066ms
+  │
+  │  ┌─ FY 2022  (types contributed: [balance_sheet, profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2022-10-31
+  │  │    months_covered: 12
+  │  │    report_date:    2024-02-22
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = 21316
+  │  │    balance_sheet.current_assets.total                     = 1524897
+  │  │    balance_sheet.current_assets.trade_debtors             = 882706
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = null
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = null
+  │  │    balance_sheet.current_liabilities.corporation_tax      = null
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = null
+  │  │    balance_sheet.current_liabilities.total                = 1244996
+  │  │    balance_sheet.current_liabilities.trade_creditors      = null
+  │  │    balance_sheet.equity.retained_earnings                 = 429089
+  │  │    balance_sheet.equity.share_capital                     = 100
+  │  │    balance_sheet.equity.total                             = 429189
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = 230701
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = null
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = null
+  │  │    balance_sheet.long_term_liabilities.total              = 81413
+  │  │    profit_and_loss.administrative_expenses                = 1078058
+  │  │    profit_and_loss.corporation_tax                        = -19642
+  │  │    profit_and_loss.cost_of_sales                          = 4437034
+  │  │    profit_and_loss.depreciation_amortisation              = 61034
+  │  │    profit_and_loss.gross_profit                           = 1317259
+  │  │    profit_and_loss.interest_payable                       = 48926
+  │  │    profit_and_loss.interest_receivable                    = 0
+  │  │    profit_and_loss.net_profit                             = 209917
+  │  │    profit_and_loss.operating_profit                       = 239201
+  │  │    profit_and_loss.other_operating_income                 = null
+  │  │    profit_and_loss.profit_before_tax                      = 190275
+  │  │    profit_and_loss.revenue                                = 5754293
+  │  └─
+  │  ┌─ FY 2023  (types contributed: [balance_sheet, profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2023-10-31
+  │  │    months_covered: 12
+  │  │    report_date:    2024-02-22
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = 28094
+  │  │    balance_sheet.current_assets.total                     = 1012734
+  │  │    balance_sheet.current_assets.trade_debtors             = 553354
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = null
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = null
+  │  │    balance_sheet.current_liabilities.corporation_tax      = null
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = null
+  │  │    balance_sheet.current_liabilities.total                = 706172
+  │  │    balance_sheet.current_liabilities.trade_creditors      = null
+  │  │    balance_sheet.equity.retained_earnings                 = 457593
+  │  │    balance_sheet.equity.share_capital                     = 100
+  │  │    balance_sheet.equity.total                             = 457693
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = 237474
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = null
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = null
+  │  │    balance_sheet.long_term_liabilities.total              = 86343
+  │  │    profit_and_loss.administrative_expenses                = 1076406
+  │  │    profit_and_loss.corporation_tax                        = 22101
+  │  │    profit_and_loss.cost_of_sales                          = 3248360
+  │  │    profit_and_loss.depreciation_amortisation              = 54527
+  │  │    profit_and_loss.gross_profit                           = 1201919
+  │  │    profit_and_loss.interest_payable                       = 15450
+  │  │    profit_and_loss.interest_receivable                    = 542
+  │  │    profit_and_loss.net_profit                             = 88504
+  │  │    profit_and_loss.operating_profit                       = 125513
+  │  │    profit_and_loss.other_operating_income                 = null
+  │  │    profit_and_loss.profit_before_tax                      = 110605
+  │  │    profit_and_loss.revenue                                = 4450279
+  │  └─
+  └─
+
+[CONTINUATION] company 1881 only — appended at 2026-08-15T16:05:20.178Z
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+COMPANY 1881
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ┌─ DOC 5873
+  │  filename:    IM - 163009.pdf
+  │  category:    Deal Documents  [NOT AUTHORITATIVE — tier must be assigned from content]
+  │  company_id:  1881
+  │  r2_key:      companies/138/doc-1778838673399-328152625.pdf
+  │  types:       [balance_sheet, profit_and_loss]
+  │  ── balance_sheet started: 2026-08-15T16:05:20.257Z
+  │  ── balance_sheet OK  model=gemini-3-flash-preview  elapsed=15661ms
+  │  ── profit_and_loss started: 2026-08-15T16:05:35.921Z
+  │  ── profit_and_loss OK  model=gemini-3-flash-preview  elapsed=16419ms
+  │
+  │  ┌─ FY 2022  (types contributed: [balance_sheet, profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2022-02-28
+  │  │    months_covered: 12
+  │  │    report_date:    null
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = 210479
+  │  │    balance_sheet.current_assets.total                     = 210479
+  │  │    balance_sheet.current_assets.trade_debtors             = null
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = null
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = null
+  │  │    balance_sheet.current_liabilities.corporation_tax      = null
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = null
+  │  │    balance_sheet.current_liabilities.total                = 85142
+  │  │    balance_sheet.current_liabilities.trade_creditors      = null
+  │  │    balance_sheet.equity.retained_earnings                 = 127321
+  │  │    balance_sheet.equity.share_capital                     = null
+  │  │    balance_sheet.equity.total                             = 127321
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = 1984
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = null
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = null
+  │  │    balance_sheet.long_term_liabilities.total              = 0
+  │  │    profit_and_loss.administrative_expenses                = 35249
+  │  │    profit_and_loss.corporation_tax                        = null
+  │  │    profit_and_loss.cost_of_sales                          = 151818
+  │  │    profit_and_loss.depreciation_amortisation              = 1478
+  │  │    profit_and_loss.gross_profit                           = 146321
+  │  │    profit_and_loss.interest_payable                       = null
+  │  │    profit_and_loss.interest_receivable                    = null
+  │  │    profit_and_loss.net_profit                             = 111774
+  │  │    profit_and_loss.operating_profit                       = 111774
+  │  │    profit_and_loss.other_operating_income                 = 702
+  │  │    profit_and_loss.profit_before_tax                      = 111774
+  │  │    profit_and_loss.revenue                                = 298139
+  │  └─
+  │  ┌─ FY 2023  (types contributed: [balance_sheet, profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2023-02-28
+  │  │    months_covered: 12
+  │  │    report_date:    null
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = 167499
+  │  │    balance_sheet.current_assets.total                     = 186159
+  │  │    balance_sheet.current_assets.trade_debtors             = null
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = null
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = null
+  │  │    balance_sheet.current_liabilities.corporation_tax      = null
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = null
+  │  │    balance_sheet.current_liabilities.total                = 64016
+  │  │    balance_sheet.current_liabilities.trade_creditors      = null
+  │  │    balance_sheet.equity.retained_earnings                 = 123842
+  │  │    balance_sheet.equity.share_capital                     = null
+  │  │    balance_sheet.equity.total                             = 123842
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = 1737
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = null
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = null
+  │  │    balance_sheet.long_term_liabilities.total              = 38
+  │  │    profit_and_loss.administrative_expenses                = 69497
+  │  │    profit_and_loss.corporation_tax                        = null
+  │  │    profit_and_loss.cost_of_sales                          = 68452
+  │  │    profit_and_loss.depreciation_amortisation              = 1328
+  │  │    profit_and_loss.gross_profit                           = 130075
+  │  │    profit_and_loss.interest_payable                       = null
+  │  │    profit_and_loss.interest_receivable                    = null
+  │  │    profit_and_loss.net_profit                             = 60757
+  │  │    profit_and_loss.operating_profit                       = 60757
+  │  │    profit_and_loss.other_operating_income                 = 179
+  │  │    profit_and_loss.profit_before_tax                      = 60757
+  │  │    profit_and_loss.revenue                                = 198527
+  │  └─
+  │  ┌─ FY 2024  (types contributed: [balance_sheet, profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2024-02-29
+  │  │    months_covered: 12
+  │  │    report_date:    null
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = 173616
+  │  │    balance_sheet.current_assets.total                     = 175646
+  │  │    balance_sheet.current_assets.trade_debtors             = null
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = null
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = null
+  │  │    balance_sheet.current_liabilities.corporation_tax      = null
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = null
+  │  │    balance_sheet.current_liabilities.total                = 46771
+  │  │    balance_sheet.current_liabilities.trade_creditors      = null
+  │  │    balance_sheet.equity.retained_earnings                 = 129972
+  │  │    balance_sheet.equity.share_capital                     = null
+  │  │    balance_sheet.equity.total                             = 129972
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = 1097
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = null
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = null
+  │  │    balance_sheet.long_term_liabilities.total              = 0
+  │  │    profit_and_loss.administrative_expenses                = 12094
+  │  │    profit_and_loss.corporation_tax                        = null
+  │  │    profit_and_loss.cost_of_sales                          = 196355
+  │  │    profit_and_loss.depreciation_amortisation              = 640
+  │  │    profit_and_loss.gross_profit                           = 129872
+  │  │    profit_and_loss.interest_payable                       = null
+  │  │    profit_and_loss.interest_receivable                    = null
+  │  │    profit_and_loss.net_profit                             = 118518
+  │  │    profit_and_loss.operating_profit                       = 118518
+  │  │    profit_and_loss.other_operating_income                 = 740
+  │  │    profit_and_loss.profit_before_tax                      = 118518
+  │  │    profit_and_loss.revenue                                = 326227
+  │  └─
+  │  ┌─ FY 2025  (types contributed: [balance_sheet, profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2025-02-28
+  │  │    months_covered: 12
+  │  │    report_date:    null
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = null
+  │  │    balance_sheet.current_assets.total                     = 302622
+  │  │    balance_sheet.current_assets.trade_debtors             = null
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = null
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = null
+  │  │    balance_sheet.current_liabilities.corporation_tax      = null
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = null
+  │  │    balance_sheet.current_liabilities.total                = 97627
+  │  │    balance_sheet.current_liabilities.trade_creditors      = null
+  │  │    balance_sheet.equity.retained_earnings                 = 214137
+  │  │    balance_sheet.equity.share_capital                     = null
+  │  │    balance_sheet.equity.total                             = 214137
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = 9142
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = null
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = null
+  │  │    balance_sheet.long_term_liabilities.total              = 0
+  │  │    profit_and_loss.administrative_expenses                = 17848
+  │  │    profit_and_loss.corporation_tax                        = null
+  │  │    profit_and_loss.cost_of_sales                          = 205301
+  │  │    profit_and_loss.depreciation_amortisation              = 299
+  │  │    profit_and_loss.gross_profit                           = 235772
+  │  │    profit_and_loss.interest_payable                       = null
+  │  │    profit_and_loss.interest_receivable                    = null
+  │  │    profit_and_loss.net_profit                             = 221372
+  │  │    profit_and_loss.operating_profit                       = 221372
+  │  │    profit_and_loss.other_operating_income                 = 3448
+  │  │    profit_and_loss.profit_before_tax                      = 221372
+  │  │    profit_and_loss.revenue                                = 441073
+  │  └─
+  └─
+
+  ┌─ DOC 5874
+  │  filename:    Cooper-Gibson Limited AC and CT ye 29.02.2024.pdf
+  │  category:    Company Accounts  [NOT AUTHORITATIVE — tier must be assigned from content]
+  │  company_id:  1881
+  │  r2_key:      companies/138/doc-1778838689011-823319302.pdf
+  │  types:       [balance_sheet, profit_and_loss]
+  │  ── balance_sheet started: 2026-08-15T16:05:52.344Z
+  │  ── balance_sheet OK  model=gemini-3-flash-preview  elapsed=10214ms
+  │  ── profit_and_loss started: 2026-08-15T16:06:02.559Z
+  │  ── profit_and_loss OK  model=gemini-3-flash-preview  elapsed=10570ms
+  │
+  │  ┌─ FY 2023  (types contributed: [balance_sheet, profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2023-02-28
+  │  │    months_covered: 12
+  │  │    report_date:    2024-11-25
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = 167499
+  │  │    balance_sheet.current_assets.total                     = 186159
+  │  │    balance_sheet.current_assets.trade_debtors             = null
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = null
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = null
+  │  │    balance_sheet.current_liabilities.corporation_tax      = null
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = null
+  │  │    balance_sheet.current_liabilities.total                = 64016
+  │  │    balance_sheet.current_liabilities.trade_creditors      = null
+  │  │    balance_sheet.equity.retained_earnings                 = null
+  │  │    balance_sheet.equity.share_capital                     = null
+  │  │    balance_sheet.equity.total                             = 123842
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = 1737
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = null
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = null
+  │  │    balance_sheet.long_term_liabilities.total              = 38
+  │  │    profit_and_loss.administrative_expenses                = 135822
+  │  │    profit_and_loss.corporation_tax                        = 11735
+  │  │    profit_and_loss.cost_of_sales                          = 447
+  │  │    profit_and_loss.depreciation_amortisation              = 1328
+  │  │    profit_and_loss.gross_profit                           = 198080
+  │  │    profit_and_loss.interest_payable                       = 1672
+  │  │    profit_and_loss.interest_receivable                    = 179
+  │  │    profit_and_loss.net_profit                             = 49022
+  │  │    profit_and_loss.operating_profit                       = 62258
+  │  │    profit_and_loss.other_operating_income                 = 179
+  │  │    profit_and_loss.profit_before_tax                      = 60757
+  │  │    profit_and_loss.revenue                                = 198527
+  │  └─
+  │  ┌─ FY 2024  (types contributed: [balance_sheet, profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   2023-03-01
+  │  │    period_end:     2024-02-29
+  │  │    months_covered: 12
+  │  │    report_date:    2024-11-25
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = 173616
+  │  │    balance_sheet.current_assets.total                     = 175646
+  │  │    balance_sheet.current_assets.trade_debtors             = null
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = null
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = null
+  │  │    balance_sheet.current_liabilities.corporation_tax      = null
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = null
+  │  │    balance_sheet.current_liabilities.total                = 46771
+  │  │    balance_sheet.current_liabilities.trade_creditors      = null
+  │  │    balance_sheet.equity.retained_earnings                 = null
+  │  │    balance_sheet.equity.share_capital                     = null
+  │  │    balance_sheet.equity.total                             = 129972
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = 1097
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = null
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = null
+  │  │    balance_sheet.long_term_liabilities.total              = 0
+  │  │    profit_and_loss.administrative_expenses                = 204475
+  │  │    profit_and_loss.corporation_tax                        = 27388
+  │  │    profit_and_loss.cost_of_sales                          = 4221
+  │  │    profit_and_loss.depreciation_amortisation              = 640
+  │  │    profit_and_loss.gross_profit                           = 322006
+  │  │    profit_and_loss.interest_payable                       = null
+  │  │    profit_and_loss.interest_receivable                    = 740
+  │  │    profit_and_loss.net_profit                             = 91130
+  │  │    profit_and_loss.operating_profit                       = 117531
+  │  │    profit_and_loss.other_operating_income                 = 740
+  │  │    profit_and_loss.profit_before_tax                      = 118518
+  │  │    profit_and_loss.revenue                                = 326227
+  │  └─
+  └─
+
+  ┌─ DOC 5875
+  │  filename:    CGRProfitandLoss1Mar24.pdf
+  │  category:    Company Accounts  [NOT AUTHORITATIVE — tier must be assigned from content]
+  │  company_id:  1881
+  │  r2_key:      companies/138/doc-1778838746863-404999227.pdf
+  │  types:       [balance_sheet, profit_and_loss]
+  │  ── balance_sheet started: 2026-08-15T16:06:13.132Z
+  │  ── balance_sheet OK  model=gemini-3-flash-preview  elapsed=5706ms
+  │  ── profit_and_loss started: 2026-08-15T16:06:18.839Z
+  │  ── profit_and_loss OK  model=gemini-3-flash-preview  elapsed=6095ms
+  │
+  │  ┌─ FY 2024  (types contributed: [balance_sheet, profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   2023-03-01
+  │  │    period_end:     2024-02-29
+  │  │    months_covered: 12
+  │  │    report_date:    2024-03-05
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = null
+  │  │    balance_sheet.current_assets.total                     = null
+  │  │    balance_sheet.current_assets.trade_debtors             = null
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = null
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = null
+  │  │    balance_sheet.current_liabilities.corporation_tax      = null
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = null
+  │  │    balance_sheet.current_liabilities.total                = null
+  │  │    balance_sheet.current_liabilities.trade_creditors      = null
+  │  │    balance_sheet.equity.retained_earnings                 = 85008.6
+  │  │    balance_sheet.equity.share_capital                     = null
+  │  │    balance_sheet.equity.total                             = 85008.6
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = null
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = null
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = null
+  │  │    balance_sheet.long_term_liabilities.total              = null
+  │  │    profit_and_loss.administrative_expenses                = 65374.84
+  │  │    profit_and_loss.corporation_tax                        = 11735.16
+  │  │    profit_and_loss.cost_of_sales                          = 139313.4
+  │  │    profit_and_loss.depreciation_amortisation              = null
+  │  │    profit_and_loss.gross_profit                           = 186913.85
+  │  │    profit_and_loss.interest_payable                       = null
+  │  │    profit_and_loss.interest_receivable                    = 739.67
+  │  │    profit_and_loss.net_profit                             = 85008.6
+  │  │    profit_and_loss.operating_profit                       = 121539.01
+  │  │    profit_and_loss.other_operating_income                 = null
+  │  │    profit_and_loss.profit_before_tax                      = 122278.68
+  │  │    profit_and_loss.revenue                                = 326227.25
+  │  └─
+  └─
+
+  ┌─ DOC 5876
+  │  filename:    CompanyOverview-end28.2.25.pdf
+  │  category:    Deal Documents  [NOT AUTHORITATIVE — tier must be assigned from content]
+  │  company_id:  1881
+  │  r2_key:      companies/138/doc-1778838776011-725630720.pdf
+  │  types:       [balance_sheet, profit_and_loss]
+  │  ── balance_sheet started: 2026-08-15T16:06:24.936Z
+  │  ── balance_sheet OK  model=gemini-3-flash-preview  elapsed=6766ms
+  │  ── profit_and_loss started: 2026-08-15T16:06:31.703Z
+  │  ── profit_and_loss OK  model=gemini-3-flash-preview  elapsed=6306ms
+  │
+  │  ┌─ FY 2025  (types contributed: [balance_sheet, profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   2024-03-01
+  │  │    period_end:     2025-02-28
+  │  │    months_covered: 12
+  │  │    report_date:    2025-04-08
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = 167600.6
+  │  │    balance_sheet.current_assets.total                     = 181240.6
+  │  │    balance_sheet.current_assets.trade_debtors             = 11610
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = -180194.29
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = null
+  │  │    balance_sheet.current_liabilities.corporation_tax      = null
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = null
+  │  │    balance_sheet.current_liabilities.total                = -178221.17
+  │  │    balance_sheet.current_liabilities.trade_creditors      = 2030
+  │  │    balance_sheet.equity.retained_earnings                 = 214970.17
+  │  │    balance_sheet.equity.share_capital                     = 2
+  │  │    balance_sheet.equity.total                             = 364119.83
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = 4658.06
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = null
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = null
+  │  │    balance_sheet.long_term_liabilities.total              = 0
+  │  │    profit_and_loss.administrative_expenses                = 41676.33
+  │  │    profit_and_loss.corporation_tax                        = null
+  │  │    profit_and_loss.cost_of_sales                          = 166074
+  │  │    profit_and_loss.depreciation_amortisation              = null
+  │  │    profit_and_loss.gross_profit                           = 274998.5
+  │  │    profit_and_loss.interest_payable                       = null
+  │  │    profit_and_loss.interest_receivable                    = 805.49
+  │  │    profit_and_loss.net_profit                             = 234147.66
+  │  │    profit_and_loss.operating_profit                       = 233322.17
+  │  │    profit_and_loss.other_operating_income                 = 20
+  │  │    profit_and_loss.profit_before_tax                      = 234147.66
+  │  │    profit_and_loss.revenue                                = 441072.5
+  │  └─
+  └─
+
+  ┌─ DOC 5877
+  │  filename:    FS_Cooper-GibsonLimited_28022025.pdf
+  │  category:    Company Accounts  [NOT AUTHORITATIVE — tier must be assigned from content]
+  │  company_id:  1881
+  │  r2_key:      companies/138/doc-1778838798393-104382606.pdf
+  │  types:       [balance_sheet, profit_and_loss]
+  │  ── balance_sheet started: 2026-08-15T16:06:38.011Z
+  │  ── balance_sheet OK  model=gemini-3-flash-preview  elapsed=9621ms
+  │  ── profit_and_loss started: 2026-08-15T16:06:47.633Z
+  │  ── profit_and_loss OK  model=gemini-3-flash-preview  elapsed=9363ms
+  │
+  │  ┌─ FY 2024  (types contributed: [balance_sheet, profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2024-02-29
+  │  │    months_covered: 12
+  │  │    report_date:    2025-08-28
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = 173614
+  │  │    balance_sheet.current_assets.total                     = 175644
+  │  │    balance_sheet.current_assets.trade_debtors             = null
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = null
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = null
+  │  │    balance_sheet.current_liabilities.corporation_tax      = null
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = null
+  │  │    balance_sheet.current_liabilities.total                = 46769
+  │  │    balance_sheet.current_liabilities.trade_creditors      = null
+  │  │    balance_sheet.equity.retained_earnings                 = null
+  │  │    balance_sheet.equity.share_capital                     = null
+  │  │    balance_sheet.equity.total                             = 129972
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = 1097
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = null
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = null
+  │  │    balance_sheet.long_term_liabilities.total              = 0
+  │  │    profit_and_loss.administrative_expenses                = 69383
+  │  │    profit_and_loss.corporation_tax                        = 27388
+  │  │    profit_and_loss.cost_of_sales                          = 139313
+  │  │    profit_and_loss.depreciation_amortisation              = 640
+  │  │    profit_and_loss.gross_profit                           = 186914
+  │  │    profit_and_loss.interest_payable                       = 247
+  │  │    profit_and_loss.interest_receivable                    = 740
+  │  │    profit_and_loss.net_profit                             = 91130
+  │  │    profit_and_loss.operating_profit                       = 118271
+  │  │    profit_and_loss.other_operating_income                 = 740
+  │  │    profit_and_loss.profit_before_tax                      = 118518
+  │  │    profit_and_loss.revenue                                = 326227
+  │  └─
+  │  ┌─ FY 2025  (types contributed: [balance_sheet, profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2025-02-28
+  │  │    months_covered: 12
+  │  │    report_date:    2025-08-28
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = 295005
+  │  │    balance_sheet.current_assets.total                     = 302622
+  │  │    balance_sheet.current_assets.trade_debtors             = null
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = null
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = null
+  │  │    balance_sheet.current_liabilities.corporation_tax      = null
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = null
+  │  │    balance_sheet.current_liabilities.total                = 97627
+  │  │    balance_sheet.current_liabilities.trade_creditors      = null
+  │  │    balance_sheet.equity.retained_earnings                 = null
+  │  │    balance_sheet.equity.share_capital                     = null
+  │  │    balance_sheet.equity.total                             = 214137
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = 9142
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = null
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = null
+  │  │    balance_sheet.long_term_liabilities.total              = 0
+  │  │    profit_and_loss.administrative_expenses                = 57095
+  │  │    profit_and_loss.corporation_tax                        = 52207
+  │  │    profit_and_loss.cost_of_sales                          = 166054
+  │  │    profit_and_loss.depreciation_amortisation              = 299
+  │  │    profit_and_loss.gross_profit                           = 275019
+  │  │    profit_and_loss.interest_payable                       = 0
+  │  │    profit_and_loss.interest_receivable                    = 3448
+  │  │    profit_and_loss.net_profit                             = 169165
+  │  │    profit_and_loss.operating_profit                       = 221372
+  │  │    profit_and_loss.other_operating_income                 = 3448
+  │  │    profit_and_loss.profit_before_tax                      = 221372
+  │  │    profit_and_loss.revenue                                = 441073
+  │  └─
+  └─
+
+  ┌─ DOC 5879
+  │  filename:    Cooper-Gibson Ltd AC and CT ye 29.02.26._final.pdf
+  │  category:    Company Accounts  [NOT AUTHORITATIVE — tier must be assigned from content]
+  │  company_id:  1881
+  │  r2_key:      companies/138/doc-1782036715100-291703953.pdf
+  │  types:       [balance_sheet, profit_and_loss]
+  │  ── balance_sheet started: 2026-08-15T16:06:56.999Z
+  │  ── balance_sheet OK  model=gemini-3-flash-preview  elapsed=11283ms
+  │  ── profit_and_loss started: 2026-08-15T16:07:08.283Z
+  │  ── profit_and_loss OK  model=gemini-3-flash-preview  elapsed=10402ms
+  │
+  │  ┌─ FY 2025  (types contributed: [balance_sheet, profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2025-02-28
+  │  │    months_covered: 12
+  │  │    report_date:    2026-06-09
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = null
+  │  │    balance_sheet.current_assets.total                     = 302622
+  │  │    balance_sheet.current_assets.trade_debtors             = null
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = null
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = null
+  │  │    balance_sheet.current_liabilities.corporation_tax      = 52782
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = null
+  │  │    balance_sheet.current_liabilities.total                = 97627
+  │  │    balance_sheet.current_liabilities.trade_creditors      = null
+  │  │    balance_sheet.equity.retained_earnings                 = null
+  │  │    balance_sheet.equity.share_capital                     = null
+  │  │    balance_sheet.equity.total                             = 214137
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = 9142
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = null
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = null
+  │  │    balance_sheet.long_term_liabilities.total              = null
+  │  │    profit_and_loss.administrative_expenses                = 220766
+  │  │    profit_and_loss.corporation_tax                        = 52207
+  │  │    profit_and_loss.cost_of_sales                          = 2383
+  │  │    profit_and_loss.depreciation_amortisation              = 299
+  │  │    profit_and_loss.gross_profit                           = 438690
+  │  │    profit_and_loss.interest_payable                       = null
+  │  │    profit_and_loss.interest_receivable                    = 3448
+  │  │    profit_and_loss.net_profit                             = 169165
+  │  │    profit_and_loss.operating_profit                       = 221372
+  │  │    profit_and_loss.other_operating_income                 = 3448
+  │  │    profit_and_loss.profit_before_tax                      = 221372
+  │  │    profit_and_loss.revenue                                = 441073
+  │  └─
+  │  ┌─ FY 2026  (types contributed: [balance_sheet, profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   2025-03-01
+  │  │    period_end:     2026-02-28
+  │  │    months_covered: 12
+  │  │    report_date:    2026-06-09
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = null
+  │  │    balance_sheet.current_assets.total                     = 195634
+  │  │    balance_sheet.current_assets.trade_debtors             = null
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = null
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = null
+  │  │    balance_sheet.current_liabilities.corporation_tax      = 7819
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = null
+  │  │    balance_sheet.current_liabilities.total                = 12551
+  │  │    balance_sheet.current_liabilities.trade_creditors      = null
+  │  │    balance_sheet.equity.retained_earnings                 = null
+  │  │    balance_sheet.equity.share_capital                     = null
+  │  │    balance_sheet.equity.total                             = 200547
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = 17464
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = null
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = null
+  │  │    balance_sheet.long_term_liabilities.total              = null
+  │  │    profit_and_loss.administrative_expenses                = 177671
+  │  │    profit_and_loss.corporation_tax                        = 7819
+  │  │    profit_and_loss.cost_of_sales                          = 0
+  │  │    profit_and_loss.depreciation_amortisation              = 7533
+  │  │    profit_and_loss.gross_profit                           = 223404
+  │  │    profit_and_loss.interest_payable                       = null
+  │  │    profit_and_loss.interest_receivable                    = 3746
+  │  │    profit_and_loss.net_profit                             = 41660
+  │  │    profit_and_loss.operating_profit                       = 49479
+  │  │    profit_and_loss.other_operating_income                 = 3746
+  │  │    profit_and_loss.profit_before_tax                      = 49479
+  │  │    profit_and_loss.revenue                                = 223404
+  │  └─
+  └─
+
+  ┌─ DOC 5880
+  │  filename:    FYTDBalanceSheet_25.6.26.pdf
+  │  category:    YTD Balance Sheet  [NOT AUTHORITATIVE — tier must be assigned from content]
+  │  company_id:  1881
+  │  r2_key:      companies/138/doc-1782760216464-656399555.pdf
+  │  types:       [balance_sheet]
+  │  ── balance_sheet started: 2026-08-15T16:07:18.690Z
+  │  ── balance_sheet OK  model=gemini-3-flash-preview  elapsed=6114ms
+  │
+  │  ┌─ FY 2026  (types contributed: [balance_sheet])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   null
+  │  │    period_end:     2026-06-25
+  │  │    months_covered: null
+  │  │    report_date:    2026-06-25
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = 0
+  │  │    balance_sheet.current_assets.cash_at_bank              = 75312.48
+  │  │    balance_sheet.current_assets.total                     = 115100.92
+  │  │    balance_sheet.current_assets.trade_debtors             = 0
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = -149587.37
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = null
+  │  │    balance_sheet.current_liabilities.corporation_tax      = 87.81
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = null
+  │  │    balance_sheet.current_liabilities.total                = -151193.18
+  │  │    balance_sheet.current_liabilities.trade_creditors      = 8960
+  │  │    balance_sheet.equity.retained_earnings                 = 377972.93
+  │  │    balance_sheet.equity.share_capital                     = 2
+  │  │    balance_sheet.equity.total                             = 292974.93
+  │  │    balance_sheet.fixed_assets.intangible_assets           = 20291.36
+  │  │    balance_sheet.fixed_assets.tangible_assets             = 6389.47
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = null
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = null
+  │  │    balance_sheet.long_term_liabilities.total              = 0
+  │  │    profit_and_loss.administrative_expenses                = null
+  │  │    profit_and_loss.corporation_tax                        = null
+  │  │    profit_and_loss.cost_of_sales                          = null
+  │  │    profit_and_loss.depreciation_amortisation              = null
+  │  │    profit_and_loss.gross_profit                           = null
+  │  │    profit_and_loss.interest_payable                       = null
+  │  │    profit_and_loss.interest_receivable                    = null
+  │  │    profit_and_loss.net_profit                             = null
+  │  │    profit_and_loss.operating_profit                       = null
+  │  │    profit_and_loss.other_operating_income                 = null
+  │  │    profit_and_loss.profit_before_tax                      = null
+  │  │    profit_and_loss.revenue                                = null
+  │  └─
+  └─
+
+  ┌─ DOC 5881
+  │  filename:    FYTD_ProfitandLoss_25.6.26.pdf
+  │  category:    Deal Documents  [NOT AUTHORITATIVE — tier must be assigned from content]
+  │  company_id:  1881
+  │  r2_key:      companies/138/doc-1782760240362-645911187.pdf
+  │  types:       [profit_and_loss]
+  │  ── profit_and_loss started: 2026-08-15T16:07:24.806Z
+  │  ── profit_and_loss OK  model=gemini-3-flash-preview  elapsed=6216ms
+  │
+  │  ┌─ FY 2026  (types contributed: [profit_and_loss])
+  │  │
+  │  │  GROUP B:
+  │  │    period_start:   2026-03-01
+  │  │    period_end:     2026-06-25
+  │  │    months_covered: 4
+  │  │    report_date:    2026-06-25
+  │  │
+  │  │  GROUP A (30 paths):
+  │  │    balance_sheet.current_assets.amounts_owed_by_directors = null
+  │  │    balance_sheet.current_assets.cash_at_bank              = null
+  │  │    balance_sheet.current_assets.total                     = null
+  │  │    balance_sheet.current_assets.trade_debtors             = null
+  │  │    balance_sheet.current_liabilities.amounts_owed_to_directors = null
+  │  │    balance_sheet.current_liabilities.bank_loans_current   = null
+  │  │    balance_sheet.current_liabilities.corporation_tax      = null
+  │  │    balance_sheet.current_liabilities.hire_purchase_current = null
+  │  │    balance_sheet.current_liabilities.total                = null
+  │  │    balance_sheet.current_liabilities.trade_creditors      = null
+  │  │    balance_sheet.equity.retained_earnings                 = null
+  │  │    balance_sheet.equity.share_capital                     = null
+  │  │    balance_sheet.equity.total                             = null
+  │  │    balance_sheet.fixed_assets.intangible_assets           = null
+  │  │    balance_sheet.fixed_assets.tangible_assets             = null
+  │  │    balance_sheet.long_term_liabilities.bank_loans         = null
+  │  │    balance_sheet.long_term_liabilities.hire_purchase_long_term = null
+  │  │    balance_sheet.long_term_liabilities.total              = null
+  │  │    profit_and_loss.administrative_expenses                = 13550.42
+  │  │    profit_and_loss.corporation_tax                        = null
+  │  │    profit_and_loss.cost_of_sales                          = 26882
+  │  │    profit_and_loss.depreciation_amortisation              = null
+  │  │    profit_and_loss.gross_profit                           = 21245
+  │  │    profit_and_loss.interest_payable                       = null
+  │  │    profit_and_loss.interest_receivable                    = 118.87
+  │  │    profit_and_loss.net_profit                             = 7813.45
+  │  │    profit_and_loss.operating_profit                       = 7694.58
+  │  │    profit_and_loss.other_operating_income                 = null
+  │  │    profit_and_loss.profit_before_tax                      = 7813.45
+  │  │    profit_and_loss.revenue                                = 48127
+  │  └─
+  └─
+
+================================================================================
+FAILURES (company 1881 continuation)
+================================================================================
+No failures. All documents in this run completed successfully.
+
+WRITES-NOTHING PROOF — row counts:
+  document_analysis_results: before=548  after=548  → UNCHANGED
+  document_evidence: before=391  after=391  → UNCHANGED
+  document_evidence_period: before=743  after=743  → UNCHANGED
+  document_evidence_figure: before=16712  after=16712  → UNCHANGED
+All tables UNCHANGED. No writes occurred.
+
+total API calls this segment: 14
+completed: 2026-08-15T16:07:31.064Z
+================================================================================
