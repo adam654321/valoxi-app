@@ -1,7 +1,7 @@
 ================================================================================
 AUDIT-1 — Phase 1 Cross-Document GROUP A Comparison
 capture file: docs/pipeline-fidelity-fix/audit1-capture-2026-08-15.txt
-generated:    2026-08-15T23:14:11.342Z
+generated:    2026-08-15T23:34:01.304Z
 ================================================================================
 
 SUMMARY
@@ -30,8 +30,136 @@ GROUP INVENTORY (all groups with 2+ documents)
   company 1881  FY 2025  docs: [5873, 5876, 5877, 5879]
   company 1881  FY 2026  docs: [5879, 5880, 5881]
 
-DISAGREEMENTS
-────────────────────────────────────────────────────────────────────────────────
+================================================================================
+CASE ROLLUP
+================================================================================
+
+  Groups with disagreements: 12
+  Total disagreement fields: 80  (= 80)
+
+  How to read: "solo value" = a document whose value for that field is not
+  shared by any other document in the same (company, FY) group. A document
+  that is solo across multiple fields is a candidate for one underlying defect.
+  No value-correctness judgement is made — that is reserved for PDF review.
+
+  ┌─ company 1877  FY 2022  docs: [5831, 5835]
+  │  disagreement fields: 3
+  │  pattern: 2-doc group: 3 field(s) disagree — each is a bilateral conflict; neither doc can be isolated as the outlier.
+  └─
+
+  ┌─ company 1877  FY 2023  docs: [5830, 5831, 5835]
+  │  disagreement fields: 6
+  │  pattern: Multi-doc scatter: doc 5830 (3 field(s)), doc 5831 (4 field(s)), doc 5835 (2 field(s)) each hold solo values in distinct fields — likely several distinct issues, not one.
+  │    doc 5831: solo in 4 field(s) — equity.retained_earnings=168834, equity.total=168934, corporation_tax=31780, net_profit=136526
+  │    doc 5830: solo in 3 field(s) — long_term_liabilities.total=49478, corporation_tax=36214, net_profit=132092
+  │    doc 5835: solo in 2 field(s) — net_profit=172769, profit_before_tax=172769
+  └─
+
+  ┌─ company 1877  FY 2024  docs: [5830, 5835]
+  │  disagreement fields: 3
+  │  pattern: 2-doc group: 3 field(s) disagree — each is a bilateral conflict; neither doc can be isolated as the outlier.
+  └─
+
+  ┌─ company 1877  FY 2025  docs: [5832, 5835, 5836]
+  │  disagreement fields: 8
+  │  pattern: Multi-doc scatter: doc 5832 (8 field(s)), doc 5835 (6 field(s)), doc 5836 (3 field(s)) each hold solo values in distinct fields — likely several distinct issues, not one.
+  │    doc 5832: solo in 8 field(s) — equity.retained_earnings=279164.69, equity.total=279164.69, administrative_expenses=538499.64, cost_of_sales=1127175.46, gross_profit=816903.54, net_profit=279164.69, operating_profit=278403.9, profit_before_tax=279164.69
+  │    doc 5835: solo in 6 field(s) — administrative_expenses=538500, cost_of_sales=1127175, gross_profit=816904, net_profit=278404, operating_profit=278404, profit_before_tax=278404
+  │    doc 5836: solo in 3 field(s) — equity.retained_earnings=622863.28, equity.total=622963.28, net_profit=183126.57
+  └─
+
+  ┌─ company 1880  FY 2022  docs: [5862, 5863, 5869]
+  │  disagreement fields: 1
+  │  pattern: No dominant outlier: every disagreement field has a different isolation pattern — likely several distinct issues.
+  │    doc 5863: solo in 1 field(s) — corporation_tax=19642
+  │    doc 5862: no solo fields (agrees with at least one other doc on every disagreement field)
+  │    doc 5869: no solo fields (agrees with at least one other doc on every disagreement field)
+  └─
+
+  ┌─ company 1880  FY 2023  docs: [5861, 5862, 5868, 5869]
+  │  disagreement fields: 1
+  │  pattern: Stable split pattern: 1 field(s) with two distinct value clusters across the group — no single doc is isolated; documents partition into two sub-sets holding different values.
+  │    doc 5861: no solo fields (agrees with at least one other doc on every disagreement field)
+  │    doc 5862: no solo fields (agrees with at least one other doc on every disagreement field)
+  │    doc 5868: no solo fields (agrees with at least one other doc on every disagreement field)
+  │    doc 5869: no solo fields (agrees with at least one other doc on every disagreement field)
+  └─
+
+  ┌─ company 1880  FY 2024  docs: [5857, 5861, 5867, 5868]
+  │  disagreement fields: 2
+  │  pattern: Single-doc outlier pattern: doc 5857 holds a solo value in 2/2 disagreement field(s) — likely one underlying defect rather than several.
+  │    doc 5857: solo in 2 field(s) — interest_payable=19699, interest_receivable=857
+  │    doc 5861: no solo fields (agrees with at least one other doc on every disagreement field)
+  │    doc 5867: no solo fields (agrees with at least one other doc on every disagreement field)
+  │    doc 5868: no solo fields (agrees with at least one other doc on every disagreement field)
+  └─
+
+  ┌─ company 1880  FY 2025  docs: [5857, 5860, 5865, 5867]
+  │  disagreement fields: 9
+  │  pattern: Multi-doc scatter: doc 5860 (8 field(s)), doc 5865 (8 field(s)) each hold solo values in distinct fields — likely several distinct issues, not one.
+  │    doc 5860: solo in 8 field(s) — administrative_expenses=1303834, corporation_tax=99882, cost_of_sales=3044637, gross_profit=1464340, net_profit=160506, operating_profit=160506, profit_before_tax=160506, revenue=4508976
+  │    doc 5865: solo in 8 field(s) — administrative_expenses=728178, cost_of_sales=846820, depreciation_amortisation=27436, gross_profit=558548, net_profit=-169631, operating_profit=-169631, profit_before_tax=-169631, revenue=1405368
+  │    doc 5857: no solo fields (agrees with at least one other doc on every disagreement field)
+  │    doc 5867: no solo fields (agrees with at least one other doc on every disagreement field)
+  └─
+
+  ┌─ company 1881  FY 2023  docs: [5873, 5874]
+  │  disagreement fields: 5
+  │  pattern: 2-doc group: 5 field(s) disagree — each is a bilateral conflict; neither doc can be isolated as the outlier.
+  └─
+
+  ┌─ company 1881  FY 2024  docs: [5873, 5874, 5875, 5877]
+  │  disagreement fields: 14
+  │  pattern: Multi-doc scatter: doc 5873 (6 field(s)), doc 5874 (4 field(s)), doc 5875 (11 field(s)), doc 5877 (7 field(s)) each hold solo values in distinct fields — likely several distinct issues, not one.
+  │    doc 5875: solo in 11 field(s) — equity.retained_earnings=85008.6, equity.total=85008.6, administrative_expenses=65374.84, corporation_tax=11735.16, cost_of_sales=139313.4, gross_profit=186913.85, interest_receivable=739.67, net_profit=85008.6, operating_profit=121539.01, profit_before_tax=122278.68, revenue=326227.25
+  │    doc 5877: solo in 7 field(s) — current_assets.cash_at_bank=173614, current_assets.total=175644, current_liabilities.total=46769, administrative_expenses=69383, cost_of_sales=139313, gross_profit=186914, operating_profit=118271
+  │    doc 5873: solo in 6 field(s) — equity.retained_earnings=129972, administrative_expenses=12094, cost_of_sales=196355, gross_profit=129872, net_profit=118518, operating_profit=118518
+  │    doc 5874: solo in 4 field(s) — administrative_expenses=204475, cost_of_sales=4221, gross_profit=322006, operating_profit=117531
+  └─
+
+  ┌─ company 1881  FY 2025  docs: [5873, 5876, 5877, 5879]
+  │  disagreement fields: 15
+  │  pattern: Multi-doc scatter: doc 5873 (5 field(s)), doc 5876 (15 field(s)), doc 5877 (4 field(s)), doc 5879 (3 field(s)) each hold solo values in distinct fields — likely several distinct issues, not one.
+  │    doc 5876: solo in 15 field(s) — current_assets.cash_at_bank=167600.6, current_assets.total=181240.6, current_liabilities.total=-178221.17, equity.retained_earnings=214970.17, equity.total=364119.83, fixed_assets.tangible_assets=4658.06, administrative_expenses=41676.33, cost_of_sales=166074, gross_profit=274998.5, interest_receivable=805.49, net_profit=234147.66, operating_profit=233322.17, other_operating_income=20, profit_before_tax=234147.66, revenue=441072.5
+  │    doc 5873: solo in 5 field(s) — equity.retained_earnings=214137, administrative_expenses=17848, cost_of_sales=205301, gross_profit=235772, net_profit=221372
+  │    doc 5877: solo in 4 field(s) — current_assets.cash_at_bank=295005, administrative_expenses=57095, cost_of_sales=166054, gross_profit=275019
+  │    doc 5879: solo in 3 field(s) — administrative_expenses=220766, cost_of_sales=2383, gross_profit=438690
+  └─
+
+  ┌─ company 1881  FY 2026  docs: [5879, 5880, 5881]
+  │  disagreement fields: 13
+  │  pattern: Multi-doc scatter: doc 5879 (13 field(s)), doc 5880 (5 field(s)), doc 5881 (8 field(s)) each hold solo values in distinct fields — likely several distinct issues, not one.
+  │    doc 5879: solo in 13 field(s) — current_assets.total=195634, current_liabilities.corporation_tax=7819, current_liabilities.total=12551, equity.total=200547, fixed_assets.tangible_assets=17464, administrative_expenses=177671, cost_of_sales=0, gross_profit=223404, interest_receivable=3746, net_profit=41660, operating_profit=49479, profit_before_tax=49479, revenue=223404
+  │    doc 5881: solo in 8 field(s) — administrative_expenses=13550.42, cost_of_sales=26882, gross_profit=21245, interest_receivable=118.87, net_profit=7813.45, operating_profit=7694.58, profit_before_tax=7813.45, revenue=48127
+  │    doc 5880: solo in 5 field(s) — current_assets.total=115100.92, current_liabilities.corporation_tax=87.81, current_liabilities.total=-151193.18, equity.total=292974.93, fixed_assets.tangible_assets=6389.47
+  └─
+
+  CASE ROLLUP SUMMARY
+  ─────────────────────────────────────────────────────────────────────────────
+  Single-doc outlier (likely 1 underlying defect per group): 1 group(s)
+    company 1880 FY 2024: doc 5857 outlier across 2/2 fields
+  Stable split (2-cluster split, no single outlier): 1 group(s)
+    company 1880 FY 2023: 1 fields
+  2-doc bilateral conflicts: 3 group(s)
+    company 1877 FY 2022: 3 fields
+    company 1877 FY 2024: 3 fields
+    company 1881 FY 2023: 5 fields
+  Multi-doc scatter / no dominant outlier: 7 group(s)
+    company 1877 FY 2023: 6 fields
+    company 1877 FY 2025: 8 fields
+    company 1880 FY 2022: 1 fields
+    company 1880 FY 2025: 9 fields
+    company 1881 FY 2024: 14 fields
+    company 1881 FY 2025: 15 fields
+    company 1881 FY 2026: 13 fields
+
+  Approximate real-case count (lower bound):  12 group(s), likely ~79 distinct underlying discrepancies across all groups
+  (80 field-rows collapses to roughly that many real issues once outlier clustering is applied)
+
+================================================================================
+DISAGREEMENT DETAIL
+================================================================================
+
 
   ┌─ COMPANY 1877
   │
