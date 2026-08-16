@@ -1,1464 +1,1464 @@
-================================================================================
-AUDIT-1 — Phase 1 Cross-Document GROUP A Comparison
-capture file: docs/pipeline-fidelity-fix/audit1-capture-2026-08-15.txt
-generated:    2026-08-15T23:34:01.304Z
-================================================================================
-
-SUMMARY
-────────────────────────────────────────────────────────────────────────────────
-  Total records parsed:               44
-  Groups with 2+ documents:           13
-  Total field-comparisons:            390
-    AGREEMENT:                        147
-    DISAGREEMENT:                     80
-    INSUFFICIENT:                     163
-  Arithmetic check: 147 + 80 + 163 = 390 (must equal 390: PASS)
-
-GROUP INVENTORY (all groups with 2+ documents)
-────────────────────────────────────────────────────────────────────────────────
-  company 1877  FY 2022  docs: [5831, 5835]
-  company 1877  FY 2023  docs: [5830, 5831, 5835]
-  company 1877  FY 2024  docs: [5830, 5835]
-  company 1877  FY 2025  docs: [5832, 5835, 5836]
-  company 1880  FY 2022  docs: [5862, 5863, 5869]
-  company 1880  FY 2023  docs: [5861, 5862, 5868, 5869]
-  company 1880  FY 2024  docs: [5857, 5861, 5867, 5868]
-  company 1880  FY 2025  docs: [5857, 5860, 5865, 5867]
-  company 1880  FY 2026  docs: [5865, 5866]
-  company 1881  FY 2023  docs: [5873, 5874]
-  company 1881  FY 2024  docs: [5873, 5874, 5875, 5877]
-  company 1881  FY 2025  docs: [5873, 5876, 5877, 5879]
-  company 1881  FY 2026  docs: [5879, 5880, 5881]
-
-================================================================================
-CASE ROLLUP
-================================================================================
-
-  Groups with disagreements: 12
-  Total disagreement fields: 80  (= 80)
-
-  How to read: "solo value" = a document whose value for that field is not
-  shared by any other document in the same (company, FY) group. A document
-  that is solo across multiple fields is a candidate for one underlying defect.
-  No value-correctness judgement is made — that is reserved for PDF review.
-
-  ┌─ company 1877  FY 2022  docs: [5831, 5835]
-  │  disagreement fields: 3
-  │  pattern: 2-doc group: 3 field(s) disagree — each is a bilateral conflict; neither doc can be isolated as the outlier.
-  └─
-
-  ┌─ company 1877  FY 2023  docs: [5830, 5831, 5835]
-  │  disagreement fields: 6
-  │  pattern: Multi-doc scatter: doc 5830 (3 field(s)), doc 5831 (4 field(s)), doc 5835 (2 field(s)) each hold solo values in distinct fields — likely several distinct issues, not one.
-  │    doc 5831: solo in 4 field(s) — equity.retained_earnings=168834, equity.total=168934, corporation_tax=31780, net_profit=136526
-  │    doc 5830: solo in 3 field(s) — long_term_liabilities.total=49478, corporation_tax=36214, net_profit=132092
-  │    doc 5835: solo in 2 field(s) — net_profit=172769, profit_before_tax=172769
-  └─
-
-  ┌─ company 1877  FY 2024  docs: [5830, 5835]
-  │  disagreement fields: 3
-  │  pattern: 2-doc group: 3 field(s) disagree — each is a bilateral conflict; neither doc can be isolated as the outlier.
-  └─
-
-  ┌─ company 1877  FY 2025  docs: [5832, 5835, 5836]
-  │  disagreement fields: 8
-  │  pattern: Multi-doc scatter: doc 5832 (8 field(s)), doc 5835 (6 field(s)), doc 5836 (3 field(s)) each hold solo values in distinct fields — likely several distinct issues, not one.
-  │    doc 5832: solo in 8 field(s) — equity.retained_earnings=279164.69, equity.total=279164.69, administrative_expenses=538499.64, cost_of_sales=1127175.46, gross_profit=816903.54, net_profit=279164.69, operating_profit=278403.9, profit_before_tax=279164.69
-  │    doc 5835: solo in 6 field(s) — administrative_expenses=538500, cost_of_sales=1127175, gross_profit=816904, net_profit=278404, operating_profit=278404, profit_before_tax=278404
-  │    doc 5836: solo in 3 field(s) — equity.retained_earnings=622863.28, equity.total=622963.28, net_profit=183126.57
-  └─
-
-  ┌─ company 1880  FY 2022  docs: [5862, 5863, 5869]
-  │  disagreement fields: 1
-  │  pattern: No dominant outlier: every disagreement field has a different isolation pattern — likely several distinct issues.
-  │    doc 5863: solo in 1 field(s) — corporation_tax=19642
-  │    doc 5862: no solo fields (agrees with at least one other doc on every disagreement field)
-  │    doc 5869: no solo fields (agrees with at least one other doc on every disagreement field)
-  └─
-
-  ┌─ company 1880  FY 2023  docs: [5861, 5862, 5868, 5869]
-  │  disagreement fields: 1
-  │  pattern: Stable split pattern: 1 field(s) with two distinct value clusters across the group — no single doc is isolated; documents partition into two sub-sets holding different values.
-  │    doc 5861: no solo fields (agrees with at least one other doc on every disagreement field)
-  │    doc 5862: no solo fields (agrees with at least one other doc on every disagreement field)
-  │    doc 5868: no solo fields (agrees with at least one other doc on every disagreement field)
-  │    doc 5869: no solo fields (agrees with at least one other doc on every disagreement field)
-  └─
-
-  ┌─ company 1880  FY 2024  docs: [5857, 5861, 5867, 5868]
-  │  disagreement fields: 2
-  │  pattern: Single-doc outlier pattern: doc 5857 holds a solo value in 2/2 disagreement field(s) — likely one underlying defect rather than several.
-  │    doc 5857: solo in 2 field(s) — interest_payable=19699, interest_receivable=857
-  │    doc 5861: no solo fields (agrees with at least one other doc on every disagreement field)
-  │    doc 5867: no solo fields (agrees with at least one other doc on every disagreement field)
-  │    doc 5868: no solo fields (agrees with at least one other doc on every disagreement field)
-  └─
-
-  ┌─ company 1880  FY 2025  docs: [5857, 5860, 5865, 5867]
-  │  disagreement fields: 9
-  │  pattern: Multi-doc scatter: doc 5860 (8 field(s)), doc 5865 (8 field(s)) each hold solo values in distinct fields — likely several distinct issues, not one.
-  │    doc 5860: solo in 8 field(s) — administrative_expenses=1303834, corporation_tax=99882, cost_of_sales=3044637, gross_profit=1464340, net_profit=160506, operating_profit=160506, profit_before_tax=160506, revenue=4508976
-  │    doc 5865: solo in 8 field(s) — administrative_expenses=728178, cost_of_sales=846820, depreciation_amortisation=27436, gross_profit=558548, net_profit=-169631, operating_profit=-169631, profit_before_tax=-169631, revenue=1405368
-  │    doc 5857: no solo fields (agrees with at least one other doc on every disagreement field)
-  │    doc 5867: no solo fields (agrees with at least one other doc on every disagreement field)
-  └─
-
-  ┌─ company 1881  FY 2023  docs: [5873, 5874]
-  │  disagreement fields: 5
-  │  pattern: 2-doc group: 5 field(s) disagree — each is a bilateral conflict; neither doc can be isolated as the outlier.
-  └─
-
-  ┌─ company 1881  FY 2024  docs: [5873, 5874, 5875, 5877]
-  │  disagreement fields: 14
-  │  pattern: Multi-doc scatter: doc 5873 (6 field(s)), doc 5874 (4 field(s)), doc 5875 (11 field(s)), doc 5877 (7 field(s)) each hold solo values in distinct fields — likely several distinct issues, not one.
-  │    doc 5875: solo in 11 field(s) — equity.retained_earnings=85008.6, equity.total=85008.6, administrative_expenses=65374.84, corporation_tax=11735.16, cost_of_sales=139313.4, gross_profit=186913.85, interest_receivable=739.67, net_profit=85008.6, operating_profit=121539.01, profit_before_tax=122278.68, revenue=326227.25
-  │    doc 5877: solo in 7 field(s) — current_assets.cash_at_bank=173614, current_assets.total=175644, current_liabilities.total=46769, administrative_expenses=69383, cost_of_sales=139313, gross_profit=186914, operating_profit=118271
-  │    doc 5873: solo in 6 field(s) — equity.retained_earnings=129972, administrative_expenses=12094, cost_of_sales=196355, gross_profit=129872, net_profit=118518, operating_profit=118518
-  │    doc 5874: solo in 4 field(s) — administrative_expenses=204475, cost_of_sales=4221, gross_profit=322006, operating_profit=117531
-  └─
-
-  ┌─ company 1881  FY 2025  docs: [5873, 5876, 5877, 5879]
-  │  disagreement fields: 15
-  │  pattern: Multi-doc scatter: doc 5873 (5 field(s)), doc 5876 (15 field(s)), doc 5877 (4 field(s)), doc 5879 (3 field(s)) each hold solo values in distinct fields — likely several distinct issues, not one.
-  │    doc 5876: solo in 15 field(s) — current_assets.cash_at_bank=167600.6, current_assets.total=181240.6, current_liabilities.total=-178221.17, equity.retained_earnings=214970.17, equity.total=364119.83, fixed_assets.tangible_assets=4658.06, administrative_expenses=41676.33, cost_of_sales=166074, gross_profit=274998.5, interest_receivable=805.49, net_profit=234147.66, operating_profit=233322.17, other_operating_income=20, profit_before_tax=234147.66, revenue=441072.5
-  │    doc 5873: solo in 5 field(s) — equity.retained_earnings=214137, administrative_expenses=17848, cost_of_sales=205301, gross_profit=235772, net_profit=221372
-  │    doc 5877: solo in 4 field(s) — current_assets.cash_at_bank=295005, administrative_expenses=57095, cost_of_sales=166054, gross_profit=275019
-  │    doc 5879: solo in 3 field(s) — administrative_expenses=220766, cost_of_sales=2383, gross_profit=438690
-  └─
-
-  ┌─ company 1881  FY 2026  docs: [5879, 5880, 5881]
-  │  disagreement fields: 13
-  │  pattern: Multi-doc scatter: doc 5879 (13 field(s)), doc 5880 (5 field(s)), doc 5881 (8 field(s)) each hold solo values in distinct fields — likely several distinct issues, not one.
-  │    doc 5879: solo in 13 field(s) — current_assets.total=195634, current_liabilities.corporation_tax=7819, current_liabilities.total=12551, equity.total=200547, fixed_assets.tangible_assets=17464, administrative_expenses=177671, cost_of_sales=0, gross_profit=223404, interest_receivable=3746, net_profit=41660, operating_profit=49479, profit_before_tax=49479, revenue=223404
-  │    doc 5881: solo in 8 field(s) — administrative_expenses=13550.42, cost_of_sales=26882, gross_profit=21245, interest_receivable=118.87, net_profit=7813.45, operating_profit=7694.58, profit_before_tax=7813.45, revenue=48127
-  │    doc 5880: solo in 5 field(s) — current_assets.total=115100.92, current_liabilities.corporation_tax=87.81, current_liabilities.total=-151193.18, equity.total=292974.93, fixed_assets.tangible_assets=6389.47
-  └─
-
-  CASE ROLLUP SUMMARY
-  ─────────────────────────────────────────────────────────────────────────────
-  Single-doc outlier (likely 1 underlying defect per group): 1 group(s)
-    company 1880 FY 2024: doc 5857 outlier across 2/2 fields
-  Stable split (2-cluster split, no single outlier): 1 group(s)
-    company 1880 FY 2023: 1 fields
-  2-doc bilateral conflicts: 3 group(s)
-    company 1877 FY 2022: 3 fields
-    company 1877 FY 2024: 3 fields
-    company 1881 FY 2023: 5 fields
-  Multi-doc scatter / no dominant outlier: 7 group(s)
-    company 1877 FY 2023: 6 fields
-    company 1877 FY 2025: 8 fields
-    company 1880 FY 2022: 1 fields
-    company 1880 FY 2025: 9 fields
-    company 1881 FY 2024: 14 fields
-    company 1881 FY 2025: 15 fields
-    company 1881 FY 2026: 13 fields
-
-  Approximate real-case count (lower bound):  12 group(s), likely ~79 distinct underlying discrepancies across all groups
-  (80 field-rows collapses to roughly that many real issues once outlier clustering is applied)
-
-================================================================================
-DISAGREEMENT DETAIL
-================================================================================
-
-
-  ┌─ COMPANY 1877
-  │
-  │  FY 2022  (docs compared: [5831, 5835])
-  │
-  │    field: profit_and_loss.depreciation_amortisation
-  │      doc 5831: 10960
-  │      doc 5835: 10962
-  │
-  │    field: profit_and_loss.net_profit
-  │      doc 5831: 89242
-  │      doc 5835: 126779
-  │
-  │    field: profit_and_loss.profit_before_tax
-  │      doc 5831: 119062
-  │      doc 5835: 126779
-  │
-  │  FY 2023  (docs compared: [5830, 5831, 5835])
-  │
-  │    field: balance_sheet.equity.retained_earnings
-  │      doc 5830: 164400
-  │      doc 5831: 168834
-  │      doc 5835: 164400
-  │
-  │    field: balance_sheet.equity.total
-  │      doc 5830: 164500
-  │      doc 5831: 168934
-  │      doc 5835: 164500
-  │
-  │    field: balance_sheet.long_term_liabilities.total
-  │      doc 5830: 49478
-  │      doc 5831: 45044
-  │      doc 5835: 45044
-  │
-  │    field: profit_and_loss.corporation_tax
-  │      doc 5830: 36214
-  │      doc 5831: 31780
-  │      doc 5835: null
-  │
-  │    field: profit_and_loss.net_profit
-  │      doc 5830: 132092
-  │      doc 5831: 136526
-  │      doc 5835: 172769
-  │
-  │    field: profit_and_loss.profit_before_tax
-  │      doc 5830: 168306
-  │      doc 5831: 168306
-  │      doc 5835: 172769
-  │
-  │  FY 2024  (docs compared: [5830, 5835])
-  │
-  │    field: balance_sheet.long_term_liabilities.total
-  │      doc 5830: 319401
-  │      doc 5835: 272466
-  │
-  │    field: profit_and_loss.net_profit
-  │      doc 5830: 53890
-  │      doc 5835: 77287
-  │
-  │    field: profit_and_loss.profit_before_tax
-  │      doc 5830: 71038
-  │      doc 5835: 77287
-  │
-  │  FY 2025  (docs compared: [5832, 5835, 5836])
-  │
-  │    field: balance_sheet.equity.retained_earnings
-  │      doc 5832: 279164.69
-  │      doc 5835: null
-  │      doc 5836: 622863.28
-  │
-  │    field: balance_sheet.equity.total
-  │      doc 5832: 279164.69
-  │      doc 5835: null
-  │      doc 5836: 622963.28
-  │
-  │    field: profit_and_loss.administrative_expenses
-  │      doc 5832: 538499.64
-  │      doc 5835: 538500
-  │      doc 5836: null
-  │
-  │    field: profit_and_loss.cost_of_sales
-  │      doc 5832: 1127175.46
-  │      doc 5835: 1127175
-  │      doc 5836: null
-  │
-  │    field: profit_and_loss.gross_profit
-  │      doc 5832: 816903.54
-  │      doc 5835: 816904
-  │      doc 5836: null
-  │
-  │    field: profit_and_loss.net_profit
-  │      doc 5832: 279164.69
-  │      doc 5835: 278404
-  │      doc 5836: 183126.57
-  │
-  │    field: profit_and_loss.operating_profit
-  │      doc 5832: 278403.9
-  │      doc 5835: 278404
-  │      doc 5836: null
-  │
-  │    field: profit_and_loss.profit_before_tax
-  │      doc 5832: 279164.69
-  │      doc 5835: 278404
-  │      doc 5836: null
-
-  ┌─ COMPANY 1880
-  │
-  │  FY 2022  (docs compared: [5862, 5863, 5869])
-  │
-  │    field: profit_and_loss.corporation_tax
-  │      doc 5862: -19642
-  │      doc 5863: 19642
-  │      doc 5869: -19642
-  │
-  │  FY 2023  (docs compared: [5861, 5862, 5868, 5869])
-  │
-  │    field: balance_sheet.current_assets.trade_debtors
-  │      doc 5861: 470739
-  │      doc 5862: 553354
-  │      doc 5868: 470739
-  │      doc 5869: 553354
-  │
-  │  FY 2024  (docs compared: [5857, 5861, 5867, 5868])
-  │
-  │    field: profit_and_loss.interest_payable
-  │      doc 5857: 19699
-  │      doc 5861: 18842
-  │      doc 5867: 18842
-  │      doc 5868: 18842
-  │
-  │    field: profit_and_loss.interest_receivable
-  │      doc 5857: 857
-  │      doc 5861: 0
-  │      doc 5867: null
-  │      doc 5868: 0
-  │
-  │  FY 2025  (docs compared: [5857, 5860, 5865, 5867])
-  │
-  │    field: profit_and_loss.administrative_expenses
-  │      doc 5857: 1361040
-  │      doc 5860: 1303834
-  │      doc 5865: 728178
-  │      doc 5867: 1361040
-  │
-  │    field: profit_and_loss.corporation_tax
-  │      doc 5857: 39122
-  │      doc 5860: 99882
-  │      doc 5865: null
-  │      doc 5867: 39122
-  │
-  │    field: profit_and_loss.cost_of_sales
-  │      doc 5857: 2979013
-  │      doc 5860: 3044637
-  │      doc 5865: 846820
-  │      doc 5867: 2979013
-  │
-  │    field: profit_and_loss.depreciation_amortisation
-  │      doc 5857: 49005
-  │      doc 5860: 49005
-  │      doc 5865: 27436
-  │      doc 5867: 49005
-  │
-  │    field: profit_and_loss.gross_profit
-  │      doc 5857: 1530073
-  │      doc 5860: 1464340
-  │      doc 5865: 558548
-  │      doc 5867: 1530073
-  │
-  │    field: profit_and_loss.net_profit
-  │      doc 5857: 119584
-  │      doc 5860: 160506
-  │      doc 5865: -169631
-  │      doc 5867: 119584
-  │
-  │    field: profit_and_loss.operating_profit
-  │      doc 5857: 169033
-  │      doc 5860: 160506
-  │      doc 5865: -169631
-  │      doc 5867: 169033
-  │
-  │    field: profit_and_loss.profit_before_tax
-  │      doc 5857: 158706
-  │      doc 5860: 160506
-  │      doc 5865: -169631
-  │      doc 5867: 158706
-  │
-  │    field: profit_and_loss.revenue
-  │      doc 5857: 4509086
-  │      doc 5860: 4508976
-  │      doc 5865: 1405368
-  │      doc 5867: 4509086
-
-  ┌─ COMPANY 1881
-  │
-  │  FY 2023  (docs compared: [5873, 5874])
-  │
-  │    field: profit_and_loss.administrative_expenses
-  │      doc 5873: 69497
-  │      doc 5874: 135822
-  │
-  │    field: profit_and_loss.cost_of_sales
-  │      doc 5873: 68452
-  │      doc 5874: 447
-  │
-  │    field: profit_and_loss.gross_profit
-  │      doc 5873: 130075
-  │      doc 5874: 198080
-  │
-  │    field: profit_and_loss.net_profit
-  │      doc 5873: 60757
-  │      doc 5874: 49022
-  │
-  │    field: profit_and_loss.operating_profit
-  │      doc 5873: 60757
-  │      doc 5874: 62258
-  │
-  │  FY 2024  (docs compared: [5873, 5874, 5875, 5877])
-  │
-  │    field: balance_sheet.current_assets.cash_at_bank
-  │      doc 5873: 173616
-  │      doc 5874: 173616
-  │      doc 5875: null
-  │      doc 5877: 173614
-  │
-  │    field: balance_sheet.current_assets.total
-  │      doc 5873: 175646
-  │      doc 5874: 175646
-  │      doc 5875: null
-  │      doc 5877: 175644
-  │
-  │    field: balance_sheet.current_liabilities.total
-  │      doc 5873: 46771
-  │      doc 5874: 46771
-  │      doc 5875: null
-  │      doc 5877: 46769
-  │
-  │    field: balance_sheet.equity.retained_earnings
-  │      doc 5873: 129972
-  │      doc 5874: null
-  │      doc 5875: 85008.6
-  │      doc 5877: null
-  │
-  │    field: balance_sheet.equity.total
-  │      doc 5873: 129972
-  │      doc 5874: 129972
-  │      doc 5875: 85008.6
-  │      doc 5877: 129972
-  │
-  │    field: profit_and_loss.administrative_expenses
-  │      doc 5873: 12094
-  │      doc 5874: 204475
-  │      doc 5875: 65374.84
-  │      doc 5877: 69383
-  │
-  │    field: profit_and_loss.corporation_tax
-  │      doc 5873: null
-  │      doc 5874: 27388
-  │      doc 5875: 11735.16
-  │      doc 5877: 27388
-  │
-  │    field: profit_and_loss.cost_of_sales
-  │      doc 5873: 196355
-  │      doc 5874: 4221
-  │      doc 5875: 139313.4
-  │      doc 5877: 139313
-  │
-  │    field: profit_and_loss.gross_profit
-  │      doc 5873: 129872
-  │      doc 5874: 322006
-  │      doc 5875: 186913.85
-  │      doc 5877: 186914
-  │
-  │    field: profit_and_loss.interest_receivable
-  │      doc 5873: null
-  │      doc 5874: 740
-  │      doc 5875: 739.67
-  │      doc 5877: 740
-  │
-  │    field: profit_and_loss.net_profit
-  │      doc 5873: 118518
-  │      doc 5874: 91130
-  │      doc 5875: 85008.6
-  │      doc 5877: 91130
-  │
-  │    field: profit_and_loss.operating_profit
-  │      doc 5873: 118518
-  │      doc 5874: 117531
-  │      doc 5875: 121539.01
-  │      doc 5877: 118271
-  │
-  │    field: profit_and_loss.profit_before_tax
-  │      doc 5873: 118518
-  │      doc 5874: 118518
-  │      doc 5875: 122278.68
-  │      doc 5877: 118518
-  │
-  │    field: profit_and_loss.revenue
-  │      doc 5873: 326227
-  │      doc 5874: 326227
-  │      doc 5875: 326227.25
-  │      doc 5877: 326227
-  │
-  │  FY 2025  (docs compared: [5873, 5876, 5877, 5879])
-  │
-  │    field: balance_sheet.current_assets.cash_at_bank
-  │      doc 5873: null
-  │      doc 5876: 167600.6
-  │      doc 5877: 295005
-  │      doc 5879: null
-  │
-  │    field: balance_sheet.current_assets.total
-  │      doc 5873: 302622
-  │      doc 5876: 181240.6
-  │      doc 5877: 302622
-  │      doc 5879: 302622
-  │
-  │    field: balance_sheet.current_liabilities.total
-  │      doc 5873: 97627
-  │      doc 5876: -178221.17
-  │      doc 5877: 97627
-  │      doc 5879: 97627
-  │
-  │    field: balance_sheet.equity.retained_earnings
-  │      doc 5873: 214137
-  │      doc 5876: 214970.17
-  │      doc 5877: null
-  │      doc 5879: null
-  │
-  │    field: balance_sheet.equity.total
-  │      doc 5873: 214137
-  │      doc 5876: 364119.83
-  │      doc 5877: 214137
-  │      doc 5879: 214137
-  │
-  │    field: balance_sheet.fixed_assets.tangible_assets
-  │      doc 5873: 9142
-  │      doc 5876: 4658.06
-  │      doc 5877: 9142
-  │      doc 5879: 9142
-  │
-  │    field: profit_and_loss.administrative_expenses
-  │      doc 5873: 17848
-  │      doc 5876: 41676.33
-  │      doc 5877: 57095
-  │      doc 5879: 220766
-  │
-  │    field: profit_and_loss.cost_of_sales
-  │      doc 5873: 205301
-  │      doc 5876: 166074
-  │      doc 5877: 166054
-  │      doc 5879: 2383
-  │
-  │    field: profit_and_loss.gross_profit
-  │      doc 5873: 235772
-  │      doc 5876: 274998.5
-  │      doc 5877: 275019
-  │      doc 5879: 438690
-  │
-  │    field: profit_and_loss.interest_receivable
-  │      doc 5873: null
-  │      doc 5876: 805.49
-  │      doc 5877: 3448
-  │      doc 5879: 3448
-  │
-  │    field: profit_and_loss.net_profit
-  │      doc 5873: 221372
-  │      doc 5876: 234147.66
-  │      doc 5877: 169165
-  │      doc 5879: 169165
-  │
-  │    field: profit_and_loss.operating_profit
-  │      doc 5873: 221372
-  │      doc 5876: 233322.17
-  │      doc 5877: 221372
-  │      doc 5879: 221372
-  │
-  │    field: profit_and_loss.other_operating_income
-  │      doc 5873: 3448
-  │      doc 5876: 20
-  │      doc 5877: 3448
-  │      doc 5879: 3448
-  │
-  │    field: profit_and_loss.profit_before_tax
-  │      doc 5873: 221372
-  │      doc 5876: 234147.66
-  │      doc 5877: 221372
-  │      doc 5879: 221372
-  │
-  │    field: profit_and_loss.revenue
-  │      doc 5873: 441073
-  │      doc 5876: 441072.5
-  │      doc 5877: 441073
-  │      doc 5879: 441073
-  │
-  │  FY 2026  (docs compared: [5879, 5880, 5881])
-  │
-  │    field: balance_sheet.current_assets.total
-  │      doc 5879: 195634
-  │      doc 5880: 115100.92
-  │      doc 5881: null
-  │
-  │    field: balance_sheet.current_liabilities.corporation_tax
-  │      doc 5879: 7819
-  │      doc 5880: 87.81
-  │      doc 5881: null
-  │
-  │    field: balance_sheet.current_liabilities.total
-  │      doc 5879: 12551
-  │      doc 5880: -151193.18
-  │      doc 5881: null
-  │
-  │    field: balance_sheet.equity.total
-  │      doc 5879: 200547
-  │      doc 5880: 292974.93
-  │      doc 5881: null
-  │
-  │    field: balance_sheet.fixed_assets.tangible_assets
-  │      doc 5879: 17464
-  │      doc 5880: 6389.47
-  │      doc 5881: null
-  │
-  │    field: profit_and_loss.administrative_expenses
-  │      doc 5879: 177671
-  │      doc 5880: null
-  │      doc 5881: 13550.42
-  │
-  │    field: profit_and_loss.cost_of_sales
-  │      doc 5879: 0
-  │      doc 5880: null
-  │      doc 5881: 26882
-  │
-  │    field: profit_and_loss.gross_profit
-  │      doc 5879: 223404
-  │      doc 5880: null
-  │      doc 5881: 21245
-  │
-  │    field: profit_and_loss.interest_receivable
-  │      doc 5879: 3746
-  │      doc 5880: null
-  │      doc 5881: 118.87
-  │
-  │    field: profit_and_loss.net_profit
-  │      doc 5879: 41660
-  │      doc 5880: null
-  │      doc 5881: 7813.45
-  │
-  │    field: profit_and_loss.operating_profit
-  │      doc 5879: 49479
-  │      doc 5880: null
-  │      doc 5881: 7694.58
-  │
-  │    field: profit_and_loss.profit_before_tax
-  │      doc 5879: 49479
-  │      doc 5880: null
-  │      doc 5881: 7813.45
-  │
-  │    field: profit_and_loss.revenue
-  │      doc 5879: 223404
-  │      doc 5880: null
-  │      doc 5881: 48127
-  │
-  └─
-
-================================================================================
-FULL FIELD-BY-FIELD DETAIL
-================================================================================
-
-  ┌─ COMPANY 1877  FY 2022  docs: [5831, 5835]
-  │
-  │  [INSUFFICIENT]  balance_sheet.current_assets.amounts_owed_by_directors
-  │               doc5831=null  doc5835=null
-  │  [INSUFFICIENT]  balance_sheet.current_assets.cash_at_bank
-  │               doc5831=144776  doc5835=null
-  │  [AGREEMENT   ]  balance_sheet.current_assets.total
-  │               doc5831=321236  doc5835=321236
-  │  [INSUFFICIENT]  balance_sheet.current_assets.trade_debtors
-  │               doc5831=113707  doc5835=null
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.amounts_owed_to_directors
-  │               doc5831=null  doc5835=null
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.bank_loans_current
-  │               doc5831=20000  doc5835=null
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.corporation_tax
-  │               doc5831=29820  doc5835=null
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.hire_purchase_current
-  │               doc5831=5770  doc5835=null
-  │  [AGREEMENT   ]  balance_sheet.current_liabilities.total
-  │               doc5831=216893  doc5835=216893
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.trade_creditors
-  │               doc5831=96522  doc5835=null
-  │  [AGREEMENT   ]  balance_sheet.equity.retained_earnings
-  │               doc5831=77808  doc5835=77808
-  │  [AGREEMENT   ]  balance_sheet.equity.share_capital
-  │               doc5831=100  doc5835=100
-  │  [AGREEMENT   ]  balance_sheet.equity.total
-  │               doc5831=77908  doc5835=77908
-  │  [INSUFFICIENT]  balance_sheet.fixed_assets.intangible_assets
-  │               doc5831=null  doc5835=null
-  │  [AGREEMENT   ]  balance_sheet.fixed_assets.tangible_assets
-  │               doc5831=49395  doc5835=49395
-  │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.bank_loans
-  │               doc5831=63333  doc5835=null
-  │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.hire_purchase_long_term
-  │               doc5831=12497  doc5835=null
-  │  [AGREEMENT   ]  balance_sheet.long_term_liabilities.total
-  │               doc5831=75830  doc5835=75830
-  │  [AGREEMENT   ]  profit_and_loss.administrative_expenses
-  │               doc5831=554473  doc5835=554473
-  │  [INSUFFICIENT]  profit_and_loss.corporation_tax
-  │               doc5831=29820  doc5835=null
-  │  [AGREEMENT   ]  profit_and_loss.cost_of_sales
-  │               doc5831=440662  doc5835=440662
-  │  [DISAGREEMENT]  profit_and_loss.depreciation_amortisation
-  │               doc5831=10960  doc5835=10962
-  │  [AGREEMENT   ]  profit_and_loss.gross_profit
-  │               doc5831=656645  doc5835=656645
-  │  [INSUFFICIENT]  profit_and_loss.interest_payable
-  │               doc5831=7720  doc5835=null
-  │  [INSUFFICIENT]  profit_and_loss.interest_receivable
-  │               doc5831=3  doc5835=null
-  │  [DISAGREEMENT]  profit_and_loss.net_profit
-  │               doc5831=89242  doc5835=126779
-  │  [AGREEMENT   ]  profit_and_loss.operating_profit
-  │               doc5831=126779  doc5835=126779
-  │  [AGREEMENT   ]  profit_and_loss.other_operating_income
-  │               doc5831=24607  doc5835=24607
-  │  [DISAGREEMENT]  profit_and_loss.profit_before_tax
-  │               doc5831=119062  doc5835=126779
-  │  [AGREEMENT   ]  profit_and_loss.revenue
-  │               doc5831=1097307  doc5835=1097307
-  └─
-
-  ┌─ COMPANY 1877  FY 2023  docs: [5830, 5831, 5835]
-  │
-  │  [INSUFFICIENT]  balance_sheet.current_assets.amounts_owed_by_directors
-  │               doc5830=null  doc5831=null  doc5835=null
-  │  [AGREEMENT   ]  balance_sheet.current_assets.cash_at_bank
-  │               doc5830=139509  doc5831=139509  doc5835=null
-  │  [AGREEMENT   ]  balance_sheet.current_assets.total
-  │               doc5830=391084  doc5831=391084  doc5835=391084
-  │  [AGREEMENT   ]  balance_sheet.current_assets.trade_debtors
-  │               doc5830=158782  doc5831=158782  doc5835=null
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.amounts_owed_to_directors
-  │               doc5830=null  doc5831=null  doc5835=null
-  │  [AGREEMENT   ]  balance_sheet.current_liabilities.bank_loans_current
-  │               doc5830=20000  doc5831=20000  doc5835=null
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.corporation_tax
-  │               doc5830=null  doc5831=31780  doc5835=null
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.hire_purchase_current
-  │               doc5830=null  doc5831=2677  doc5835=null
-  │  [AGREEMENT   ]  balance_sheet.current_liabilities.total
-  │               doc5830=222713  doc5831=222713  doc5835=222713
-  │  [AGREEMENT   ]  balance_sheet.current_liabilities.trade_creditors
-  │               doc5830=112146  doc5831=112146  doc5835=null
-  │  [DISAGREEMENT]  balance_sheet.equity.retained_earnings
-  │               doc5830=164400  doc5831=168834  doc5835=164400
-  │  [AGREEMENT   ]  balance_sheet.equity.share_capital
-  │               doc5830=100  doc5831=100  doc5835=100
-  │  [DISAGREEMENT]  balance_sheet.equity.total
-  │               doc5830=164500  doc5831=168934  doc5835=164500
-  │  [INSUFFICIENT]  balance_sheet.fixed_assets.intangible_assets
-  │               doc5830=null  doc5831=null  doc5835=null
-  │  [AGREEMENT   ]  balance_sheet.fixed_assets.tangible_assets
-  │               doc5830=45607  doc5831=45607  doc5835=45607
-  │  [AGREEMENT   ]  balance_sheet.long_term_liabilities.bank_loans
-  │               doc5830=43333  doc5831=43333  doc5835=null
-  │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.hire_purchase_long_term
-  │               doc5830=null  doc5831=1711  doc5835=null
-  │  [DISAGREEMENT]  balance_sheet.long_term_liabilities.total
-  │               doc5830=49478  doc5831=45044  doc5835=45044
-  │  [AGREEMENT   ]  profit_and_loss.administrative_expenses
-  │               doc5830=730019  doc5831=730019  doc5835=730019
-  │  [DISAGREEMENT]  profit_and_loss.corporation_tax
-  │               doc5830=36214  doc5831=31780  doc5835=null
-  │  [AGREEMENT   ]  profit_and_loss.cost_of_sales
-  │               doc5830=538883  doc5831=538883  doc5835=538883
-  │  [AGREEMENT   ]  profit_and_loss.depreciation_amortisation
-  │               doc5830=10824  doc5831=10824  doc5835=10824
-  │  [AGREEMENT   ]  profit_and_loss.gross_profit
-  │               doc5830=902788  doc5831=902788  doc5835=902788
-  │  [AGREEMENT   ]  profit_and_loss.interest_payable
-  │               doc5830=4524  doc5831=4524  doc5835=null
-  │  [AGREEMENT   ]  profit_and_loss.interest_receivable
-  │               doc5830=61  doc5831=61  doc5835=null
-  │  [DISAGREEMENT]  profit_and_loss.net_profit
-  │               doc5830=132092  doc5831=136526  doc5835=172769
-  │  [AGREEMENT   ]  profit_and_loss.operating_profit
-  │               doc5830=172769  doc5831=172769  doc5835=172769
-  │  [AGREEMENT   ]  profit_and_loss.other_operating_income
-  │               doc5830=null  doc5831=0  doc5835=0
-  │  [DISAGREEMENT]  profit_and_loss.profit_before_tax
-  │               doc5830=168306  doc5831=168306  doc5835=172769
-  │  [AGREEMENT   ]  profit_and_loss.revenue
-  │               doc5830=1441671  doc5831=1441671  doc5835=1441671
-  └─
-
-  ┌─ COMPANY 1877  FY 2024  docs: [5830, 5835]
-  │
-  │  [INSUFFICIENT]  balance_sheet.current_assets.amounts_owed_by_directors
-  │               doc5830=null  doc5835=null
-  │  [INSUFFICIENT]  balance_sheet.current_assets.cash_at_bank
-  │               doc5830=154281  doc5835=null
-  │  [AGREEMENT   ]  balance_sheet.current_assets.total
-  │               doc5830=446241  doc5835=446241
-  │  [INSUFFICIENT]  balance_sheet.current_assets.trade_debtors
-  │               doc5830=140300  doc5835=null
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.amounts_owed_to_directors
-  │               doc5830=null  doc5835=null
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.bank_loans_current
-  │               doc5830=20000  doc5835=null
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.corporation_tax
-  │               doc5830=null  doc5835=null
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.hire_purchase_current
-  │               doc5830=null  doc5835=null
-  │  [AGREEMENT   ]  balance_sheet.current_liabilities.total
-  │               doc5830=293522  doc5835=293522
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.trade_creditors
-  │               doc5830=108277  doc5835=null
-  │  [AGREEMENT   ]  balance_sheet.equity.retained_earnings
-  │               doc5830=165682  doc5835=165682
-  │  [AGREEMENT   ]  balance_sheet.equity.share_capital
-  │               doc5830=100  doc5835=100
-  │  [AGREEMENT   ]  balance_sheet.equity.total
-  │               doc5830=165782  doc5835=165782
-  │  [INSUFFICIENT]  balance_sheet.fixed_assets.intangible_assets
-  │               doc5830=null  doc5835=null
-  │  [AGREEMENT   ]  balance_sheet.fixed_assets.tangible_assets
-  │               doc5830=332464  doc5835=332464
-  │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.bank_loans
-  │               doc5830=23333  doc5835=null
-  │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.hire_purchase_long_term
-  │               doc5830=null  doc5835=null
-  │  [DISAGREEMENT]  balance_sheet.long_term_liabilities.total
-  │               doc5830=319401  doc5835=272466
-  │  [AGREEMENT   ]  profit_and_loss.administrative_expenses
-  │               doc5830=985102  doc5835=985102
-  │  [INSUFFICIENT]  profit_and_loss.corporation_tax
-  │               doc5830=17148  doc5835=null
-  │  [AGREEMENT   ]  profit_and_loss.cost_of_sales
-  │               doc5830=632814  doc5835=632814
-  │  [AGREEMENT   ]  profit_and_loss.depreciation_amortisation
-  │               doc5830=51911  doc5835=51911
-  │  [AGREEMENT   ]  profit_and_loss.gross_profit
-  │               doc5830=1062389  doc5835=1062389
-  │  [INSUFFICIENT]  profit_and_loss.interest_payable
-  │               doc5830=6761  doc5835=null
-  │  [INSUFFICIENT]  profit_and_loss.interest_receivable
-  │               doc5830=512  doc5835=null
-  │  [DISAGREEMENT]  profit_and_loss.net_profit
-  │               doc5830=53890  doc5835=77287
-  │  [AGREEMENT   ]  profit_and_loss.operating_profit
-  │               doc5830=77287  doc5835=77287
-  │  [INSUFFICIENT]  profit_and_loss.other_operating_income
-  │               doc5830=null  doc5835=0
-  │  [DISAGREEMENT]  profit_and_loss.profit_before_tax
-  │               doc5830=71038  doc5835=77287
-  │  [AGREEMENT   ]  profit_and_loss.revenue
-  │               doc5830=1695203  doc5835=1695203
-  └─
-
-  ┌─ COMPANY 1877  FY 2025  docs: [5832, 5835, 5836]
-  │
-  │  [INSUFFICIENT]  balance_sheet.current_assets.amounts_owed_by_directors
-  │               doc5832=null  doc5835=null  doc5836=null
-  │  [INSUFFICIENT]  balance_sheet.current_assets.cash_at_bank
-  │               doc5832=null  doc5835=null  doc5836=187479.57
-  │  [INSUFFICIENT]  balance_sheet.current_assets.total
-  │               doc5832=null  doc5835=null  doc5836=419921.68
-  │  [INSUFFICIENT]  balance_sheet.current_assets.trade_debtors
-  │               doc5832=null  doc5835=null  doc5836=226803.01
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.amounts_owed_to_directors
-  │               doc5832=null  doc5835=null  doc5836=-91197.52
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.bank_loans_current
-  │               doc5832=null  doc5835=null  doc5836=null
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.corporation_tax
-  │               doc5832=null  doc5835=null  doc5836=1208.26
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.hire_purchase_current
-  │               doc5832=null  doc5835=null  doc5836=null
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.total
-  │               doc5832=null  doc5835=null  doc5836=95877.22
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.trade_creditors
-  │               doc5832=null  doc5835=null  doc5836=14122.57
-  │  [DISAGREEMENT]  balance_sheet.equity.retained_earnings
-  │               doc5832=279164.69  doc5835=null  doc5836=622863.28
-  │  [INSUFFICIENT]  balance_sheet.equity.share_capital
-  │               doc5832=null  doc5835=null  doc5836=100
-  │  [DISAGREEMENT]  balance_sheet.equity.total
-  │               doc5832=279164.69  doc5835=null  doc5836=622963.28
-  │  [INSUFFICIENT]  balance_sheet.fixed_assets.intangible_assets
-  │               doc5832=null  doc5835=null  doc5836=null
-  │  [INSUFFICIENT]  balance_sheet.fixed_assets.tangible_assets
-  │               doc5832=null  doc5835=null  doc5836=502332.22
-  │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.bank_loans
-  │               doc5832=null  doc5835=null  doc5836=5140.73
-  │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.hire_purchase_long_term
-  │               doc5832=null  doc5835=null  doc5836=-29996.88
-  │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.total
-  │               doc5832=null  doc5835=null  doc5836=203413.4
-  │  [DISAGREEMENT]  profit_and_loss.administrative_expenses
-  │               doc5832=538499.64  doc5835=538500  doc5836=null
-  │  [INSUFFICIENT]  profit_and_loss.corporation_tax
-  │               doc5832=null  doc5835=null  doc5836=1208.26
-  │  [DISAGREEMENT]  profit_and_loss.cost_of_sales
-  │               doc5832=1127175.46  doc5835=1127175  doc5836=null
-  │  [INSUFFICIENT]  profit_and_loss.depreciation_amortisation
-  │               doc5832=null  doc5835=0  doc5836=null
-  │  [DISAGREEMENT]  profit_and_loss.gross_profit
-  │               doc5832=816903.54  doc5835=816904  doc5836=null
-  │  [INSUFFICIENT]  profit_and_loss.interest_payable
-  │               doc5832=3254.93  doc5835=null  doc5836=null
-  │  [INSUFFICIENT]  profit_and_loss.interest_receivable
-  │               doc5832=760.79  doc5835=null  doc5836=null
-  │  [DISAGREEMENT]  profit_and_loss.net_profit
-  │               doc5832=279164.69  doc5835=278404  doc5836=183126.57
-  │  [DISAGREEMENT]  profit_and_loss.operating_profit
-  │               doc5832=278403.9  doc5835=278404  doc5836=null
-  │  [INSUFFICIENT]  profit_and_loss.other_operating_income
-  │               doc5832=null  doc5835=0  doc5836=null
-  │  [DISAGREEMENT]  profit_and_loss.profit_before_tax
-  │               doc5832=279164.69  doc5835=278404  doc5836=null
-  │  [AGREEMENT   ]  profit_and_loss.revenue
-  │               doc5832=1944079  doc5835=1944079  doc5836=null
-  └─
-
-  ┌─ COMPANY 1880  FY 2022  docs: [5862, 5863, 5869]
-  │
-  │  [INSUFFICIENT]  balance_sheet.current_assets.amounts_owed_by_directors
-  │               doc5862=null  doc5863=null  doc5869=null
-  │  [AGREEMENT   ]  balance_sheet.current_assets.cash_at_bank
-  │               doc5862=21316  doc5863=21316  doc5869=21316
-  │  [AGREEMENT   ]  balance_sheet.current_assets.total
-  │               doc5862=1524897  doc5863=1524897  doc5869=1524897
-  │  [AGREEMENT   ]  balance_sheet.current_assets.trade_debtors
-  │               doc5862=882706  doc5863=882706  doc5869=882706
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.amounts_owed_to_directors
-  │               doc5862=null  doc5863=null  doc5869=null
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.bank_loans_current
-  │               doc5862=null  doc5863=null  doc5869=null
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.corporation_tax
-  │               doc5862=null  doc5863=46999  doc5869=null
-  │  [AGREEMENT   ]  balance_sheet.current_liabilities.hire_purchase_current
-  │               doc5862=67951  doc5863=67951  doc5869=null
-  │  [AGREEMENT   ]  balance_sheet.current_liabilities.total
-  │               doc5862=1244996  doc5863=1244996  doc5869=1244996
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.trade_creditors
-  │               doc5862=null  doc5863=null  doc5869=null
-  │  [AGREEMENT   ]  balance_sheet.equity.retained_earnings
-  │               doc5862=429089  doc5863=429089  doc5869=429089
-  │  [AGREEMENT   ]  balance_sheet.equity.share_capital
-  │               doc5862=100  doc5863=100  doc5869=100
-  │  [AGREEMENT   ]  balance_sheet.equity.total
-  │               doc5862=429189  doc5863=429189  doc5869=429189
-  │  [INSUFFICIENT]  balance_sheet.fixed_assets.intangible_assets
-  │               doc5862=null  doc5863=null  doc5869=null
-  │  [AGREEMENT   ]  balance_sheet.fixed_assets.tangible_assets
-  │               doc5862=230701  doc5863=230701  doc5869=230701
-  │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.bank_loans
-  │               doc5862=null  doc5863=null  doc5869=null
-  │  [AGREEMENT   ]  balance_sheet.long_term_liabilities.hire_purchase_long_term
-  │               doc5862=12790  doc5863=12790  doc5869=null
-  │  [AGREEMENT   ]  balance_sheet.long_term_liabilities.total
-  │               doc5862=81413  doc5863=81413  doc5869=81413
-  │  [AGREEMENT   ]  profit_and_loss.administrative_expenses
-  │               doc5862=1078058  doc5863=1078058  doc5869=1078058
-  │  [DISAGREEMENT]  profit_and_loss.corporation_tax
-  │               doc5862=-19642  doc5863=19642  doc5869=-19642
-  │  [AGREEMENT   ]  profit_and_loss.cost_of_sales
-  │               doc5862=4437034  doc5863=4437034  doc5869=4437034
-  │  [AGREEMENT   ]  profit_and_loss.depreciation_amortisation
-  │               doc5862=61034  doc5863=61034  doc5869=61034
-  │  [AGREEMENT   ]  profit_and_loss.gross_profit
-  │               doc5862=1317259  doc5863=1317259  doc5869=1317259
-  │  [AGREEMENT   ]  profit_and_loss.interest_payable
-  │               doc5862=48926  doc5863=48926  doc5869=48926
-  │  [AGREEMENT   ]  profit_and_loss.interest_receivable
-  │               doc5862=0  doc5863=null  doc5869=0
-  │  [AGREEMENT   ]  profit_and_loss.net_profit
-  │               doc5862=209917  doc5863=209917  doc5869=209917
-  │  [AGREEMENT   ]  profit_and_loss.operating_profit
-  │               doc5862=239201  doc5863=239201  doc5869=239201
-  │  [INSUFFICIENT]  profit_and_loss.other_operating_income
-  │               doc5862=null  doc5863=null  doc5869=null
-  │  [AGREEMENT   ]  profit_and_loss.profit_before_tax
-  │               doc5862=190275  doc5863=190275  doc5869=190275
-  │  [AGREEMENT   ]  profit_and_loss.revenue
-  │               doc5862=5754293  doc5863=5754293  doc5869=5754293
-  └─
-
-  ┌─ COMPANY 1880  FY 2023  docs: [5861, 5862, 5868, 5869]
-  │
-  │  [INSUFFICIENT]  balance_sheet.current_assets.amounts_owed_by_directors
-  │               doc5861=null  doc5862=null  doc5868=null  doc5869=null
-  │  [AGREEMENT   ]  balance_sheet.current_assets.cash_at_bank
-  │               doc5861=28094  doc5862=28094  doc5868=28094  doc5869=28094
-  │  [AGREEMENT   ]  balance_sheet.current_assets.total
-  │               doc5861=1012734  doc5862=1012734  doc5868=1012734  doc5869=1012734
-  │  [DISAGREEMENT]  balance_sheet.current_assets.trade_debtors
-  │               doc5861=470739  doc5862=553354  doc5868=470739  doc5869=553354
-  │  [AGREEMENT   ]  balance_sheet.current_liabilities.amounts_owed_to_directors
-  │               doc5861=24607  doc5862=null  doc5868=24607  doc5869=null
-  │  [AGREEMENT   ]  balance_sheet.current_liabilities.bank_loans_current
-  │               doc5861=10000  doc5862=null  doc5868=10000  doc5869=null
-  │  [AGREEMENT   ]  balance_sheet.current_liabilities.corporation_tax
-  │               doc5861=22101  doc5862=null  doc5868=22101  doc5869=null
-  │  [AGREEMENT   ]  balance_sheet.current_liabilities.hire_purchase_current
-  │               doc5861=115840  doc5862=115840  doc5868=115840  doc5869=null
-  │  [AGREEMENT   ]  balance_sheet.current_liabilities.total
-  │               doc5861=706172  doc5862=706172  doc5868=706172  doc5869=706172
-  │  [AGREEMENT   ]  balance_sheet.current_liabilities.trade_creditors
-  │               doc5861=291986  doc5862=null  doc5868=291986  doc5869=null
-  │  [AGREEMENT   ]  balance_sheet.equity.retained_earnings
-  │               doc5861=457593  doc5862=457593  doc5868=457593  doc5869=457593
-  │  [AGREEMENT   ]  balance_sheet.equity.share_capital
-  │               doc5861=100  doc5862=100  doc5868=100  doc5869=100
-  │  [AGREEMENT   ]  balance_sheet.equity.total
-  │               doc5861=457693  doc5862=457693  doc5868=457693  doc5869=457693
-  │  [INSUFFICIENT]  balance_sheet.fixed_assets.intangible_assets
-  │               doc5861=null  doc5862=null  doc5868=null  doc5869=null
-  │  [AGREEMENT   ]  balance_sheet.fixed_assets.tangible_assets
-  │               doc5861=237474  doc5862=237474  doc5868=237474  doc5869=237474
-  │  [AGREEMENT   ]  balance_sheet.long_term_liabilities.bank_loans
-  │               doc5861=17500  doc5862=null  doc5868=17500  doc5869=null
-  │  [AGREEMENT   ]  balance_sheet.long_term_liabilities.hire_purchase_long_term
-  │               doc5861=27720  doc5862=27720  doc5868=27720  doc5869=null
-  │  [AGREEMENT   ]  balance_sheet.long_term_liabilities.total
-  │               doc5861=86343  doc5862=86343  doc5868=86343  doc5869=86343
-  │  [AGREEMENT   ]  profit_and_loss.administrative_expenses
-  │               doc5861=1076406  doc5862=1076406  doc5868=1076406  doc5869=1076406
-  │  [AGREEMENT   ]  profit_and_loss.corporation_tax
-  │               doc5861=22101  doc5862=22101  doc5868=22101  doc5869=22101
-  │  [AGREEMENT   ]  profit_and_loss.cost_of_sales
-  │               doc5861=3248360  doc5862=3248360  doc5868=3248360  doc5869=3248360
-  │  [AGREEMENT   ]  profit_and_loss.depreciation_amortisation
-  │               doc5861=54527  doc5862=54527  doc5868=54527  doc5869=54527
-  │  [AGREEMENT   ]  profit_and_loss.gross_profit
-  │               doc5861=1201919  doc5862=1201919  doc5868=1201919  doc5869=1201919
-  │  [AGREEMENT   ]  profit_and_loss.interest_payable
-  │               doc5861=15450  doc5862=15450  doc5868=15450  doc5869=15450
-  │  [AGREEMENT   ]  profit_and_loss.interest_receivable
-  │               doc5861=542  doc5862=542  doc5868=542  doc5869=542
-  │  [AGREEMENT   ]  profit_and_loss.net_profit
-  │               doc5861=88504  doc5862=88504  doc5868=88504  doc5869=88504
-  │  [AGREEMENT   ]  profit_and_loss.operating_profit
-  │               doc5861=125513  doc5862=125513  doc5868=125513  doc5869=125513
-  │  [INSUFFICIENT]  profit_and_loss.other_operating_income
-  │               doc5861=null  doc5862=null  doc5868=null  doc5869=null
-  │  [AGREEMENT   ]  profit_and_loss.profit_before_tax
-  │               doc5861=110605  doc5862=110605  doc5868=110605  doc5869=110605
-  │  [AGREEMENT   ]  profit_and_loss.revenue
-  │               doc5861=4450279  doc5862=4450279  doc5868=4450279  doc5869=4450279
-  └─
-
-  ┌─ COMPANY 1880  FY 2024  docs: [5857, 5861, 5867, 5868]
-  │
-  │  [INSUFFICIENT]  balance_sheet.current_assets.amounts_owed_by_directors
-  │               doc5857=null  doc5861=null  doc5867=null  doc5868=null
-  │  [AGREEMENT   ]  balance_sheet.current_assets.cash_at_bank
-  │               doc5857=346697  doc5861=346697  doc5867=346697  doc5868=346697
-  │  [AGREEMENT   ]  balance_sheet.current_assets.total
-  │               doc5857=1284307  doc5861=1284307  doc5867=1284307  doc5868=1284307
-  │  [AGREEMENT   ]  balance_sheet.current_assets.trade_debtors
-  │               doc5857=663569  doc5861=663569  doc5867=663569  doc5868=663569
-  │  [AGREEMENT   ]  balance_sheet.current_liabilities.amounts_owed_to_directors
-  │               doc5857=null  doc5861=3098  doc5867=null  doc5868=3098
-  │  [AGREEMENT   ]  balance_sheet.current_liabilities.bank_loans_current
-  │               doc5857=10000  doc5861=10000  doc5867=10000  doc5868=10000
-  │  [AGREEMENT   ]  balance_sheet.current_liabilities.corporation_tax
-  │               doc5857=null  doc5861=99882  doc5867=null  doc5868=99882
-  │  [AGREEMENT   ]  balance_sheet.current_liabilities.hire_purchase_current
-  │               doc5857=80840  doc5861=80840  doc5867=80840  doc5868=80840
-  │  [AGREEMENT   ]  balance_sheet.current_liabilities.total
-  │               doc5857=765061  doc5861=765061  doc5867=765061  doc5868=765061
-  │  [AGREEMENT   ]  balance_sheet.current_liabilities.trade_creditors
-  │               doc5857=295953  doc5861=295953  doc5867=295953  doc5868=295953
-  │  [AGREEMENT   ]  balance_sheet.equity.retained_earnings
-  │               doc5857=670553  doc5861=670553  doc5867=670553  doc5868=670553
-  │  [AGREEMENT   ]  balance_sheet.equity.share_capital
-  │               doc5857=100  doc5861=100  doc5867=100  doc5868=100
-  │  [AGREEMENT   ]  balance_sheet.equity.total
-  │               doc5857=670653  doc5861=670653  doc5867=670653  doc5868=670653
-  │  [INSUFFICIENT]  balance_sheet.fixed_assets.intangible_assets
-  │               doc5857=null  doc5861=null  doc5867=null  doc5868=null
-  │  [AGREEMENT   ]  balance_sheet.fixed_assets.tangible_assets
-  │               doc5857=210787  doc5861=210787  doc5867=210787  doc5868=210787
-  │  [AGREEMENT   ]  balance_sheet.long_term_liabilities.bank_loans
-  │               doc5857=7500  doc5861=7500  doc5867=7500  doc5868=7500
-  │  [AGREEMENT   ]  balance_sheet.long_term_liabilities.hire_purchase_long_term
-  │               doc5857=11880  doc5861=11880  doc5867=11880  doc5868=11880
-  │  [AGREEMENT   ]  balance_sheet.long_term_liabilities.total
-  │               doc5857=59380  doc5861=59380  doc5867=59380  doc5868=59380
-  │  [AGREEMENT   ]  profit_and_loss.administrative_expenses
-  │               doc5857=1198254  doc5861=1198254  doc5867=1198254  doc5868=1198254
-  │  [AGREEMENT   ]  profit_and_loss.corporation_tax
-  │               doc5857=99882  doc5861=99882  doc5867=99882  doc5868=99882
-  │  [AGREEMENT   ]  profit_and_loss.cost_of_sales
-  │               doc5857=3366215  doc5861=3366215  doc5867=3366215  doc5868=3366215
-  │  [AGREEMENT   ]  profit_and_loss.depreciation_amortisation
-  │               doc5857=52606  doc5861=52606  doc5867=52606  doc5868=52606
-  │  [AGREEMENT   ]  profit_and_loss.gross_profit
-  │               doc5857=1589938  doc5861=1589938  doc5867=1589938  doc5868=1589938
-  │  [DISAGREEMENT]  profit_and_loss.interest_payable
-  │               doc5857=19699  doc5861=18842  doc5867=18842  doc5868=18842
-  │  [DISAGREEMENT]  profit_and_loss.interest_receivable
-  │               doc5857=857  doc5861=0  doc5867=null  doc5868=0
-  │  [AGREEMENT   ]  profit_and_loss.net_profit
-  │               doc5857=272960  doc5861=272960  doc5867=272960  doc5868=272960
-  │  [AGREEMENT   ]  profit_and_loss.operating_profit
-  │               doc5857=391684  doc5861=391684  doc5867=391684  doc5868=391684
-  │  [INSUFFICIENT]  profit_and_loss.other_operating_income
-  │               doc5857=null  doc5861=null  doc5867=null  doc5868=null
-  │  [AGREEMENT   ]  profit_and_loss.profit_before_tax
-  │               doc5857=372842  doc5861=372842  doc5867=372842  doc5868=372842
-  │  [AGREEMENT   ]  profit_and_loss.revenue
-  │               doc5857=4956153  doc5861=4956153  doc5867=4956153  doc5868=4956153
-  └─
-
-  ┌─ COMPANY 1880  FY 2025  docs: [5857, 5860, 5865, 5867]
-  │
-  │  [INSUFFICIENT]  balance_sheet.current_assets.amounts_owed_by_directors
-  │               doc5857=null  doc5860=null  doc5865=null  doc5867=null
-  │  [AGREEMENT   ]  balance_sheet.current_assets.cash_at_bank
-  │               doc5857=346281  doc5860=null  doc5865=null  doc5867=346281
-  │  [AGREEMENT   ]  balance_sheet.current_assets.total
-  │               doc5857=1131855  doc5860=null  doc5865=null  doc5867=1131855
-  │  [AGREEMENT   ]  balance_sheet.current_assets.trade_debtors
-  │               doc5857=429667  doc5860=null  doc5865=null  doc5867=429667
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.amounts_owed_to_directors
-  │               doc5857=null  doc5860=null  doc5865=null  doc5867=null
-  │  [AGREEMENT   ]  balance_sheet.current_liabilities.bank_loans_current
-  │               doc5857=7500  doc5860=null  doc5865=null  doc5867=7500
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.corporation_tax
-  │               doc5857=null  doc5860=null  doc5865=null  doc5867=null
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.hire_purchase_current
-  │               doc5857=null  doc5860=null  doc5865=null  doc5867=0
-  │  [AGREEMENT   ]  balance_sheet.current_liabilities.total
-  │               doc5857=612575  doc5860=null  doc5865=null  doc5867=612575
-  │  [AGREEMENT   ]  balance_sheet.current_liabilities.trade_creditors
-  │               doc5857=347074  doc5860=null  doc5865=null  doc5867=347074
-  │  [AGREEMENT   ]  balance_sheet.equity.retained_earnings
-  │               doc5857=673137  doc5860=null  doc5865=null  doc5867=673137
-  │  [AGREEMENT   ]  balance_sheet.equity.share_capital
-  │               doc5857=100  doc5860=null  doc5865=null  doc5867=100
-  │  [AGREEMENT   ]  balance_sheet.equity.total
-  │               doc5857=673237  doc5860=null  doc5865=null  doc5867=673237
-  │  [INSUFFICIENT]  balance_sheet.fixed_assets.intangible_assets
-  │               doc5857=null  doc5860=null  doc5865=null  doc5867=null
-  │  [AGREEMENT   ]  balance_sheet.fixed_assets.tangible_assets
-  │               doc5857=207712  doc5860=null  doc5865=null  doc5867=207712
-  │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.bank_loans
-  │               doc5857=null  doc5860=null  doc5865=null  doc5867=0
-  │  [AGREEMENT   ]  balance_sheet.long_term_liabilities.hire_purchase_long_term
-  │               doc5857=33755  doc5860=null  doc5865=null  doc5867=33755
-  │  [AGREEMENT   ]  balance_sheet.long_term_liabilities.total
-  │               doc5857=53755  doc5860=null  doc5865=null  doc5867=53755
-  │  [DISAGREEMENT]  profit_and_loss.administrative_expenses
-  │               doc5857=1361040  doc5860=1303834  doc5865=728178  doc5867=1361040
-  │  [DISAGREEMENT]  profit_and_loss.corporation_tax
-  │               doc5857=39122  doc5860=99882  doc5865=null  doc5867=39122
-  │  [DISAGREEMENT]  profit_and_loss.cost_of_sales
-  │               doc5857=2979013  doc5860=3044637  doc5865=846820  doc5867=2979013
-  │  [DISAGREEMENT]  profit_and_loss.depreciation_amortisation
-  │               doc5857=49005  doc5860=49005  doc5865=27436  doc5867=49005
-  │  [DISAGREEMENT]  profit_and_loss.gross_profit
-  │               doc5857=1530073  doc5860=1464340  doc5865=558548  doc5867=1530073
-  │  [AGREEMENT   ]  profit_and_loss.interest_payable
-  │               doc5857=10327  doc5860=null  doc5865=null  doc5867=10327
-  │  [INSUFFICIENT]  profit_and_loss.interest_receivable
-  │               doc5857=3  doc5860=null  doc5865=null  doc5867=null
-  │  [DISAGREEMENT]  profit_and_loss.net_profit
-  │               doc5857=119584  doc5860=160506  doc5865=-169631  doc5867=119584
-  │  [DISAGREEMENT]  profit_and_loss.operating_profit
-  │               doc5857=169033  doc5860=160506  doc5865=-169631  doc5867=169033
-  │  [AGREEMENT   ]  profit_and_loss.other_operating_income
-  │               doc5857=null  doc5860=109  doc5865=109  doc5867=null
-  │  [DISAGREEMENT]  profit_and_loss.profit_before_tax
-  │               doc5857=158706  doc5860=160506  doc5865=-169631  doc5867=158706
-  │  [DISAGREEMENT]  profit_and_loss.revenue
-  │               doc5857=4509086  doc5860=4508976  doc5865=1405368  doc5867=4509086
-  └─
-
-  ┌─ COMPANY 1880  FY 2026  docs: [5865, 5866]
-  │
-  │  [INSUFFICIENT]  balance_sheet.current_assets.amounts_owed_by_directors
-  │               doc5865=null  doc5866=null
-  │  [INSUFFICIENT]  balance_sheet.current_assets.cash_at_bank
-  │               doc5865=null  doc5866=210202
-  │  [INSUFFICIENT]  balance_sheet.current_assets.total
-  │               doc5865=null  doc5866=1145049
-  │  [INSUFFICIENT]  balance_sheet.current_assets.trade_debtors
-  │               doc5865=null  doc5866=480236
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.amounts_owed_to_directors
-  │               doc5865=null  doc5866=29032
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.bank_loans_current
-  │               doc5865=null  doc5866=null
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.corporation_tax
-  │               doc5865=null  doc5866=39122
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.hire_purchase_current
-  │               doc5865=null  doc5866=null
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.total
-  │               doc5865=null  doc5866=583648
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.trade_creditors
-  │               doc5865=null  doc5866=248574
-  │  [INSUFFICIENT]  balance_sheet.equity.retained_earnings
-  │               doc5865=null  doc5866=648247
-  │  [INSUFFICIENT]  balance_sheet.equity.share_capital
-  │               doc5865=null  doc5866=100
-  │  [INSUFFICIENT]  balance_sheet.equity.total
-  │               doc5865=null  doc5866=648347
-  │  [INSUFFICIENT]  balance_sheet.fixed_assets.intangible_assets
-  │               doc5865=null  doc5866=null
-  │  [INSUFFICIENT]  balance_sheet.fixed_assets.tangible_assets
-  │               doc5865=null  doc5866=269921
-  │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.bank_loans
-  │               doc5865=null  doc5866=null
-  │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.hire_purchase_long_term
-  │               doc5865=null  doc5866=null
-  │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.total
-  │               doc5865=null  doc5866=182975
-  │  [INSUFFICIENT]  profit_and_loss.administrative_expenses
-  │               doc5865=793560  doc5866=null
-  │  [INSUFFICIENT]  profit_and_loss.corporation_tax
-  │               doc5865=null  doc5866=null
-  │  [INSUFFICIENT]  profit_and_loss.cost_of_sales
-  │               doc5865=1132258  doc5866=null
-  │  [INSUFFICIENT]  profit_and_loss.depreciation_amortisation
-  │               doc5865=34789  doc5866=null
-  │  [INSUFFICIENT]  profit_and_loss.gross_profit
-  │               doc5865=769597  doc5866=null
-  │  [INSUFFICIENT]  profit_and_loss.interest_payable
-  │               doc5865=null  doc5866=null
-  │  [INSUFFICIENT]  profit_and_loss.interest_receivable
-  │               doc5865=null  doc5866=null
-  │  [INSUFFICIENT]  profit_and_loss.net_profit
-  │               doc5865=-23963  doc5866=null
-  │  [INSUFFICIENT]  profit_and_loss.operating_profit
-  │               doc5865=-23963  doc5866=null
-  │  [INSUFFICIENT]  profit_and_loss.other_operating_income
-  │               doc5865=153  doc5866=null
-  │  [INSUFFICIENT]  profit_and_loss.profit_before_tax
-  │               doc5865=-23963  doc5866=null
-  │  [INSUFFICIENT]  profit_and_loss.revenue
-  │               doc5865=1901855  doc5866=null
-  └─
-
-  ┌─ COMPANY 1881  FY 2023  docs: [5873, 5874]
-  │
-  │  [INSUFFICIENT]  balance_sheet.current_assets.amounts_owed_by_directors
-  │               doc5873=null  doc5874=null
-  │  [AGREEMENT   ]  balance_sheet.current_assets.cash_at_bank
-  │               doc5873=167499  doc5874=167499
-  │  [AGREEMENT   ]  balance_sheet.current_assets.total
-  │               doc5873=186159  doc5874=186159
-  │  [INSUFFICIENT]  balance_sheet.current_assets.trade_debtors
-  │               doc5873=null  doc5874=null
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.amounts_owed_to_directors
-  │               doc5873=null  doc5874=null
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.bank_loans_current
-  │               doc5873=null  doc5874=null
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.corporation_tax
-  │               doc5873=null  doc5874=null
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.hire_purchase_current
-  │               doc5873=null  doc5874=null
-  │  [AGREEMENT   ]  balance_sheet.current_liabilities.total
-  │               doc5873=64016  doc5874=64016
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.trade_creditors
-  │               doc5873=null  doc5874=null
-  │  [INSUFFICIENT]  balance_sheet.equity.retained_earnings
-  │               doc5873=123842  doc5874=null
-  │  [INSUFFICIENT]  balance_sheet.equity.share_capital
-  │               doc5873=null  doc5874=null
-  │  [AGREEMENT   ]  balance_sheet.equity.total
-  │               doc5873=123842  doc5874=123842
-  │  [INSUFFICIENT]  balance_sheet.fixed_assets.intangible_assets
-  │               doc5873=null  doc5874=null
-  │  [AGREEMENT   ]  balance_sheet.fixed_assets.tangible_assets
-  │               doc5873=1737  doc5874=1737
-  │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.bank_loans
-  │               doc5873=null  doc5874=null
-  │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.hire_purchase_long_term
-  │               doc5873=null  doc5874=null
-  │  [AGREEMENT   ]  balance_sheet.long_term_liabilities.total
-  │               doc5873=38  doc5874=38
-  │  [DISAGREEMENT]  profit_and_loss.administrative_expenses
-  │               doc5873=69497  doc5874=135822
-  │  [INSUFFICIENT]  profit_and_loss.corporation_tax
-  │               doc5873=null  doc5874=11735
-  │  [DISAGREEMENT]  profit_and_loss.cost_of_sales
-  │               doc5873=68452  doc5874=447
-  │  [AGREEMENT   ]  profit_and_loss.depreciation_amortisation
-  │               doc5873=1328  doc5874=1328
-  │  [DISAGREEMENT]  profit_and_loss.gross_profit
-  │               doc5873=130075  doc5874=198080
-  │  [INSUFFICIENT]  profit_and_loss.interest_payable
-  │               doc5873=null  doc5874=1672
-  │  [INSUFFICIENT]  profit_and_loss.interest_receivable
-  │               doc5873=null  doc5874=179
-  │  [DISAGREEMENT]  profit_and_loss.net_profit
-  │               doc5873=60757  doc5874=49022
-  │  [DISAGREEMENT]  profit_and_loss.operating_profit
-  │               doc5873=60757  doc5874=62258
-  │  [AGREEMENT   ]  profit_and_loss.other_operating_income
-  │               doc5873=179  doc5874=179
-  │  [AGREEMENT   ]  profit_and_loss.profit_before_tax
-  │               doc5873=60757  doc5874=60757
-  │  [AGREEMENT   ]  profit_and_loss.revenue
-  │               doc5873=198527  doc5874=198527
-  └─
-
-  ┌─ COMPANY 1881  FY 2024  docs: [5873, 5874, 5875, 5877]
-  │
-  │  [INSUFFICIENT]  balance_sheet.current_assets.amounts_owed_by_directors
-  │               doc5873=null  doc5874=null  doc5875=null  doc5877=null
-  │  [DISAGREEMENT]  balance_sheet.current_assets.cash_at_bank
-  │               doc5873=173616  doc5874=173616  doc5875=null  doc5877=173614
-  │  [DISAGREEMENT]  balance_sheet.current_assets.total
-  │               doc5873=175646  doc5874=175646  doc5875=null  doc5877=175644
-  │  [INSUFFICIENT]  balance_sheet.current_assets.trade_debtors
-  │               doc5873=null  doc5874=null  doc5875=null  doc5877=null
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.amounts_owed_to_directors
-  │               doc5873=null  doc5874=null  doc5875=null  doc5877=null
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.bank_loans_current
-  │               doc5873=null  doc5874=null  doc5875=null  doc5877=null
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.corporation_tax
-  │               doc5873=null  doc5874=null  doc5875=null  doc5877=null
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.hire_purchase_current
-  │               doc5873=null  doc5874=null  doc5875=null  doc5877=null
-  │  [DISAGREEMENT]  balance_sheet.current_liabilities.total
-  │               doc5873=46771  doc5874=46771  doc5875=null  doc5877=46769
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.trade_creditors
-  │               doc5873=null  doc5874=null  doc5875=null  doc5877=null
-  │  [DISAGREEMENT]  balance_sheet.equity.retained_earnings
-  │               doc5873=129972  doc5874=null  doc5875=85008.6  doc5877=null
-  │  [INSUFFICIENT]  balance_sheet.equity.share_capital
-  │               doc5873=null  doc5874=null  doc5875=null  doc5877=null
-  │  [DISAGREEMENT]  balance_sheet.equity.total
-  │               doc5873=129972  doc5874=129972  doc5875=85008.6  doc5877=129972
-  │  [INSUFFICIENT]  balance_sheet.fixed_assets.intangible_assets
-  │               doc5873=null  doc5874=null  doc5875=null  doc5877=null
-  │  [AGREEMENT   ]  balance_sheet.fixed_assets.tangible_assets
-  │               doc5873=1097  doc5874=1097  doc5875=null  doc5877=1097
-  │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.bank_loans
-  │               doc5873=null  doc5874=null  doc5875=null  doc5877=null
-  │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.hire_purchase_long_term
-  │               doc5873=null  doc5874=null  doc5875=null  doc5877=null
-  │  [AGREEMENT   ]  balance_sheet.long_term_liabilities.total
-  │               doc5873=0  doc5874=0  doc5875=null  doc5877=0
-  │  [DISAGREEMENT]  profit_and_loss.administrative_expenses
-  │               doc5873=12094  doc5874=204475  doc5875=65374.84  doc5877=69383
-  │  [DISAGREEMENT]  profit_and_loss.corporation_tax
-  │               doc5873=null  doc5874=27388  doc5875=11735.16  doc5877=27388
-  │  [DISAGREEMENT]  profit_and_loss.cost_of_sales
-  │               doc5873=196355  doc5874=4221  doc5875=139313.4  doc5877=139313
-  │  [AGREEMENT   ]  profit_and_loss.depreciation_amortisation
-  │               doc5873=640  doc5874=640  doc5875=null  doc5877=640
-  │  [DISAGREEMENT]  profit_and_loss.gross_profit
-  │               doc5873=129872  doc5874=322006  doc5875=186913.85  doc5877=186914
-  │  [INSUFFICIENT]  profit_and_loss.interest_payable
-  │               doc5873=null  doc5874=null  doc5875=null  doc5877=247
-  │  [DISAGREEMENT]  profit_and_loss.interest_receivable
-  │               doc5873=null  doc5874=740  doc5875=739.67  doc5877=740
-  │  [DISAGREEMENT]  profit_and_loss.net_profit
-  │               doc5873=118518  doc5874=91130  doc5875=85008.6  doc5877=91130
-  │  [DISAGREEMENT]  profit_and_loss.operating_profit
-  │               doc5873=118518  doc5874=117531  doc5875=121539.01  doc5877=118271
-  │  [AGREEMENT   ]  profit_and_loss.other_operating_income
-  │               doc5873=740  doc5874=740  doc5875=null  doc5877=740
-  │  [DISAGREEMENT]  profit_and_loss.profit_before_tax
-  │               doc5873=118518  doc5874=118518  doc5875=122278.68  doc5877=118518
-  │  [DISAGREEMENT]  profit_and_loss.revenue
-  │               doc5873=326227  doc5874=326227  doc5875=326227.25  doc5877=326227
-  └─
-
-  ┌─ COMPANY 1881  FY 2025  docs: [5873, 5876, 5877, 5879]
-  │
-  │  [INSUFFICIENT]  balance_sheet.current_assets.amounts_owed_by_directors
-  │               doc5873=null  doc5876=null  doc5877=null  doc5879=null
-  │  [DISAGREEMENT]  balance_sheet.current_assets.cash_at_bank
-  │               doc5873=null  doc5876=167600.6  doc5877=295005  doc5879=null
-  │  [DISAGREEMENT]  balance_sheet.current_assets.total
-  │               doc5873=302622  doc5876=181240.6  doc5877=302622  doc5879=302622
-  │  [INSUFFICIENT]  balance_sheet.current_assets.trade_debtors
-  │               doc5873=null  doc5876=11610  doc5877=null  doc5879=null
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.amounts_owed_to_directors
-  │               doc5873=null  doc5876=-180194.29  doc5877=null  doc5879=null
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.bank_loans_current
-  │               doc5873=null  doc5876=null  doc5877=null  doc5879=null
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.corporation_tax
-  │               doc5873=null  doc5876=null  doc5877=null  doc5879=52782
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.hire_purchase_current
-  │               doc5873=null  doc5876=null  doc5877=null  doc5879=null
-  │  [DISAGREEMENT]  balance_sheet.current_liabilities.total
-  │               doc5873=97627  doc5876=-178221.17  doc5877=97627  doc5879=97627
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.trade_creditors
-  │               doc5873=null  doc5876=2030  doc5877=null  doc5879=null
-  │  [DISAGREEMENT]  balance_sheet.equity.retained_earnings
-  │               doc5873=214137  doc5876=214970.17  doc5877=null  doc5879=null
-  │  [INSUFFICIENT]  balance_sheet.equity.share_capital
-  │               doc5873=null  doc5876=2  doc5877=null  doc5879=null
-  │  [DISAGREEMENT]  balance_sheet.equity.total
-  │               doc5873=214137  doc5876=364119.83  doc5877=214137  doc5879=214137
-  │  [INSUFFICIENT]  balance_sheet.fixed_assets.intangible_assets
-  │               doc5873=null  doc5876=null  doc5877=null  doc5879=null
-  │  [DISAGREEMENT]  balance_sheet.fixed_assets.tangible_assets
-  │               doc5873=9142  doc5876=4658.06  doc5877=9142  doc5879=9142
-  │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.bank_loans
-  │               doc5873=null  doc5876=null  doc5877=null  doc5879=null
-  │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.hire_purchase_long_term
-  │               doc5873=null  doc5876=null  doc5877=null  doc5879=null
-  │  [AGREEMENT   ]  balance_sheet.long_term_liabilities.total
-  │               doc5873=0  doc5876=0  doc5877=0  doc5879=null
-  │  [DISAGREEMENT]  profit_and_loss.administrative_expenses
-  │               doc5873=17848  doc5876=41676.33  doc5877=57095  doc5879=220766
-  │  [AGREEMENT   ]  profit_and_loss.corporation_tax
-  │               doc5873=null  doc5876=null  doc5877=52207  doc5879=52207
-  │  [DISAGREEMENT]  profit_and_loss.cost_of_sales
-  │               doc5873=205301  doc5876=166074  doc5877=166054  doc5879=2383
-  │  [AGREEMENT   ]  profit_and_loss.depreciation_amortisation
-  │               doc5873=299  doc5876=null  doc5877=299  doc5879=299
-  │  [DISAGREEMENT]  profit_and_loss.gross_profit
-  │               doc5873=235772  doc5876=274998.5  doc5877=275019  doc5879=438690
-  │  [INSUFFICIENT]  profit_and_loss.interest_payable
-  │               doc5873=null  doc5876=null  doc5877=0  doc5879=null
-  │  [DISAGREEMENT]  profit_and_loss.interest_receivable
-  │               doc5873=null  doc5876=805.49  doc5877=3448  doc5879=3448
-  │  [DISAGREEMENT]  profit_and_loss.net_profit
-  │               doc5873=221372  doc5876=234147.66  doc5877=169165  doc5879=169165
-  │  [DISAGREEMENT]  profit_and_loss.operating_profit
-  │               doc5873=221372  doc5876=233322.17  doc5877=221372  doc5879=221372
-  │  [DISAGREEMENT]  profit_and_loss.other_operating_income
-  │               doc5873=3448  doc5876=20  doc5877=3448  doc5879=3448
-  │  [DISAGREEMENT]  profit_and_loss.profit_before_tax
-  │               doc5873=221372  doc5876=234147.66  doc5877=221372  doc5879=221372
-  │  [DISAGREEMENT]  profit_and_loss.revenue
-  │               doc5873=441073  doc5876=441072.5  doc5877=441073  doc5879=441073
-  └─
-
-  ┌─ COMPANY 1881  FY 2026  docs: [5879, 5880, 5881]
-  │
-  │  [INSUFFICIENT]  balance_sheet.current_assets.amounts_owed_by_directors
-  │               doc5879=null  doc5880=0  doc5881=null
-  │  [INSUFFICIENT]  balance_sheet.current_assets.cash_at_bank
-  │               doc5879=null  doc5880=75312.48  doc5881=null
-  │  [DISAGREEMENT]  balance_sheet.current_assets.total
-  │               doc5879=195634  doc5880=115100.92  doc5881=null
-  │  [INSUFFICIENT]  balance_sheet.current_assets.trade_debtors
-  │               doc5879=null  doc5880=0  doc5881=null
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.amounts_owed_to_directors
-  │               doc5879=null  doc5880=-149587.37  doc5881=null
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.bank_loans_current
-  │               doc5879=null  doc5880=null  doc5881=null
-  │  [DISAGREEMENT]  balance_sheet.current_liabilities.corporation_tax
-  │               doc5879=7819  doc5880=87.81  doc5881=null
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.hire_purchase_current
-  │               doc5879=null  doc5880=null  doc5881=null
-  │  [DISAGREEMENT]  balance_sheet.current_liabilities.total
-  │               doc5879=12551  doc5880=-151193.18  doc5881=null
-  │  [INSUFFICIENT]  balance_sheet.current_liabilities.trade_creditors
-  │               doc5879=null  doc5880=8960  doc5881=null
-  │  [INSUFFICIENT]  balance_sheet.equity.retained_earnings
-  │               doc5879=null  doc5880=377972.93  doc5881=null
-  │  [INSUFFICIENT]  balance_sheet.equity.share_capital
-  │               doc5879=null  doc5880=2  doc5881=null
-  │  [DISAGREEMENT]  balance_sheet.equity.total
-  │               doc5879=200547  doc5880=292974.93  doc5881=null
-  │  [INSUFFICIENT]  balance_sheet.fixed_assets.intangible_assets
-  │               doc5879=null  doc5880=20291.36  doc5881=null
-  │  [DISAGREEMENT]  balance_sheet.fixed_assets.tangible_assets
-  │               doc5879=17464  doc5880=6389.47  doc5881=null
-  │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.bank_loans
-  │               doc5879=null  doc5880=null  doc5881=null
-  │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.hire_purchase_long_term
-  │               doc5879=null  doc5880=null  doc5881=null
-  │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.total
-  │               doc5879=null  doc5880=0  doc5881=null
-  │  [DISAGREEMENT]  profit_and_loss.administrative_expenses
-  │               doc5879=177671  doc5880=null  doc5881=13550.42
-  │  [INSUFFICIENT]  profit_and_loss.corporation_tax
-  │               doc5879=7819  doc5880=null  doc5881=null
-  │  [DISAGREEMENT]  profit_and_loss.cost_of_sales
-  │               doc5879=0  doc5880=null  doc5881=26882
-  │  [INSUFFICIENT]  profit_and_loss.depreciation_amortisation
-  │               doc5879=7533  doc5880=null  doc5881=null
-  │  [DISAGREEMENT]  profit_and_loss.gross_profit
-  │               doc5879=223404  doc5880=null  doc5881=21245
-  │  [INSUFFICIENT]  profit_and_loss.interest_payable
-  │               doc5879=null  doc5880=null  doc5881=null
-  │  [DISAGREEMENT]  profit_and_loss.interest_receivable
-  │               doc5879=3746  doc5880=null  doc5881=118.87
-  │  [DISAGREEMENT]  profit_and_loss.net_profit
-  │               doc5879=41660  doc5880=null  doc5881=7813.45
-  │  [DISAGREEMENT]  profit_and_loss.operating_profit
-  │               doc5879=49479  doc5880=null  doc5881=7694.58
-  │  [INSUFFICIENT]  profit_and_loss.other_operating_income
-  │               doc5879=3746  doc5880=null  doc5881=null
-  │  [DISAGREEMENT]  profit_and_loss.profit_before_tax
-  │               doc5879=49479  doc5880=null  doc5881=7813.45
-  │  [DISAGREEMENT]  profit_and_loss.revenue
-  │               doc5879=223404  doc5880=null  doc5881=48127
-  └─
-
-================================================================================
-END OF REPORT
-================================================================================
+  ================================================================================
+  AUDIT-1 — Phase 1 Cross-Document GROUP A Comparison
+  capture file: docs/pipeline-fidelity-fix/audit1-capture-2026-08-15.txt
+  generated:    2026-08-15T23:34:01.304Z
+  ================================================================================
+  
+  SUMMARY
+  ────────────────────────────────────────────────────────────────────────────────
+    Total records parsed:               44
+    Groups with 2+ documents:           13
+    Total field-comparisons:            390
+      AGREEMENT:                        147
+      DISAGREEMENT:                     80
+      INSUFFICIENT:                     163
+    Arithmetic check: 147 + 80 + 163 = 390 (must equal 390: PASS)
+  
+  GROUP INVENTORY (all groups with 2+ documents)
+  ────────────────────────────────────────────────────────────────────────────────
+    company 1877  FY 2022  docs: [5831, 5835]
+    company 1877  FY 2023  docs: [5830, 5831, 5835]
+    company 1877  FY 2024  docs: [5830, 5835]
+    company 1877  FY 2025  docs: [5832, 5835, 5836]
+    company 1880  FY 2022  docs: [5862, 5863, 5869]
+    company 1880  FY 2023  docs: [5861, 5862, 5868, 5869]
+    company 1880  FY 2024  docs: [5857, 5861, 5867, 5868]
+    company 1880  FY 2025  docs: [5857, 5860, 5865, 5867]
+    company 1880  FY 2026  docs: [5865, 5866]
+    company 1881  FY 2023  docs: [5873, 5874]
+    company 1881  FY 2024  docs: [5873, 5874, 5875, 5877]
+    company 1881  FY 2025  docs: [5873, 5876, 5877, 5879]
+    company 1881  FY 2026  docs: [5879, 5880, 5881]
+  
+  ================================================================================
+  CASE ROLLUP
+  ================================================================================
+  
+    Groups with disagreements: 12
+    Total disagreement fields: 80  (= 80)
+  
+    How to read: "solo value" = a document whose value for that field is not
+    shared by any other document in the same (company, FY) group. A document
+    that is solo across multiple fields is a candidate for one underlying defect.
+    No value-correctness judgement is made — that is reserved for PDF review.
+  
+    ┌─ company 1877  FY 2022  docs: [5831, 5835]
+    │  disagreement fields: 3
+    │  pattern: 2-doc group: 3 field(s) disagree — each is a bilateral conflict; neither doc can be isolated as the outlier.
+    └─
+  
+    ┌─ company 1877  FY 2023  docs: [5830, 5831, 5835]
+    │  disagreement fields: 6
+    │  pattern: Multi-doc scatter: doc 5830 (3 field(s)), doc 5831 (4 field(s)), doc 5835 (2 field(s)) each hold solo values in distinct fields — likely several distinct issues, not one.
+    │    doc 5831: solo in 4 field(s) — equity.retained_earnings=168834, equity.total=168934, corporation_tax=31780, net_profit=136526
+    │    doc 5830: solo in 3 field(s) — long_term_liabilities.total=49478, corporation_tax=36214, net_profit=132092
+    │    doc 5835: solo in 2 field(s) — net_profit=172769, profit_before_tax=172769
+    └─
+  
+    ┌─ company 1877  FY 2024  docs: [5830, 5835]
+    │  disagreement fields: 3
+    │  pattern: 2-doc group: 3 field(s) disagree — each is a bilateral conflict; neither doc can be isolated as the outlier.
+    └─
+  
+    ┌─ company 1877  FY 2025  docs: [5832, 5835, 5836]
+    │  disagreement fields: 8
+    │  pattern: Multi-doc scatter: doc 5832 (8 field(s)), doc 5835 (6 field(s)), doc 5836 (3 field(s)) each hold solo values in distinct fields — likely several distinct issues, not one.
+    │    doc 5832: solo in 8 field(s) — equity.retained_earnings=279164.69, equity.total=279164.69, administrative_expenses=538499.64, cost_of_sales=1127175.46, gross_profit=816903.54, net_profit=279164.69, operating_profit=278403.9, profit_before_tax=279164.69
+    │    doc 5835: solo in 6 field(s) — administrative_expenses=538500, cost_of_sales=1127175, gross_profit=816904, net_profit=278404, operating_profit=278404, profit_before_tax=278404
+    │    doc 5836: solo in 3 field(s) — equity.retained_earnings=622863.28, equity.total=622963.28, net_profit=183126.57
+    └─
+  
+    ┌─ company 1880  FY 2022  docs: [5862, 5863, 5869]
+    │  disagreement fields: 1
+    │  pattern: No dominant outlier: every disagreement field has a different isolation pattern — likely several distinct issues.
+    │    doc 5863: solo in 1 field(s) — corporation_tax=19642
+    │    doc 5862: no solo fields (agrees with at least one other doc on every disagreement field)
+    │    doc 5869: no solo fields (agrees with at least one other doc on every disagreement field)
+    └─
+  
+    ┌─ company 1880  FY 2023  docs: [5861, 5862, 5868, 5869]
+    │  disagreement fields: 1
+    │  pattern: Stable split pattern: 1 field(s) with two distinct value clusters across the group — no single doc is isolated; documents partition into two sub-sets holding different values.
+    │    doc 5861: no solo fields (agrees with at least one other doc on every disagreement field)
+    │    doc 5862: no solo fields (agrees with at least one other doc on every disagreement field)
+    │    doc 5868: no solo fields (agrees with at least one other doc on every disagreement field)
+    │    doc 5869: no solo fields (agrees with at least one other doc on every disagreement field)
+    └─
+  
+    ┌─ company 1880  FY 2024  docs: [5857, 5861, 5867, 5868]
+    │  disagreement fields: 2
+    │  pattern: Single-doc outlier pattern: doc 5857 holds a solo value in 2/2 disagreement field(s) — likely one underlying defect rather than several.
+    │    doc 5857: solo in 2 field(s) — interest_payable=19699, interest_receivable=857
+    │    doc 5861: no solo fields (agrees with at least one other doc on every disagreement field)
+    │    doc 5867: no solo fields (agrees with at least one other doc on every disagreement field)
+    │    doc 5868: no solo fields (agrees with at least one other doc on every disagreement field)
+    └─
+  
+    ┌─ company 1880  FY 2025  docs: [5857, 5860, 5865, 5867]
+    │  disagreement fields: 9
+    │  pattern: Multi-doc scatter: doc 5860 (8 field(s)), doc 5865 (8 field(s)) each hold solo values in distinct fields — likely several distinct issues, not one.
+    │    doc 5860: solo in 8 field(s) — administrative_expenses=1303834, corporation_tax=99882, cost_of_sales=3044637, gross_profit=1464340, net_profit=160506, operating_profit=160506, profit_before_tax=160506, revenue=4508976
+    │    doc 5865: solo in 8 field(s) — administrative_expenses=728178, cost_of_sales=846820, depreciation_amortisation=27436, gross_profit=558548, net_profit=-169631, operating_profit=-169631, profit_before_tax=-169631, revenue=1405368
+    │    doc 5857: no solo fields (agrees with at least one other doc on every disagreement field)
+    │    doc 5867: no solo fields (agrees with at least one other doc on every disagreement field)
+    └─
+  
+    ┌─ company 1881  FY 2023  docs: [5873, 5874]
+    │  disagreement fields: 5
+    │  pattern: 2-doc group: 5 field(s) disagree — each is a bilateral conflict; neither doc can be isolated as the outlier.
+    └─
+  
+    ┌─ company 1881  FY 2024  docs: [5873, 5874, 5875, 5877]
+    │  disagreement fields: 14
+    │  pattern: Multi-doc scatter: doc 5873 (6 field(s)), doc 5874 (4 field(s)), doc 5875 (11 field(s)), doc 5877 (7 field(s)) each hold solo values in distinct fields — likely several distinct issues, not one.
+    │    doc 5875: solo in 11 field(s) — equity.retained_earnings=85008.6, equity.total=85008.6, administrative_expenses=65374.84, corporation_tax=11735.16, cost_of_sales=139313.4, gross_profit=186913.85, interest_receivable=739.67, net_profit=85008.6, operating_profit=121539.01, profit_before_tax=122278.68, revenue=326227.25
+    │    doc 5877: solo in 7 field(s) — current_assets.cash_at_bank=173614, current_assets.total=175644, current_liabilities.total=46769, administrative_expenses=69383, cost_of_sales=139313, gross_profit=186914, operating_profit=118271
+    │    doc 5873: solo in 6 field(s) — equity.retained_earnings=129972, administrative_expenses=12094, cost_of_sales=196355, gross_profit=129872, net_profit=118518, operating_profit=118518
+    │    doc 5874: solo in 4 field(s) — administrative_expenses=204475, cost_of_sales=4221, gross_profit=322006, operating_profit=117531
+    └─
+  
+    ┌─ company 1881  FY 2025  docs: [5873, 5876, 5877, 5879]
+    │  disagreement fields: 15
+    │  pattern: Multi-doc scatter: doc 5873 (5 field(s)), doc 5876 (15 field(s)), doc 5877 (4 field(s)), doc 5879 (3 field(s)) each hold solo values in distinct fields — likely several distinct issues, not one.
+    │    doc 5876: solo in 15 field(s) — current_assets.cash_at_bank=167600.6, current_assets.total=181240.6, current_liabilities.total=-178221.17, equity.retained_earnings=214970.17, equity.total=364119.83, fixed_assets.tangible_assets=4658.06, administrative_expenses=41676.33, cost_of_sales=166074, gross_profit=274998.5, interest_receivable=805.49, net_profit=234147.66, operating_profit=233322.17, other_operating_income=20, profit_before_tax=234147.66, revenue=441072.5
+    │    doc 5873: solo in 5 field(s) — equity.retained_earnings=214137, administrative_expenses=17848, cost_of_sales=205301, gross_profit=235772, net_profit=221372
+    │    doc 5877: solo in 4 field(s) — current_assets.cash_at_bank=295005, administrative_expenses=57095, cost_of_sales=166054, gross_profit=275019
+    │    doc 5879: solo in 3 field(s) — administrative_expenses=220766, cost_of_sales=2383, gross_profit=438690
+    └─
+  
+    ┌─ company 1881  FY 2026  docs: [5879, 5880, 5881]
+    │  disagreement fields: 13
+    │  pattern: Multi-doc scatter: doc 5879 (13 field(s)), doc 5880 (5 field(s)), doc 5881 (8 field(s)) each hold solo values in distinct fields — likely several distinct issues, not one.
+    │    doc 5879: solo in 13 field(s) — current_assets.total=195634, current_liabilities.corporation_tax=7819, current_liabilities.total=12551, equity.total=200547, fixed_assets.tangible_assets=17464, administrative_expenses=177671, cost_of_sales=0, gross_profit=223404, interest_receivable=3746, net_profit=41660, operating_profit=49479, profit_before_tax=49479, revenue=223404
+    │    doc 5881: solo in 8 field(s) — administrative_expenses=13550.42, cost_of_sales=26882, gross_profit=21245, interest_receivable=118.87, net_profit=7813.45, operating_profit=7694.58, profit_before_tax=7813.45, revenue=48127
+    │    doc 5880: solo in 5 field(s) — current_assets.total=115100.92, current_liabilities.corporation_tax=87.81, current_liabilities.total=-151193.18, equity.total=292974.93, fixed_assets.tangible_assets=6389.47
+    └─
+  
+    CASE ROLLUP SUMMARY
+    ─────────────────────────────────────────────────────────────────────────────
+    Single-doc outlier (likely 1 underlying defect per group): 1 group(s)
+      company 1880 FY 2024: doc 5857 outlier across 2/2 fields
+    Stable split (2-cluster split, no single outlier): 1 group(s)
+      company 1880 FY 2023: 1 fields
+    2-doc bilateral conflicts: 3 group(s)
+      company 1877 FY 2022: 3 fields
+      company 1877 FY 2024: 3 fields
+      company 1881 FY 2023: 5 fields
+    Multi-doc scatter / no dominant outlier: 7 group(s)
+      company 1877 FY 2023: 6 fields
+      company 1877 FY 2025: 8 fields
+      company 1880 FY 2022: 1 fields
+      company 1880 FY 2025: 9 fields
+      company 1881 FY 2024: 14 fields
+      company 1881 FY 2025: 15 fields
+      company 1881 FY 2026: 13 fields
+  
+    Approximate real-case count (lower bound):  12 group(s), likely ~79 distinct underlying discrepancies across all groups
+    (80 field-rows collapses to roughly that many real issues once outlier clustering is applied)
+  
+  ================================================================================
+  DISAGREEMENT DETAIL
+  ================================================================================
+  
+  
+    ┌─ COMPANY 1877
+    │
+    │  FY 2022  (docs compared: [5831, 5835])
+    │
+    │    field: profit_and_loss.depreciation_amortisation
+    │      doc 5831: 10960
+    │      doc 5835: 10962
+    │
+    │    field: profit_and_loss.net_profit
+    │      doc 5831: 89242
+    │      doc 5835: 126779
+    │
+    │    field: profit_and_loss.profit_before_tax
+    │      doc 5831: 119062
+    │      doc 5835: 126779
+    │
+    │  FY 2023  (docs compared: [5830, 5831, 5835])
+    │
+    │    field: balance_sheet.equity.retained_earnings
+    │      doc 5830: 164400
+    │      doc 5831: 168834
+    │      doc 5835: 164400
+    │
+    │    field: balance_sheet.equity.total
+    │      doc 5830: 164500
+    │      doc 5831: 168934
+    │      doc 5835: 164500
+    │
+    │    field: balance_sheet.long_term_liabilities.total
+    │      doc 5830: 49478
+    │      doc 5831: 45044
+    │      doc 5835: 45044
+    │
+    │    field: profit_and_loss.corporation_tax
+    │      doc 5830: 36214
+    │      doc 5831: 31780
+    │      doc 5835: null
+    │
+    │    field: profit_and_loss.net_profit
+    │      doc 5830: 132092
+    │      doc 5831: 136526
+    │      doc 5835: 172769
+    │
+    │    field: profit_and_loss.profit_before_tax
+    │      doc 5830: 168306
+    │      doc 5831: 168306
+    │      doc 5835: 172769
+    │
+    │  FY 2024  (docs compared: [5830, 5835])
+    │
+    │    field: balance_sheet.long_term_liabilities.total
+    │      doc 5830: 319401
+    │      doc 5835: 272466
+    │
+    │    field: profit_and_loss.net_profit
+    │      doc 5830: 53890
+    │      doc 5835: 77287
+    │
+    │    field: profit_and_loss.profit_before_tax
+    │      doc 5830: 71038
+    │      doc 5835: 77287
+    │
+    │  FY 2025  (docs compared: [5832, 5835, 5836])
+    │
+    │    field: balance_sheet.equity.retained_earnings
+    │      doc 5832: 279164.69
+    │      doc 5835: null
+    │      doc 5836: 622863.28
+    │
+    │    field: balance_sheet.equity.total
+    │      doc 5832: 279164.69
+    │      doc 5835: null
+    │      doc 5836: 622963.28
+    │
+    │    field: profit_and_loss.administrative_expenses
+    │      doc 5832: 538499.64
+    │      doc 5835: 538500
+    │      doc 5836: null
+    │
+    │    field: profit_and_loss.cost_of_sales
+    │      doc 5832: 1127175.46
+    │      doc 5835: 1127175
+    │      doc 5836: null
+    │
+    │    field: profit_and_loss.gross_profit
+    │      doc 5832: 816903.54
+    │      doc 5835: 816904
+    │      doc 5836: null
+    │
+    │    field: profit_and_loss.net_profit
+    │      doc 5832: 279164.69
+    │      doc 5835: 278404
+    │      doc 5836: 183126.57
+    │
+    │    field: profit_and_loss.operating_profit
+    │      doc 5832: 278403.9
+    │      doc 5835: 278404
+    │      doc 5836: null
+    │
+    │    field: profit_and_loss.profit_before_tax
+    │      doc 5832: 279164.69
+    │      doc 5835: 278404
+    │      doc 5836: null
+  
+    ┌─ COMPANY 1880
+    │
+    │  FY 2022  (docs compared: [5862, 5863, 5869])
+    │
+    │    field: profit_and_loss.corporation_tax
+    │      doc 5862: -19642
+    │      doc 5863: 19642
+    │      doc 5869: -19642
+    │
+    │  FY 2023  (docs compared: [5861, 5862, 5868, 5869])
+    │
+    │    field: balance_sheet.current_assets.trade_debtors
+    │      doc 5861: 470739
+    │      doc 5862: 553354
+    │      doc 5868: 470739
+    │      doc 5869: 553354
+    │
+    │  FY 2024  (docs compared: [5857, 5861, 5867, 5868])
+    │
+    │    field: profit_and_loss.interest_payable
+    │      doc 5857: 19699
+    │      doc 5861: 18842
+    │      doc 5867: 18842
+    │      doc 5868: 18842
+    │
+    │    field: profit_and_loss.interest_receivable
+    │      doc 5857: 857
+    │      doc 5861: 0
+    │      doc 5867: null
+    │      doc 5868: 0
+    │
+    │  FY 2025  (docs compared: [5857, 5860, 5865, 5867])
+    │
+    │    field: profit_and_loss.administrative_expenses
+    │      doc 5857: 1361040
+    │      doc 5860: 1303834
+    │      doc 5865: 728178
+    │      doc 5867: 1361040
+    │
+    │    field: profit_and_loss.corporation_tax
+    │      doc 5857: 39122
+    │      doc 5860: 99882
+    │      doc 5865: null
+    │      doc 5867: 39122
+    │
+    │    field: profit_and_loss.cost_of_sales
+    │      doc 5857: 2979013
+    │      doc 5860: 3044637
+    │      doc 5865: 846820
+    │      doc 5867: 2979013
+    │
+    │    field: profit_and_loss.depreciation_amortisation
+    │      doc 5857: 49005
+    │      doc 5860: 49005
+    │      doc 5865: 27436
+    │      doc 5867: 49005
+    │
+    │    field: profit_and_loss.gross_profit
+    │      doc 5857: 1530073
+    │      doc 5860: 1464340
+    │      doc 5865: 558548
+    │      doc 5867: 1530073
+    │
+    │    field: profit_and_loss.net_profit
+    │      doc 5857: 119584
+    │      doc 5860: 160506
+    │      doc 5865: -169631
+    │      doc 5867: 119584
+    │
+    │    field: profit_and_loss.operating_profit
+    │      doc 5857: 169033
+    │      doc 5860: 160506
+    │      doc 5865: -169631
+    │      doc 5867: 169033
+    │
+    │    field: profit_and_loss.profit_before_tax
+    │      doc 5857: 158706
+    │      doc 5860: 160506
+    │      doc 5865: -169631
+    │      doc 5867: 158706
+    │
+    │    field: profit_and_loss.revenue
+    │      doc 5857: 4509086
+    │      doc 5860: 4508976
+    │      doc 5865: 1405368
+    │      doc 5867: 4509086
+  
+    ┌─ COMPANY 1881
+    │
+    │  FY 2023  (docs compared: [5873, 5874])
+    │
+    │    field: profit_and_loss.administrative_expenses
+    │      doc 5873: 69497
+    │      doc 5874: 135822
+    │
+    │    field: profit_and_loss.cost_of_sales
+    │      doc 5873: 68452
+    │      doc 5874: 447
+    │
+    │    field: profit_and_loss.gross_profit
+    │      doc 5873: 130075
+    │      doc 5874: 198080
+    │
+    │    field: profit_and_loss.net_profit
+    │      doc 5873: 60757
+    │      doc 5874: 49022
+    │
+    │    field: profit_and_loss.operating_profit
+    │      doc 5873: 60757
+    │      doc 5874: 62258
+    │
+    │  FY 2024  (docs compared: [5873, 5874, 5875, 5877])
+    │
+    │    field: balance_sheet.current_assets.cash_at_bank
+    │      doc 5873: 173616
+    │      doc 5874: 173616
+    │      doc 5875: null
+    │      doc 5877: 173614
+    │
+    │    field: balance_sheet.current_assets.total
+    │      doc 5873: 175646
+    │      doc 5874: 175646
+    │      doc 5875: null
+    │      doc 5877: 175644
+    │
+    │    field: balance_sheet.current_liabilities.total
+    │      doc 5873: 46771
+    │      doc 5874: 46771
+    │      doc 5875: null
+    │      doc 5877: 46769
+    │
+    │    field: balance_sheet.equity.retained_earnings
+    │      doc 5873: 129972
+    │      doc 5874: null
+    │      doc 5875: 85008.6
+    │      doc 5877: null
+    │
+    │    field: balance_sheet.equity.total
+    │      doc 5873: 129972
+    │      doc 5874: 129972
+    │      doc 5875: 85008.6
+    │      doc 5877: 129972
+    │
+    │    field: profit_and_loss.administrative_expenses
+    │      doc 5873: 12094
+    │      doc 5874: 204475
+    │      doc 5875: 65374.84
+    │      doc 5877: 69383
+    │
+    │    field: profit_and_loss.corporation_tax
+    │      doc 5873: null
+    │      doc 5874: 27388
+    │      doc 5875: 11735.16
+    │      doc 5877: 27388
+    │
+    │    field: profit_and_loss.cost_of_sales
+    │      doc 5873: 196355
+    │      doc 5874: 4221
+    │      doc 5875: 139313.4
+    │      doc 5877: 139313
+    │
+    │    field: profit_and_loss.gross_profit
+    │      doc 5873: 129872
+    │      doc 5874: 322006
+    │      doc 5875: 186913.85
+    │      doc 5877: 186914
+    │
+    │    field: profit_and_loss.interest_receivable
+    │      doc 5873: null
+    │      doc 5874: 740
+    │      doc 5875: 739.67
+    │      doc 5877: 740
+    │
+    │    field: profit_and_loss.net_profit
+    │      doc 5873: 118518
+    │      doc 5874: 91130
+    │      doc 5875: 85008.6
+    │      doc 5877: 91130
+    │
+    │    field: profit_and_loss.operating_profit
+    │      doc 5873: 118518
+    │      doc 5874: 117531
+    │      doc 5875: 121539.01
+    │      doc 5877: 118271
+    │
+    │    field: profit_and_loss.profit_before_tax
+    │      doc 5873: 118518
+    │      doc 5874: 118518
+    │      doc 5875: 122278.68
+    │      doc 5877: 118518
+    │
+    │    field: profit_and_loss.revenue
+    │      doc 5873: 326227
+    │      doc 5874: 326227
+    │      doc 5875: 326227.25
+    │      doc 5877: 326227
+    │
+    │  FY 2025  (docs compared: [5873, 5876, 5877, 5879])
+    │
+    │    field: balance_sheet.current_assets.cash_at_bank
+    │      doc 5873: null
+    │      doc 5876: 167600.6
+    │      doc 5877: 295005
+    │      doc 5879: null
+    │
+    │    field: balance_sheet.current_assets.total
+    │      doc 5873: 302622
+    │      doc 5876: 181240.6
+    │      doc 5877: 302622
+    │      doc 5879: 302622
+    │
+    │    field: balance_sheet.current_liabilities.total
+    │      doc 5873: 97627
+    │      doc 5876: -178221.17
+    │      doc 5877: 97627
+    │      doc 5879: 97627
+    │
+    │    field: balance_sheet.equity.retained_earnings
+    │      doc 5873: 214137
+    │      doc 5876: 214970.17
+    │      doc 5877: null
+    │      doc 5879: null
+    │
+    │    field: balance_sheet.equity.total
+    │      doc 5873: 214137
+    │      doc 5876: 364119.83
+    │      doc 5877: 214137
+    │      doc 5879: 214137
+    │
+    │    field: balance_sheet.fixed_assets.tangible_assets
+    │      doc 5873: 9142
+    │      doc 5876: 4658.06
+    │      doc 5877: 9142
+    │      doc 5879: 9142
+    │
+    │    field: profit_and_loss.administrative_expenses
+    │      doc 5873: 17848
+    │      doc 5876: 41676.33
+    │      doc 5877: 57095
+    │      doc 5879: 220766
+    │
+    │    field: profit_and_loss.cost_of_sales
+    │      doc 5873: 205301
+    │      doc 5876: 166074
+    │      doc 5877: 166054
+    │      doc 5879: 2383
+    │
+    │    field: profit_and_loss.gross_profit
+    │      doc 5873: 235772
+    │      doc 5876: 274998.5
+    │      doc 5877: 275019
+    │      doc 5879: 438690
+    │
+    │    field: profit_and_loss.interest_receivable
+    │      doc 5873: null
+    │      doc 5876: 805.49
+    │      doc 5877: 3448
+    │      doc 5879: 3448
+    │
+    │    field: profit_and_loss.net_profit
+    │      doc 5873: 221372
+    │      doc 5876: 234147.66
+    │      doc 5877: 169165
+    │      doc 5879: 169165
+    │
+    │    field: profit_and_loss.operating_profit
+    │      doc 5873: 221372
+    │      doc 5876: 233322.17
+    │      doc 5877: 221372
+    │      doc 5879: 221372
+    │
+    │    field: profit_and_loss.other_operating_income
+    │      doc 5873: 3448
+    │      doc 5876: 20
+    │      doc 5877: 3448
+    │      doc 5879: 3448
+    │
+    │    field: profit_and_loss.profit_before_tax
+    │      doc 5873: 221372
+    │      doc 5876: 234147.66
+    │      doc 5877: 221372
+    │      doc 5879: 221372
+    │
+    │    field: profit_and_loss.revenue
+    │      doc 5873: 441073
+    │      doc 5876: 441072.5
+    │      doc 5877: 441073
+    │      doc 5879: 441073
+    │
+    │  FY 2026  (docs compared: [5879, 5880, 5881])
+    │
+    │    field: balance_sheet.current_assets.total
+    │      doc 5879: 195634
+    │      doc 5880: 115100.92
+    │      doc 5881: null
+    │
+    │    field: balance_sheet.current_liabilities.corporation_tax
+    │      doc 5879: 7819
+    │      doc 5880: 87.81
+    │      doc 5881: null
+    │
+    │    field: balance_sheet.current_liabilities.total
+    │      doc 5879: 12551
+    │      doc 5880: -151193.18
+    │      doc 5881: null
+    │
+    │    field: balance_sheet.equity.total
+    │      doc 5879: 200547
+    │      doc 5880: 292974.93
+    │      doc 5881: null
+    │
+    │    field: balance_sheet.fixed_assets.tangible_assets
+    │      doc 5879: 17464
+    │      doc 5880: 6389.47
+    │      doc 5881: null
+    │
+    │    field: profit_and_loss.administrative_expenses
+    │      doc 5879: 177671
+    │      doc 5880: null
+    │      doc 5881: 13550.42
+    │
+    │    field: profit_and_loss.cost_of_sales
+    │      doc 5879: 0
+    │      doc 5880: null
+    │      doc 5881: 26882
+    │
+    │    field: profit_and_loss.gross_profit
+    │      doc 5879: 223404
+    │      doc 5880: null
+    │      doc 5881: 21245
+    │
+    │    field: profit_and_loss.interest_receivable
+    │      doc 5879: 3746
+    │      doc 5880: null
+    │      doc 5881: 118.87
+    │
+    │    field: profit_and_loss.net_profit
+    │      doc 5879: 41660
+    │      doc 5880: null
+    │      doc 5881: 7813.45
+    │
+    │    field: profit_and_loss.operating_profit
+    │      doc 5879: 49479
+    │      doc 5880: null
+    │      doc 5881: 7694.58
+    │
+    │    field: profit_and_loss.profit_before_tax
+    │      doc 5879: 49479
+    │      doc 5880: null
+    │      doc 5881: 7813.45
+    │
+    │    field: profit_and_loss.revenue
+    │      doc 5879: 223404
+    │      doc 5880: null
+    │      doc 5881: 48127
+    │
+    └─
+  
+  ================================================================================
+  FULL FIELD-BY-FIELD DETAIL
+  ================================================================================
+  
+    ┌─ COMPANY 1877  FY 2022  docs: [5831, 5835]
+    │
+    │  [INSUFFICIENT]  balance_sheet.current_assets.amounts_owed_by_directors
+    │               doc5831=null  doc5835=null
+    │  [INSUFFICIENT]  balance_sheet.current_assets.cash_at_bank
+    │               doc5831=144776  doc5835=null
+    │  [AGREEMENT   ]  balance_sheet.current_assets.total
+    │               doc5831=321236  doc5835=321236
+    │  [INSUFFICIENT]  balance_sheet.current_assets.trade_debtors
+    │               doc5831=113707  doc5835=null
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.amounts_owed_to_directors
+    │               doc5831=null  doc5835=null
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.bank_loans_current
+    │               doc5831=20000  doc5835=null
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.corporation_tax
+    │               doc5831=29820  doc5835=null
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.hire_purchase_current
+    │               doc5831=5770  doc5835=null
+    │  [AGREEMENT   ]  balance_sheet.current_liabilities.total
+    │               doc5831=216893  doc5835=216893
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.trade_creditors
+    │               doc5831=96522  doc5835=null
+    │  [AGREEMENT   ]  balance_sheet.equity.retained_earnings
+    │               doc5831=77808  doc5835=77808
+    │  [AGREEMENT   ]  balance_sheet.equity.share_capital
+    │               doc5831=100  doc5835=100
+    │  [AGREEMENT   ]  balance_sheet.equity.total
+    │               doc5831=77908  doc5835=77908
+    │  [INSUFFICIENT]  balance_sheet.fixed_assets.intangible_assets
+    │               doc5831=null  doc5835=null
+    │  [AGREEMENT   ]  balance_sheet.fixed_assets.tangible_assets
+    │               doc5831=49395  doc5835=49395
+    │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.bank_loans
+    │               doc5831=63333  doc5835=null
+    │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.hire_purchase_long_term
+    │               doc5831=12497  doc5835=null
+    │  [AGREEMENT   ]  balance_sheet.long_term_liabilities.total
+    │               doc5831=75830  doc5835=75830
+    │  [AGREEMENT   ]  profit_and_loss.administrative_expenses
+    │               doc5831=554473  doc5835=554473
+    │  [INSUFFICIENT]  profit_and_loss.corporation_tax
+    │               doc5831=29820  doc5835=null
+    │  [AGREEMENT   ]  profit_and_loss.cost_of_sales
+    │               doc5831=440662  doc5835=440662
+    │  [DISAGREEMENT]  profit_and_loss.depreciation_amortisation
+    │               doc5831=10960  doc5835=10962
+    │  [AGREEMENT   ]  profit_and_loss.gross_profit
+    │               doc5831=656645  doc5835=656645
+    │  [INSUFFICIENT]  profit_and_loss.interest_payable
+    │               doc5831=7720  doc5835=null
+    │  [INSUFFICIENT]  profit_and_loss.interest_receivable
+    │               doc5831=3  doc5835=null
+    │  [DISAGREEMENT]  profit_and_loss.net_profit
+    │               doc5831=89242  doc5835=126779
+    │  [AGREEMENT   ]  profit_and_loss.operating_profit
+    │               doc5831=126779  doc5835=126779
+    │  [AGREEMENT   ]  profit_and_loss.other_operating_income
+    │               doc5831=24607  doc5835=24607
+    │  [DISAGREEMENT]  profit_and_loss.profit_before_tax
+    │               doc5831=119062  doc5835=126779
+    │  [AGREEMENT   ]  profit_and_loss.revenue
+    │               doc5831=1097307  doc5835=1097307
+    └─
+  
+    ┌─ COMPANY 1877  FY 2023  docs: [5830, 5831, 5835]
+    │
+    │  [INSUFFICIENT]  balance_sheet.current_assets.amounts_owed_by_directors
+    │               doc5830=null  doc5831=null  doc5835=null
+    │  [AGREEMENT   ]  balance_sheet.current_assets.cash_at_bank
+    │               doc5830=139509  doc5831=139509  doc5835=null
+    │  [AGREEMENT   ]  balance_sheet.current_assets.total
+    │               doc5830=391084  doc5831=391084  doc5835=391084
+    │  [AGREEMENT   ]  balance_sheet.current_assets.trade_debtors
+    │               doc5830=158782  doc5831=158782  doc5835=null
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.amounts_owed_to_directors
+    │               doc5830=null  doc5831=null  doc5835=null
+    │  [AGREEMENT   ]  balance_sheet.current_liabilities.bank_loans_current
+    │               doc5830=20000  doc5831=20000  doc5835=null
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.corporation_tax
+    │               doc5830=null  doc5831=31780  doc5835=null
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.hire_purchase_current
+    │               doc5830=null  doc5831=2677  doc5835=null
+    │  [AGREEMENT   ]  balance_sheet.current_liabilities.total
+    │               doc5830=222713  doc5831=222713  doc5835=222713
+    │  [AGREEMENT   ]  balance_sheet.current_liabilities.trade_creditors
+    │               doc5830=112146  doc5831=112146  doc5835=null
+    │  [DISAGREEMENT]  balance_sheet.equity.retained_earnings
+    │               doc5830=164400  doc5831=168834  doc5835=164400
+    │  [AGREEMENT   ]  balance_sheet.equity.share_capital
+    │               doc5830=100  doc5831=100  doc5835=100
+    │  [DISAGREEMENT]  balance_sheet.equity.total
+    │               doc5830=164500  doc5831=168934  doc5835=164500
+    │  [INSUFFICIENT]  balance_sheet.fixed_assets.intangible_assets
+    │               doc5830=null  doc5831=null  doc5835=null
+    │  [AGREEMENT   ]  balance_sheet.fixed_assets.tangible_assets
+    │               doc5830=45607  doc5831=45607  doc5835=45607
+    │  [AGREEMENT   ]  balance_sheet.long_term_liabilities.bank_loans
+    │               doc5830=43333  doc5831=43333  doc5835=null
+    │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.hire_purchase_long_term
+    │               doc5830=null  doc5831=1711  doc5835=null
+    │  [DISAGREEMENT]  balance_sheet.long_term_liabilities.total
+    │               doc5830=49478  doc5831=45044  doc5835=45044
+    │  [AGREEMENT   ]  profit_and_loss.administrative_expenses
+    │               doc5830=730019  doc5831=730019  doc5835=730019
+    │  [DISAGREEMENT]  profit_and_loss.corporation_tax
+    │               doc5830=36214  doc5831=31780  doc5835=null
+    │  [AGREEMENT   ]  profit_and_loss.cost_of_sales
+    │               doc5830=538883  doc5831=538883  doc5835=538883
+    │  [AGREEMENT   ]  profit_and_loss.depreciation_amortisation
+    │               doc5830=10824  doc5831=10824  doc5835=10824
+    │  [AGREEMENT   ]  profit_and_loss.gross_profit
+    │               doc5830=902788  doc5831=902788  doc5835=902788
+    │  [AGREEMENT   ]  profit_and_loss.interest_payable
+    │               doc5830=4524  doc5831=4524  doc5835=null
+    │  [AGREEMENT   ]  profit_and_loss.interest_receivable
+    │               doc5830=61  doc5831=61  doc5835=null
+    │  [DISAGREEMENT]  profit_and_loss.net_profit
+    │               doc5830=132092  doc5831=136526  doc5835=172769
+    │  [AGREEMENT   ]  profit_and_loss.operating_profit
+    │               doc5830=172769  doc5831=172769  doc5835=172769
+    │  [AGREEMENT   ]  profit_and_loss.other_operating_income
+    │               doc5830=null  doc5831=0  doc5835=0
+    │  [DISAGREEMENT]  profit_and_loss.profit_before_tax
+    │               doc5830=168306  doc5831=168306  doc5835=172769
+    │  [AGREEMENT   ]  profit_and_loss.revenue
+    │               doc5830=1441671  doc5831=1441671  doc5835=1441671
+    └─
+  
+    ┌─ COMPANY 1877  FY 2024  docs: [5830, 5835]
+    │
+    │  [INSUFFICIENT]  balance_sheet.current_assets.amounts_owed_by_directors
+    │               doc5830=null  doc5835=null
+    │  [INSUFFICIENT]  balance_sheet.current_assets.cash_at_bank
+    │               doc5830=154281  doc5835=null
+    │  [AGREEMENT   ]  balance_sheet.current_assets.total
+    │               doc5830=446241  doc5835=446241
+    │  [INSUFFICIENT]  balance_sheet.current_assets.trade_debtors
+    │               doc5830=140300  doc5835=null
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.amounts_owed_to_directors
+    │               doc5830=null  doc5835=null
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.bank_loans_current
+    │               doc5830=20000  doc5835=null
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.corporation_tax
+    │               doc5830=null  doc5835=null
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.hire_purchase_current
+    │               doc5830=null  doc5835=null
+    │  [AGREEMENT   ]  balance_sheet.current_liabilities.total
+    │               doc5830=293522  doc5835=293522
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.trade_creditors
+    │               doc5830=108277  doc5835=null
+    │  [AGREEMENT   ]  balance_sheet.equity.retained_earnings
+    │               doc5830=165682  doc5835=165682
+    │  [AGREEMENT   ]  balance_sheet.equity.share_capital
+    │               doc5830=100  doc5835=100
+    │  [AGREEMENT   ]  balance_sheet.equity.total
+    │               doc5830=165782  doc5835=165782
+    │  [INSUFFICIENT]  balance_sheet.fixed_assets.intangible_assets
+    │               doc5830=null  doc5835=null
+    │  [AGREEMENT   ]  balance_sheet.fixed_assets.tangible_assets
+    │               doc5830=332464  doc5835=332464
+    │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.bank_loans
+    │               doc5830=23333  doc5835=null
+    │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.hire_purchase_long_term
+    │               doc5830=null  doc5835=null
+    │  [DISAGREEMENT]  balance_sheet.long_term_liabilities.total
+    │               doc5830=319401  doc5835=272466
+    │  [AGREEMENT   ]  profit_and_loss.administrative_expenses
+    │               doc5830=985102  doc5835=985102
+    │  [INSUFFICIENT]  profit_and_loss.corporation_tax
+    │               doc5830=17148  doc5835=null
+    │  [AGREEMENT   ]  profit_and_loss.cost_of_sales
+    │               doc5830=632814  doc5835=632814
+    │  [AGREEMENT   ]  profit_and_loss.depreciation_amortisation
+    │               doc5830=51911  doc5835=51911
+    │  [AGREEMENT   ]  profit_and_loss.gross_profit
+    │               doc5830=1062389  doc5835=1062389
+    │  [INSUFFICIENT]  profit_and_loss.interest_payable
+    │               doc5830=6761  doc5835=null
+    │  [INSUFFICIENT]  profit_and_loss.interest_receivable
+    │               doc5830=512  doc5835=null
+    │  [DISAGREEMENT]  profit_and_loss.net_profit
+    │               doc5830=53890  doc5835=77287
+    │  [AGREEMENT   ]  profit_and_loss.operating_profit
+    │               doc5830=77287  doc5835=77287
+    │  [INSUFFICIENT]  profit_and_loss.other_operating_income
+    │               doc5830=null  doc5835=0
+    │  [DISAGREEMENT]  profit_and_loss.profit_before_tax
+    │               doc5830=71038  doc5835=77287
+    │  [AGREEMENT   ]  profit_and_loss.revenue
+    │               doc5830=1695203  doc5835=1695203
+    └─
+  
+    ┌─ COMPANY 1877  FY 2025  docs: [5832, 5835, 5836]
+    │
+    │  [INSUFFICIENT]  balance_sheet.current_assets.amounts_owed_by_directors
+    │               doc5832=null  doc5835=null  doc5836=null
+    │  [INSUFFICIENT]  balance_sheet.current_assets.cash_at_bank
+    │               doc5832=null  doc5835=null  doc5836=187479.57
+    │  [INSUFFICIENT]  balance_sheet.current_assets.total
+    │               doc5832=null  doc5835=null  doc5836=419921.68
+    │  [INSUFFICIENT]  balance_sheet.current_assets.trade_debtors
+    │               doc5832=null  doc5835=null  doc5836=226803.01
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.amounts_owed_to_directors
+    │               doc5832=null  doc5835=null  doc5836=-91197.52
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.bank_loans_current
+    │               doc5832=null  doc5835=null  doc5836=null
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.corporation_tax
+    │               doc5832=null  doc5835=null  doc5836=1208.26
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.hire_purchase_current
+    │               doc5832=null  doc5835=null  doc5836=null
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.total
+    │               doc5832=null  doc5835=null  doc5836=95877.22
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.trade_creditors
+    │               doc5832=null  doc5835=null  doc5836=14122.57
+    │  [DISAGREEMENT]  balance_sheet.equity.retained_earnings
+    │               doc5832=279164.69  doc5835=null  doc5836=622863.28
+    │  [INSUFFICIENT]  balance_sheet.equity.share_capital
+    │               doc5832=null  doc5835=null  doc5836=100
+    │  [DISAGREEMENT]  balance_sheet.equity.total
+    │               doc5832=279164.69  doc5835=null  doc5836=622963.28
+    │  [INSUFFICIENT]  balance_sheet.fixed_assets.intangible_assets
+    │               doc5832=null  doc5835=null  doc5836=null
+    │  [INSUFFICIENT]  balance_sheet.fixed_assets.tangible_assets
+    │               doc5832=null  doc5835=null  doc5836=502332.22
+    │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.bank_loans
+    │               doc5832=null  doc5835=null  doc5836=5140.73
+    │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.hire_purchase_long_term
+    │               doc5832=null  doc5835=null  doc5836=-29996.88
+    │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.total
+    │               doc5832=null  doc5835=null  doc5836=203413.4
+    │  [DISAGREEMENT]  profit_and_loss.administrative_expenses
+    │               doc5832=538499.64  doc5835=538500  doc5836=null
+    │  [INSUFFICIENT]  profit_and_loss.corporation_tax
+    │               doc5832=null  doc5835=null  doc5836=1208.26
+    │  [DISAGREEMENT]  profit_and_loss.cost_of_sales
+    │               doc5832=1127175.46  doc5835=1127175  doc5836=null
+    │  [INSUFFICIENT]  profit_and_loss.depreciation_amortisation
+    │               doc5832=null  doc5835=0  doc5836=null
+    │  [DISAGREEMENT]  profit_and_loss.gross_profit
+    │               doc5832=816903.54  doc5835=816904  doc5836=null
+    │  [INSUFFICIENT]  profit_and_loss.interest_payable
+    │               doc5832=3254.93  doc5835=null  doc5836=null
+    │  [INSUFFICIENT]  profit_and_loss.interest_receivable
+    │               doc5832=760.79  doc5835=null  doc5836=null
+    │  [DISAGREEMENT]  profit_and_loss.net_profit
+    │               doc5832=279164.69  doc5835=278404  doc5836=183126.57
+    │  [DISAGREEMENT]  profit_and_loss.operating_profit
+    │               doc5832=278403.9  doc5835=278404  doc5836=null
+    │  [INSUFFICIENT]  profit_and_loss.other_operating_income
+    │               doc5832=null  doc5835=0  doc5836=null
+    │  [DISAGREEMENT]  profit_and_loss.profit_before_tax
+    │               doc5832=279164.69  doc5835=278404  doc5836=null
+    │  [AGREEMENT   ]  profit_and_loss.revenue
+    │               doc5832=1944079  doc5835=1944079  doc5836=null
+    └─
+  
+    ┌─ COMPANY 1880  FY 2022  docs: [5862, 5863, 5869]
+    │
+    │  [INSUFFICIENT]  balance_sheet.current_assets.amounts_owed_by_directors
+    │               doc5862=null  doc5863=null  doc5869=null
+    │  [AGREEMENT   ]  balance_sheet.current_assets.cash_at_bank
+    │               doc5862=21316  doc5863=21316  doc5869=21316
+    │  [AGREEMENT   ]  balance_sheet.current_assets.total
+    │               doc5862=1524897  doc5863=1524897  doc5869=1524897
+    │  [AGREEMENT   ]  balance_sheet.current_assets.trade_debtors
+    │               doc5862=882706  doc5863=882706  doc5869=882706
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.amounts_owed_to_directors
+    │               doc5862=null  doc5863=null  doc5869=null
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.bank_loans_current
+    │               doc5862=null  doc5863=null  doc5869=null
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.corporation_tax
+    │               doc5862=null  doc5863=46999  doc5869=null
+    │  [AGREEMENT   ]  balance_sheet.current_liabilities.hire_purchase_current
+    │               doc5862=67951  doc5863=67951  doc5869=null
+    │  [AGREEMENT   ]  balance_sheet.current_liabilities.total
+    │               doc5862=1244996  doc5863=1244996  doc5869=1244996
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.trade_creditors
+    │               doc5862=null  doc5863=null  doc5869=null
+    │  [AGREEMENT   ]  balance_sheet.equity.retained_earnings
+    │               doc5862=429089  doc5863=429089  doc5869=429089
+    │  [AGREEMENT   ]  balance_sheet.equity.share_capital
+    │               doc5862=100  doc5863=100  doc5869=100
+    │  [AGREEMENT   ]  balance_sheet.equity.total
+    │               doc5862=429189  doc5863=429189  doc5869=429189
+    │  [INSUFFICIENT]  balance_sheet.fixed_assets.intangible_assets
+    │               doc5862=null  doc5863=null  doc5869=null
+    │  [AGREEMENT   ]  balance_sheet.fixed_assets.tangible_assets
+    │               doc5862=230701  doc5863=230701  doc5869=230701
+    │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.bank_loans
+    │               doc5862=null  doc5863=null  doc5869=null
+    │  [AGREEMENT   ]  balance_sheet.long_term_liabilities.hire_purchase_long_term
+    │               doc5862=12790  doc5863=12790  doc5869=null
+    │  [AGREEMENT   ]  balance_sheet.long_term_liabilities.total
+    │               doc5862=81413  doc5863=81413  doc5869=81413
+    │  [AGREEMENT   ]  profit_and_loss.administrative_expenses
+    │               doc5862=1078058  doc5863=1078058  doc5869=1078058
+    │  [DISAGREEMENT]  profit_and_loss.corporation_tax
+    │               doc5862=-19642  doc5863=19642  doc5869=-19642
+    │  [AGREEMENT   ]  profit_and_loss.cost_of_sales
+    │               doc5862=4437034  doc5863=4437034  doc5869=4437034
+    │  [AGREEMENT   ]  profit_and_loss.depreciation_amortisation
+    │               doc5862=61034  doc5863=61034  doc5869=61034
+    │  [AGREEMENT   ]  profit_and_loss.gross_profit
+    │               doc5862=1317259  doc5863=1317259  doc5869=1317259
+    │  [AGREEMENT   ]  profit_and_loss.interest_payable
+    │               doc5862=48926  doc5863=48926  doc5869=48926
+    │  [AGREEMENT   ]  profit_and_loss.interest_receivable
+    │               doc5862=0  doc5863=null  doc5869=0
+    │  [AGREEMENT   ]  profit_and_loss.net_profit
+    │               doc5862=209917  doc5863=209917  doc5869=209917
+    │  [AGREEMENT   ]  profit_and_loss.operating_profit
+    │               doc5862=239201  doc5863=239201  doc5869=239201
+    │  [INSUFFICIENT]  profit_and_loss.other_operating_income
+    │               doc5862=null  doc5863=null  doc5869=null
+    │  [AGREEMENT   ]  profit_and_loss.profit_before_tax
+    │               doc5862=190275  doc5863=190275  doc5869=190275
+    │  [AGREEMENT   ]  profit_and_loss.revenue
+    │               doc5862=5754293  doc5863=5754293  doc5869=5754293
+    └─
+  
+    ┌─ COMPANY 1880  FY 2023  docs: [5861, 5862, 5868, 5869]
+    │
+    │  [INSUFFICIENT]  balance_sheet.current_assets.amounts_owed_by_directors
+    │               doc5861=null  doc5862=null  doc5868=null  doc5869=null
+    │  [AGREEMENT   ]  balance_sheet.current_assets.cash_at_bank
+    │               doc5861=28094  doc5862=28094  doc5868=28094  doc5869=28094
+    │  [AGREEMENT   ]  balance_sheet.current_assets.total
+    │               doc5861=1012734  doc5862=1012734  doc5868=1012734  doc5869=1012734
+    │  [DISAGREEMENT]  balance_sheet.current_assets.trade_debtors
+    │               doc5861=470739  doc5862=553354  doc5868=470739  doc5869=553354
+    │  [AGREEMENT   ]  balance_sheet.current_liabilities.amounts_owed_to_directors
+    │               doc5861=24607  doc5862=null  doc5868=24607  doc5869=null
+    │  [AGREEMENT   ]  balance_sheet.current_liabilities.bank_loans_current
+    │               doc5861=10000  doc5862=null  doc5868=10000  doc5869=null
+    │  [AGREEMENT   ]  balance_sheet.current_liabilities.corporation_tax
+    │               doc5861=22101  doc5862=null  doc5868=22101  doc5869=null
+    │  [AGREEMENT   ]  balance_sheet.current_liabilities.hire_purchase_current
+    │               doc5861=115840  doc5862=115840  doc5868=115840  doc5869=null
+    │  [AGREEMENT   ]  balance_sheet.current_liabilities.total
+    │               doc5861=706172  doc5862=706172  doc5868=706172  doc5869=706172
+    │  [AGREEMENT   ]  balance_sheet.current_liabilities.trade_creditors
+    │               doc5861=291986  doc5862=null  doc5868=291986  doc5869=null
+    │  [AGREEMENT   ]  balance_sheet.equity.retained_earnings
+    │               doc5861=457593  doc5862=457593  doc5868=457593  doc5869=457593
+    │  [AGREEMENT   ]  balance_sheet.equity.share_capital
+    │               doc5861=100  doc5862=100  doc5868=100  doc5869=100
+    │  [AGREEMENT   ]  balance_sheet.equity.total
+    │               doc5861=457693  doc5862=457693  doc5868=457693  doc5869=457693
+    │  [INSUFFICIENT]  balance_sheet.fixed_assets.intangible_assets
+    │               doc5861=null  doc5862=null  doc5868=null  doc5869=null
+    │  [AGREEMENT   ]  balance_sheet.fixed_assets.tangible_assets
+    │               doc5861=237474  doc5862=237474  doc5868=237474  doc5869=237474
+    │  [AGREEMENT   ]  balance_sheet.long_term_liabilities.bank_loans
+    │               doc5861=17500  doc5862=null  doc5868=17500  doc5869=null
+    │  [AGREEMENT   ]  balance_sheet.long_term_liabilities.hire_purchase_long_term
+    │               doc5861=27720  doc5862=27720  doc5868=27720  doc5869=null
+    │  [AGREEMENT   ]  balance_sheet.long_term_liabilities.total
+    │               doc5861=86343  doc5862=86343  doc5868=86343  doc5869=86343
+    │  [AGREEMENT   ]  profit_and_loss.administrative_expenses
+    │               doc5861=1076406  doc5862=1076406  doc5868=1076406  doc5869=1076406
+    │  [AGREEMENT   ]  profit_and_loss.corporation_tax
+    │               doc5861=22101  doc5862=22101  doc5868=22101  doc5869=22101
+    │  [AGREEMENT   ]  profit_and_loss.cost_of_sales
+    │               doc5861=3248360  doc5862=3248360  doc5868=3248360  doc5869=3248360
+    │  [AGREEMENT   ]  profit_and_loss.depreciation_amortisation
+    │               doc5861=54527  doc5862=54527  doc5868=54527  doc5869=54527
+    │  [AGREEMENT   ]  profit_and_loss.gross_profit
+    │               doc5861=1201919  doc5862=1201919  doc5868=1201919  doc5869=1201919
+    │  [AGREEMENT   ]  profit_and_loss.interest_payable
+    │               doc5861=15450  doc5862=15450  doc5868=15450  doc5869=15450
+    │  [AGREEMENT   ]  profit_and_loss.interest_receivable
+    │               doc5861=542  doc5862=542  doc5868=542  doc5869=542
+    │  [AGREEMENT   ]  profit_and_loss.net_profit
+    │               doc5861=88504  doc5862=88504  doc5868=88504  doc5869=88504
+    │  [AGREEMENT   ]  profit_and_loss.operating_profit
+    │               doc5861=125513  doc5862=125513  doc5868=125513  doc5869=125513
+    │  [INSUFFICIENT]  profit_and_loss.other_operating_income
+    │               doc5861=null  doc5862=null  doc5868=null  doc5869=null
+    │  [AGREEMENT   ]  profit_and_loss.profit_before_tax
+    │               doc5861=110605  doc5862=110605  doc5868=110605  doc5869=110605
+    │  [AGREEMENT   ]  profit_and_loss.revenue
+    │               doc5861=4450279  doc5862=4450279  doc5868=4450279  doc5869=4450279
+    └─
+  
+    ┌─ COMPANY 1880  FY 2024  docs: [5857, 5861, 5867, 5868]
+    │
+    │  [INSUFFICIENT]  balance_sheet.current_assets.amounts_owed_by_directors
+    │               doc5857=null  doc5861=null  doc5867=null  doc5868=null
+    │  [AGREEMENT   ]  balance_sheet.current_assets.cash_at_bank
+    │               doc5857=346697  doc5861=346697  doc5867=346697  doc5868=346697
+    │  [AGREEMENT   ]  balance_sheet.current_assets.total
+    │               doc5857=1284307  doc5861=1284307  doc5867=1284307  doc5868=1284307
+    │  [AGREEMENT   ]  balance_sheet.current_assets.trade_debtors
+    │               doc5857=663569  doc5861=663569  doc5867=663569  doc5868=663569
+    │  [AGREEMENT   ]  balance_sheet.current_liabilities.amounts_owed_to_directors
+    │               doc5857=null  doc5861=3098  doc5867=null  doc5868=3098
+    │  [AGREEMENT   ]  balance_sheet.current_liabilities.bank_loans_current
+    │               doc5857=10000  doc5861=10000  doc5867=10000  doc5868=10000
+    │  [AGREEMENT   ]  balance_sheet.current_liabilities.corporation_tax
+    │               doc5857=null  doc5861=99882  doc5867=null  doc5868=99882
+    │  [AGREEMENT   ]  balance_sheet.current_liabilities.hire_purchase_current
+    │               doc5857=80840  doc5861=80840  doc5867=80840  doc5868=80840
+    │  [AGREEMENT   ]  balance_sheet.current_liabilities.total
+    │               doc5857=765061  doc5861=765061  doc5867=765061  doc5868=765061
+    │  [AGREEMENT   ]  balance_sheet.current_liabilities.trade_creditors
+    │               doc5857=295953  doc5861=295953  doc5867=295953  doc5868=295953
+    │  [AGREEMENT   ]  balance_sheet.equity.retained_earnings
+    │               doc5857=670553  doc5861=670553  doc5867=670553  doc5868=670553
+    │  [AGREEMENT   ]  balance_sheet.equity.share_capital
+    │               doc5857=100  doc5861=100  doc5867=100  doc5868=100
+    │  [AGREEMENT   ]  balance_sheet.equity.total
+    │               doc5857=670653  doc5861=670653  doc5867=670653  doc5868=670653
+    │  [INSUFFICIENT]  balance_sheet.fixed_assets.intangible_assets
+    │               doc5857=null  doc5861=null  doc5867=null  doc5868=null
+    │  [AGREEMENT   ]  balance_sheet.fixed_assets.tangible_assets
+    │               doc5857=210787  doc5861=210787  doc5867=210787  doc5868=210787
+    │  [AGREEMENT   ]  balance_sheet.long_term_liabilities.bank_loans
+    │               doc5857=7500  doc5861=7500  doc5867=7500  doc5868=7500
+    │  [AGREEMENT   ]  balance_sheet.long_term_liabilities.hire_purchase_long_term
+    │               doc5857=11880  doc5861=11880  doc5867=11880  doc5868=11880
+    │  [AGREEMENT   ]  balance_sheet.long_term_liabilities.total
+    │               doc5857=59380  doc5861=59380  doc5867=59380  doc5868=59380
+    │  [AGREEMENT   ]  profit_and_loss.administrative_expenses
+    │               doc5857=1198254  doc5861=1198254  doc5867=1198254  doc5868=1198254
+    │  [AGREEMENT   ]  profit_and_loss.corporation_tax
+    │               doc5857=99882  doc5861=99882  doc5867=99882  doc5868=99882
+    │  [AGREEMENT   ]  profit_and_loss.cost_of_sales
+    │               doc5857=3366215  doc5861=3366215  doc5867=3366215  doc5868=3366215
+    │  [AGREEMENT   ]  profit_and_loss.depreciation_amortisation
+    │               doc5857=52606  doc5861=52606  doc5867=52606  doc5868=52606
+    │  [AGREEMENT   ]  profit_and_loss.gross_profit
+    │               doc5857=1589938  doc5861=1589938  doc5867=1589938  doc5868=1589938
+    │  [DISAGREEMENT]  profit_and_loss.interest_payable
+    │               doc5857=19699  doc5861=18842  doc5867=18842  doc5868=18842
+    │  [DISAGREEMENT]  profit_and_loss.interest_receivable
+    │               doc5857=857  doc5861=0  doc5867=null  doc5868=0
+    │  [AGREEMENT   ]  profit_and_loss.net_profit
+    │               doc5857=272960  doc5861=272960  doc5867=272960  doc5868=272960
+    │  [AGREEMENT   ]  profit_and_loss.operating_profit
+    │               doc5857=391684  doc5861=391684  doc5867=391684  doc5868=391684
+    │  [INSUFFICIENT]  profit_and_loss.other_operating_income
+    │               doc5857=null  doc5861=null  doc5867=null  doc5868=null
+    │  [AGREEMENT   ]  profit_and_loss.profit_before_tax
+    │               doc5857=372842  doc5861=372842  doc5867=372842  doc5868=372842
+    │  [AGREEMENT   ]  profit_and_loss.revenue
+    │               doc5857=4956153  doc5861=4956153  doc5867=4956153  doc5868=4956153
+    └─
+  
+    ┌─ COMPANY 1880  FY 2025  docs: [5857, 5860, 5865, 5867]
+    │
+    │  [INSUFFICIENT]  balance_sheet.current_assets.amounts_owed_by_directors
+    │               doc5857=null  doc5860=null  doc5865=null  doc5867=null
+    │  [AGREEMENT   ]  balance_sheet.current_assets.cash_at_bank
+    │               doc5857=346281  doc5860=null  doc5865=null  doc5867=346281
+    │  [AGREEMENT   ]  balance_sheet.current_assets.total
+    │               doc5857=1131855  doc5860=null  doc5865=null  doc5867=1131855
+    │  [AGREEMENT   ]  balance_sheet.current_assets.trade_debtors
+    │               doc5857=429667  doc5860=null  doc5865=null  doc5867=429667
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.amounts_owed_to_directors
+    │               doc5857=null  doc5860=null  doc5865=null  doc5867=null
+    │  [AGREEMENT   ]  balance_sheet.current_liabilities.bank_loans_current
+    │               doc5857=7500  doc5860=null  doc5865=null  doc5867=7500
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.corporation_tax
+    │               doc5857=null  doc5860=null  doc5865=null  doc5867=null
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.hire_purchase_current
+    │               doc5857=null  doc5860=null  doc5865=null  doc5867=0
+    │  [AGREEMENT   ]  balance_sheet.current_liabilities.total
+    │               doc5857=612575  doc5860=null  doc5865=null  doc5867=612575
+    │  [AGREEMENT   ]  balance_sheet.current_liabilities.trade_creditors
+    │               doc5857=347074  doc5860=null  doc5865=null  doc5867=347074
+    │  [AGREEMENT   ]  balance_sheet.equity.retained_earnings
+    │               doc5857=673137  doc5860=null  doc5865=null  doc5867=673137
+    │  [AGREEMENT   ]  balance_sheet.equity.share_capital
+    │               doc5857=100  doc5860=null  doc5865=null  doc5867=100
+    │  [AGREEMENT   ]  balance_sheet.equity.total
+    │               doc5857=673237  doc5860=null  doc5865=null  doc5867=673237
+    │  [INSUFFICIENT]  balance_sheet.fixed_assets.intangible_assets
+    │               doc5857=null  doc5860=null  doc5865=null  doc5867=null
+    │  [AGREEMENT   ]  balance_sheet.fixed_assets.tangible_assets
+    │               doc5857=207712  doc5860=null  doc5865=null  doc5867=207712
+    │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.bank_loans
+    │               doc5857=null  doc5860=null  doc5865=null  doc5867=0
+    │  [AGREEMENT   ]  balance_sheet.long_term_liabilities.hire_purchase_long_term
+    │               doc5857=33755  doc5860=null  doc5865=null  doc5867=33755
+    │  [AGREEMENT   ]  balance_sheet.long_term_liabilities.total
+    │               doc5857=53755  doc5860=null  doc5865=null  doc5867=53755
+    │  [DISAGREEMENT]  profit_and_loss.administrative_expenses
+    │               doc5857=1361040  doc5860=1303834  doc5865=728178  doc5867=1361040
+    │  [DISAGREEMENT]  profit_and_loss.corporation_tax
+    │               doc5857=39122  doc5860=99882  doc5865=null  doc5867=39122
+    │  [DISAGREEMENT]  profit_and_loss.cost_of_sales
+    │               doc5857=2979013  doc5860=3044637  doc5865=846820  doc5867=2979013
+    │  [DISAGREEMENT]  profit_and_loss.depreciation_amortisation
+    │               doc5857=49005  doc5860=49005  doc5865=27436  doc5867=49005
+    │  [DISAGREEMENT]  profit_and_loss.gross_profit
+    │               doc5857=1530073  doc5860=1464340  doc5865=558548  doc5867=1530073
+    │  [AGREEMENT   ]  profit_and_loss.interest_payable
+    │               doc5857=10327  doc5860=null  doc5865=null  doc5867=10327
+    │  [INSUFFICIENT]  profit_and_loss.interest_receivable
+    │               doc5857=3  doc5860=null  doc5865=null  doc5867=null
+    │  [DISAGREEMENT]  profit_and_loss.net_profit
+    │               doc5857=119584  doc5860=160506  doc5865=-169631  doc5867=119584
+    │  [DISAGREEMENT]  profit_and_loss.operating_profit
+    │               doc5857=169033  doc5860=160506  doc5865=-169631  doc5867=169033
+    │  [AGREEMENT   ]  profit_and_loss.other_operating_income
+    │               doc5857=null  doc5860=109  doc5865=109  doc5867=null
+    │  [DISAGREEMENT]  profit_and_loss.profit_before_tax
+    │               doc5857=158706  doc5860=160506  doc5865=-169631  doc5867=158706
+    │  [DISAGREEMENT]  profit_and_loss.revenue
+    │               doc5857=4509086  doc5860=4508976  doc5865=1405368  doc5867=4509086
+    └─
+  
+    ┌─ COMPANY 1880  FY 2026  docs: [5865, 5866]
+    │
+    │  [INSUFFICIENT]  balance_sheet.current_assets.amounts_owed_by_directors
+    │               doc5865=null  doc5866=null
+    │  [INSUFFICIENT]  balance_sheet.current_assets.cash_at_bank
+    │               doc5865=null  doc5866=210202
+    │  [INSUFFICIENT]  balance_sheet.current_assets.total
+    │               doc5865=null  doc5866=1145049
+    │  [INSUFFICIENT]  balance_sheet.current_assets.trade_debtors
+    │               doc5865=null  doc5866=480236
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.amounts_owed_to_directors
+    │               doc5865=null  doc5866=29032
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.bank_loans_current
+    │               doc5865=null  doc5866=null
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.corporation_tax
+    │               doc5865=null  doc5866=39122
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.hire_purchase_current
+    │               doc5865=null  doc5866=null
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.total
+    │               doc5865=null  doc5866=583648
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.trade_creditors
+    │               doc5865=null  doc5866=248574
+    │  [INSUFFICIENT]  balance_sheet.equity.retained_earnings
+    │               doc5865=null  doc5866=648247
+    │  [INSUFFICIENT]  balance_sheet.equity.share_capital
+    │               doc5865=null  doc5866=100
+    │  [INSUFFICIENT]  balance_sheet.equity.total
+    │               doc5865=null  doc5866=648347
+    │  [INSUFFICIENT]  balance_sheet.fixed_assets.intangible_assets
+    │               doc5865=null  doc5866=null
+    │  [INSUFFICIENT]  balance_sheet.fixed_assets.tangible_assets
+    │               doc5865=null  doc5866=269921
+    │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.bank_loans
+    │               doc5865=null  doc5866=null
+    │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.hire_purchase_long_term
+    │               doc5865=null  doc5866=null
+    │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.total
+    │               doc5865=null  doc5866=182975
+    │  [INSUFFICIENT]  profit_and_loss.administrative_expenses
+    │               doc5865=793560  doc5866=null
+    │  [INSUFFICIENT]  profit_and_loss.corporation_tax
+    │               doc5865=null  doc5866=null
+    │  [INSUFFICIENT]  profit_and_loss.cost_of_sales
+    │               doc5865=1132258  doc5866=null
+    │  [INSUFFICIENT]  profit_and_loss.depreciation_amortisation
+    │               doc5865=34789  doc5866=null
+    │  [INSUFFICIENT]  profit_and_loss.gross_profit
+    │               doc5865=769597  doc5866=null
+    │  [INSUFFICIENT]  profit_and_loss.interest_payable
+    │               doc5865=null  doc5866=null
+    │  [INSUFFICIENT]  profit_and_loss.interest_receivable
+    │               doc5865=null  doc5866=null
+    │  [INSUFFICIENT]  profit_and_loss.net_profit
+    │               doc5865=-23963  doc5866=null
+    │  [INSUFFICIENT]  profit_and_loss.operating_profit
+    │               doc5865=-23963  doc5866=null
+    │  [INSUFFICIENT]  profit_and_loss.other_operating_income
+    │               doc5865=153  doc5866=null
+    │  [INSUFFICIENT]  profit_and_loss.profit_before_tax
+    │               doc5865=-23963  doc5866=null
+    │  [INSUFFICIENT]  profit_and_loss.revenue
+    │               doc5865=1901855  doc5866=null
+    └─
+  
+    ┌─ COMPANY 1881  FY 2023  docs: [5873, 5874]
+    │
+    │  [INSUFFICIENT]  balance_sheet.current_assets.amounts_owed_by_directors
+    │               doc5873=null  doc5874=null
+    │  [AGREEMENT   ]  balance_sheet.current_assets.cash_at_bank
+    │               doc5873=167499  doc5874=167499
+    │  [AGREEMENT   ]  balance_sheet.current_assets.total
+    │               doc5873=186159  doc5874=186159
+    │  [INSUFFICIENT]  balance_sheet.current_assets.trade_debtors
+    │               doc5873=null  doc5874=null
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.amounts_owed_to_directors
+    │               doc5873=null  doc5874=null
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.bank_loans_current
+    │               doc5873=null  doc5874=null
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.corporation_tax
+    │               doc5873=null  doc5874=null
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.hire_purchase_current
+    │               doc5873=null  doc5874=null
+    │  [AGREEMENT   ]  balance_sheet.current_liabilities.total
+    │               doc5873=64016  doc5874=64016
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.trade_creditors
+    │               doc5873=null  doc5874=null
+    │  [INSUFFICIENT]  balance_sheet.equity.retained_earnings
+    │               doc5873=123842  doc5874=null
+    │  [INSUFFICIENT]  balance_sheet.equity.share_capital
+    │               doc5873=null  doc5874=null
+    │  [AGREEMENT   ]  balance_sheet.equity.total
+    │               doc5873=123842  doc5874=123842
+    │  [INSUFFICIENT]  balance_sheet.fixed_assets.intangible_assets
+    │               doc5873=null  doc5874=null
+    │  [AGREEMENT   ]  balance_sheet.fixed_assets.tangible_assets
+    │               doc5873=1737  doc5874=1737
+    │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.bank_loans
+    │               doc5873=null  doc5874=null
+    │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.hire_purchase_long_term
+    │               doc5873=null  doc5874=null
+    │  [AGREEMENT   ]  balance_sheet.long_term_liabilities.total
+    │               doc5873=38  doc5874=38
+    │  [DISAGREEMENT]  profit_and_loss.administrative_expenses
+    │               doc5873=69497  doc5874=135822
+    │  [INSUFFICIENT]  profit_and_loss.corporation_tax
+    │               doc5873=null  doc5874=11735
+    │  [DISAGREEMENT]  profit_and_loss.cost_of_sales
+    │               doc5873=68452  doc5874=447
+    │  [AGREEMENT   ]  profit_and_loss.depreciation_amortisation
+    │               doc5873=1328  doc5874=1328
+    │  [DISAGREEMENT]  profit_and_loss.gross_profit
+    │               doc5873=130075  doc5874=198080
+    │  [INSUFFICIENT]  profit_and_loss.interest_payable
+    │               doc5873=null  doc5874=1672
+    │  [INSUFFICIENT]  profit_and_loss.interest_receivable
+    │               doc5873=null  doc5874=179
+    │  [DISAGREEMENT]  profit_and_loss.net_profit
+    │               doc5873=60757  doc5874=49022
+    │  [DISAGREEMENT]  profit_and_loss.operating_profit
+    │               doc5873=60757  doc5874=62258
+    │  [AGREEMENT   ]  profit_and_loss.other_operating_income
+    │               doc5873=179  doc5874=179
+    │  [AGREEMENT   ]  profit_and_loss.profit_before_tax
+    │               doc5873=60757  doc5874=60757
+    │  [AGREEMENT   ]  profit_and_loss.revenue
+    │               doc5873=198527  doc5874=198527
+    └─
+  
+    ┌─ COMPANY 1881  FY 2024  docs: [5873, 5874, 5875, 5877]
+    │
+    │  [INSUFFICIENT]  balance_sheet.current_assets.amounts_owed_by_directors
+    │               doc5873=null  doc5874=null  doc5875=null  doc5877=null
+    │  [DISAGREEMENT]  balance_sheet.current_assets.cash_at_bank
+    │               doc5873=173616  doc5874=173616  doc5875=null  doc5877=173614
+    │  [DISAGREEMENT]  balance_sheet.current_assets.total
+    │               doc5873=175646  doc5874=175646  doc5875=null  doc5877=175644
+    │  [INSUFFICIENT]  balance_sheet.current_assets.trade_debtors
+    │               doc5873=null  doc5874=null  doc5875=null  doc5877=null
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.amounts_owed_to_directors
+    │               doc5873=null  doc5874=null  doc5875=null  doc5877=null
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.bank_loans_current
+    │               doc5873=null  doc5874=null  doc5875=null  doc5877=null
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.corporation_tax
+    │               doc5873=null  doc5874=null  doc5875=null  doc5877=null
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.hire_purchase_current
+    │               doc5873=null  doc5874=null  doc5875=null  doc5877=null
+    │  [DISAGREEMENT]  balance_sheet.current_liabilities.total
+    │               doc5873=46771  doc5874=46771  doc5875=null  doc5877=46769
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.trade_creditors
+    │               doc5873=null  doc5874=null  doc5875=null  doc5877=null
+    │  [DISAGREEMENT]  balance_sheet.equity.retained_earnings
+    │               doc5873=129972  doc5874=null  doc5875=85008.6  doc5877=null
+    │  [INSUFFICIENT]  balance_sheet.equity.share_capital
+    │               doc5873=null  doc5874=null  doc5875=null  doc5877=null
+    │  [DISAGREEMENT]  balance_sheet.equity.total
+    │               doc5873=129972  doc5874=129972  doc5875=85008.6  doc5877=129972
+    │  [INSUFFICIENT]  balance_sheet.fixed_assets.intangible_assets
+    │               doc5873=null  doc5874=null  doc5875=null  doc5877=null
+    │  [AGREEMENT   ]  balance_sheet.fixed_assets.tangible_assets
+    │               doc5873=1097  doc5874=1097  doc5875=null  doc5877=1097
+    │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.bank_loans
+    │               doc5873=null  doc5874=null  doc5875=null  doc5877=null
+    │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.hire_purchase_long_term
+    │               doc5873=null  doc5874=null  doc5875=null  doc5877=null
+    │  [AGREEMENT   ]  balance_sheet.long_term_liabilities.total
+    │               doc5873=0  doc5874=0  doc5875=null  doc5877=0
+    │  [DISAGREEMENT]  profit_and_loss.administrative_expenses
+    │               doc5873=12094  doc5874=204475  doc5875=65374.84  doc5877=69383
+    │  [DISAGREEMENT]  profit_and_loss.corporation_tax
+    │               doc5873=null  doc5874=27388  doc5875=11735.16  doc5877=27388
+    │  [DISAGREEMENT]  profit_and_loss.cost_of_sales
+    │               doc5873=196355  doc5874=4221  doc5875=139313.4  doc5877=139313
+    │  [AGREEMENT   ]  profit_and_loss.depreciation_amortisation
+    │               doc5873=640  doc5874=640  doc5875=null  doc5877=640
+    │  [DISAGREEMENT]  profit_and_loss.gross_profit
+    │               doc5873=129872  doc5874=322006  doc5875=186913.85  doc5877=186914
+    │  [INSUFFICIENT]  profit_and_loss.interest_payable
+    │               doc5873=null  doc5874=null  doc5875=null  doc5877=247
+    │  [DISAGREEMENT]  profit_and_loss.interest_receivable
+    │               doc5873=null  doc5874=740  doc5875=739.67  doc5877=740
+    │  [DISAGREEMENT]  profit_and_loss.net_profit
+    │               doc5873=118518  doc5874=91130  doc5875=85008.6  doc5877=91130
+    │  [DISAGREEMENT]  profit_and_loss.operating_profit
+    │               doc5873=118518  doc5874=117531  doc5875=121539.01  doc5877=118271
+    │  [AGREEMENT   ]  profit_and_loss.other_operating_income
+    │               doc5873=740  doc5874=740  doc5875=null  doc5877=740
+    │  [DISAGREEMENT]  profit_and_loss.profit_before_tax
+    │               doc5873=118518  doc5874=118518  doc5875=122278.68  doc5877=118518
+    │  [DISAGREEMENT]  profit_and_loss.revenue
+    │               doc5873=326227  doc5874=326227  doc5875=326227.25  doc5877=326227
+    └─
+  
+    ┌─ COMPANY 1881  FY 2025  docs: [5873, 5876, 5877, 5879]
+    │
+    │  [INSUFFICIENT]  balance_sheet.current_assets.amounts_owed_by_directors
+    │               doc5873=null  doc5876=null  doc5877=null  doc5879=null
+    │  [DISAGREEMENT]  balance_sheet.current_assets.cash_at_bank
+    │               doc5873=null  doc5876=167600.6  doc5877=295005  doc5879=null
+    │  [DISAGREEMENT]  balance_sheet.current_assets.total
+    │               doc5873=302622  doc5876=181240.6  doc5877=302622  doc5879=302622
+    │  [INSUFFICIENT]  balance_sheet.current_assets.trade_debtors
+    │               doc5873=null  doc5876=11610  doc5877=null  doc5879=null
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.amounts_owed_to_directors
+    │               doc5873=null  doc5876=-180194.29  doc5877=null  doc5879=null
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.bank_loans_current
+    │               doc5873=null  doc5876=null  doc5877=null  doc5879=null
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.corporation_tax
+    │               doc5873=null  doc5876=null  doc5877=null  doc5879=52782
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.hire_purchase_current
+    │               doc5873=null  doc5876=null  doc5877=null  doc5879=null
+    │  [DISAGREEMENT]  balance_sheet.current_liabilities.total
+    │               doc5873=97627  doc5876=-178221.17  doc5877=97627  doc5879=97627
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.trade_creditors
+    │               doc5873=null  doc5876=2030  doc5877=null  doc5879=null
+    │  [DISAGREEMENT]  balance_sheet.equity.retained_earnings
+    │               doc5873=214137  doc5876=214970.17  doc5877=null  doc5879=null
+    │  [INSUFFICIENT]  balance_sheet.equity.share_capital
+    │               doc5873=null  doc5876=2  doc5877=null  doc5879=null
+    │  [DISAGREEMENT]  balance_sheet.equity.total
+    │               doc5873=214137  doc5876=364119.83  doc5877=214137  doc5879=214137
+    │  [INSUFFICIENT]  balance_sheet.fixed_assets.intangible_assets
+    │               doc5873=null  doc5876=null  doc5877=null  doc5879=null
+    │  [DISAGREEMENT]  balance_sheet.fixed_assets.tangible_assets
+    │               doc5873=9142  doc5876=4658.06  doc5877=9142  doc5879=9142
+    │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.bank_loans
+    │               doc5873=null  doc5876=null  doc5877=null  doc5879=null
+    │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.hire_purchase_long_term
+    │               doc5873=null  doc5876=null  doc5877=null  doc5879=null
+    │  [AGREEMENT   ]  balance_sheet.long_term_liabilities.total
+    │               doc5873=0  doc5876=0  doc5877=0  doc5879=null
+    │  [DISAGREEMENT]  profit_and_loss.administrative_expenses
+    │               doc5873=17848  doc5876=41676.33  doc5877=57095  doc5879=220766
+    │  [AGREEMENT   ]  profit_and_loss.corporation_tax
+    │               doc5873=null  doc5876=null  doc5877=52207  doc5879=52207
+    │  [DISAGREEMENT]  profit_and_loss.cost_of_sales
+    │               doc5873=205301  doc5876=166074  doc5877=166054  doc5879=2383
+    │  [AGREEMENT   ]  profit_and_loss.depreciation_amortisation
+    │               doc5873=299  doc5876=null  doc5877=299  doc5879=299
+    │  [DISAGREEMENT]  profit_and_loss.gross_profit
+    │               doc5873=235772  doc5876=274998.5  doc5877=275019  doc5879=438690
+    │  [INSUFFICIENT]  profit_and_loss.interest_payable
+    │               doc5873=null  doc5876=null  doc5877=0  doc5879=null
+    │  [DISAGREEMENT]  profit_and_loss.interest_receivable
+    │               doc5873=null  doc5876=805.49  doc5877=3448  doc5879=3448
+    │  [DISAGREEMENT]  profit_and_loss.net_profit
+    │               doc5873=221372  doc5876=234147.66  doc5877=169165  doc5879=169165
+    │  [DISAGREEMENT]  profit_and_loss.operating_profit
+    │               doc5873=221372  doc5876=233322.17  doc5877=221372  doc5879=221372
+    │  [DISAGREEMENT]  profit_and_loss.other_operating_income
+    │               doc5873=3448  doc5876=20  doc5877=3448  doc5879=3448
+    │  [DISAGREEMENT]  profit_and_loss.profit_before_tax
+    │               doc5873=221372  doc5876=234147.66  doc5877=221372  doc5879=221372
+    │  [DISAGREEMENT]  profit_and_loss.revenue
+    │               doc5873=441073  doc5876=441072.5  doc5877=441073  doc5879=441073
+    └─
+  
+    ┌─ COMPANY 1881  FY 2026  docs: [5879, 5880, 5881]
+    │
+    │  [INSUFFICIENT]  balance_sheet.current_assets.amounts_owed_by_directors
+    │               doc5879=null  doc5880=0  doc5881=null
+    │  [INSUFFICIENT]  balance_sheet.current_assets.cash_at_bank
+    │               doc5879=null  doc5880=75312.48  doc5881=null
+    │  [DISAGREEMENT]  balance_sheet.current_assets.total
+    │               doc5879=195634  doc5880=115100.92  doc5881=null
+    │  [INSUFFICIENT]  balance_sheet.current_assets.trade_debtors
+    │               doc5879=null  doc5880=0  doc5881=null
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.amounts_owed_to_directors
+    │               doc5879=null  doc5880=-149587.37  doc5881=null
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.bank_loans_current
+    │               doc5879=null  doc5880=null  doc5881=null
+    │  [DISAGREEMENT]  balance_sheet.current_liabilities.corporation_tax
+    │               doc5879=7819  doc5880=87.81  doc5881=null
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.hire_purchase_current
+    │               doc5879=null  doc5880=null  doc5881=null
+    │  [DISAGREEMENT]  balance_sheet.current_liabilities.total
+    │               doc5879=12551  doc5880=-151193.18  doc5881=null
+    │  [INSUFFICIENT]  balance_sheet.current_liabilities.trade_creditors
+    │               doc5879=null  doc5880=8960  doc5881=null
+    │  [INSUFFICIENT]  balance_sheet.equity.retained_earnings
+    │               doc5879=null  doc5880=377972.93  doc5881=null
+    │  [INSUFFICIENT]  balance_sheet.equity.share_capital
+    │               doc5879=null  doc5880=2  doc5881=null
+    │  [DISAGREEMENT]  balance_sheet.equity.total
+    │               doc5879=200547  doc5880=292974.93  doc5881=null
+    │  [INSUFFICIENT]  balance_sheet.fixed_assets.intangible_assets
+    │               doc5879=null  doc5880=20291.36  doc5881=null
+    │  [DISAGREEMENT]  balance_sheet.fixed_assets.tangible_assets
+    │               doc5879=17464  doc5880=6389.47  doc5881=null
+    │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.bank_loans
+    │               doc5879=null  doc5880=null  doc5881=null
+    │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.hire_purchase_long_term
+    │               doc5879=null  doc5880=null  doc5881=null
+    │  [INSUFFICIENT]  balance_sheet.long_term_liabilities.total
+    │               doc5879=null  doc5880=0  doc5881=null
+    │  [DISAGREEMENT]  profit_and_loss.administrative_expenses
+    │               doc5879=177671  doc5880=null  doc5881=13550.42
+    │  [INSUFFICIENT]  profit_and_loss.corporation_tax
+    │               doc5879=7819  doc5880=null  doc5881=null
+    │  [DISAGREEMENT]  profit_and_loss.cost_of_sales
+    │               doc5879=0  doc5880=null  doc5881=26882
+    │  [INSUFFICIENT]  profit_and_loss.depreciation_amortisation
+    │               doc5879=7533  doc5880=null  doc5881=null
+    │  [DISAGREEMENT]  profit_and_loss.gross_profit
+    │               doc5879=223404  doc5880=null  doc5881=21245
+    │  [INSUFFICIENT]  profit_and_loss.interest_payable
+    │               doc5879=null  doc5880=null  doc5881=null
+    │  [DISAGREEMENT]  profit_and_loss.interest_receivable
+    │               doc5879=3746  doc5880=null  doc5881=118.87
+    │  [DISAGREEMENT]  profit_and_loss.net_profit
+    │               doc5879=41660  doc5880=null  doc5881=7813.45
+    │  [DISAGREEMENT]  profit_and_loss.operating_profit
+    │               doc5879=49479  doc5880=null  doc5881=7694.58
+    │  [INSUFFICIENT]  profit_and_loss.other_operating_income
+    │               doc5879=3746  doc5880=null  doc5881=null
+    │  [DISAGREEMENT]  profit_and_loss.profit_before_tax
+    │               doc5879=49479  doc5880=null  doc5881=7813.45
+    │  [DISAGREEMENT]  profit_and_loss.revenue
+    │               doc5879=223404  doc5880=null  doc5881=48127
+    └─
+  
+  ================================================================================
+  END OF REPORT
+  ================================================================================
