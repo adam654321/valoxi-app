@@ -78,7 +78,15 @@ const BS_SCALAR = [
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type Classification = 'FIRST_WRITE' | 'AGREE' | 'GRANULARITY' | 'CONFLICT';
+type Classification =
+  | 'FIRST_WRITE'
+  | 'AGREE'
+  | 'GRANULARITY'
+  | 'CONFLICT'
+  | 'ENRICHED'
+  | 'ERASED';
+
+type ScalarValue = number | string | null;
 
 interface DocEntry {
   devDocId: number;
@@ -96,10 +104,10 @@ interface WriteEvent {
   periodId: number;
   statement: 'IS' | 'BS';
   field: string;
-  previousValue: string | null;
+  previousValue: ScalarValue;
   previousSourceDocId: number | null;
   previousTier: string | null;
-  newValue: string | null;
+  newValue: ScalarValue;
   newSourceDocId: number;
   classification: Classification;
 }
@@ -107,42 +115,47 @@ interface WriteEvent {
 // ─── Value normalisation ─────────────────────────────────────────────────────
 
 /**
- * Canonical string form of a scalar value.
+ * Canonical scalar form.
  * - null / undefined / '' → null
- * - Valid numeric string → String(Number(s))  so "0" == 0 and "1.0" == "1"
+ * - Finite numeric string / number → number, so "0" == 0 and "1.0" == 1
  * - Other strings → trimmed string
  */
-function norm(v: unknown): string | null {
+function norm(v: unknown): ScalarValue {
   if (v === null || v === undefined) return null;
   const s = String(v).trim();
   if (s === '') return null;
   const n = Number(s);
-  if (!isNaN(n)) return String(n);
+  if (Number.isFinite(n)) return n;
   return s;
 }
 
 function valEq(a: unknown, b: unknown): boolean {
-  return norm(a) === norm(b);
+  const aNorm = norm(a);
+  const bNorm = norm(b);
+
+  if (typeof aNorm === 'number' && typeof bNorm === 'number') {
+    return aNorm === bNorm;
+  }
+
+  return aNorm === bNorm;
 }
 
-function toNum(v: string | null): number | null {
-  if (v === null) return null;
-  const n = Number(v);
-  return isNaN(n) ? null : n;
+function toNum(v: ScalarValue): number | null {
+  return typeof v === 'number' && Number.isFinite(v) ? v : null;
 }
 
 // ─── Field extraction ────────────────────────────────────────────────────────
 
 /**
  * Extract scalar fields from an IS or BS row, recursing one level into
- * named nested objects. Returns field → normalised value.
+ * named nested objects. Returns field → canonical scalar value.
  */
 function extractFields(
   row: Record<string, unknown>,
   scalarFields: readonly string[],
   nestedFields: readonly string[],
-): Map<string, string | null> {
-  const out = new Map<string, string | null>();
+): Map<string, ScalarValue> {
+  const out = new Map<string, ScalarValue>();
   for (const f of scalarFields) {
     out.set(f, norm(row[f]));
   }
@@ -242,15 +255,15 @@ function emitStatementEvents(
     beforeRows.map(r => [r.financialPeriodId as number, r]),
   );
 
-  // ── Collect all raw changes for this (devDocId, statement) batch ──────────
+  // ── Collect all row writes for this (devDocId, statement) batch ───────────
   // We need them all before classifying so GRANULARITY can inspect siblings.
 
   interface RawChange {
     periodId: number;
     field: string;
-    prevValue: string | null;
+    prevValue: ScalarValue;
     prevSourceDocId: number | null;
-    newValue: string | null;
+    newValue: ScalarValue;
     newSourceDocId: number;
   }
 
@@ -264,7 +277,7 @@ function emitStatementEvents(
     const beforeRow = beforeByPeriod.get(periodId);
 
     if (!beforeRow) {
-      // New period — all non-null fields are FIRST_WRITE
+      // New row — every populated field is its first write.
       for (const [field, newVal] of afterFields) {
         if (newVal !== null) {
           rawChanges.push({
@@ -277,13 +290,19 @@ function emitStatementEvents(
         }
       }
     } else {
-      // Existing period — compare every field
+      // A source-document change means the new document wrote every populated
+      // field in the row. If the source did not change, preserve the original
+      // behaviour and record only actual value changes.
       const beforeFields = extractFields(beforeRow, scalarFields, nestedFields);
       const prevSourceDocId = beforeRow.sourceDocumentId as number;
+      const sourceChanged = prevSourceDocId !== newSourceDocId;
+      const fields = new Set([...beforeFields.keys(), ...afterFields.keys()]);
 
-      for (const [field, newVal] of afterFields) {
+      for (const field of fields) {
+        const newVal = afterFields.get(field) ?? null;
         const prevVal = beforeFields.get(field) ?? null;
-        if (!valEq(prevVal, newVal)) {
+        // Both-null positions carry no reported value and have no classification.
+        if ((sourceChanged || !valEq(prevVal, newVal)) && !(prevVal === null && newVal === null)) {
           rawChanges.push({
             periodId, field,
             prevValue: prevVal,
@@ -325,18 +344,15 @@ function emitStatementEvents(
 
       const decrease = prevNum - newNum;
 
-      // Sum ALL null→non-null siblings (excluding the candidate field itself)
-      let sibSum = 0;
-      let sibCount = 0;
-      for (const sib of nullToNonNull) {
-        if (sib.field === candidate.field) continue;
-        const sibNum = toNum(sib.newValue);
-        if (sibNum === null) continue;
-        sibSum += sibNum;
-        sibCount++;
-      }
+      // A bundled source figure may be split across a subset of newly-filled
+      // siblings. For example, 255845 becomes 22148 + 133815 + 99882:
+      // only the latter two are the newly-filled sibling fields.
+      const siblingValues = nullToNonNull
+        .filter(sib => sib.field !== candidate.field)
+        .map(sib => toNum(sib.newValue))
+        .filter((value): value is number => value !== null);
 
-      if (sibCount > 0 && Math.abs(sibSum - decrease) < 0.0001) {
+      if (hasExactSiblingSum(siblingValues, decrease)) {
         granularityFields.add(`${periodId}|${candidate.field}`);
       }
     }
@@ -346,8 +362,13 @@ function emitStatementEvents(
   for (const ch of rawChanges) {
     let classification: Classification;
 
-    if (ch.prevValue === null) {
-      classification = 'FIRST_WRITE';
+    if (ch.prevValue === null && ch.newValue === null) {
+      // Excluded above, retained defensively so every category is exhaustive.
+      continue;
+    } else if (ch.prevValue === null) {
+      classification = ch.prevSourceDocId === null ? 'FIRST_WRITE' : 'ENRICHED';
+    } else if (ch.newValue === null) {
+      classification = 'ERASED';
     } else if (valEq(ch.prevValue, ch.newValue)) {
       classification = 'AGREE';
     } else if (granularityFields.has(`${ch.periodId}|${ch.field}`)) {
@@ -381,8 +402,28 @@ function emitStatementEvents(
 
 // ─── Markdown generation ─────────────────────────────────────────────────────
 
-function fmtVal(v: string | null): string {
-  return v === null ? '(null)' : v;
+function hasExactSiblingSum(values: number[], target: number): boolean {
+  if (values.length === 0) return false;
+
+  // Financial statement figures in these captures are non-negative. Sorting
+  // gives deterministic pruning while still allowing any non-empty subset.
+  const sorted = [...values].sort((a, b) => b - a);
+  const suffixSums = new Array<number>(sorted.length + 1).fill(0);
+  for (let i = sorted.length - 1; i >= 0; i--) {
+    suffixSums[i] = suffixSums[i + 1] + sorted[i];
+  }
+
+  const search = (index: number, sum: number, hasSibling: boolean): boolean => {
+    if (sum === target) return hasSibling;
+    if (index === sorted.length || sum > target || sum + suffixSums[index] < target) return false;
+    return search(index + 1, sum + sorted[index], true) || search(index + 1, sum, hasSibling);
+  };
+
+  return search(0, 0, false);
+}
+
+function fmtVal(v: ScalarValue): string {
+  return v === null ? '(null)' : String(v);
 }
 
 function fmtDoc(devDocId: number, prodDocId: number, tier: string): string {
@@ -516,86 +557,56 @@ function buildReport(allEvents: WriteEvent[]): string {
   lines.push('');
 
   // ── S3 ────────────────────────────────────────────────────────────────────
-  lines.push('## S3 — Counts');
+  lines.push('## S3 — Counts and Accuracy Rate by Tier Pair');
   lines.push('');
 
-  // Distinct (company, periodId, statement, field) tuples with ≥1 write
-  const fieldKeys = new Map<string, WriteEvent[]>(); // key → all events for that field-slot
+  const classifications: Classification[] = [
+    'FIRST_WRITE', 'AGREE', 'GRANULARITY', 'CONFLICT', 'ENRICHED', 'ERASED',
+  ];
+  const classCounts = new Map<Classification, number>(
+    classifications.map(classification => [classification, 0]),
+  );
   for (const ev of allEvents) {
-    const k = `${ev.company}|${ev.periodId}|${ev.statement}|${ev.field}`;
-    if (!fieldKeys.has(k)) fieldKeys.set(k, []);
-    fieldKeys.get(k)!.push(ev);
-  }
-
-  const totalFieldsWritten = fieldKeys.size;
-  const multiWriteSlots = [...fieldKeys.entries()].filter(([, evs]) => evs.length > 1);
-  const totalMultiWrite = multiWriteSlots.length;
-
-  // For multi-write slots, classify the overwrite events (all events after first)
-  // Actually the classification is already on each event — AGREE/GRANULARITY/CONFLICT
-  // counts for events that replaced a non-null value (i.e. non-FIRST_WRITE overwrites)
-  let agreeCount     = 0;
-  let granCount      = 0;
-  let conflictCount  = 0;
-
-  // Count GRANULARITY events (each GRANULARITY-classified event = one bundled field)
-  // Per spec: "Report as a count only, do not list individually"
-  for (const ev of allEvents) {
-    if (ev.classification === 'AGREE')      agreeCount++;
-    if (ev.classification === 'GRANULARITY') granCount++;
-    if (ev.classification === 'CONFLICT')   conflictCount++;
+    classCounts.set(ev.classification, (classCounts.get(ev.classification) ?? 0) + 1);
   }
 
   const totalEvents = allEvents.length;
-  const firstWriteCount = allEvents.filter(e => e.classification === 'FIRST_WRITE').length;
-
   lines.push(`Total write events (all classifications): **${totalEvents}**`);
   lines.push('');
-  lines.push(`- FIRST_WRITE: ${firstWriteCount}`);
-  lines.push(`- AGREE:       ${agreeCount}`);
-  lines.push(`- GRANULARITY: ${granCount}`);
-  lines.push(`- CONFLICT:    ${conflictCount}`);
-  lines.push(`- Sum check:   ${firstWriteCount} + ${agreeCount} + ${granCount} + ${conflictCount} = ${firstWriteCount + agreeCount + granCount + conflictCount} (expected ${totalEvents})`);
+  for (const classification of classifications) {
+    lines.push(`- ${classification}: ${classCounts.get(classification) ?? 0}`);
+  }
+  lines.push(`- Sum check: ${classifications.map(c => classCounts.get(c) ?? 0).join(' + ')} = ${classifications.reduce((sum, c) => sum + (classCounts.get(c) ?? 0), 0)} (expected ${totalEvents})`);
   lines.push('');
-  lines.push(`Distinct (company, period, statement, field) slots written: **${totalFieldsWritten}**`);
-  lines.push(`Slots written by more than one document: **${totalMultiWrite}**`);
+  lines.push('Accuracy rate = **AGREE / (AGREE + CONFLICT)**. Its sample size is the denominator. GRANULARITY, ENRICHED, FIRST_WRITE and ERASED are excluded from this rate.');
   lines.push('');
 
-  // Tier-pair breakdown for AGREE / GRANULARITY / CONFLICT events
-  // (events where prevValue was non-null, i.e. not FIRST_WRITE)
-  const overwrites = allEvents.filter(e => e.classification !== 'FIRST_WRITE' && e.previousValue !== null);
-
-  // Count by tier pair
-  const tierPairCounts = new Map<string, { agree: number; gran: number; conflict: number }>();
-  for (const ev of overwrites) {
-    const prevTier = ev.previousTier ?? 'n/a';
-    const newTier  = ev.tier;
-    const key = `${prevTier} → ${newTier}`;
-    if (!tierPairCounts.has(key)) tierPairCounts.set(key, { agree: 0, gran: 0, conflict: 0 });
-    const c = tierPairCounts.get(key)!;
-    if (ev.classification === 'AGREE')      c.agree++;
-    if (ev.classification === 'GRANULARITY') c.gran++;
-    if (ev.classification === 'CONFLICT')   c.conflict++;
+  type TierPairCounts = Record<Classification, number>;
+  const tierPairCounts = new Map<string, TierPairCounts>();
+  for (const ev of allEvents) {
+    if (ev.previousSourceDocId === null) continue;
+    const key = `${ev.previousTier ?? 'n/a'} → ${ev.tier}`;
+    if (!tierPairCounts.has(key)) {
+      tierPairCounts.set(key, {
+        FIRST_WRITE: 0, AGREE: 0, GRANULARITY: 0, CONFLICT: 0, ENRICHED: 0, ERASED: 0,
+      });
+    }
+    tierPairCounts.get(key)![ev.classification]++;
   }
 
   if (tierPairCounts.size > 0) {
-    lines.push('### Breakdown by tier pair (prev tier → new tier)');
-    lines.push('');
-    lines.push('| Tier pair | AGREE | GRANULARITY | CONFLICT | Total |');
-    lines.push('|---|---|---|---|---|');
+    lines.push('| Tier pair | AGREE | CONFLICT | GRANULARITY | ENRICHED | ERASED | Accuracy rate (AGREE / sample) | Sample size |');
+    lines.push('|---|---|---|---|---|---|---|---|');
 
     const sortedPairs = [...tierPairCounts.entries()].sort(([a], [b]) => a.localeCompare(b));
-    for (const [pair, c] of sortedPairs) {
-      const total = c.agree + c.gran + c.conflict;
-      lines.push(`| ${pair} | ${c.agree} | ${c.gran} | ${c.conflict} | ${total} |`);
+    for (const [pair, counts] of sortedPairs) {
+      const sampleSize = counts.AGREE + counts.CONFLICT;
+      const accuracy = sampleSize === 0 ? 'n/a' : `${((counts.AGREE / sampleSize) * 100).toFixed(2)}% (${counts.AGREE}/${sampleSize})`;
+      lines.push(`| ${pair} | ${counts.AGREE} | ${counts.CONFLICT} | ${counts.GRANULARITY} | ${counts.ENRICHED} | ${counts.ERASED} | ${accuracy} | ${sampleSize} |`);
     }
-    // Totals row
-    let totAgree = 0, totGran = 0, totConf = 0;
-    for (const c of tierPairCounts.values()) { totAgree += c.agree; totGran += c.gran; totConf += c.conflict; }
-    lines.push(`| **Total** | **${totAgree}** | **${totGran}** | **${totConf}** | **${totAgree + totGran + totConf}** |`);
     lines.push('');
   } else {
-    lines.push('*No overwrite events.*');
+    lines.push('*No writes to existing rows.*');
     lines.push('');
   }
 
@@ -603,21 +614,25 @@ function buildReport(allEvents: WriteEvent[]): string {
   lines.push('');
 
   // ── S4 ────────────────────────────────────────────────────────────────────
-  lines.push('## S4 — CONFLICT: Higher-Tier Value Replaced by Lower-Tier');
+  lines.push('## S4 — HIGHER TIER DEGRADED BY LOWER TIER');
   lines.push('');
-  lines.push('Rows where the previous value came from a document of higher precedence (T1a > T1b > T2 > T3 > INT > n/a) and was overwritten by a document of lower precedence.');
+  lines.push('ERASED rows are listed first, followed by CONFLICT rows. Each previous document tier outranks the replacing document tier (T1a > T1b > T2 > T3 > INT > n/a).');
   lines.push('');
 
-  const s4Rows = conflicts.filter(ev => {
+  const s4Rows = allEvents.filter(ev => {
     const prevTier = ev.previousTier ?? 'n/a';
-    return isHigherTier(prevTier, ev.tier);
+    return (ev.classification === 'ERASED' || ev.classification === 'CONFLICT')
+      && isHigherTier(prevTier, ev.tier);
   });
 
   if (s4Rows.length === 0) {
-    lines.push('*No conflicts where a higher-tier value was replaced by a lower-tier one.*');
+    lines.push('*No higher-tier values were degraded by a lower-tier document.*');
     lines.push('');
   } else {
     const sortedS4 = [...s4Rows].sort((a, b) => {
+      const classOrder = a.classification === 'ERASED' ? 0 : 1;
+      const otherClassOrder = b.classification === 'ERASED' ? 0 : 1;
+      if (classOrder !== otherClassOrder) return classOrder - otherClassOrder;
       const co = a.company.localeCompare(b.company);
       if (co !== 0) return co;
       if (a.fiscalYear !== b.fiscalYear) return a.fiscalYear - b.fiscalYear;
@@ -626,15 +641,63 @@ function buildReport(allEvents: WriteEvent[]): string {
       return a.field.localeCompare(b.field);
     });
 
-    lines.push('| Company | FY | Stmt | Period | Field | High-tier value | High-tier doc | Low-tier value | Low-tier doc |');
-    lines.push('|---|---|---|---|---|---|---|---|---|');
+    lines.push('| Class | Company | FY | Stmt | Period | Field | High-tier value | High-tier doc | Lower-tier value | Lower-tier doc |');
+    lines.push('|---|---|---|---|---|---|---|---|---|---|');
     for (const ev of sortedS4) {
       const prevDocStr = ev.previousSourceDocId !== null
         ? `${ev.previousSourceDocId} (${ev.previousTier ?? 'n/a'})`
         : 'none';
       lines.push(
-        `| ${ev.company} | ${ev.fiscalYear} | ${ev.statement} | ${ev.periodId} | \`${ev.field}\` ` +
+        `| ${ev.classification} | ${ev.company} | ${ev.fiscalYear} | ${ev.statement} | ${ev.periodId} | \`${ev.field}\` ` +
         `| ${fmtVal(ev.previousValue)} | ${prevDocStr} | ${fmtVal(ev.newValue)} | ${ev.devDocId} (${ev.tier}) |`,
+      );
+    }
+    lines.push('');
+  }
+
+  lines.push('---');
+  lines.push('');
+
+  // ── S5 ────────────────────────────────────────────────────────────────────
+  lines.push('## S5 — All ERASED Rows');
+  lines.push('');
+  lines.push('Grouped by company and fiscal year; every row where a later document replaced a non-null value with null.');
+  lines.push('');
+
+  const erasedRows = allEvents
+    .filter(ev => ev.classification === 'ERASED')
+    .sort((a, b) => {
+      const co = a.company.localeCompare(b.company);
+      if (co !== 0) return co;
+      if (a.fiscalYear !== b.fiscalYear) return a.fiscalYear - b.fiscalYear;
+      const st = a.statement.localeCompare(b.statement);
+      if (st !== 0) return st;
+      return a.field.localeCompare(b.field);
+    });
+
+  if (erasedRows.length === 0) {
+    lines.push('*No ERASED rows.*');
+    lines.push('');
+  } else {
+    let currentCompany = '';
+    let currentYear = -1;
+    for (const ev of erasedRows) {
+      if (ev.company !== currentCompany) {
+        currentCompany = ev.company;
+        currentYear = -1;
+        lines.push(`### ${currentCompany}`);
+        lines.push('');
+      }
+      if (ev.fiscalYear !== currentYear) {
+        currentYear = ev.fiscalYear;
+        lines.push(`#### FY ${currentYear}`);
+        lines.push('');
+        lines.push('| Stmt | Period | Field | Erased value | Previous doc (tier) | Erasing doc (tier) |');
+        lines.push('|---|---|---|---|---|---|');
+      }
+      lines.push(
+        `| ${ev.statement} | ${ev.periodId} | \`${ev.field}\` | ${fmtVal(ev.previousValue)} ` +
+        `| ${ev.previousSourceDocId} (${ev.previousTier ?? 'n/a'}) | ${ev.devDocId} (${ev.tier}) |`,
       );
     }
     lines.push('');
