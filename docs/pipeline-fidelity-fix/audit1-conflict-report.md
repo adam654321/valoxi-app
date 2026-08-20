@@ -2543,7 +2543,7 @@ Surviving value marked **bold**. Only fields with at least one write event shown
 
 **`leaseholdProperty`** (period 7948)
 - 10231 (doc 5830/1624, tier T1a, FIRST_WRITE)
-- **(null) (doc 5831/1759, tier T1a, ERASED)** ← surviving
+- **(null) (doc 5831/1759, tier T1a, GRANULARITY_REVERSE)** ← surviving
 
 **`otherCreditors`** (period 7948)
 - 36449 (doc 5830/1624, tier T1a, FIRST_WRITE)
@@ -2555,7 +2555,7 @@ Surviving value marked **bold**. Only fields with at least one write event shown
 
 **`plantMachinery`** (period 7948)
 - 35376 (doc 5830/1624, tier T1a, FIRST_WRITE)
-- **45607 (doc 5831/1759, tier T1a, CONFLICT)** ← surviving
+- **45607 (doc 5831/1759, tier T1a, GRANULARITY_REVERSE)** ← surviving
 
 **`retainedEarnings`** (period 7948)
 - 164400 (doc 5830/1624, tier T1a, FIRST_WRITE)
@@ -3323,7 +3323,6 @@ Sorted: company → fiscal year → field.
 | Innova Design Group Limited | 2025 | IS | 7974 | `overheadsBreakdown.other_overheads` | 24042 | 5857/1678 (T1a) | 24084 | 5867/1678 (T1a) | 42 | 0.17% |
 | Innova Design Group Limited | 2025 | IS | 7974 | `overheadsBreakdown.professional_fees` | 16027 | 5857/1678 (T1a) | 12885 | 5867/1678 (T1a) | 3142 | 19.60% |
 | Innova Design Group Limited | 2025 | IS | 7974 | `staffCosts` | 712676 | 5857/1678 (T1a) | 716147 | 5867/1678 (T1a) | 3471 | 0.49% |
-| Thor-CON (Midland Air Conditioning) | 2023 | BS | 7948 | `plantMachinery` | 35376 | 5830/1759 (T1a) | 45607 | 5831/1759 (T1a) | 10231 | 28.92% |
 | Thor-CON (Midland Air Conditioning) | 2023 | BS | 7948 | `retainedEarnings` | 164400 | 5830/1759 (T1a) | 168834 | 5831/1759 (T1a) | 4434 | 2.70% |
 | Thor-CON (Midland Air Conditioning) | 2023 | BS | 7948 | `totalEquity` | 164500 | 5830/1759 (T1a) | 168934 | 5831/1759 (T1a) | 4434 | 2.70% |
 | Thor-CON (Midland Air Conditioning) | 2023 | BS | 7948 | `totalLongTermLiabilities` | 49478 | 5830/1759 (T1a) | 45044 | 5831/1759 (T1a) | 4434 | 8.96% |
@@ -3340,21 +3339,56 @@ Total write events (all classifications): **1425**
 - FIRST_WRITE: 817
 - AGREE: 383
 - GRANULARITY: 7
-- CONFLICT: 76
+- GRANULARITY_REVERSE: 2
+- CONFLICT: 75
 - ENRICHED: 105
-- ERASED: 37
-- Sum check: 817 + 383 + 7 + 76 + 105 + 37 = 1425 (expected 1425)
+- ERASED: 36
+- Sum check: 817 + 383 + 7 + 2 + 75 + 105 + 36 = 1425 (expected 1425)
 
-Accuracy rate = **AGREE / (AGREE + CONFLICT)**. Its sample size is the denominator. GRANULARITY, ENRICHED, FIRST_WRITE and ERASED are excluded from this rate.
+Accuracy rate = **AGREE / (AGREE + CONFLICT)**. Its sample size is the denominator. GRANULARITY, GRANULARITY_REVERSE, ENRICHED, FIRST_WRITE and ERASED are excluded from this rate.
 
-| Tier pair | AGREE | CONFLICT | GRANULARITY | ENRICHED | ERASED | Accuracy rate (AGREE / sample) | Sample size |
-|---|---|---|---|---|---|---|---|
-| T1a → T1a | 218 | 15 | 4 | 10 | 2 | 93.56% (218/233) | 233 |
-| T1a → T1b | 44 | 6 | 0 | 1 | 16 | 88.00% (44/50) | 50 |
-| T1b → T1b | 90 | 6 | 2 | 7 | 4 | 93.75% (90/96) | 96 |
-| T2 → T1a | 2 | 28 | 0 | 15 | 9 | 6.67% (2/30) | 30 |
-| T3 → T1a | 28 | 9 | 1 | 46 | 0 | 75.68% (28/37) | 37 |
-| T3 → T2 | 1 | 12 | 0 | 26 | 6 | 7.69% (1/13) | 13 |
+### S3.1 — All fields, unfiltered
+
+Reconciles to the total above. Retained as the full audit trail. NOT the gate.
+
+| Tier pair | AGREE | CONFLICT | GRANULARITY | GRAN_REV | ENRICHED | ERASED | Accuracy rate (AGREE / sample) | Sample size |
+|---|---|---|---|---|---|---|---|---|
+| T1a → T1a | 218 | 14 | 4 | 2 | 10 | 1 | 93.97% (218/232) | 232 |
+| T1a → T1b | 44 | 6 | 0 | 0 | 1 | 16 | 88.00% (44/50) | 50 |
+| T1b → T1b | 90 | 6 | 2 | 0 | 7 | 4 | 93.75% (90/96) | 96 |
+| T2 → T1a | 2 | 28 | 0 | 0 | 15 | 9 | 6.67% (2/30) | 30 |
+| T3 → T1a | 28 | 9 | 1 | 0 | 46 | 0 | 75.68% (28/37) | 37 |
+| T3 → T2 | 1 | 12 | 0 | 0 | 26 | 6 | 7.69% (1/13) | 13 |
+
+### S3.2 — IN SCOPE (R1) — the measured gate
+
+Excludes `costOfSalesBreakdown.*`, `overheadsBreakdown.*` and the residual buckets
+`otherOperatingIncome`, `otherDebtors`, `otherCreditors`, `otherLongTermDebt`,
+per BRIEF-extraction-accuracy-audit.md SCOPE and item 429.
+
+| Tier pair | AGREE | CONFLICT | GRANULARITY | GRAN_REV | ENRICHED | ERASED | Accuracy rate (AGREE / sample) | Sample size |
+|---|---|---|---|---|---|---|---|---|
+| T1a → T1a | 115 | 7 | 1 | 2 | 9 | 1 | 94.26% (115/122) | 122 |
+| T1a → T1b | 21 | 3 | 0 | 0 | 0 | 13 | 87.50% (21/24) | 24 |
+| T1b → T1b | 42 | 2 | 2 | 0 | 3 | 2 | 95.45% (42/44) | 44 |
+| T2 → T1a | 0 | 18 | 0 | 0 | 6 | 6 | 0.00% (0/18) | 18 |
+| T3 → T1a | 22 | 8 | 1 | 0 | 20 | 0 | 73.33% (22/30) | 30 |
+| T3 → T2 | 0 | 12 | 0 | 0 | 12 | 2 | 0.00% (0/12) | 12 |
+
+### S3.3 — ADJUDICATED — the honest gate
+
+In scope, less conflicts that are documented not-a-defect: the Midland FY2023
+restatement (5830 vs 5831) and conflicts between md5-identical inputs.
+Every excluded row is itemised in S8.
+
+| Tier pair | AGREE | CONFLICT | GRANULARITY | GRAN_REV | ENRICHED | ERASED | Accuracy rate (AGREE / sample) | Sample size |
+|---|---|---|---|---|---|---|---|---|
+| T1a → T1a | 115 | 1 | 1 | 2 | 9 | 1 | 99.14% (115/116) | 116 |
+| T1a → T1b | 21 | 3 | 0 | 0 | 0 | 13 | 87.50% (21/24) | 24 |
+| T1b → T1b | 42 | 2 | 2 | 0 | 3 | 2 | 95.45% (42/44) | 44 |
+| T2 → T1a | 0 | 18 | 0 | 0 | 6 | 6 | 0.00% (0/18) | 18 |
+| T3 → T1a | 22 | 8 | 1 | 0 | 20 | 0 | 73.33% (22/30) | 30 |
+| T3 → T2 | 0 | 12 | 0 | 0 | 12 | 2 | 0.00% (0/12) | 12 |
 
 ---
 
@@ -3451,7 +3485,6 @@ Grouped by company and fiscal year; every row where a later document replaced a 
 | Stmt | Period | Field | Erased value | Previous doc (tier) | Erasing doc (tier) |
 |---|---|---|---|---|---|
 | BS | 7948 | `deferredTaxation` | 4434 | 5830 (T1a) | 5831 (T1a) |
-| BS | 7948 | `leaseholdProperty` | 10231 | 5830 (T1a) | 5831 (T1a) |
 
 ---
 
@@ -3459,33 +3492,68 @@ Grouped by company and fiscal year; every row where a later document replaced a 
 
 All CONFLICT rows where the previous and new documents have the same tier. Document IDs are the dev capture document IDs.
 
-### T1a → T1a
+### T1a → T1a — IN SCOPE
 
-| Company | FY | Statement | Field | Previous value | New value | Previous doc ID | New doc ID |
-|---|---|---|---|---|---|---|---|
-| Innova Design Group Limited | 2024 | BS | `otherDebtors` | 1564 | 850 | 5861 | 5868 |
-| Innova Design Group Limited | 2024 | IS | `costOfSalesBreakdown.other_direct_costs` | 99354 | 88185 | 5857 | 5861 |
-| Innova Design Group Limited | 2024 | IS | `overheadsBreakdown.other_overheads` | 13718 | 44937 | 5857 | 5861 |
-| Innova Design Group Limited | 2024 | IS | `overheadsBreakdown.staff_training_recruitment` | 10901 | 13373 | 5857 | 5861 |
-| Innova Design Group Limited | 2024 | IS | `staffCosts` | 556781 | 570154 | 5857 | 5861 |
-| Innova Design Group Limited | 2025 | IS | `overheadsBreakdown.other_overheads` | 24042 | 24084 | 5857 | 5867 |
-| Innova Design Group Limited | 2025 | IS | `overheadsBreakdown.professional_fees` | 16027 | 12885 | 5857 | 5867 |
-| Innova Design Group Limited | 2025 | IS | `staffCosts` | 712676 | 716147 | 5857 | 5867 |
-| Thor-CON (Midland Air Conditioning) | 2023 | BS | `plantMachinery` | 35376 | 45607 | 5830 | 5831 |
-| Thor-CON (Midland Air Conditioning) | 2023 | BS | `retainedEarnings` | 164400 | 168834 | 5830 | 5831 |
-| Thor-CON (Midland Air Conditioning) | 2023 | BS | `totalEquity` | 164500 | 168934 | 5830 | 5831 |
-| Thor-CON (Midland Air Conditioning) | 2023 | BS | `totalLongTermLiabilities` | 49478 | 45044 | 5830 | 5831 |
-| Thor-CON (Midland Air Conditioning) | 2023 | IS | `corporationTax` | 36214 | 31780 | 5830 | 5831 |
-| Thor-CON (Midland Air Conditioning) | 2023 | IS | `netProfit` | 132092 | 136526 | 5830 | 5831 |
-| Thor-CON (Midland Air Conditioning) | 2023 | IS | `overheadsBreakdown.other_overheads` | 15403 | 1460 | 5830 | 5831 |
+| Company | FY | Statement | Field | Previous value | New value | Previous doc ID | New doc ID | Adjudication |
+|---|---|---|---|---|---|---|---|---|
+| Innova Design Group Limited | 2024 | IS | `staffCosts` | 556781 | 570154 | 5857 | 5861 | UNEXPLAINED |
+| Innova Design Group Limited | 2025 | IS | `staffCosts` | 712676 | 716147 | 5857 | 5867 | IDENTICAL_INPUT |
+| Thor-CON (Midland Air Conditioning) | 2023 | BS | `retainedEarnings` | 164400 | 168834 | 5830 | 5831 | RESTATEMENT |
+| Thor-CON (Midland Air Conditioning) | 2023 | BS | `totalEquity` | 164500 | 168934 | 5830 | 5831 | RESTATEMENT |
+| Thor-CON (Midland Air Conditioning) | 2023 | BS | `totalLongTermLiabilities` | 49478 | 45044 | 5830 | 5831 | RESTATEMENT |
+| Thor-CON (Midland Air Conditioning) | 2023 | IS | `corporationTax` | 36214 | 31780 | 5830 | 5831 | RESTATEMENT |
+| Thor-CON (Midland Air Conditioning) | 2023 | IS | `netProfit` | 132092 | 136526 | 5830 | 5831 | RESTATEMENT |
 
-### T1b → T1b
+### T1a → T1a — OUT OF SCOPE (R1)
 
-| Company | FY | Statement | Field | Previous value | New value | Previous doc ID | New doc ID |
-|---|---|---|---|---|---|---|---|
-| Innova Design Group Limited | 2022 | IS | `costOfSalesBreakdown.other_direct_costs` | 1582248 | 980718 | 5862 | 5863 |
-| Innova Design Group Limited | 2022 | IS | `overheadsBreakdown.other_overheads` | 18121 | 33723 | 5862 | 5863 |
-| Innova Design Group Limited | 2022 | IS | `staffCosts` | 506800 | 538301 | 5862 | 5863 |
-| Innova Design Group Limited | 2023 | IS | `costOfSalesBreakdown.other_direct_costs` | 723073 | 1343948 | 5862 | 5869 |
-| Innova Design Group Limited | 2023 | IS | `overheadsBreakdown.other_overheads` | 14534 | 14472 | 5862 | 5869 |
-| Innova Design Group Limited | 2023 | IS | `staffCosts` | 498233 | 547038 | 5862 | 5869 |
+| Company | FY | Statement | Field | Previous value | New value | Previous doc ID | New doc ID | Adjudication |
+|---|---|---|---|---|---|---|---|---|
+| Innova Design Group Limited | 2024 | BS | `otherDebtors` | 1564 | 850 | 5861 | 5868 | IDENTICAL_INPUT |
+| Innova Design Group Limited | 2024 | IS | `costOfSalesBreakdown.other_direct_costs` | 99354 | 88185 | 5857 | 5861 | UNEXPLAINED |
+| Innova Design Group Limited | 2024 | IS | `overheadsBreakdown.other_overheads` | 13718 | 44937 | 5857 | 5861 | UNEXPLAINED |
+| Innova Design Group Limited | 2024 | IS | `overheadsBreakdown.staff_training_recruitment` | 10901 | 13373 | 5857 | 5861 | UNEXPLAINED |
+| Innova Design Group Limited | 2025 | IS | `overheadsBreakdown.other_overheads` | 24042 | 24084 | 5857 | 5867 | IDENTICAL_INPUT |
+| Innova Design Group Limited | 2025 | IS | `overheadsBreakdown.professional_fees` | 16027 | 12885 | 5857 | 5867 | IDENTICAL_INPUT |
+| Thor-CON (Midland Air Conditioning) | 2023 | IS | `overheadsBreakdown.other_overheads` | 15403 | 1460 | 5830 | 5831 | RESTATEMENT |
+
+### T1b → T1b — IN SCOPE
+
+| Company | FY | Statement | Field | Previous value | New value | Previous doc ID | New doc ID | Adjudication |
+|---|---|---|---|---|---|---|---|---|
+| Innova Design Group Limited | 2022 | IS | `staffCosts` | 506800 | 538301 | 5862 | 5863 | UNEXPLAINED |
+| Innova Design Group Limited | 2023 | IS | `staffCosts` | 498233 | 547038 | 5862 | 5869 | UNEXPLAINED |
+
+### T1b → T1b — OUT OF SCOPE (R1)
+
+| Company | FY | Statement | Field | Previous value | New value | Previous doc ID | New doc ID | Adjudication |
+|---|---|---|---|---|---|---|---|---|
+| Innova Design Group Limited | 2022 | IS | `costOfSalesBreakdown.other_direct_costs` | 1582248 | 980718 | 5862 | 5863 | UNEXPLAINED |
+| Innova Design Group Limited | 2022 | IS | `overheadsBreakdown.other_overheads` | 18121 | 33723 | 5862 | 5863 | UNEXPLAINED |
+| Innova Design Group Limited | 2023 | IS | `costOfSalesBreakdown.other_direct_costs` | 723073 | 1343948 | 5862 | 5869 | UNEXPLAINED |
+| Innova Design Group Limited | 2023 | IS | `overheadsBreakdown.other_overheads` | 14534 | 14472 | 5862 | 5869 | UNEXPLAINED |
+
+---
+
+## S7 — Reverse-Granularity Reclassifications (R2)
+
+Declared parent-child rules only, each additionally requiring an exact
+arithmetic match. Every reclassification is listed here. Nothing is silent.
+
+| Company | FY | Stmt | Period | Parent field | Prev | New | Erased children | Arithmetic |
+|---|---|---|---|---|---|---|---|---|
+| Thor-CON (Midland Air Conditioning) | 2023 | BS | 7948 | `plantMachinery` | 35376 | 45607 | `leaseholdProperty` 10231 | 35376 + 10231 = 45607 |
+
+---
+
+## S8 — Adjudication Ledger
+
+Every in-scope CONFLICT row excluded from the S3.3 rate, with its reason.
+
+| Reason | Company | FY | Stmt | Field | Previous value | New value | Prev doc | New doc |
+|---|---|---|---|---|---|---|---|---|
+| IDENTICAL_INPUT | Innova Design Group Limited | 2025 | IS | `staffCosts` | 712676 | 716147 | 5857 | 5867 |
+| RESTATEMENT | Thor-CON (Midland Air Conditioning) | 2023 | BS | `retainedEarnings` | 164400 | 168834 | 5830 | 5831 |
+| RESTATEMENT | Thor-CON (Midland Air Conditioning) | 2023 | BS | `totalEquity` | 164500 | 168934 | 5830 | 5831 |
+| RESTATEMENT | Thor-CON (Midland Air Conditioning) | 2023 | BS | `totalLongTermLiabilities` | 49478 | 45044 | 5830 | 5831 |
+| RESTATEMENT | Thor-CON (Midland Air Conditioning) | 2023 | IS | `corporationTax` | 36214 | 31780 | 5830 | 5831 |
+| RESTATEMENT | Thor-CON (Midland Air Conditioning) | 2023 | IS | `netProfit` | 132092 | 136526 | 5830 | 5831 |

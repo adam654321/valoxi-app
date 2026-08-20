@@ -76,12 +76,66 @@ const BS_SCALAR = [
   'totalLongTermLiabilities', 'shareCapital', 'retainedEarnings', 'totalEquity',
 ] as const;
 
+// ─── R1: brief scope filter ──────────────────────────────────────────────────
+// BRIEF-extraction-accuracy-audit.md, SCOPE: "Breakdown detail and residual
+// other_* buckets are OUT of scope; item 429 measured them unstable by nature
+// and they do not carry a valuation."
+// Applied to the GATE tables only. Enumeration stays complete so the 1,425
+// total and sections S1-S5 remain the full audit trail.
+
+const OUT_OF_SCOPE_PREFIXES = ['costOfSalesBreakdown.', 'overheadsBreakdown.'] as const;
+
+const OUT_OF_SCOPE_FIELDS = new Set<string>([
+  'otherOperatingIncome', 'otherDebtors', 'otherCreditors', 'otherLongTermDebt',
+]);
+
+function isInScope(field: string): boolean {
+  if (OUT_OF_SCOPE_PREFIXES.some(p => field.startsWith(p))) return false;
+  return !OUT_OF_SCOPE_FIELDS.has(field);
+}
+
+// ─── R2: reverse granularity, DECLARED RULES ONLY ────────────────────────────
+// A split replaced by its bundled parent. Deliberately NOT a general arithmetic
+// rule. A generic "increase equals the sum of siblings erased in the same event"
+// rule was tested against these captures and rejected: it fires six times and
+// only one is genuine. It also matches
+//   - the Midland FY2023 restatement: retainedEarnings 164,400 -> 168,834 and
+//     totalEquity 164,500 -> 168,934, each +4,434, against deferredTaxation
+//     4,434 erased in the same event; and
+//   - defect D3: tradeDebtors 470,739 -> 553,354 against prepayments 81,765 +
+//     otherDebtors 850 erased.
+// Arithmetic cannot separate reverse granularity from a mislabelled bundle,
+// because D3 IS a bundle replacing a split. A generic rule would silently
+// reclassify a restatement and a known defect as not-a-conflict.
+const REVERSE_GRANULARITY_RULES: ReadonlyArray<{ parent: string; children: readonly string[] }> = [
+  // Midland: doc 5830 splits tangible assets into plant and leasehold;
+  // doc 5831 reports the bundled total. 35,376 + 10,231 = 45,607.
+  { parent: 'plantMachinery', children: ['leaseholdProperty'] },
+];
+
+// ─── Adjudication: conflicts that are documented not-a-defect ────────────────
+// Key: `${previousSourceDocId}|${devDocId}`. Declared, itemised, never silent.
+// Every excluded row is listed in section S8.
+
+/** Midland FY2023 as-filed vs as-restated. Product decision 20 Aug 2026:
+ *  show the restated figures, keep both versions, surface as a step 3
+ *  CONFLICTED case. Not an extraction defect. */
+const RESTATEMENT_PAIRS = new Set<string>(['5830|5831']);
+
+/** Document pairs that are md5-identical on input (v81 section 4.4).
+ *  A conflict between byte-identical inputs measures nondeterminism (D4),
+ *  not extraction accuracy against source. */
+const IDENTICAL_INPUT_PAIRS = new Set<string>([
+  '5857|5867', '5867|5857', '5861|5868', '5868|5861',
+]);
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type Classification =
   | 'FIRST_WRITE'
   | 'AGREE'
   | 'GRANULARITY'
+  | 'GRANULARITY_REVERSE'
   | 'CONFLICT'
   | 'ENRICHED'
   | 'ERASED';
@@ -110,6 +164,7 @@ interface WriteEvent {
   newValue: ScalarValue;
   newSourceDocId: number;
   classification: Classification;
+  inScope: boolean;
 }
 
 // ─── Value normalisation ─────────────────────────────────────────────────────
@@ -396,8 +451,89 @@ function emitStatementEvents(
       newValue: ch.newValue,
       newSourceDocId: ch.newSourceDocId,
       classification,
+      inScope: isInScope(ch.field),
     });
   }
+}
+
+// ─── R2 post-pass ────────────────────────────────────────────────────────────
+
+interface ReverseGranularityHit {
+  company: string;
+  devDocId: number;
+  statement: 'IS' | 'BS';
+  periodId: number;
+  fiscalYear: number;
+  parent: string;
+  prev: number;
+  next: number;
+  children: Array<{ field: string; value: number }>;
+}
+
+/**
+ * Reclassify declared parent<-child reverse-granularity pairs from
+ * CONFLICT + ERASED to GRANULARITY_REVERSE. Requires an EXACT arithmetic
+ * match in addition to the declared rule. Mutates events in place.
+ */
+function applyReverseGranularity(events: WriteEvent[]): ReverseGranularityHit[] {
+  const hits: ReverseGranularityHit[] = [];
+
+  const groups = new Map<string, WriteEvent[]>();
+  for (const ev of events) {
+    const k = `${ev.devDocId}|${ev.statement}|${ev.periodId}`;
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k)!.push(ev);
+  }
+
+  for (const group of groups.values()) {
+    for (const rule of REVERSE_GRANULARITY_RULES) {
+      const parent = group.find(e => e.field === rule.parent && e.classification === 'CONFLICT');
+      if (!parent) continue;
+
+      const prev = toNum(parent.previousValue);
+      const next = toNum(parent.newValue);
+      if (prev === null || next === null || next <= prev) continue;
+
+      const children: WriteEvent[] = [];
+      for (const childField of rule.children) {
+        const child = group.find(e => e.field === childField && e.classification === 'ERASED');
+        if (!child) break;
+        children.push(child);
+      }
+      if (children.length !== rule.children.length) continue;
+
+      let sum = 0;
+      let ok = true;
+      for (const child of children) {
+        const v = toNum(child.previousValue);
+        if (v === null) { ok = false; break; }
+        sum += v;
+      }
+      if (!ok) continue;
+      if (prev + sum !== next) continue;
+
+      parent.classification = 'GRANULARITY_REVERSE';
+      for (const child of children) child.classification = 'GRANULARITY_REVERSE';
+
+      hits.push({
+        company: parent.company,
+        devDocId: parent.devDocId,
+        statement: parent.statement,
+        periodId: parent.periodId,
+        fiscalYear: parent.fiscalYear,
+        parent: rule.parent,
+        prev,
+        next,
+        children: children.map(c => ({ field: c.field, value: toNum(c.previousValue)! })),
+      });
+    }
+  }
+
+  return hits.sort((a, b) =>
+    a.company.localeCompare(b.company)
+    || a.devDocId - b.devDocId
+    || a.periodId - b.periodId
+    || a.parent.localeCompare(b.parent));
 }
 
 // ─── Markdown generation ─────────────────────────────────────────────────────
@@ -435,7 +571,16 @@ function pct(diff: number, base: number): string {
   return `${((Math.abs(diff) / Math.abs(base)) * 100).toFixed(2)}%`;
 }
 
-function buildReport(allEvents: WriteEvent[]): string {
+function isAdjudicatedOut(ev: WriteEvent): 'RESTATEMENT' | 'IDENTICAL_INPUT' | null {
+  if (ev.classification !== 'CONFLICT') return null;
+  if (ev.previousSourceDocId === null) return null;
+  const pair = `${ev.previousSourceDocId}|${ev.devDocId}`;
+  if (RESTATEMENT_PAIRS.has(pair)) return 'RESTATEMENT';
+  if (IDENTICAL_INPUT_PAIRS.has(pair)) return 'IDENTICAL_INPUT';
+  return null;
+}
+
+function buildReport(allEvents: WriteEvent[], reverseHits: ReverseGranularityHit[]): string {
   const lines: string[] = [];
 
   lines.push('# Audit-1 Conflict Report');
@@ -561,7 +706,7 @@ function buildReport(allEvents: WriteEvent[]): string {
   lines.push('');
 
   const classifications: Classification[] = [
-    'FIRST_WRITE', 'AGREE', 'GRANULARITY', 'CONFLICT', 'ENRICHED', 'ERASED',
+    'FIRST_WRITE', 'AGREE', 'GRANULARITY', 'GRANULARITY_REVERSE', 'CONFLICT', 'ENRICHED', 'ERASED',
   ];
   const classCounts = new Map<Classification, number>(
     classifications.map(classification => [classification, 0]),
@@ -578,37 +723,66 @@ function buildReport(allEvents: WriteEvent[]): string {
   }
   lines.push(`- Sum check: ${classifications.map(c => classCounts.get(c) ?? 0).join(' + ')} = ${classifications.reduce((sum, c) => sum + (classCounts.get(c) ?? 0), 0)} (expected ${totalEvents})`);
   lines.push('');
-  lines.push('Accuracy rate = **AGREE / (AGREE + CONFLICT)**. Its sample size is the denominator. GRANULARITY, ENRICHED, FIRST_WRITE and ERASED are excluded from this rate.');
+  lines.push('Accuracy rate = **AGREE / (AGREE + CONFLICT)**. Its sample size is the denominator. GRANULARITY, GRANULARITY_REVERSE, ENRICHED, FIRST_WRITE and ERASED are excluded from this rate.');
   lines.push('');
 
   type TierPairCounts = Record<Classification, number>;
-  const tierPairCounts = new Map<string, TierPairCounts>();
-  for (const ev of allEvents) {
-    if (ev.previousSourceDocId === null) continue;
-    const key = `${ev.previousTier ?? 'n/a'} → ${ev.tier}`;
-    if (!tierPairCounts.has(key)) {
-      tierPairCounts.set(key, {
-        FIRST_WRITE: 0, AGREE: 0, GRANULARITY: 0, CONFLICT: 0, ENRICHED: 0, ERASED: 0,
-      });
+
+  const tierPairTable = (filter: (ev: WriteEvent) => boolean): string[] => {
+    const out: string[] = [];
+    const tierPairCounts = new Map<string, TierPairCounts>();
+    for (const ev of allEvents) {
+      if (ev.previousSourceDocId === null) continue;
+      if (!filter(ev)) continue;
+      const key = `${ev.previousTier ?? 'n/a'} → ${ev.tier}`;
+      if (!tierPairCounts.has(key)) {
+        tierPairCounts.set(key, {
+          FIRST_WRITE: 0, AGREE: 0, GRANULARITY: 0, GRANULARITY_REVERSE: 0,
+          CONFLICT: 0, ENRICHED: 0, ERASED: 0,
+        });
+      }
+      tierPairCounts.get(key)![ev.classification]++;
     }
-    tierPairCounts.get(key)![ev.classification]++;
-  }
 
-  if (tierPairCounts.size > 0) {
-    lines.push('| Tier pair | AGREE | CONFLICT | GRANULARITY | ENRICHED | ERASED | Accuracy rate (AGREE / sample) | Sample size |');
-    lines.push('|---|---|---|---|---|---|---|---|');
+    if (tierPairCounts.size === 0) {
+      out.push('*No writes to existing rows.*');
+      out.push('');
+      return out;
+    }
 
+    out.push('| Tier pair | AGREE | CONFLICT | GRANULARITY | GRAN_REV | ENRICHED | ERASED | Accuracy rate (AGREE / sample) | Sample size |');
+    out.push('|---|---|---|---|---|---|---|---|---|');
     const sortedPairs = [...tierPairCounts.entries()].sort(([a], [b]) => a.localeCompare(b));
     for (const [pair, counts] of sortedPairs) {
       const sampleSize = counts.AGREE + counts.CONFLICT;
       const accuracy = sampleSize === 0 ? 'n/a' : `${((counts.AGREE / sampleSize) * 100).toFixed(2)}% (${counts.AGREE}/${sampleSize})`;
-      lines.push(`| ${pair} | ${counts.AGREE} | ${counts.CONFLICT} | ${counts.GRANULARITY} | ${counts.ENRICHED} | ${counts.ERASED} | ${accuracy} | ${sampleSize} |`);
+      out.push(`| ${pair} | ${counts.AGREE} | ${counts.CONFLICT} | ${counts.GRANULARITY} | ${counts.GRANULARITY_REVERSE} | ${counts.ENRICHED} | ${counts.ERASED} | ${accuracy} | ${sampleSize} |`);
     }
-    lines.push('');
-  } else {
-    lines.push('*No writes to existing rows.*');
-    lines.push('');
-  }
+    out.push('');
+    return out;
+  };
+
+  lines.push('### S3.1 — All fields, unfiltered');
+  lines.push('');
+  lines.push('Reconciles to the total above. Retained as the full audit trail. NOT the gate.');
+  lines.push('');
+  lines.push(...tierPairTable(() => true));
+
+  lines.push('### S3.2 — IN SCOPE (R1) — the measured gate');
+  lines.push('');
+  lines.push('Excludes `costOfSalesBreakdown.*`, `overheadsBreakdown.*` and the residual buckets');
+  lines.push('`otherOperatingIncome`, `otherDebtors`, `otherCreditors`, `otherLongTermDebt`,');
+  lines.push('per BRIEF-extraction-accuracy-audit.md SCOPE and item 429.');
+  lines.push('');
+  lines.push(...tierPairTable(ev => ev.inScope));
+
+  lines.push('### S3.3 — ADJUDICATED — the honest gate');
+  lines.push('');
+  lines.push('In scope, less conflicts that are documented not-a-defect: the Midland FY2023');
+  lines.push('restatement (5830 vs 5831) and conflicts between md5-identical inputs.');
+  lines.push('Every excluded row is itemised in S8.');
+  lines.push('');
+  lines.push(...tierPairTable(ev => ev.inScope && isAdjudicatedOut(ev) === null));
 
   lines.push('---');
   lines.push('');
@@ -711,31 +885,84 @@ function buildReport(allEvents: WriteEvent[]): string {
   lines.push('All CONFLICT rows where the previous and new documents have the same tier. Document IDs are the dev capture document IDs.');
   lines.push('');
 
+  const sortConflicts = (rows: WriteEvent[]): WriteEvent[] => [...rows].sort((a, b) => {
+    const co = a.company.localeCompare(b.company);
+    if (co !== 0) return co;
+    if (a.fiscalYear !== b.fiscalYear) return a.fiscalYear - b.fiscalYear;
+    const st = a.statement.localeCompare(b.statement);
+    if (st !== 0) return st;
+    return a.field.localeCompare(b.field);
+  });
+
   for (const tier of ['T1a', 'T1b']) {
-    const sameTierConflicts = conflicts
-      .filter(ev => ev.previousTier === tier && ev.tier === tier)
-      .sort((a, b) => {
-        const co = a.company.localeCompare(b.company);
-        if (co !== 0) return co;
-        if (a.fiscalYear !== b.fiscalYear) return a.fiscalYear - b.fiscalYear;
-        const st = a.statement.localeCompare(b.statement);
-        if (st !== 0) return st;
-        return a.field.localeCompare(b.field);
-      });
+    for (const scope of [true, false]) {
+      const rows = sortConflicts(conflicts.filter(
+        ev => ev.previousTier === tier && ev.tier === tier && ev.inScope === scope,
+      ));
 
-    lines.push(`### ${tier} → ${tier}`);
-    lines.push('');
-    if (sameTierConflicts.length === 0) {
-      lines.push('*No matching CONFLICT rows.*');
+      lines.push(`### ${tier} → ${tier} — ${scope ? 'IN SCOPE' : 'OUT OF SCOPE (R1)'}`);
       lines.push('');
-      continue;
-    }
+      if (rows.length === 0) {
+        lines.push('*No matching CONFLICT rows.*');
+        lines.push('');
+        continue;
+      }
 
-    lines.push('| Company | FY | Statement | Field | Previous value | New value | Previous doc ID | New doc ID |');
-    lines.push('|---|---|---|---|---|---|---|---|');
-    for (const ev of sameTierConflicts) {
+      lines.push('| Company | FY | Statement | Field | Previous value | New value | Previous doc ID | New doc ID | Adjudication |');
+      lines.push('|---|---|---|---|---|---|---|---|---|');
+      for (const ev of rows) {
+        lines.push(
+          `| ${ev.company} | ${ev.fiscalYear} | ${ev.statement} | \`${ev.field}\` ` +
+          `| ${fmtVal(ev.previousValue)} | ${fmtVal(ev.newValue)} | ${ev.previousSourceDocId} | ${ev.devDocId} ` +
+          `| ${isAdjudicatedOut(ev) ?? 'UNEXPLAINED'} |`,
+        );
+      }
+      lines.push('');
+    }
+  }
+
+  // ── S7 ────────────────────────────────────────────────────────────────────
+  lines.push('---');
+  lines.push('');
+  lines.push('## S7 — Reverse-Granularity Reclassifications (R2)');
+  lines.push('');
+  lines.push('Declared parent-child rules only, each additionally requiring an exact');
+  lines.push('arithmetic match. Every reclassification is listed here. Nothing is silent.');
+  lines.push('');
+  if (reverseHits.length === 0) {
+    lines.push('*No reverse-granularity reclassifications.*');
+    lines.push('');
+  } else {
+    lines.push('| Company | FY | Stmt | Period | Parent field | Prev | New | Erased children | Arithmetic |');
+    lines.push('|---|---|---|---|---|---|---|---|---|');
+    for (const h of reverseHits) {
+      const kids = h.children.map(c => `\`${c.field}\` ${c.value}`).join(' + ');
+      const sums = h.children.map(c => String(c.value)).join(' + ');
       lines.push(
-        `| ${ev.company} | ${ev.fiscalYear} | ${ev.statement} | \`${ev.field}\` ` +
+        `| ${h.company} | ${h.fiscalYear} | ${h.statement} | ${h.periodId} | \`${h.parent}\` ` +
+        `| ${h.prev} | ${h.next} | ${kids} | ${h.prev} + ${sums} = ${h.next} |`,
+      );
+    }
+    lines.push('');
+  }
+
+  // ── S8 ────────────────────────────────────────────────────────────────────
+  lines.push('---');
+  lines.push('');
+  lines.push('## S8 — Adjudication Ledger');
+  lines.push('');
+  lines.push('Every in-scope CONFLICT row excluded from the S3.3 rate, with its reason.');
+  lines.push('');
+  const adjudicated = sortConflicts(allEvents.filter(ev => ev.inScope && isAdjudicatedOut(ev) !== null));
+  if (adjudicated.length === 0) {
+    lines.push('*No adjudicated exclusions.*');
+    lines.push('');
+  } else {
+    lines.push('| Reason | Company | FY | Stmt | Field | Previous value | New value | Prev doc | New doc |');
+    lines.push('|---|---|---|---|---|---|---|---|---|');
+    for (const ev of adjudicated) {
+      lines.push(
+        `| ${isAdjudicatedOut(ev)} | ${ev.company} | ${ev.fiscalYear} | ${ev.statement} | \`${ev.field}\` ` +
         `| ${fmtVal(ev.previousValue)} | ${fmtVal(ev.newValue)} | ${ev.previousSourceDocId} | ${ev.devDocId} |`,
       );
     }
@@ -769,7 +996,10 @@ function main(): void {
 
   console.log(`\nTotal write events across all companies: ${allEvents.length}`);
 
-  const md = buildReport(allEvents);
+  const reverseHits = applyReverseGranularity(allEvents);
+  console.log(`R2 reverse-granularity reclassifications (declared rules only): ${reverseHits.length}`);
+
+  const md = buildReport(allEvents, reverseHits);
 
   fs.mkdirSync(path.dirname(OUTPUT_PATH), { recursive: true });
   fs.writeFileSync(OUTPUT_PATH, md, 'utf8');
