@@ -204,7 +204,7 @@ export class FinancialDataService {
           profitBeforeTax: this.parseDecimal(pl.profit_before_tax),
           corporationTax: this.parseDecimal(pl.tax || pl.corporation_tax),
           netProfit: this.parseDecimal(pl.net_profit),
-          staffCosts: this.parseDecimal(yd.total_staff_costs || pl.total_staff_costs),
+          staffCosts: this.deriveStaffCosts(yd, pl),
           directorsRemuneration: this.parseDecimal(yd.total_directors_remuneration || pl.total_directors_remuneration),
           dividendsPaid: this.parseDecimal(yd.dividends_paid || pl.dividends_paid),
           revenueBreakdown: yd.revenue_breakdown || pl.revenue_breakdown || null,
@@ -423,7 +423,7 @@ export class FinancialDataService {
           hirePurchaseLongTerm: this.parseDecimal(longTermLiabilities.hire_purchase_long_term),
           deferredTaxation: this.parseDecimal(longTermLiabilities.deferred_taxation),
           otherLongTermDebt: this.parseDecimal(longTermLiabilities.other_debt),
-          totalLongTermLiabilities: this.parseDecimal(longTermLiabilities.total),
+          totalLongTermLiabilities: this.deriveLongTermLiabilitiesTotal(longTermLiabilities),
           shareCapital: this.parseDecimal(equity.share_capital),
           retainedEarnings: this.parseDecimal(equity.retained_earnings),
           totalEquity: this.parseDecimal(equity.total),
@@ -520,7 +520,7 @@ export class FinancialDataService {
           hirePurchaseLongTerm: this.parseDecimal(longTermLiabilities.hire_purchase_long_term),
           deferredTaxation: this.parseDecimal(longTermLiabilities.deferred_taxation),
           otherLongTermDebt: this.parseDecimal(longTermLiabilities.other_debt),
-          totalLongTermLiabilities: this.parseDecimal(longTermLiabilities.total),
+          totalLongTermLiabilities: this.deriveLongTermLiabilitiesTotal(longTermLiabilities),
           shareCapital: this.parseDecimal(equity.share_capital),
           retainedEarnings: this.parseDecimal(equity.retained_earnings),
           totalEquity: this.parseDecimal(equity.total),
@@ -768,6 +768,101 @@ export class FinancialDataService {
       recordsCreated: totalRecords,
       errors: allErrors.length > 0 ? allErrors : undefined,
     };
+  }
+
+  /** Round a computed money figure to pence. Removes binary float error introduced by
+   *  summing decimal inputs. Not a rounding of the source figures themselves. */
+  private toMoney(n: number): string {
+    return (Math.round(n * 100) / 100).toString();
+  }
+
+  /**
+   * CONTRACT 1 — `long_term_liabilities.total` holds the printed "Creditors: amounts
+   * falling due after more than one year" line. Provisions for liabilities, including
+   * deferred taxation, sit OUTSIDE it.
+   * See claude/CONTRACT-field-composition.md.
+   *
+   * Measured read-only 20 Aug 2026: 82 of 82 dev periods and 32 of 32 prod periods that
+   * carry a non-zero deferred taxation figure have it folded INSIDE the extracted total.
+   * already_outside and neither were both zero on both databases.
+   *
+   * Derived by SUBTRACTION, never by summing the children. A note listing only some
+   * categories would make a children-sum understate the total, which is the failure mode
+   * already documented in the BS6 comment in shared/utils/evidence-mapper.ts. Across all
+   * 114 affected rows, extracted_total minus deferred equals the children sum exactly.
+   *
+   * Subtracts ONLY where the fold is demonstrably present. Every other shape is returned
+   * unchanged. This method never guesses.
+   */
+  private deriveLongTermLiabilitiesTotal(ltl: any): string | null {
+    const extracted = this.parseDecimal(ltl?.total);
+    if (extracted === null) return null;
+
+    const deferredStr = this.parseDecimal(ltl?.deferred_taxation);
+    if (deferredStr === null) return extracted;
+
+    const total = Number(extracted);
+    const deferred = Number(deferredStr);
+    if (!Number.isFinite(total) || !Number.isFinite(deferred) || deferred === 0) {
+      return extracted;
+    }
+
+    let children = 0;
+    for (const key of ['bank_loans', 'hire_purchase_long_term', 'other_debt']) {
+      const v = this.parseDecimal(ltl?.[key]);
+      if (v === null) continue;
+      const n = Number(v);
+      if (Number.isFinite(n)) children += n;
+    }
+
+    const tolerance = Math.max(1, Math.abs(total) * 0.0001);
+
+    // Fold present: total === children + deferred. Remove the provision.
+    if (Math.abs(total - (children + deferred)) <= tolerance) {
+      return this.toMoney(total - deferred);
+    }
+
+    // Already correct (total === children), or a shape we do not recognise.
+    // Do not guess. BS4b will flag the unrecognised case in apply 2.
+    return extracted;
+  }
+
+  /**
+   * CONTRACT 3 — staff_costs = staff wages and salaries + employer's national insurance
+   * + staff pension contributions. Excludes staff training and recruitment. Excludes
+   * directors' remuneration, which stays counted inside administrative_expenses via
+   * overheads_breakdown.directors_salaries.
+   * See claude/CONTRACT-field-composition.md.
+   *
+   * This is already the P&L prompt's own definition. The extracted aggregate follows it
+   * in only 4 of 10 observed cases and produces three different formulas over the same
+   * four components, including two different answers from md5-identical input. Every
+   * component is read correctly every time, so the aggregate is derived rather than
+   * extracted, per item 432.
+   *
+   * Requires ALL THREE components. A document carrying only some of them would produce an
+   * understated sum, so the extracted aggregate is kept in that case.
+   */
+  private deriveStaffCosts(yd: any, pl: any): string | null {
+    const extracted = this.parseDecimal(yd?.total_staff_costs || pl?.total_staff_costs);
+
+    const overheads = yd?.overheads_breakdown || pl?.overheads_breakdown || null;
+    if (!overheads || typeof overheads !== 'object') return extracted;
+
+    let sum = 0;
+    for (const key of [
+      'staff_wages_salaries',
+      'employers_national_insurance',
+      'staff_pension_contributions',
+    ]) {
+      const v = this.parseDecimal((overheads as any)[key]);
+      if (v === null) return extracted;
+      const n = Number(v);
+      if (!Number.isFinite(n)) return extracted;
+      sum += n;
+    }
+
+    return this.toMoney(sum);
   }
 
   private parseDecimal(value: any): string | null {
