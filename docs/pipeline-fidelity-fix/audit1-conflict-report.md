@@ -3452,3 +3452,40 @@ Grouped by company and fiscal year; every row where a later document replaced a 
 |---|---|---|---|---|---|
 | BS | 7948 | `deferredTaxation` | 4434 | 5830 (T1a) | 5831 (T1a) |
 | BS | 7948 | `leaseholdProperty` | 10231 | 5830 (T1a) | 5831 (T1a) |
+
+---
+
+## S6 — Same-Tier CONFLICT Rows
+
+All CONFLICT rows where the previous and new documents have the same tier. Document IDs are the dev capture document IDs.
+
+### T1a → T1a
+
+| Company | FY | Statement | Field | Previous value | New value | Previous doc ID | New doc ID |
+|---|---|---|---|---|---|---|---|
+| Innova Design Group Limited | 2024 | BS | `otherDebtors` | 1564 | 850 | 5861 | 5868 |
+| Innova Design Group Limited | 2024 | IS | `costOfSalesBreakdown.other_direct_costs` | 99354 | 88185 | 5857 | 5861 |
+| Innova Design Group Limited | 2024 | IS | `overheadsBreakdown.other_overheads` | 13718 | 44937 | 5857 | 5861 |
+| Innova Design Group Limited | 2024 | IS | `overheadsBreakdown.staff_training_recruitment` | 10901 | 13373 | 5857 | 5861 |
+| Innova Design Group Limited | 2024 | IS | `staffCosts` | 556781 | 570154 | 5857 | 5861 |
+| Innova Design Group Limited | 2025 | IS | `overheadsBreakdown.other_overheads` | 24042 | 24084 | 5857 | 5867 |
+| Innova Design Group Limited | 2025 | IS | `overheadsBreakdown.professional_fees` | 16027 | 12885 | 5857 | 5867 |
+| Innova Design Group Limited | 2025 | IS | `staffCosts` | 712676 | 716147 | 5857 | 5867 |
+| Thor-CON (Midland Air Conditioning) | 2023 | BS | `plantMachinery` | 35376 | 45607 | 5830 | 5831 |
+| Thor-CON (Midland Air Conditioning) | 2023 | BS | `retainedEarnings` | 164400 | 168834 | 5830 | 5831 |
+| Thor-CON (Midland Air Conditioning) | 2023 | BS | `totalEquity` | 164500 | 168934 | 5830 | 5831 |
+| Thor-CON (Midland Air Conditioning) | 2023 | BS | `totalLongTermLiabilities` | 49478 | 45044 | 5830 | 5831 |
+| Thor-CON (Midland Air Conditioning) | 2023 | IS | `corporationTax` | 36214 | 31780 | 5830 | 5831 |
+| Thor-CON (Midland Air Conditioning) | 2023 | IS | `netProfit` | 132092 | 136526 | 5830 | 5831 |
+| Thor-CON (Midland Air Conditioning) | 2023 | IS | `overheadsBreakdown.other_overheads` | 15403 | 1460 | 5830 | 5831 |
+
+### T1b → T1b
+
+| Company | FY | Statement | Field | Previous value | New value | Previous doc ID | New doc ID |
+|---|---|---|---|---|---|---|---|
+| Innova Design Group Limited | 2022 | IS | `costOfSalesBreakdown.other_direct_costs` | 1582248 | 980718 | 5862 | 5863 |
+| Innova Design Group Limited | 2022 | IS | `overheadsBreakdown.other_overheads` | 18121 | 33723 | 5862 | 5863 |
+| Innova Design Group Limited | 2022 | IS | `staffCosts` | 506800 | 538301 | 5862 | 5863 |
+| Innova Design Group Limited | 2023 | IS | `costOfSalesBreakdown.other_direct_costs` | 723073 | 1343948 | 5862 | 5869 |
+| Innova Design Group Limited | 2023 | IS | `overheadsBreakdown.other_overheads` | 14534 | 14472 | 5862 | 5869 |
+| Innova Design Group Limited | 2023 | IS | `staffCosts` | 498233 | 547038 | 5862 | 5869 |

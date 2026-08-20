@@ -703,6 +703,45 @@ function buildReport(allEvents: WriteEvent[]): string {
     lines.push('');
   }
 
+  // ── S6 ────────────────────────────────────────────────────────────────────
+  lines.push('---');
+  lines.push('');
+  lines.push('## S6 — Same-Tier CONFLICT Rows');
+  lines.push('');
+  lines.push('All CONFLICT rows where the previous and new documents have the same tier. Document IDs are the dev capture document IDs.');
+  lines.push('');
+
+  for (const tier of ['T1a', 'T1b']) {
+    const sameTierConflicts = conflicts
+      .filter(ev => ev.previousTier === tier && ev.tier === tier)
+      .sort((a, b) => {
+        const co = a.company.localeCompare(b.company);
+        if (co !== 0) return co;
+        if (a.fiscalYear !== b.fiscalYear) return a.fiscalYear - b.fiscalYear;
+        const st = a.statement.localeCompare(b.statement);
+        if (st !== 0) return st;
+        return a.field.localeCompare(b.field);
+      });
+
+    lines.push(`### ${tier} → ${tier}`);
+    lines.push('');
+    if (sameTierConflicts.length === 0) {
+      lines.push('*No matching CONFLICT rows.*');
+      lines.push('');
+      continue;
+    }
+
+    lines.push('| Company | FY | Statement | Field | Previous value | New value | Previous doc ID | New doc ID |');
+    lines.push('|---|---|---|---|---|---|---|---|');
+    for (const ev of sameTierConflicts) {
+      lines.push(
+        `| ${ev.company} | ${ev.fiscalYear} | ${ev.statement} | \`${ev.field}\` ` +
+        `| ${fmtVal(ev.previousValue)} | ${fmtVal(ev.newValue)} | ${ev.previousSourceDocId} | ${ev.devDocId} |`,
+      );
+    }
+    lines.push('');
+  }
+
   return lines.join('\n');
 }
 
