@@ -519,6 +519,43 @@ const CAST_CHECKS: CastDefinition[] = [
       sumOfPaths(g, TANGIBLE_COMPONENTS),
     ],
   },
+  {
+    // CONTRACT 1, added 20 August 2026. See claude/CONTRACT-field-composition.md.
+    //
+    // long_term_liabilities.total holds the printed "Creditors: amounts falling due after
+    // more than one year" line. Provisions for liabilities, including deferred taxation,
+    // sit OUTSIDE it.
+    //
+    // BS4 above sums ALL children including deferred_taxation, so it passes whenever the
+    // model's own arithmetic is self-consistent. Measured 20 Aug 2026: BS4 has never fired
+    // across 743 dev and 227 prod periods, while eleven other casts do. It is a tautology
+    // on this data and cannot see the fold.
+    //
+    // BS4b compares the total against the creditor children ONLY. It fires on exactly the
+    // rows where the provision has been folded in: 82 of 82 dev and 32 of 32 prod periods
+    // carrying a non-zero deferred taxation figure.
+    //
+    // Written as an explicit sides function rather than g.sum(), because g.sum() returns
+    // null when no matching path is found, which would silently skip the 18 prod rows
+    // whose ONLY long term liability is the provision (total 4,006, children none).
+    // Those are the clearest instances and must not be skipped.
+    //
+    // informational, not trust_blocking. This observes; it does not gate. BS4 is retired
+    // once stored data is corrected.
+    check: 'BS4b',
+    type: 'cast_failure',
+    severity: 'informational',
+    sides: g => {
+      const total = g.get(LTL_PREFIX + 'total');
+      const deferred = g.get(LTL_PREFIX + 'deferred_taxation');
+      if (total === null || deferred === null) return [null, null];
+      const creditors =
+        nz(g.get(LTL_PREFIX + 'bank_loans')) +
+        nz(g.get(LTL_PREFIX + 'hire_purchase_long_term')) +
+        nz(g.get(LTL_PREFIX + 'other_debt'));
+      return [total, creditors];
+    },
+  },
 ];
 
 /**

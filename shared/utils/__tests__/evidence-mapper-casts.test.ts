@@ -155,6 +155,78 @@ describe('cast checks — balance sheet', () => {
   });
 });
 
+describe('cast checks — BS4b long-term liabilities contract observer', () => {
+  it('fires informationally on the Midland FY2024 deferred-tax fold while BS4 passes', () => {
+    const { periods } = mapRoot({
+      balance_sheet: {
+        long_term_liabilities: {
+          total: 319401,
+          bank_loans: 23333,
+          hire_purchase_long_term: 249133,
+          deferred_taxation: 46935,
+        },
+      },
+    });
+    const a = casts(periods[0]);
+    const bs4b = a.filter(x => (x as any).detail.check === 'BS4b');
+    expect(bs4b).toHaveLength(1);
+    expect((bs4b[0] as any).severity).toBe('informational');
+    expect((bs4b[0] as any).detail.lhs).toBe(319401);
+    expect((bs4b[0] as any).detail.rhs).toBe(272466);
+    expect(a.some(x => (x as any).detail.check === 'BS4')).toBe(false);
+  });
+
+  it('fires when deferred taxation is the whole total', () => {
+    const { periods } = mapRoot({
+      balance_sheet: {
+        long_term_liabilities: { total: 4006, deferred_taxation: 4006 },
+      },
+    });
+    const bs4b = casts(periods[0]).filter(x => (x as any).detail.check === 'BS4b');
+    expect(bs4b).toHaveLength(1);
+    expect((bs4b[0] as any).detail.lhs).toBe(4006);
+    expect((bs4b[0] as any).detail.rhs).toBe(0);
+  });
+
+  it('skips when deferred taxation is absent', () => {
+    const { periods } = mapRoot({
+      balance_sheet: {
+        long_term_liabilities: { total: 45044, bank_loans: 43333, hire_purchase_long_term: 1711 },
+      },
+    });
+    expect(casts(periods[0]).some(x => (x as any).detail.check === 'BS4b')).toBe(false);
+  });
+
+  it('does not fire when the total already excludes deferred taxation, while BS4 fires by design', () => {
+    const { periods } = mapRoot({
+      balance_sheet: {
+        long_term_liabilities: {
+          total: 272466,
+          bank_loans: 23333,
+          hire_purchase_long_term: 249133,
+          deferred_taxation: 46935,
+        },
+      },
+    });
+    const a = casts(periods[0]);
+    expect(a.some(x => (x as any).detail.check === 'BS4b')).toBe(false);
+    expect(a.some(x => (x as any).detail.check === 'BS4')).toBe(true);
+  });
+
+  it('does not fire within the one-basis-point tolerance', () => {
+    const { periods } = mapRoot({
+      balance_sheet: {
+        long_term_liabilities: {
+          total: 1000000,
+          bank_loans: 999999.5,
+          deferred_taxation: 500,
+        },
+      },
+    });
+    expect(casts(periods[0]).some(x => (x as any).detail.check === 'BS4b')).toBe(false);
+  });
+});
+
 describe('cast checks — path normalisation and merge coexistence', () => {
   it('wrapped payload paths normalise, so casts still bind', () => {
     const wrapped = {
