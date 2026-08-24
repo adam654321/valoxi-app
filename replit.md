@@ -24,11 +24,12 @@ npm run build
 # Typecheck the project
 npm run typecheck
 
-# Generate Drizzle migration snapshot (for review, 'db:push' is active strategy)
+# Generate Drizzle migration snapshot. REVIEW ONLY. Do not run the migration.
 npm run db:generate
 
-# Push schema changes to the database (active sync strategy)
-npm run db:push
+# DO NOT RUN. db:push is BLOCKED by the #188 drift. See "Gotchas" below.
+# Schema changes go through a direct ALTER with explicit constraint names (#189).
+# npm run db:push
 ```
 
 ## Stack
@@ -58,7 +59,7 @@ npm run db:push
 ## Architecture decisions
 
 - **Modular Backend Architecture**: Layered `repositories` (data access), `services` (business logic), and `routes` (HTTP concerns) using domain-specific files for maintainability and separation of concerns.
-- **Drizzle ORM `db:push` Strategy**: Prioritizes direct schema synchronization for rapid development over traditional versioned migrations, treating `db:push` as the source of truth for the live database.
+- **Drizzle Schema Strategy, LIVE DATABASE authoritative**: `db:push` was the original strategy and is now BLOCKED by the #188 drift. The live database is authoritative for accepted deltas. Schema changes are applied as direct ALTER statements with explicit constraint names, because auto-generated names drift between `_key` and `_unique` (#189). Migrations must not be generated or run to close accepted deltas without a dedicated reviewed slice. See `docs/drizzle-rebaseline/drift-register.md`.
 - **EventBus Pattern**: Utilizes a typed EventEmitter singleton for decoupled inter-service communication, facilitating reactive system behavior (e.g., `file:uploaded` triggers analysis).
 - **Entitlements Layer**: Centralized `shared/entitlements.ts` as the single source of truth for tier-based feature gating and limits, applied consistently across both client and server.
 - **Value Creation Modeller**: Implements a pure TypeScript calculation engine for financial projections, isolated from database concerns, enabling robust and testable financial modeling.
@@ -80,7 +81,7 @@ Preferred communication style: Simple, everyday language.
 
 ## Gotchas
 
-- **Drizzle Migration Strategy**: Always use `npm run db:push` to apply schema changes. Do not mix `db:push` with `db:generate`/`db:migrate` as `db:push` is the active sync strategy.
+- **Drizzle Migration Strategy, DO NOT RUN `db:push`**: It is blocked by the #188 drift and will reintroduce it. Apply schema changes as a direct ALTER with EXPLICIT constraint names (#189: auto-generated names drift between `_key` and `_unique`). Do not run `db:migrate`. `db:generate` is for producing a snapshot to review, never to apply. The live database is authoritative for accepted deltas; see `docs/drizzle-rebaseline/drift-register.md`.
 - **CSRF Tokens**: Frontend must fetch a CSRF token (`GET /api/v2/auth/csrf`) and attach it as `x-csrf-token` header to all mutating API requests after authentication.
 - **Data Isolation**: All data access must respect `userCompanyId` for multi-tenancy.
 - **Analysis Pipeline Disk Access**: The analysis pipeline (e.g., `classifyDocumentWithGemini()`) reads text files directly from disk (`fs.readFile`) and does not use loopback HTTP calls.
