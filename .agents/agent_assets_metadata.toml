@@ -48,3 +48,10 @@ id = "KJzUrzTLbz1YLo0uK_TIz"
 uri = "file://valoxi-prod-p4-rehearsal.dump"
 type = "unspecified"
 title = "valoxi-prod-p4-rehearsal.dump (pre-Phase 4 rollback point)"
+
+[[outputs]]
+id = "fe53CXNSypUeSHYdRfLqk"
+uri = "file://docs/pipeline-fidelity-fix/c1-paper-sample-assess.txt"
+type = "text"
+title = "Contract 1 paper sample assessment"
+description = "Read-only production population assessment report with sizing, company/category cohorts, shortlist, and R2 HEAD checks."

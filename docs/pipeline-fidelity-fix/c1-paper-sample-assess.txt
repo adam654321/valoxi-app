@@ -1,0 +1,657 @@
+=== IDENTITY ===
+database=neondb  documents=1054  balance_sheets=697
+adam last_name(s)=Auty,David   (prod expects Coxon, dev expects David)
+
+=== POPULATION ===
+balance_sheets rows          : 697
+with a long term total       : 663
+with a deferred figure       : 298
+with NON-ZERO deferred       : 289
+
+=== SIZING REPRODUCTION (expect 281 / 9925991.99 / 98) ===
+would-change rows            : 281   MATCH
+deferred tax removed         : 9925991.99   MATCH
+rows going to exactly zero   : 98   MATCH
+DEGENERATE (children = 0)    : 98
+non-zero-deferred residue    : 8  (predicate does not fire, left alone)
+
+=== SOURCE DOCUMENT COVERAGE ===
+would-change rows with NO source_document_id : 49  (cannot be paper-verified)
+distinct source documents                    : 159
+distinct companies                           : 81
+
+=== PER COMPANY (would-change rows, sorted by deferred at risk) ===
+co    name                           rows zeros docs      deferred  categories
+123   Printing Company                  6     6    4    1627697.50  Company Accounts
+122       Clifford Press Limited        4     4    3    1223075.25  Sales Ledger|Company Accounts|YTD Balance Sheet
+82    Astorbush                         4     1    3     973104.00  Company Accounts
+160   Climb Quest (Walthew Leisure L    5     0    1     584800.00  Company Accounts
+242   Premier Garden Supplies Limite    6     1    5     412526.00  Company Accounts
+88    Kitchen Generator Limited         3     0    0     408526.00  NO DOC
+217   Teakcroft                         5     0    3     350033.00  Company Accounts|YTD Balance Sheet
+127   Moby Foods                        6     0    5     323265.00  Company Accounts|YTD Balance Sheet
+108   RCT MANUFACTURING LIMITED         5     1    4     306156.00  Company Accounts|YTD Balance Sheet
+67    DNA                               2     0    1     288380.00  Company Accounts
+114   Chew Valley Construction Limit    4     4    2     279118.00  Company Accounts
+133   The Smile Gallery                 4     0    3     207252.00  Company Accounts
+172   Ideal scaffolding                 4     1    3     186197.00  Company Accounts
+174   B&K Electrical Services           5     0    0     163127.00  NO DOC
+155   LW Haddow                         5     1    4     153047.00  Company Accounts
+87    Dental Surgery 70171              3     0    2     150795.00  Company Accounts
+80    Indirock Limited                  2     0    0     139259.00  NO DOC
+212   Spring Europe Limited             5     2    0     130116.00  NO DOC
+180   M&M Scaffolding                   4     1    0     115116.00  NO DOC
+120   acme1                             2     2    2     111990.00  Company Accounts
+173   Advanced scaffolding              3     3    0     111208.00  NO DOC
+134   LCIAD                             4     0    2     103502.00  Company Accounts
+228   Thor-CON                          3     0    2      98304.00  Deal Documents|Company Accounts
+136   LHDPS                             4     0    3      93888.00  Company Accounts
+230   Summit Print                      4     2    3      89780.76  Company Accounts|YTD Balance Sheet
+142   CR Building Contractors Limite    3     0    0      79116.00  NO DOC
+89    Innova Design Group Limited       1     0    0      78623.00  NO DOC
+163   Lovell Landscape                  4     0    2      65559.00  Company Accounts|YTD Balance Sheet
+97    Palatial leisure                  1     1    1      61710.00  Deal Documents
+198   CR Building                       2     0    2      58614.00  Company Accounts
+60    MSL                               4     0    3      55800.00  Company Accounts
+83    Newbie&Me                         3     3    3      51961.00  Deal Documents|YTD Balance Sheet
+206   Westcliffe joiners                6     6    4      51122.00  Company Accounts
+252   CARPENTRY DIVISION LTD            6     0    4      49993.00  Company Accounts
+251   Capital Services Group            4     0    3      46019.00  Company Accounts
+259   GMS Plumbing & Heating Supplie    8     0    6      40870.00  Company Accounts|YTD Balance Sheet
+125   Cordell Engineering Limited       4     1    2      38647.00  Company Accounts
+147   Cordell                           4     1    2      38647.00  Company Accounts
+167   Advanced Industrial Roofing an    4     0    0      37855.00  NO DOC
+81    Revolution Skate Park Limited     5     3    0      35411.00  NO DOC
+145   Elecktec Limited                  3     3    2      33954.00  Company Accounts
+132   COOPER LOMAZ RECRUITMENT LIMIT    2     0    1      32446.00  Company Accounts
+179   Little Agnes Nursery              1     1    0      31747.00  NO DOC
+191   Frametech Essex Limited           5     1    4      28624.00  Company Accounts
+168   Jessup Electrical Wholesalers     3     3    0      25347.00  NO DOC
+224   About Time Creative               4     1    2      24968.00  Company Accounts
+100   EREKA and NECAB                   3     0    2      24366.00  Company Accounts
+189   Manor Building Solutions (UK)     3     0    2      22095.00  Company Accounts
+244   Origin Digital                    5     0    4      19309.48  Company Accounts|YTD Balance Sheet
+135   Vici Dental                       3     2    2      18977.00  Company Accounts|Deal Documents
+116   Woodfield Building Services       3     3    2      18245.00  Company Accounts
+166   Barn Nursery                      5     1    4      17607.00  Company Accounts
+211   Scotty Gates Limited              3     0    0      17062.00  NO DOC
+188   Commercial Cleaning Company -     5     5    3      16810.00  Company Accounts|NO DOC
+240   Lima Homecare                     4     0    3      14856.00  Company Accounts
+137   MANOR BUILDING SOLUTIONS (UK)     2     0    1      14196.00  Company Accounts
+165   Daycare                           4     4    3      10098.00  Company Accounts
+107   Property Care NW                  6     0    4       9357.00  Company Accounts
+196   Compassion Home Care Limited      3     0    2       9201.00  Company Accounts
+139   Cleaning and Gardening Crew       3     3    3       9060.00  Company Accounts
+197   BESIXTH & Campus Group (MGA Me    1     0    1       8590.00  Company Accounts
+149   Civil Engineering                 3     3    1       7755.00  YTD Balance Sheet
+150   Civil Engineering                 3     3    2       7755.00  Company Accounts|YTD Balance Sheet
+151   Civils                            3     3    1       7755.00  YTD Balance Sheet
+169   Kent Construction & Restoratio    3     0    0       7743.00  NO DOC
+115   Asher Care Ltd                    2     2    1       7738.00  Company Accounts
+152   Civils 2                          3     3    2       7571.00  Company Accounts
+121   Emcon Services Limited            1     0    0       7392.00  NO DOC
+177   Crickets Montessori               1     1    0       6514.00  NO DOC
+112   Kimpol Limited                    3     0    2       5632.00  Company Accounts
+71    Acme Manufacturing Ltd            2     2    1       4845.00  Due Diligence
+209   Litge_Nursery                     3     3    2       4836.00  Company Accounts
+231   Triple test                       1     0    0       4434.00  NO DOC
+257   Croston                           5     5    4       4041.00  Company Accounts
+117   Habit 5                           4     1    2       3894.00  Company Accounts
+156   Apple Homecare Limited            1     1    1       3146.00  Company Accounts
+128   Metainy Air Conditioning Ltd      1     0    1       2365.00  Deal Documents
+241   Luniq                             2     0    2       1998.00  Company Accounts
+232   Warm Roofing                      2     0    1       1421.00  Company Accounts
+124   Association of Learning           4     0    3       1240.00  Company Accounts
+109   Satos Media                       2     0    1        792.00  Company Accounts
+
+=== COHORT x DOCUMENT CATEGORY (category used for SAMPLING only, never tiering) ===
+category                          to-zero   multi      deferred
+Company Accounts                       66     137    7411894.50
+NO DOC                                 15      34    1401394.00
+YTD Balance Sheet                      10       8     643270.49
+Sales Ledger                            1       0     318179.00
+Deal Documents                          4       4     146409.00
+Due Diligence                           2       0       4845.00
+
+=== SHORTLIST (largest deferred per company per cohort) ===
+bs     co    fy    doc    cohort           total     deferred     children    corrected          tcl       equity  file
+505    123   2022  697    ZERO         366979.00    366979.00         0.00         0.00    875869.00   1938462.00  2023 Full Accounts_Printing Company.pdf
+500    122   2024  704    ZERO         332100.00    332100.00         0.00         0.00    855856.00   2108679.00  2025 Full Accounts Clifford Press Limited (New).pdf
+374    82    2022  534    ZERO         249175.00    249175.00         0.00         0.00   1537179.00   2405403.00  Limited company accounts 2023.PDF
+376    82    2024  531    MULTI       1685312.00    285312.00   1400000.00   1400000.00    110633.00   2499847.00  Limited company accounts 2024.pdf
+1020   160   2023  1564   MULTI        414311.04    121682.00    292629.04    292629.04    595589.66    211472.88  Balance Sheet.pdf
+1136   242   2026  1836   ZERO          91283.00     91283.00         0.00         0.00    450098.00   1163836.00  DRAFTQ~1.PDF
+1138   242   2025  1838   MULTI        207042.00     91283.00    115759.00    115759.00    177984.00   1138259.00  2025FU~1.PDF
+1143   88    2024  NONE   MULTI        154874.71    154003.00       871.71       871.71    218222.85   1232705.73  NO DOC
+981    217   2022  1481   MULTI        334622.00     84192.00    250430.00    250430.00    440417.00    610376.00  FY23.pdf
+530    127   2023  729    MULTI        123876.00     77662.00     46214.00     46214.00    335655.00    328296.00  Accounts Full - 2024.pdf
+441    108   2026  619    ZERO          72823.00     72823.00         0.00         0.00    402001.57    406006.73  1.Bal Sheet Feb 26.pdf
+440    108   2025  618    MULTI        226435.00     72823.00    153612.00    153612.00    306799.00    191532.00  RCT Manufacturing Limited-Draft Full Accounts YE 31 January 2026.pdf
+273    67    2022  383    MULTI       1426603.00    162648.00   1263955.00   1263955.00   1046504.00   1605864.00  Shearfab Ltd - Accounts 31 January 2022.pdf
+462    114   2024  652    ZERO         102560.00    102560.00         0.00         0.00    504932.00   1361296.00  CVC - Unaudited Financial Statements YE 31-03-2025.pdf
+563    133   2023  808    MULTI        284259.00     67531.00    216728.00    216728.00     98552.00    322396.00  08745997_aa_2025-03-31.pdf
+791    172   2024  1424   ZERO          25420.00     25420.00         0.00         0.00    275868.00    362845.00  year end 24.pdf
+857    172   2022  1423   MULTI        119236.00     61655.00     57581.00     57581.00    564353.00    498579.00  year end 23.pdf
+832    174   2026  NONE   MULTI        461779.00     77111.00    384668.00    384668.00     98016.00    990281.00  NO DOC
+670    155   2026  965    ZERO          37514.00     37514.00         0.00         0.00    211469.00    500714.00  2026 Accs.pdf
+669    155   2025  969    MULTI         71594.00     68064.00      3530.00      3530.00    402566.00    594653.00  LW Haddow 2025 Accs.pdf
+337    87    2023  475    MULTI        182775.00     54468.00    128307.00    128307.00    100496.00    388762.00  Accounts 2024 - 70171 (1).pdf
+420    80    2024  NONE   MULTI        397563.00    138695.00    258868.00    258868.00     92364.00    -46516.00  NO DOC
+950    212   2021  NONE   ZERO          18443.00     18443.00         0.00         0.00    196664.00    226587.00  NO DOC
+947    212   2025  NONE   MULTI         97345.00     38540.00     58805.00     58805.00    374229.00    885436.00  NO DOC
+816    180   2024  NONE   ZERO          23961.00     23961.00         0.00         0.00    235407.00    427863.00  NO DOC
+814    180   2025  NONE   MULTI         56949.00     36764.00     20185.00     20185.00    191838.00    503578.00  NO DOC
+487    120   2024  680    ZERO          59295.00     59295.00         0.00         0.00    163852.00    797345.00  2024 final accounts.pdf
+797    173   2024  NONE   ZERO          59530.00     59530.00         0.00         0.00    373825.00    999401.00  NO DOC
+565    134   2024  814    MULTI        533476.00     33390.00    500086.00    500086.00   1003498.00      5782.00  2025.03.31 LL SIGNED full accounts.pdf
+1079   228   2024  1765   MULTI        319401.00     46935.00    272466.00    272466.00    293522.00    165782.00  154764 - Midland Air Conditioning & Facility Management Ltd.pdf
+576    136   2022  839    MULTI        658073.00     30605.00    627468.00    627468.00    199599.00    -44443.00  08121165_aa_2023-10-26.pdf
+1090   230   2024  1782   ZERO          16543.00     16543.00         0.00         0.00    562717.00    178112.00  Summit Print Limited 31 December 2025 Full Accounts.pdf
+1091   230   2025  1782   MULTI         52137.00     29420.00     22717.00     22717.00    515216.00    193878.00  Summit Print Limited 31 December 2025 Full Accounts.pdf
+615    142   2024  NONE   MULTI        434999.00     35008.00    399991.00    399991.00    642751.00    715203.00  NO DOC
+392    89    2021  NONE   MULTI        158735.00     78623.00     80112.00     80112.00   1370248.00    311272.00  NO DOC
+728    163   2026  1298   MULTI         31231.00     21029.00     10202.00     10202.00    392438.00   1103321.00  Lovell Landscapes ltd Full draft accounts YE 31 March 2026 (latest) (1).PDF
+363    97    2023  976    ZERO          61710.00     61710.00         0.00         0.00   1154524.00   8828205.00  companies_house_document (2).pdf
+871    198   2024  1280   MULTI        434999.00     35008.00    399991.00    399991.00    642751.00    715203.00  Full_accounts_-_YE_31-10-24.pdf
+253    60    2018  338    MULTI         82182.00     22182.00     60000.00     60000.00    251204.00    267871.00  MSL 2019 final accounts.pdf
+1142   83    2023  524    ZERO          35233.00     35233.00         0.00         0.00    550051.00   -218305.00  S1968 N&MLeeds FY24.pdf
+916    206   2023  1342   ZERO          10563.00     10563.00         0.00         0.00     97204.00     83778.00  WESTCLIFFE JOINERS  2024 accounts.pdf
+1240   252   2021  1909   MULTI       1081558.00     11210.00   1070348.00   1070348.00    316720.00    497860.00  Carpentry.VT28.02.2022.pdf
+1235   251   2026  1902   MULTI        524136.00     18398.00    505738.00    505738.00    562628.00    155288.00  2026 third draft accounts 12 June 2026.PDF
+1266   259   2021  1954   MULTI         71530.00      6741.00     64789.00     64789.00    667148.00    485727.00  GMS_Management_Accounts_FY_to_June_2022.xls
+519    125   2025  711    ZERO           5141.00      5141.00         0.00         0.00    219471.00    279907.00  2025 accounts.pdf
+518    125   2024  711    MULTI         14650.00     12333.00      2317.00      2317.00    210927.00    201991.00  2025 accounts.pdf
+639    147   2025  922    ZERO           5141.00      5141.00         0.00         0.00    219471.00    279907.00  2025 accounts.pdf
+637    147   2024  922    MULTI         14650.00     12333.00      2317.00      2317.00    210927.00    201991.00  2025 accounts.pdf
+770    167   2021  NONE   MULTI         47927.00     14664.00     33263.00     33263.00    385598.00      2282.00  NO DOC
+325    81    2024  NONE   ZERO           8216.00      8216.00         0.00         0.00     63476.00    113846.00  NO DOC
+326    81    2020  NONE   MULTI         25489.00      8608.00     16881.00     16881.00     81628.00    108475.00  NO DOC
+631    145   2023  909    ZERO          13419.00     13419.00         0.00         0.00    516904.00    864298.00  Elecktec Limited 2023-2024.pdf
+557    132   2023  802    MULTI        622369.00     26469.00    595900.00    595900.00   1167740.00    314539.00  03392891_aa_2025-09-30.pdf
+847    179   2025  NONE   ZERO          31747.00     31747.00         0.00         0.00    398257.00    164464.00  NO DOC
+1039   191   2026  1582   ZERO           3387.00      3387.00         0.00         0.00     67276.00    248554.00  ACCOUNTS MARCH 26..pdf
+1041   191   2023  1585   MULTI         30604.00      7721.00     22883.00     22883.00     84038.00    228492.00  Frametech YE 23.pdf
+760    168   2022  NONE   ZERO          25298.00     25298.00         0.00         0.00    137442.00    409269.00  NO DOC
+1057   224   2023  1599   ZERO           4235.00      4235.00         0.00         0.00    120900.00     50695.00  A85_Full accounts 0324.pdf
+1056   224   2025  1601   MULTI         54819.00      6926.00     47893.00     47893.00    134407.00    105953.00  About Time draft 0326.pdf
+386    100   2023  546    MULTI         35601.00      8122.00     27479.00     27479.00     69559.00    114849.00  EREKA - ACCTS - YE 31.03.2024 (1).pdf
+806    189   2026  1164   MULTI         32378.00      9454.00     22924.00     22924.00    369778.00    717070.00  Draft Accounts YE 31-03-2026 - Manor Building Solutions.pdf
+1202   244   2026  1855   MULTI        581841.99      4361.48    577480.51    577480.51     54709.26    811378.41  Origin_Digital_Ltd_-_Balance_Sheet (2).pdf
+569    135   2023  825    ZERO           4740.00      4740.00         0.00         0.00     91192.00   1253454.00  Pudsey Statutory accounts March 2024.pdf
+571    135   2025  833    MULTI         43996.00     11480.00     32516.00     32516.00    102168.00    494507.00  Vici Dental Pudsey Limited - Final Accounts 2025.pdf
+470    116   2023  663    ZERO           7751.00      7751.00         0.00         0.00    120438.00    243693.00  Full accounts 31-08-24.pdf
+747    166   2023  1091   ZERO           3900.00      3900.00         0.00         0.00     24064.00    123921.00  2024.1 Accounts.pdf
+746    166   2022  1090   MULTI         48786.00      4116.00     44670.00     44670.00     22767.00    123470.00  2023.1 Accounts.pdf
+944    211   2023  NONE   MULTI         87299.00      7025.00     80274.00     80274.00    154540.00    131801.00  NO DOC
+910    188   2025  1937   ZERO           4806.00      4806.00         0.00         0.00    197788.00    162593.00  2025 Accounts.pdf
+1127   240   2022  1823   MULTI         14346.00     10979.00      3367.00      3367.00    156058.00    193509.00  49214 2023 Accounts.pdf
+1077   137   2026  1299   MULTI         32378.00      9454.00     22924.00     22924.00    369778.00    717070.00  Manor 2025-26 draft accounts.pdf
+743    165   2024  1088   ZERO           2820.00      2820.00         0.00         0.00     97441.00     44300.00  2025 accounts.pdf
+1075   107   2025  616    MULTI         32664.00      5127.00     27537.00     27537.00    119674.00    102197.00  PROP01- Full - Not Finalised.pdf
+1067   196   2023  1617   MULTI         25373.00      4040.00     21333.00     21333.00     77577.00     89747.00  51973A~1.PDF
+593    139   2023  1041   ZERO           4206.00      4206.00         0.00         0.00     81345.00     73740.00  2023-04-30 The Cleaning & Gardening Crew Ltd signed accounts.pdf
+964    197   2023  1555   MULTI         95177.00      8590.00     86587.00     86587.00    703978.00     30644.00  Besixth Pty Ltd - Financial Statements 2024 Year - Signed.pdf
+643    149   2024  936    ZERO           3676.00      3676.00         0.00         0.00     44585.00     96346.00  _Balance_Sheet 2025.pdf
+647    150   2024  942    ZERO           3676.00      3676.00         0.00         0.00     48349.00     96798.00  H176-Full accounts (final)-MH-20250409-160834-382 2024.08.31.PDF
+653    151   2024  948    ZERO           3676.00      3676.00         0.00         0.00     44585.00     96346.00  _Balance_Sheet 2025.pdf
+761    169   2024  NONE   MULTI         18926.00      6179.00     12747.00     12747.00    108110.00     17152.00  NO DOC
+468    115   2024  657    ZERO           4237.00      4237.00         0.00         0.00    340596.00    650716.00  Asher Care trading summary.pdf
+659    152   2024  953    ZERO           3676.00      3676.00         0.00         0.00     48349.00     96798.00  H176-UPDATED 2025 ACCOUNTS 25.1-LTD-MH-20251124.PDF
+495    121   2024  NONE   MULTI         76481.00      7392.00     69089.00     69089.00    188354.00    949520.00  NO DOC
+841    177   2023  NONE   ZERO           6514.00      6514.00         0.00         0.00     66324.00   1242962.00  NO DOC
+514    112   2024  707    MULTI         77257.00      2332.00     74925.00     74925.00    315327.00   -149845.00  DRAFT Full FRS 102 1A Accounts YE 31.12.24.pdf
+778    71    2022  1127   ZERO           2503.00      2503.00         0.00         0.00     71789.00     41837.00  2023 accounts.PDF
+931    209   2025  1371   ZERO           1854.00      1854.00         0.00         0.00     24336.00     29568.00  LGNS Ltd - SIGNED acs 31-03-2026.pdf
+1094   231   2023  NONE   MULTI         49478.00      4434.00     45044.00     45044.00    222713.00    164500.00  NO DOC
+1251   257   2021  1921   ZERO           1109.00      1109.00         0.00         0.00     21677.00      8116.00  51445 - 22 Accounts.pdf
+1151   117   2025  670    ZERO            825.00       825.00         0.00         0.00     34952.00       338.00  HABI3608-Habit5 Limited company accounts FINAL to 30 June 2025.pdf
+1152   117   2022  669    MULTI         16233.00      1158.00     15075.00     15075.00     30100.00      1040.00  HABI3608-Habit5 Limited company accounts FYE 30 June 2023 Full FINAL.pdf
+693    156   2021  1015   ZERO           3146.00      3146.00         0.00         0.00     45683.00     16340.00  2022-Full accounts .pdf
+1163   128   2025  746    MULTI        380898.00      2365.00    378533.00    378533.00    543444.00    282116.00  IM - 62394-496471 Metainy.pdf
+1132   241   2025  1828   MULTI         29533.00      1328.00     28205.00     28205.00    246370.00    243343.00  annual-accounts-FY2025-full-disclosure.pdf
+1099   232   2025  1792   MULTI         28528.00       752.00     27776.00     27776.00    109936.00    259413.00  Unaudited Fin Statements 01102024_30092025.pdf
+537    124   2022  738    MULTI          2340.00       310.00      2030.00      2030.00    192004.00    333282.00  AOFL Ltd - 31 July 2023 financial statements (2).pdf
+444    109   2024  623    MULTI         14595.00       507.00     14088.00     14088.00    709158.00    452172.00  SATOS Year End April 25.PDF
+
+=== R2 HEAD CHECK (shortlist documents only, no downloads) ===
+doc=697    co=123   OK  bytes=   1198300 type=application/octet-stream
+     key=companies/123/doc-1777902104446-818798687.pdf
+doc=704    co=122   OK  bytes=    183613 type=application/octet-stream
+     key=companies/122/doc-1777927024915-988793433.pdf
+doc=534    co=82    OK  bytes=     30257 type=application/octet-stream
+     key=companies/82/doc-1777209217225-375066359.pdf
+doc=531    co=82    OK  bytes=    698158 type=application/octet-stream
+     key=companies/82/doc-1777209166583-134548099.pdf
+doc=1564   co=160   OK  bytes=    213189 type=application/pdf
+     key=companies/160/doc-1783253691033-493711521.pdf
+doc=1836   co=242   OK  bytes=   1121137 type=application/pdf
+     key=companies/242/doc-1785070692233-541372872.pdf
+doc=1838   co=242   OK  bytes=    227102 type=application/pdf
+     key=companies/242/doc-1785070725369-589058890.pdf
+doc=1481   co=217   OK  bytes=   3505772 type=application/pdf
+     key=companies/217/doc-1782898844934-922808652.pdf
+doc=729    co=127   OK  bytes=    232530 type=application/octet-stream
+     key=companies/127/doc-1778106591018-802527022.pdf
+doc=619    co=108   OK  bytes=    143172 type=application/octet-stream
+     key=companies/108/doc-1777537330831-131160772.pdf
+doc=618    co=108   OK  bytes=   1209284 type=application/octet-stream
+     key=companies/108/doc-1777537277505-221823040.pdf
+doc=383    co=67    OK  bytes=    335425 type=application/octet-stream
+     key=companies/67/doc-1776239222361-663730003.pdf
+doc=652    co=114   OK  bytes=   2453644 type=application/octet-stream
+     key=companies/114/doc-1777575766093-362642178.pdf
+doc=808    co=133   OK  bytes=    119339 type=application/octet-stream
+     key=companies/133/doc-1778352673682-933572202.pdf
+doc=1424   co=172   OK  bytes=    362236 type=application/pdf
+     key=companies/172/doc-1782745628074-406531217.pdf
+doc=1423   co=172   OK  bytes=    177855 type=application/pdf
+     key=companies/172/doc-1782745615640-147464204.pdf
+doc=965    co=155   OK  bytes=    139751 type=application/octet-stream
+     key=companies/155/doc-1779888245825-741310880.pdf
+doc=969    co=155   OK  bytes=    206182 type=application/octet-stream
+     key=companies/155/doc-1779888322612-968754135.pdf
+doc=475    co=87    OK  bytes=   1080653 type=application/octet-stream
+     key=companies/87/doc-1777068676623-799714510.pdf
+doc=680    co=120   OK  bytes=     27457 type=application/octet-stream
+     key=companies/120/doc-1777805969813-671046611.pdf
+doc=814    co=134   OK  bytes=    435867 type=application/octet-stream
+     key=companies/134/doc-1778496270592-374365771.pdf
+doc=1765   co=228   OK  bytes=   5607240 type=application/pdf
+     key=companies/228/doc-1784217025842-596919980.pdf
+doc=839    co=136   OK  bytes=    158457 type=application/octet-stream
+     key=companies/136/doc-1778593798818-691416338.pdf
+doc=1782   co=230   OK  bytes=   2527911 type=application/pdf
+     key=companies/230/doc-1784240321705-953174849.pdf
+doc=1298   co=163   OK  bytes=     36822 type=application/pdf
+     key=companies/163/doc-1781528461875-442540110.pdf
+doc=976    co=97    OK  bytes=    234740 type=application/octet-stream
+     key=companies/97/doc-1779889391745-223924315.pdf
+doc=1280   co=198   OK  bytes=    556438 type=application/pdf
+     key=companies/198/doc-1781336465533-766907880.pdf
+doc=338    co=60    OK  bytes=    258642 type=application/octet-stream
+     key=companies/60/doc-1775409897045-642951708.pdf
+doc=524    co=83    OK  bytes=   2652661 type=application/octet-stream
+     key=companies/83/doc-1777208481103-13742105.pdf
+doc=1342   co=206   OK  bytes=    234585 type=application/pdf
+     key=companies/206/doc-1782129802610-959514883.pdf
+doc=1909   co=252   OK  bytes=    368254 type=application/pdf
+     key=companies/252/doc-1786645529781-86235881.pdf
+doc=1902   co=251   OK  bytes=     30592 type=application/pdf
+     key=companies/251/doc-1786644270896-410677078.pdf
+doc=1954   co=259   OK  bytes=    972800 type=application/vnd.ms-excel
+     key=companies/259/doc-1787295166505-972765981.xls
+doc=711    co=125   OK  bytes=   1502019 type=application/octet-stream
+     key=companies/125/doc-1777990430714-686644706.pdf
+doc=922    co=147   OK  bytes=   1502019 type=application/octet-stream
+     key=companies/147/doc-1779450399272-102827283.pdf
+doc=909    co=145   OK  bytes=    558108 type=application/octet-stream
+     key=companies/145/doc-1779361125094-821087320.pdf
+doc=802    co=132   OK  bytes=    104495 type=application/octet-stream
+     key=companies/132/doc-1778344237690-84806656.pdf
+doc=1582   co=191   OK  bytes=     90286 type=application/pdf
+     key=companies/191/doc-1783452686013-500803362.pdf
+doc=1585   co=191   OK  bytes=   3919016 type=application/pdf
+     key=companies/191/doc-1783452740336-51697467.pdf
+doc=1599   co=224   OK  bytes=    321751 type=application/pdf
+     key=companies/224/doc-1783938756235-752242076.pdf
+doc=1601   co=224   OK  bytes=    354217 type=application/pdf
+     key=companies/224/doc-1783954910397-969474693.pdf
+doc=546    co=100   OK  bytes=     82431 type=application/octet-stream
+     key=companies/100/doc-1777294596036-474812905.pdf
+doc=1164   co=189   OK  bytes=     32888 type=application/pdf
+     key=companies/189/doc-1780950241561-285347648.pdf
+doc=1855   co=244   OK  bytes=     40257 type=application/pdf
+     key=companies/244/doc-1785262764115-696052639.pdf
+doc=825    co=135   OK  bytes=    371316 type=application/octet-stream
+     key=companies/135/doc-1778588076803-385136353.pdf
+doc=833    co=135   OK  bytes=   1016141 type=application/octet-stream
+     key=companies/135/doc-1778588200610-592045981.pdf
+doc=663    co=116   OK  bytes=    137932 type=application/octet-stream
+     key=companies/116/doc-1777718928909-35307597.pdf
+doc=1091   co=166   OK  bytes=    812773 type=application/pdf
+     key=companies/166/doc-1780677188781-82651926.pdf
+doc=1090   co=166   OK  bytes=    272297 type=application/pdf
+     key=companies/166/doc-1780677170091-511739909.pdf
+doc=1937   co=188   OK  bytes=    144361 type=application/pdf
+     key=companies/188/doc-1787163633597-821459975.pdf
+doc=1823   co=240   OK  bytes=    512211 type=application/pdf
+     key=companies/240/doc-1784801242177-577530448.pdf
+doc=1299   co=137   OK  bytes=     32888 type=application/pdf
+     key=companies/137/doc-1781535664647-511389281.pdf
+doc=1088   co=165   OK  bytes=    217477 type=application/pdf
+     key=companies/165/doc-1780665816086-304663558.pdf
+doc=616    co=107   OK  bytes=     28014 type=application/octet-stream
+     key=companies/107/doc-1777534236060-808349293.pdf
+doc=1617   co=196   OK  bytes=   6883271 type=application/pdf
+     key=companies/196/doc-1784054658646-772722481.pdf
+doc=1041   co=139   OK  bytes=   2846989 type=application/octet-stream
+     key=companies/139/doc-1780137981088-479487268.pdf
+doc=1555   co=197   OK  bytes=    692442 type=application/pdf
+     key=companies/197/doc-1783250198547-680204189.pdf
+doc=936    co=149   OK  bytes=     25021 type=application/octet-stream
+     key=companies/149/doc-1779516825718-889272808.pdf
+doc=942    co=150   OK  bytes=     65851 type=application/octet-stream
+     key=companies/150/doc-1779560878810-251862192.pdf
+doc=948    co=151   OK  bytes=     25021 type=application/octet-stream
+     key=companies/151/doc-1779616925123-666623751.pdf
+doc=657    co=115   OK  bytes=    140253 type=application/octet-stream
+     key=companies/115/doc-1777680078782-544479496.pdf
+doc=953    co=152   OK  bytes=     24275 type=application/octet-stream
+     key=companies/152/doc-1779617534338-711731600.pdf
+doc=707    co=112   OK  bytes=    100911 type=application/octet-stream
+     key=companies/112/doc-1777987908253-728566248.pdf
+doc=1127   co=71    OK  bytes=    215618 type=application/pdf
+     key=companies/71/doc-1780704135640-122267195.pdf
+doc=1371   co=209   OK  bytes=    495015 type=application/pdf
+     key=companies/209/doc-1782160777366-609990869.pdf
+doc=1921   co=257   OK  bytes=    224706 type=application/pdf
+     key=companies/257/doc-1786986396173-637260222.pdf
+doc=670    co=117   OK  bytes=     22798 type=application/octet-stream
+     key=companies/117/doc-1777724400723-110326465.pdf
+doc=669    co=117   OK  bytes=     22298 type=application/octet-stream
+     key=companies/117/doc-1777724373931-351091390.pdf
+doc=1015   co=156   OK  bytes=     26282 type=application/octet-stream
+     key=companies/156/doc-1780052561049-730957538.pdf
+doc=746    co=128   OK  bytes=   1779121 type=application/octet-stream
+     key=companies/128/doc-1778180825073-371977038.pdf
+doc=1828   co=241   OK  bytes=    225825 type=application/pdf
+     key=companies/241/doc-1784961350626-744760179.pdf
+doc=1792   co=232   OK  bytes=   1218342 type=application/pdf
+     key=companies/232/doc-1784559111447-983791141.pdf
+doc=738    co=124   OK  bytes=   1290714 type=application/octet-stream
+     key=companies/124/doc-1778170044919-629188478.pdf
+doc=623    co=109   OK  bytes=     75307 type=application/octet-stream
+     key=companies/109/doc-1777538140005-999175882.pdf
+
+=== FULL WOULD-CHANGE ROW LISTING ===
+bs=253 co=60 fy=2018 pe=2018-04-30 doc=338 cat=Company Accounts total=82182.00 deferred=22182.00 children=60000.00 corrected=60000.00 zero=false file=MSL 2019 final accounts.pdf
+bs=254 co=60 fy=2019 pe=2019-04-30 doc=339 cat=Company Accounts total=52952.00 deferred=16702.00 children=36250.00 corrected=36250.00 zero=false file=MSL Full Final 2020.pdf
+bs=256 co=60 fy=2021 pe=2021-04-30 doc=341 cat=Company Accounts total=176173.00 deferred=9720.00 children=166453.00 corrected=166453.00 zero=false file=2022 Full Accounts.pdf
+bs=257 co=60 fy=2022 pe=2022-04-30 doc=341 cat=Company Accounts total=161435.00 deferred=7196.00 children=154239.00 corrected=154239.00 zero=false file=2022 Full Accounts.pdf
+bs=276 co=67 fy=2021 pe=2021-01-31 doc=383 cat=Company Accounts total=1559765.00 deferred=125732.00 children=1434033.00 corrected=1434033.00 zero=false file=Shearfab Ltd - Accounts 31 January 2022.pdf
+bs=273 co=67 fy=2022 pe=2022-01-31 doc=383 cat=Company Accounts total=1426603.00 deferred=162648.00 children=1263955.00 corrected=1263955.00 zero=false file=Shearfab Ltd - Accounts 31 January 2022.pdf
+bs=778 co=71 fy=2022 pe=2022-10-31 doc=1127 cat=Due Diligence total=2503.00 deferred=2503.00 children=0.00 corrected=0.00 zero=true file=2023 accounts.PDF
+bs=779 co=71 fy=2023 pe=2023-10-31 doc=1127 cat=Due Diligence total=2342.00 deferred=2342.00 children=0.00 corrected=0.00 zero=true file=2023 accounts.PDF
+bs=424 co=80 fy=2021 pe=2021-03-31 doc=NONE cat=- total=69539.00 deferred=564.00 children=68975.00 corrected=68975.00 zero=false file=-
+bs=420 co=80 fy=2024 pe=2024-03-31 doc=NONE cat=- total=397563.00 deferred=138695.00 children=258868.00 corrected=258868.00 zero=false file=-
+bs=326 co=81 fy=2020 pe=2020-03-31 doc=NONE cat=- total=25489.00 deferred=8608.00 children=16881.00 corrected=16881.00 zero=false file=-
+bs=327 co=81 fy=2021 pe=2021-03-31 doc=NONE cat=- total=49365.00 deferred=6865.00 children=42500.00 corrected=42500.00 zero=false file=-
+bs=324 co=81 fy=2023 pe=2023-03-31 doc=NONE cat=- total=6368.00 deferred=6368.00 children=0.00 corrected=0.00 zero=true file=-
+bs=325 co=81 fy=2024 pe=2024-03-31 doc=NONE cat=- total=8216.00 deferred=8216.00 children=0.00 corrected=0.00 zero=true file=-
+bs=328 co=81 fy=2025 pe=2025-03-31 doc=NONE cat=- total=5354.00 deferred=5354.00 children=0.00 corrected=0.00 zero=true file=-
+bs=373 co=82 fy=2021 pe=2021-09-30 doc=532 cat=Company Accounts total=1562629.00 deferred=162629.00 children=1400000.00 corrected=1400000.00 zero=false file=Limited company accounts 2022.PDF
+bs=374 co=82 fy=2022 pe=2022-09-30 doc=534 cat=Company Accounts total=249175.00 deferred=249175.00 children=0.00 corrected=0.00 zero=true file=Limited company accounts 2023.PDF
+bs=375 co=82 fy=2023 pe=2023-09-30 doc=534 cat=Company Accounts total=1675988.00 deferred=275988.00 children=1400000.00 corrected=1400000.00 zero=false file=Limited company accounts 2023.PDF
+bs=376 co=82 fy=2024 pe=2024-09-30 doc=531 cat=Company Accounts total=1685312.00 deferred=285312.00 children=1400000.00 corrected=1400000.00 zero=false file=Limited company accounts 2024.pdf
+bs=372 co=83 fy=2022 pe=2022-11-30 doc=522 cat=Deal Documents total=14282.00 deferred=14282.00 children=0.00 corrected=0.00 zero=true file=S1968 N&MBirmingham FY23.pdf
+bs=1142 co=83 fy=2023 pe=2023-11-30 doc=524 cat=YTD Balance Sheet total=35233.00 deferred=35233.00 children=0.00 corrected=0.00 zero=true file=S1968 N&MLeeds FY24.pdf
+bs=369 co=83 fy=2024 pe=2024-11-30 doc=871 cat=Deal Documents total=2446.00 deferred=2446.00 children=0.00 corrected=0.00 zero=true file=Newbie and Me Ltd Ye30Nov25 Draft Accounts.pdf
+bs=337 co=87 fy=2023 pe=2023-08-31 doc=475 cat=Company Accounts total=182775.00 deferred=54468.00 children=128307.00 corrected=128307.00 zero=false file=Accounts 2024 - 70171 (1).pdf
+bs=338 co=87 fy=2024 pe=2024-08-31 doc=476 cat=Company Accounts total=131159.00 deferred=47680.00 children=83479.00 corrected=83479.00 zero=false file=Accounts 2025 - 70171.pdf
+bs=339 co=87 fy=2025 pe=2025-08-31 doc=476 cat=Company Accounts total=83170.00 deferred=48647.00 children=34523.00 corrected=34523.00 zero=false file=Accounts 2025 - 70171.pdf
+bs=395 co=88 fy=2022 pe=2022-03-31 doc=NONE cat=- total=314472.54 deferred=131536.00 children=182936.54 corrected=182936.54 zero=false file=-
+bs=396 co=88 fy=2023 pe=2023-03-31 doc=NONE cat=- total=195016.97 deferred=122987.00 children=72029.97 corrected=72029.97 zero=false file=-
+bs=1143 co=88 fy=2024 pe=2024-03-12 doc=NONE cat=- total=154874.71 deferred=154003.00 children=871.71 corrected=871.71 zero=false file=-
+bs=392 co=89 fy=2021 pe=2021-10-31 doc=NONE cat=- total=158735.00 deferred=78623.00 children=80112.00 corrected=80112.00 zero=false file=-
+bs=363 co=97 fy=2023 pe=2023-12-31 doc=976 cat=Deal Documents total=61710.00 deferred=61710.00 children=0.00 corrected=0.00 zero=true file=companies_house_document (2).pdf
+bs=386 co=100 fy=2023 pe=2023-03-31 doc=546 cat=Company Accounts total=35601.00 deferred=8122.00 children=27479.00 corrected=27479.00 zero=false file=EREKA - ACCTS - YE 31.03.2024 (1).pdf
+bs=384 co=100 fy=2024 pe=2024-03-31 doc=546 cat=Company Accounts total=26774.00 deferred=8122.00 children=18652.00 corrected=18652.00 zero=false file=EREKA - ACCTS - YE 31.03.2024 (1).pdf
+bs=385 co=100 fy=2025 pe=2025-03-31 doc=545 cat=Company Accounts total=17000.00 deferred=8122.00 children=8878.00 corrected=8878.00 zero=false file=EREKA LTD - ACCTS - YE 31.03.2025.pdf
+bs=438 co=107 fy=2020 pe=2020-10-31 doc=617 cat=Company Accounts total=58573.00 deferred=763.00 children=57810.00 corrected=57810.00 zero=false file=PROP01-Limited company accounts (1).pdf
+bs=439 co=107 fy=2021 pe=2021-10-31 doc=617 cat=Company Accounts total=40947.00 deferred=572.00 children=40375.00 corrected=40375.00 zero=false file=PROP01-Limited company accounts (1).pdf
+bs=434 co=107 fy=2022 pe=2022-10-31 doc=614 cat=Company Accounts total=36709.00 deferred=408.00 children=36301.00 corrected=36301.00 zero=false file=PROP01- Full - Finalised (7).pdf
+bs=435 co=107 fy=2023 pe=2023-10-31 doc=615 cat=Company Accounts total=30978.00 deferred=402.00 children=30576.00 corrected=30576.00 zero=false file=PROP01- Full - Finalised Acc 2024 (6).pdf
+bs=436 co=107 fy=2024 pe=2024-10-31 doc=616 cat=Company Accounts total=26958.00 deferred=2085.00 children=24873.00 corrected=24873.00 zero=false file=PROP01- Full - Not Finalised.pdf
+bs=1075 co=107 fy=2025 pe=2025-10-31 doc=616 cat=Company Accounts total=32664.00 deferred=5127.00 children=27537.00 corrected=27537.00 zero=false file=PROP01- Full - Not Finalised.pdf
+bs=534 co=108 fy=2022 pe=2022-01-31 doc=737 cat=Company Accounts total=74162.00 deferred=28400.00 children=45762.00 corrected=45762.00 zero=false file=RCT Full Accounts YE 31 January 2023.pdf
+bs=535 co=108 fy=2023 pe=2023-01-31 doc=737 cat=Company Accounts total=176403.00 deferred=71894.00 children=104509.00 corrected=104509.00 zero=false file=RCT Full Accounts YE 31 January 2023.pdf
+bs=536 co=108 fy=2024 pe=2024-01-31 doc=736 cat=Company Accounts total=291971.00 deferred=60216.00 children=231755.00 corrected=231755.00 zero=false file=RCT Full Accounts YE 31 January 2024.pdf
+bs=440 co=108 fy=2025 pe=2025-01-31 doc=618 cat=Company Accounts total=226435.00 deferred=72823.00 children=153612.00 corrected=153612.00 zero=false file=RCT Manufacturing Limited-Draft Full Accounts YE 31 January 2026.pdf
+bs=441 co=108 fy=2026 pe=2026-02-01 doc=619 cat=YTD Balance Sheet total=72823.00 deferred=72823.00 children=0.00 corrected=0.00 zero=true file=1.Bal Sheet Feb 26.pdf
+bs=444 co=109 fy=2024 pe=2024-04-30 doc=623 cat=Company Accounts total=14595.00 deferred=507.00 children=14088.00 corrected=14088.00 zero=false file=SATOS Year End April 25.PDF
+bs=445 co=109 fy=2025 pe=2025-04-30 doc=623 cat=Company Accounts total=5054.00 deferred=285.00 children=4769.00 corrected=4769.00 zero=false file=SATOS Year End April 25.PDF
+bs=452 co=112 fy=2022 pe=2022-12-31 doc=633 cat=Company Accounts total=228778.00 deferred=1735.00 children=227043.00 corrected=227043.00 zero=false file=Kimpol Full Accounts Dec 2023.pdf
+bs=453 co=112 fy=2023 pe=2023-12-31 doc=707 cat=Company Accounts total=147142.00 deferred=1565.00 children=145577.00 corrected=145577.00 zero=false file=DRAFT Full FRS 102 1A Accounts YE 31.12.24.pdf
+bs=514 co=112 fy=2024 pe=2024-12-31 doc=707 cat=Company Accounts total=77257.00 deferred=2332.00 children=74925.00 corrected=74925.00 zero=false file=DRAFT Full FRS 102 1A Accounts YE 31.12.24.pdf
+bs=460 co=114 fy=2022 pe=2022-03-31 doc=650 cat=Company Accounts total=41479.00 deferred=41479.00 children=0.00 corrected=0.00 zero=true file=CVC - Unaudited Financial Statements YE 31-03-2023.pdf
+bs=461 co=114 fy=2023 pe=2023-03-31 doc=650 cat=Company Accounts total=72958.00 deferred=72958.00 children=0.00 corrected=0.00 zero=true file=CVC - Unaudited Financial Statements YE 31-03-2023.pdf
+bs=462 co=114 fy=2024 pe=2024-03-31 doc=652 cat=Company Accounts total=102560.00 deferred=102560.00 children=0.00 corrected=0.00 zero=true file=CVC - Unaudited Financial Statements YE 31-03-2025.pdf
+bs=459 co=114 fy=2025 pe=2025-03-31 doc=652 cat=Company Accounts total=62121.00 deferred=62121.00 children=0.00 corrected=0.00 zero=true file=CVC - Unaudited Financial Statements YE 31-03-2025.pdf
+bs=467 co=115 fy=2023 pe=2023-03-31 doc=657 cat=Company Accounts total=3501.00 deferred=3501.00 children=0.00 corrected=0.00 zero=true file=Asher Care trading summary.pdf
+bs=468 co=115 fy=2024 pe=2024-03-31 doc=657 cat=Company Accounts total=4237.00 deferred=4237.00 children=0.00 corrected=0.00 zero=true file=Asher Care trading summary.pdf
+bs=470 co=116 fy=2023 pe=2023-08-31 doc=663 cat=Company Accounts total=7751.00 deferred=7751.00 children=0.00 corrected=0.00 zero=true file=Full accounts 31-08-24.pdf
+bs=471 co=116 fy=2024 pe=2024-08-31 doc=664 cat=Company Accounts total=5992.00 deferred=5992.00 children=0.00 corrected=0.00 zero=true file=Woodfield Building Svs 31-08-25 full.pdf
+bs=472 co=116 fy=2025 pe=2025-08-31 doc=664 cat=Company Accounts total=4502.00 deferred=4502.00 children=0.00 corrected=0.00 zero=true file=Woodfield Building Svs 31-08-25 full.pdf
+bs=1152 co=117 fy=2022 pe=2022-06-30 doc=669 cat=Company Accounts total=16233.00 deferred=1158.00 children=15075.00 corrected=15075.00 zero=false file=HABI3608-Habit5 Limited company accounts FYE 30 June 2023 Full FINAL.pdf
+bs=1153 co=117 fy=2023 pe=2023-06-30 doc=669 cat=Company Accounts total=10932.00 deferred=953.00 children=9979.00 corrected=9979.00 zero=false file=HABI3608-Habit5 Limited company accounts FYE 30 June 2023 Full FINAL.pdf
+bs=1150 co=117 fy=2024 pe=2024-06-30 doc=670 cat=Company Accounts total=5748.00 deferred=958.00 children=4790.00 corrected=4790.00 zero=false file=HABI3608-Habit5 Limited company accounts FINAL to 30 June 2025.pdf
+bs=1151 co=117 fy=2025 pe=2025-06-30 doc=670 cat=Company Accounts total=825.00 deferred=825.00 children=0.00 corrected=0.00 zero=true file=HABI3608-Habit5 Limited company accounts FINAL to 30 June 2025.pdf
+bs=487 co=120 fy=2024 pe=2024-03-31 doc=680 cat=Company Accounts total=59295.00 deferred=59295.00 children=0.00 corrected=0.00 zero=true file=2024 final accounts.pdf
+bs=488 co=120 fy=2025 pe=2025-03-31 doc=679 cat=Company Accounts total=52695.00 deferred=52695.00 children=0.00 corrected=0.00 zero=true file=2025 - Final Accounts.pdf
+bs=495 co=121 fy=2024 pe=2024-07-31 doc=NONE cat=- total=76481.00 deferred=7392.00 children=69089.00 corrected=69089.00 zero=false file=-
+bs=503 co=122 fy=2023 pe=2023-03-31 doc=703 cat=Sales Ledger total=318179.00 deferred=318179.00 children=0.00 corrected=0.00 zero=true file=2024 Full Accounts Clifford Press Limited (New).pdf
+bs=500 co=122 fy=2024 pe=2024-03-31 doc=704 cat=Company Accounts total=332100.00 deferred=332100.00 children=0.00 corrected=0.00 zero=true file=2025 Full Accounts Clifford Press Limited (New).pdf
+bs=498 co=122 fy=2025 pe=2025-03-31 doc=704 cat=Company Accounts total=286398.00 deferred=286398.00 children=0.00 corrected=0.00 zero=true file=2025 Full Accounts Clifford Press Limited (New).pdf
+bs=499 co=122 fy=2026 pe=2026-01-31 doc=702 cat=YTD Balance Sheet total=286398.25 deferred=286398.25 children=0.00 corrected=0.00 zero=true file=Management Report January 2026 (New).pdf
+bs=504 co=123 fy=2021 pe=2021-03-31 doc=696 cat=Company Accounts total=37643.00 deferred=37643.00 children=0.00 corrected=0.00 zero=true file=2022 Full Accounts_Printing Company.pdf
+bs=505 co=123 fy=2022 pe=2022-03-31 doc=697 cat=Company Accounts total=366979.00 deferred=366979.00 children=0.00 corrected=0.00 zero=true file=2023 Full Accounts_Printing Company.pdf
+bs=506 co=123 fy=2023 pe=2023-03-31 doc=697 cat=Company Accounts total=318179.00 deferred=318179.00 children=0.00 corrected=0.00 zero=true file=2023 Full Accounts_Printing Company.pdf
+bs=507 co=123 fy=2024 pe=2024-03-31 doc=698 cat=Company Accounts total=332100.00 deferred=332100.00 children=0.00 corrected=0.00 zero=true file=2024 Full Accounts_Printing Company.pdf
+bs=1157 co=123 fy=2025 pe=2025-01-31 doc=699 cat=Company Accounts total=286398.25 deferred=286398.25 children=0.00 corrected=0.00 zero=true file=Management_Report January 2026_Printing Company.pdf
+bs=1158 co=123 fy=2026 pe=2026-01-31 doc=699 cat=Company Accounts total=286398.25 deferred=286398.25 children=0.00 corrected=0.00 zero=true file=Management_Report January 2026_Printing Company.pdf
+bs=537 co=124 fy=2022 pe=2022-07-31 doc=738 cat=Company Accounts total=2340.00 deferred=310.00 children=2030.00 corrected=2030.00 zero=false file=AOFL Ltd - 31 July 2023 financial statements (2).pdf
+bs=1159 co=124 fy=2023 pe=2023-07-31 doc=741 cat=Company Accounts total=75410.00 deferred=310.00 children=75100.00 corrected=75100.00 zero=false file=AOFL Ltd, Full Financial Statements, Period from 01 August 2023 to 31 July 2024.pdf (2).pdf
+bs=1160 co=124 fy=2024 pe=2024-07-31 doc=742 cat=Company Accounts total=318104.00 deferred=310.00 children=317794.00 corrected=317794.00 zero=false file=AOFL Ltd- 31 July 2025 financial statements (1) (2).pdf
+bs=1161 co=124 fy=2025 pe=2025-07-31 doc=742 cat=Company Accounts total=198036.00 deferred=310.00 children=197726.00 corrected=197726.00 zero=false file=AOFL Ltd- 31 July 2025 financial statements (1) (2).pdf
+bs=520 co=125 fy=2022 pe=2022-12-31 doc=712 cat=Company Accounts total=74720.00 deferred=9611.00 children=65109.00 corrected=65109.00 zero=false file=Annual Accounts YE 31.12.2023 (Final Acounts).pdf
+bs=517 co=125 fy=2023 pe=2023-12-31 doc=712 cat=Company Accounts total=24592.00 deferred=11562.00 children=13030.00 corrected=13030.00 zero=false file=Annual Accounts YE 31.12.2023 (Final Acounts).pdf
+bs=518 co=125 fy=2024 pe=2024-12-31 doc=711 cat=Company Accounts total=14650.00 deferred=12333.00 children=2317.00 corrected=2317.00 zero=false file=2025 accounts.pdf
+bs=519 co=125 fy=2025 pe=2025-12-31 doc=711 cat=Company Accounts total=5141.00 deferred=5141.00 children=0.00 corrected=0.00 zero=true file=2025 accounts.pdf
+bs=528 co=127 fy=2021 pe=2021-07-31 doc=727 cat=Company Accounts total=103173.00 deferred=9807.00 children=93366.00 corrected=93366.00 zero=false file=Moby Foods Ltd - Financial statements for the year ended 31.07.22.pdf
+bs=529 co=127 fy=2022 pe=2022-07-31 doc=728 cat=Company Accounts total=101498.00 deferred=19104.00 children=82394.00 corrected=82394.00 zero=false file=Moby Foods Ltd - Financial statements for the year ended 31.07.23.pdf
+bs=530 co=127 fy=2023 pe=2023-07-31 doc=729 cat=Company Accounts total=123876.00 deferred=77662.00 children=46214.00 corrected=46214.00 zero=false file=Accounts Full - 2024.pdf
+bs=531 co=127 fy=2024 pe=2024-07-31 doc=732 cat=Company Accounts total=92207.00 deferred=73872.00 children=18335.00 corrected=18335.00 zero=false file=2025 Accounts - Full.pdf
+bs=532 co=127 fy=2025 pe=2025-07-31 doc=732 cat=Company Accounts total=75180.00 deferred=71410.00 children=3770.00 corrected=3770.00 zero=false file=2025 Accounts - Full.pdf
+bs=533 co=127 fy=2026 pe=2026-01-31 doc=735 cat=YTD Balance Sheet total=147646.75 deferred=71410.00 children=76236.75 corrected=76236.75 zero=false file=balance sheet jan 2026.pdf
+bs=1163 co=128 fy=2025 pe=2025-03-31 doc=746 cat=Deal Documents total=380898.00 deferred=2365.00 children=378533.00 corrected=378533.00 zero=false file=IM - 62394-496471 Metainy.pdf
+bs=557 co=132 fy=2023 pe=2023-12-31 doc=802 cat=Company Accounts total=622369.00 deferred=26469.00 children=595900.00 corrected=595900.00 zero=false file=03392891_aa_2025-09-30.pdf
+bs=1167 co=132 fy=2024 pe=2024-12-31 doc=802 cat=Company Accounts total=471263.00 deferred=5977.00 children=465286.00 corrected=465286.00 zero=false file=03392891_aa_2025-09-30.pdf
+bs=562 co=133 fy=2022 pe=2022-03-31 doc=807 cat=Company Accounts total=233997.00 deferred=45767.00 children=188230.00 corrected=188230.00 zero=false file=08745997_aa_2023-12-16.pdf
+bs=563 co=133 fy=2023 pe=2023-03-31 doc=808 cat=Company Accounts total=284259.00 deferred=67531.00 children=216728.00 corrected=216728.00 zero=false file=08745997_aa_2025-03-31.pdf
+bs=559 co=133 fy=2024 pe=2024-03-31 doc=809 cat=Company Accounts total=165973.00 deferred=46977.00 children=118996.00 corrected=118996.00 zero=false file=08745997_aa_2025-11-14.pdf
+bs=560 co=133 fy=2025 pe=2025-03-31 doc=809 cat=Company Accounts total=115183.00 deferred=46977.00 children=68206.00 corrected=68206.00 zero=false file=08745997_aa_2025-11-14.pdf
+bs=567 co=134 fy=2022 pe=2022-03-31 doc=815 cat=Company Accounts total=710275.00 deferred=23300.00 children=686975.00 corrected=686975.00 zero=false file=2023.03.31 LL SIGNED full accounts.pdf
+bs=564 co=134 fy=2023 pe=2023-03-31 doc=815 cat=Company Accounts total=586777.00 deferred=25495.00 children=561282.00 corrected=561282.00 zero=false file=2023.03.31 LL SIGNED full accounts.pdf
+bs=565 co=134 fy=2024 pe=2024-03-31 doc=814 cat=Company Accounts total=533476.00 deferred=33390.00 children=500086.00 corrected=500086.00 zero=false file=2025.03.31 LL SIGNED full accounts.pdf
+bs=568 co=134 fy=2025 pe=2025-03-31 doc=814 cat=Company Accounts total=699043.00 deferred=21317.00 children=677726.00 corrected=677726.00 zero=false file=2025.03.31 LL SIGNED full accounts.pdf
+bs=569 co=135 fy=2023 pe=2023-03-31 doc=825 cat=Company Accounts total=4740.00 deferred=4740.00 children=0.00 corrected=0.00 zero=true file=Pudsey Statutory accounts March 2024.pdf
+bs=570 co=135 fy=2024 pe=2024-03-31 doc=833 cat=Deal Documents total=2757.00 deferred=2757.00 children=0.00 corrected=0.00 zero=true file=Vici Dental Pudsey Limited - Final Accounts 2025.pdf
+bs=571 co=135 fy=2025 pe=2025-03-31 doc=833 cat=Deal Documents total=43996.00 deferred=11480.00 children=32516.00 corrected=32516.00 zero=false file=Vici Dental Pudsey Limited - Final Accounts 2025.pdf
+bs=577 co=136 fy=2021 pe=2021-06-30 doc=839 cat=Company Accounts total=154381.00 deferred=28381.00 children=126000.00 corrected=126000.00 zero=false file=08121165_aa_2023-10-26.pdf
+bs=576 co=136 fy=2022 pe=2022-06-30 doc=839 cat=Company Accounts total=658073.00 deferred=30605.00 children=627468.00 corrected=627468.00 zero=false file=08121165_aa_2023-10-26.pdf
+bs=573 co=136 fy=2023 pe=2023-08-31 doc=838 cat=Company Accounts total=580733.00 deferred=21278.00 children=559455.00 corrected=559455.00 zero=false file=08121165_aa_2024-05-30.pdf
+bs=574 co=136 fy=2024 pe=2024-08-31 doc=837 cat=Company Accounts total=516734.00 deferred=13624.00 children=503110.00 corrected=503110.00 zero=false file=08121165_aa_2025-08-31.pdf
+bs=1076 co=137 fy=2025 pe=2025-03-31 doc=1299 cat=Company Accounts total=21467.00 deferred=4742.00 children=16725.00 corrected=16725.00 zero=false file=Manor 2025-26 draft accounts.pdf
+bs=1077 co=137 fy=2026 pe=2026-03-31 doc=1299 cat=Company Accounts total=32378.00 deferred=9454.00 children=22924.00 corrected=22924.00 zero=false file=Manor 2025-26 draft accounts.pdf
+bs=593 co=139 fy=2023 pe=2023-04-30 doc=1041 cat=Company Accounts total=4206.00 deferred=4206.00 children=0.00 corrected=0.00 zero=true file=2023-04-30 The Cleaning & Gardening Crew Ltd signed accounts.pdf
+bs=591 co=139 fy=2024 pe=2024-04-30 doc=856 cat=Company Accounts total=2879.00 deferred=2879.00 children=0.00 corrected=0.00 zero=true file=2024-04-30 The Cleaning & Gardening Crew Ltd signed accounts.pdf
+bs=592 co=139 fy=2025 pe=2025-04-30 doc=855 cat=Company Accounts total=1975.00 deferred=1975.00 children=0.00 corrected=0.00 zero=true file=The Cleaning  Gardening Crew Limited full ACCOUNTS 2025.pdf
+bs=617 co=142 fy=2021 pe=2021-10-31 doc=NONE cat=- total=161435.00 deferred=20187.00 children=141248.00 corrected=141248.00 zero=false file=-
+bs=616 co=142 fy=2022 pe=2022-10-31 doc=NONE cat=- total=408120.00 deferred=23921.00 children=384199.00 corrected=384199.00 zero=false file=-
+bs=615 co=142 fy=2024 pe=2024-10-31 doc=NONE cat=- total=434999.00 deferred=35008.00 children=399991.00 corrected=399991.00 zero=false file=-
+bs=631 co=145 fy=2023 pe=2023-03-31 doc=909 cat=Company Accounts total=13419.00 deferred=13419.00 children=0.00 corrected=0.00 zero=true file=Elecktec Limited 2023-2024.pdf
+bs=629 co=145 fy=2024 pe=2024-03-31 doc=909 cat=Company Accounts total=12303.00 deferred=12303.00 children=0.00 corrected=0.00 zero=true file=Elecktec Limited 2023-2024.pdf
+bs=630 co=145 fy=2025 pe=2025-03-31 doc=908 cat=Company Accounts total=8232.00 deferred=8232.00 children=0.00 corrected=0.00 zero=true file=Elecktec Limited 2025.pdf
+bs=638 co=147 fy=2022 pe=2022-12-31 doc=923 cat=Company Accounts total=74720.00 deferred=9611.00 children=65109.00 corrected=65109.00 zero=false file=Annual Accounts YE 31.12.2023 (Final Acounts).pdf
+bs=636 co=147 fy=2023 pe=2023-12-31 doc=923 cat=Company Accounts total=24592.00 deferred=11562.00 children=13030.00 corrected=13030.00 zero=false file=Annual Accounts YE 31.12.2023 (Final Acounts).pdf
+bs=637 co=147 fy=2024 pe=2024-12-31 doc=922 cat=Company Accounts total=14650.00 deferred=12333.00 children=2317.00 corrected=2317.00 zero=false file=2025 accounts.pdf
+bs=639 co=147 fy=2025 pe=2025-12-31 doc=922 cat=Company Accounts total=5141.00 deferred=5141.00 children=0.00 corrected=0.00 zero=true file=2025 accounts.pdf
+bs=645 co=149 fy=2023 pe=2023-08-31 doc=936 cat=YTD Balance Sheet total=403.00 deferred=403.00 children=0.00 corrected=0.00 zero=true file=_Balance_Sheet 2025.pdf
+bs=643 co=149 fy=2024 pe=2024-08-31 doc=936 cat=YTD Balance Sheet total=3676.00 deferred=3676.00 children=0.00 corrected=0.00 zero=true file=_Balance_Sheet 2025.pdf
+bs=644 co=149 fy=2025 pe=2025-08-31 doc=936 cat=YTD Balance Sheet total=3676.00 deferred=3676.00 children=0.00 corrected=0.00 zero=true file=_Balance_Sheet 2025.pdf
+bs=649 co=150 fy=2023 pe=2023-08-31 doc=942 cat=Company Accounts total=403.00 deferred=403.00 children=0.00 corrected=0.00 zero=true file=H176-Full accounts (final)-MH-20250409-160834-382 2024.08.31.PDF
+bs=647 co=150 fy=2024 pe=2024-08-31 doc=942 cat=Company Accounts total=3676.00 deferred=3676.00 children=0.00 corrected=0.00 zero=true file=H176-Full accounts (final)-MH-20250409-160834-382 2024.08.31.PDF
+bs=648 co=150 fy=2025 pe=2025-08-31 doc=940 cat=YTD Balance Sheet total=3676.00 deferred=3676.00 children=0.00 corrected=0.00 zero=true file=Beckwith___Hanlon_Consulting_Engineers_Limited_-_Balance_Sheet 2025.pdf
+bs=655 co=151 fy=2023 pe=2023-08-31 doc=948 cat=YTD Balance Sheet total=403.00 deferred=403.00 children=0.00 corrected=0.00 zero=true file=_Balance_Sheet 2025.pdf
+bs=653 co=151 fy=2024 pe=2024-08-31 doc=948 cat=YTD Balance Sheet total=3676.00 deferred=3676.00 children=0.00 corrected=0.00 zero=true file=_Balance_Sheet 2025.pdf
+bs=654 co=151 fy=2025 pe=2025-08-31 doc=948 cat=YTD Balance Sheet total=3676.00 deferred=3676.00 children=0.00 corrected=0.00 zero=true file=_Balance_Sheet 2025.pdf
+bs=658 co=152 fy=2023 pe=2023-08-31 doc=952 cat=Company Accounts total=403.00 deferred=403.00 children=0.00 corrected=0.00 zero=true file=H176-Accounts to the registrar (final)-MH-20240304-120338-124 2023.08.31.PDF
+bs=659 co=152 fy=2024 pe=2024-08-31 doc=953 cat=Company Accounts total=3676.00 deferred=3676.00 children=0.00 corrected=0.00 zero=true file=H176-UPDATED 2025 ACCOUNTS 25.1-LTD-MH-20251124.PDF
+bs=660 co=152 fy=2025 pe=2025-08-31 doc=953 cat=Company Accounts total=3492.00 deferred=3492.00 children=0.00 corrected=0.00 zero=true file=H176-UPDATED 2025 ACCOUNTS 25.1-LTD-MH-20251124.PDF
+bs=671 co=155 fy=2022 pe=2022-02-28 doc=967 cat=Company Accounts total=59509.00 deferred=8170.00 children=51339.00 corrected=51339.00 zero=false file=LW Haddow 2023 Accs.pdf
+bs=672 co=155 fy=2023 pe=2023-02-28 doc=968 cat=Company Accounts total=48489.00 deferred=14112.00 children=34377.00 corrected=34377.00 zero=false file=LW Haddow 2024 Accs.pdf
+bs=673 co=155 fy=2024 pe=2024-02-29 doc=969 cat=Company Accounts total=39136.00 deferred=25187.00 children=13949.00 corrected=13949.00 zero=false file=LW Haddow 2025 Accs.pdf
+bs=669 co=155 fy=2025 pe=2025-02-28 doc=969 cat=Company Accounts total=71594.00 deferred=68064.00 children=3530.00 corrected=3530.00 zero=false file=LW Haddow 2025 Accs.pdf
+bs=670 co=155 fy=2026 pe=2026-02-28 doc=965 cat=Company Accounts total=37514.00 deferred=37514.00 children=0.00 corrected=0.00 zero=true file=2026 Accs.pdf
+bs=693 co=156 fy=2021 pe=2021-11-30 doc=1015 cat=Company Accounts total=3146.00 deferred=3146.00 children=0.00 corrected=0.00 zero=true file=2022-Full accounts .pdf
+bs=1021 co=160 fy=2022 pe=2022-03-31 doc=1564 cat=Company Accounts total=505291.80 deferred=115531.00 children=389760.80 corrected=389760.80 zero=false file=Balance Sheet.pdf
+bs=1020 co=160 fy=2023 pe=2023-03-31 doc=1564 cat=Company Accounts total=414311.04 deferred=121682.00 children=292629.04 corrected=292629.04 zero=false file=Balance Sheet.pdf
+bs=1018 co=160 fy=2024 pe=2024-03-31 doc=1564 cat=Company Accounts total=385395.66 deferred=121682.00 children=263713.66 corrected=263713.66 zero=false file=Balance Sheet.pdf
+bs=1019 co=160 fy=2025 pe=2025-03-31 doc=1564 cat=Company Accounts total=369973.27 deferred=112952.50 children=257020.77 corrected=257020.77 zero=false file=Balance Sheet.pdf
+bs=1022 co=160 fy=2026 pe=2026-03-31 doc=1564 cat=Company Accounts total=365266.63 deferred=112952.50 children=252314.13 corrected=252314.13 zero=false file=Balance Sheet.pdf
+bs=730 co=163 fy=2023 pe=2023-03-31 doc=1073 cat=Company Accounts total=14911.00 deferred=11327.00 children=3584.00 corrected=3584.00 zero=false file=SIGNED - Lovell Landscapes ltd Full accounts YE 31 March 2024.pdf
+bs=729 co=163 fy=2024 pe=2024-03-31 doc=1073 cat=Company Accounts total=23979.00 deferred=14745.00 children=9234.00 corrected=9234.00 zero=false file=SIGNED - Lovell Landscapes ltd Full accounts YE 31 March 2024.pdf
+bs=727 co=163 fy=2025 pe=2025-03-31 doc=1298 cat=YTD Balance Sheet total=30638.00 deferred=18458.00 children=12180.00 corrected=12180.00 zero=false file=Lovell Landscapes ltd Full draft accounts YE 31 March 2026 (latest) (1).PDF
+bs=728 co=163 fy=2026 pe=2026-03-31 doc=1298 cat=YTD Balance Sheet total=31231.00 deferred=21029.00 children=10202.00 corrected=10202.00 zero=false file=Lovell Landscapes ltd Full draft accounts YE 31 March 2026 (latest) (1).PDF
+bs=741 co=165 fy=2022 pe=2022-10-31 doc=1086 cat=Company Accounts total=2503.00 deferred=2503.00 children=0.00 corrected=0.00 zero=true file=2023 accounts.PDF
+bs=742 co=165 fy=2023 pe=2023-10-31 doc=1087 cat=Company Accounts total=2342.00 deferred=2342.00 children=0.00 corrected=0.00 zero=true file=2024_Accounts.PDF
+bs=743 co=165 fy=2024 pe=2024-10-31 doc=1088 cat=Company Accounts total=2820.00 deferred=2820.00 children=0.00 corrected=0.00 zero=true file=2025 accounts.pdf
+bs=744 co=165 fy=2025 pe=2025-10-31 doc=1088 cat=Company Accounts total=2433.00 deferred=2433.00 children=0.00 corrected=0.00 zero=true file=2025 accounts.pdf
+bs=745 co=166 fy=2021 pe=2021-10-31 doc=1089 cat=Company Accounts total=53059.00 deferred=3998.00 children=49061.00 corrected=49061.00 zero=false file=2022.1 Accounts.pdf
+bs=746 co=166 fy=2022 pe=2022-10-31 doc=1090 cat=Company Accounts total=48786.00 deferred=4116.00 children=44670.00 corrected=44670.00 zero=false file=2023.1 Accounts.pdf
+bs=747 co=166 fy=2023 pe=2023-10-31 doc=1091 cat=Company Accounts total=3900.00 deferred=3900.00 children=0.00 corrected=0.00 zero=true file=2024.1 Accounts.pdf
+bs=748 co=166 fy=2024 pe=2024-10-31 doc=1092 cat=Company Accounts total=3779.00 deferred=3293.00 children=486.00 corrected=486.00 zero=false file=2025.1 Accounts.pdf
+bs=749 co=166 fy=2025 pe=2025-10-31 doc=1092 cat=Company Accounts total=2769.00 deferred=2300.00 children=469.00 corrected=469.00 zero=false file=2025.1 Accounts.pdf
+bs=770 co=167 fy=2021 pe=2021-03-31 doc=NONE cat=- total=47927.00 deferred=14664.00 children=33263.00 corrected=33263.00 zero=false file=-
+bs=768 co=167 fy=2022 pe=2022-03-31 doc=NONE cat=- total=18602.00 deferred=10647.00 children=7955.00 corrected=7955.00 zero=false file=-
+bs=769 co=167 fy=2023 pe=2023-03-31 doc=NONE cat=- total=70241.00 deferred=8574.00 children=61667.00 corrected=61667.00 zero=false file=-
+bs=766 co=167 fy=2024 pe=2024-03-31 doc=NONE cat=- total=97877.00 deferred=3970.00 children=93907.00 corrected=93907.00 zero=false file=-
+bs=760 co=168 fy=2022 pe=2022-12-31 doc=NONE cat=- total=25298.00 deferred=25298.00 children=0.00 corrected=0.00 zero=true file=-
+bs=759 co=168 fy=2023 pe=2023-12-31 doc=NONE cat=- total=37.00 deferred=37.00 children=0.00 corrected=0.00 zero=true file=-
+bs=757 co=168 fy=2024 pe=2024-12-31 doc=NONE cat=- total=12.00 deferred=12.00 children=0.00 corrected=0.00 zero=true file=-
+bs=765 co=169 fy=2022 pe=2022-06-30 doc=NONE cat=- total=33282.00 deferred=782.00 children=32500.00 corrected=32500.00 zero=false file=-
+bs=763 co=169 fy=2023 pe=2023-06-30 doc=NONE cat=- total=23282.00 deferred=782.00 children=22500.00 corrected=22500.00 zero=false file=-
+bs=761 co=169 fy=2024 pe=2024-05-31 doc=NONE cat=- total=18926.00 deferred=6179.00 children=12747.00 corrected=12747.00 zero=false file=-
+bs=857 co=172 fy=2022 pe=2022-03-31 doc=1423 cat=Company Accounts total=119236.00 deferred=61655.00 children=57581.00 corrected=57581.00 zero=false file=year end 23.pdf
+bs=790 co=172 fy=2023 pe=2023-03-31 doc=1424 cat=Company Accounts total=99078.00 deferred=58641.00 children=40437.00 corrected=40437.00 zero=false file=year end 24.pdf
+bs=791 co=172 fy=2024 pe=2024-03-31 doc=1424 cat=Company Accounts total=25420.00 deferred=25420.00 children=0.00 corrected=0.00 zero=true file=year end 24.pdf
+bs=789 co=172 fy=2025 pe=2025-03-31 doc=1422 cat=Company Accounts total=97681.00 deferred=40481.00 children=57200.00 corrected=57200.00 zero=false file=draft year end 25.pdf
+bs=795 co=173 fy=2022 pe=2022-09-30 doc=NONE cat=- total=17432.00 deferred=17432.00 children=0.00 corrected=0.00 zero=true file=-
+bs=796 co=173 fy=2023 pe=2023-09-30 doc=NONE cat=- total=34246.00 deferred=34246.00 children=0.00 corrected=0.00 zero=true file=-
+bs=797 co=173 fy=2024 pe=2024-09-30 doc=NONE cat=- total=59530.00 deferred=59530.00 children=0.00 corrected=0.00 zero=true file=-
+bs=901 co=174 fy=2022 pe=2022-08-31 doc=NONE cat=- total=38162.00 deferred=17776.00 children=20386.00 corrected=20386.00 zero=false file=-
+bs=835 co=174 fy=2023 pe=2023-08-31 doc=NONE cat=- total=406139.00 deferred=22159.00 children=383980.00 corrected=383980.00 zero=false file=-
+bs=1175 co=174 fy=2024 pe=2024-08-31 doc=NONE cat=- total=399865.00 deferred=30223.00 children=369642.00 corrected=369642.00 zero=false file=-
+bs=1174 co=174 fy=2025 pe=2025-08-31 doc=NONE cat=- total=374496.00 deferred=15858.00 children=358638.00 corrected=358638.00 zero=false file=-
+bs=832 co=174 fy=2026 pe=2026-04-30 doc=NONE cat=- total=461779.00 deferred=77111.00 children=384668.00 corrected=384668.00 zero=false file=-
+bs=841 co=177 fy=2023 pe=2023-03-31 doc=NONE cat=- total=6514.00 deferred=6514.00 children=0.00 corrected=0.00 zero=true file=-
+bs=847 co=179 fy=2025 pe=2025-08-31 doc=NONE cat=- total=31747.00 deferred=31747.00 children=0.00 corrected=0.00 zero=true file=-
+bs=811 co=180 fy=2022 pe=2022-03-31 doc=NONE cat=- total=40323.00 deferred=29542.00 children=10781.00 corrected=10781.00 zero=false file=-
+bs=815 co=180 fy=2023 pe=2023-03-31 doc=NONE cat=- total=32101.00 deferred=24849.00 children=7252.00 corrected=7252.00 zero=false file=-
+bs=816 co=180 fy=2024 pe=2024-03-31 doc=NONE cat=- total=23961.00 deferred=23961.00 children=0.00 corrected=0.00 zero=true file=-
+bs=814 co=180 fy=2025 pe=2025-03-31 doc=NONE cat=- total=56949.00 deferred=36764.00 children=20185.00 corrected=20185.00 zero=false file=-
+bs=911 co=188 fy=2022 pe=2022-03-31 doc=1939 cat=Company Accounts total=2798.00 deferred=2798.00 children=0.00 corrected=0.00 zero=true file=2023 Accounts.pdf
+bs=1265 co=188 fy=2022 pe=2022-03-31 doc=NONE cat=- total=2798.00 deferred=2798.00 children=0.00 corrected=0.00 zero=true file=-
+bs=912 co=188 fy=2023 pe=2023-03-31 doc=1939 cat=Company Accounts total=2402.00 deferred=2402.00 children=0.00 corrected=0.00 zero=true file=2023 Accounts.pdf
+bs=909 co=188 fy=2024 pe=2024-03-31 doc=1938 cat=Company Accounts total=4006.00 deferred=4006.00 children=0.00 corrected=0.00 zero=true file=2024 Accounts.pdf
+bs=910 co=188 fy=2025 pe=2025-03-31 doc=1937 cat=Company Accounts total=4806.00 deferred=4806.00 children=0.00 corrected=0.00 zero=true file=2025 Accounts.pdf
+bs=804 co=189 fy=2024 pe=2024-03-31 doc=1163 cat=Company Accounts total=42995.00 deferred=7899.00 children=35096.00 corrected=35096.00 zero=false file=Unaudtited Financial Statements YE 31-03-2025 - Manor Building Solutions.pdf
+bs=805 co=189 fy=2025 pe=2025-03-31 doc=1164 cat=Company Accounts total=21467.00 deferred=4742.00 children=16725.00 corrected=16725.00 zero=false file=Draft Accounts YE 31-03-2026 - Manor Building Solutions.pdf
+bs=806 co=189 fy=2026 pe=2026-03-31 doc=1164 cat=Company Accounts total=32378.00 deferred=9454.00 children=22924.00 corrected=22924.00 zero=false file=Draft Accounts YE 31-03-2026 - Manor Building Solutions.pdf
+bs=1042 co=191 fy=2022 pe=2022-03-31 doc=1585 cat=Company Accounts total=56624.00 deferred=6066.00 children=50558.00 corrected=50558.00 zero=false file=Frametech YE 23.pdf
+bs=1041 co=191 fy=2023 pe=2023-03-31 doc=1585 cat=Company Accounts total=30604.00 deferred=7721.00 children=22883.00 corrected=22883.00 zero=false file=Frametech YE 23.pdf
+bs=1040 co=191 fy=2024 pe=2024-03-31 doc=1584 cat=Company Accounts total=15133.00 deferred=5818.00 children=9315.00 corrected=9315.00 zero=false file=ACCOUNTS March 24.pdf
+bs=1038 co=191 fy=2025 pe=2025-03-31 doc=1583 cat=Company Accounts total=7898.00 deferred=5632.00 children=2266.00 corrected=2266.00 zero=false file=9054 2025 accounts.pdf
+bs=1039 co=191 fy=2026 pe=2026-03-31 doc=1582 cat=Company Accounts total=3387.00 deferred=3387.00 children=0.00 corrected=0.00 zero=true file=ACCOUNTS MARCH 26..pdf
+bs=1067 co=196 fy=2023 pe=2023-02-28 doc=1617 cat=Company Accounts total=25373.00 deferred=4040.00 children=21333.00 corrected=21333.00 zero=false file=51973A~1.PDF
+bs=1066 co=196 fy=2024 pe=2024-02-29 doc=1617 cat=Company Accounts total=16376.00 deferred=3043.00 children=13333.00 corrected=13333.00 zero=false file=51973A~1.PDF
+bs=1064 co=196 fy=2025 pe=2025-02-28 doc=1616 cat=Company Accounts total=7451.00 deferred=2118.00 children=5333.00 corrected=5333.00 zero=false file=51973A~1.PDF
+bs=964 co=197 fy=2023 pe=2023-07-31 doc=1555 cat=Company Accounts total=95177.00 deferred=8590.00 children=86587.00 corrected=86587.00 zero=false file=Besixth Pty Ltd - Financial Statements 2024 Year - Signed.pdf
+bs=870 co=198 fy=2023 pe=2023-10-31 doc=1281 cat=Company Accounts total=583625.00 deferred=23606.00 children=560019.00 corrected=560019.00 zero=false file=Fillted accounts - YE 31-10-23.pdf
+bs=871 co=198 fy=2024 pe=2024-10-31 doc=1280 cat=Company Accounts total=434999.00 deferred=35008.00 children=399991.00 corrected=399991.00 zero=false file=Full_accounts_-_YE_31-10-24.pdf
+bs=918 co=206 fy=2021 pe=2021-01-31 doc=1343 cat=Company Accounts total=10450.00 deferred=10450.00 children=0.00 corrected=0.00 zero=true file=WESTCLIFFE JOINERS  2022 accounts.pdf
+bs=915 co=206 fy=2022 pe=2022-01-31 doc=1343 cat=Company Accounts total=8099.00 deferred=8099.00 children=0.00 corrected=0.00 zero=true file=WESTCLIFFE JOINERS  2022 accounts.pdf
+bs=916 co=206 fy=2023 pe=2023-01-31 doc=1342 cat=Company Accounts total=10563.00 deferred=10563.00 children=0.00 corrected=0.00 zero=true file=WESTCLIFFE JOINERS  2024 accounts.pdf
+bs=917 co=206 fy=2024 pe=2024-01-31 doc=1342 cat=Company Accounts total=8859.00 deferred=8859.00 children=0.00 corrected=0.00 zero=true file=WESTCLIFFE JOINERS  2024 accounts.pdf
+bs=913 co=206 fy=2025 pe=2025-01-31 doc=1341 cat=Company Accounts total=7346.00 deferred=7346.00 children=0.00 corrected=0.00 zero=true file=WESTCLIFFE JOINERS  2025 accounts.pdf
+bs=914 co=206 fy=2026 pe=2026-01-31 doc=1339 cat=Company Accounts total=5805.00 deferred=5805.00 children=0.00 corrected=0.00 zero=true file=WESTCLIFFE JOINERS 2026 accounts.pdf
+bs=930 co=209 fy=2024 pe=2024-03-31 doc=1370 cat=Company Accounts total=1663.00 deferred=1663.00 children=0.00 corrected=0.00 zero=true file=LGNS Ltd - SIGNED FULL acs 31-03-2025 (1).pdf
+bs=931 co=209 fy=2025 pe=2025-03-31 doc=1371 cat=Company Accounts total=1854.00 deferred=1854.00 children=0.00 corrected=0.00 zero=true file=LGNS Ltd - SIGNED acs 31-03-2026.pdf
+bs=932 co=209 fy=2026 pe=2026-03-31 doc=1371 cat=Company Accounts total=1319.00 deferred=1319.00 children=0.00 corrected=0.00 zero=true file=LGNS Ltd - SIGNED acs 31-03-2026.pdf
+bs=945 co=211 fy=2022 pe=2022-04-30 doc=NONE cat=- total=96823.00 deferred=4534.00 children=92289.00 corrected=92289.00 zero=false file=-
+bs=944 co=211 fy=2023 pe=2023-04-30 doc=NONE cat=- total=87299.00 deferred=7025.00 children=80274.00 corrected=80274.00 zero=false file=-
+bs=943 co=211 fy=2025 pe=2025-04-30 doc=NONE cat=- total=18043.00 deferred=5503.00 children=12540.00 corrected=12540.00 zero=false file=-
+bs=950 co=212 fy=2021 pe=2021-05-31 doc=NONE cat=- total=18443.00 deferred=18443.00 children=0.00 corrected=0.00 zero=true file=-
+bs=949 co=212 fy=2022 pe=2022-05-31 doc=NONE cat=- total=17405.00 deferred=17405.00 children=0.00 corrected=0.00 zero=true file=-
+bs=948 co=212 fy=2023 pe=2023-05-31 doc=NONE cat=- total=166711.00 deferred=20389.00 children=146322.00 corrected=146322.00 zero=false file=-
+bs=946 co=212 fy=2024 pe=2024-05-31 doc=NONE cat=- total=111994.00 deferred=35339.00 children=76655.00 corrected=76655.00 zero=false file=-
+bs=947 co=212 fy=2025 pe=2025-05-31 doc=NONE cat=- total=97345.00 deferred=38540.00 children=58805.00 corrected=58805.00 zero=false file=-
+bs=981 co=217 fy=2022 pe=2022-03-31 doc=1481 cat=Company Accounts total=334622.00 deferred=84192.00 children=250430.00 corrected=250430.00 zero=false file=FY23.pdf
+bs=978 co=217 fy=2023 pe=2023-03-31 doc=1481 cat=Company Accounts total=264543.00 deferred=65220.00 children=199323.00 corrected=199323.00 zero=false file=FY23.pdf
+bs=979 co=217 fy=2024 pe=2024-03-31 doc=1480 cat=Company Accounts total=191716.00 deferred=49137.00 children=142579.00 corrected=142579.00 zero=false file=Teakcroft Limited 2025 signed accounts.pdf
+bs=980 co=217 fy=2025 pe=2025-03-31 doc=1480 cat=Company Accounts total=80536.00 deferred=75742.00 children=4794.00 corrected=4794.00 zero=false file=Teakcroft Limited 2025 signed accounts.pdf
+bs=1184 co=217 fy=2026 pe=2026-03-31 doc=1483 cat=YTD Balance Sheet total=80140.55 deferred=75742.00 children=4398.55 corrected=4398.55 zero=false file=BS.March 26.pdf
+bs=1057 co=224 fy=2023 pe=2023-03-30 doc=1599 cat=Company Accounts total=4235.00 deferred=4235.00 children=0.00 corrected=0.00 zero=true file=A85_Full accounts 0324.pdf
+bs=1055 co=224 fy=2024 pe=2024-03-30 doc=1599 cat=Company Accounts total=64429.00 deferred=6881.00 children=57548.00 corrected=57548.00 zero=false file=A85_Full accounts 0324.pdf
+bs=1056 co=224 fy=2025 pe=2025-03-30 doc=1601 cat=Company Accounts total=54819.00 deferred=6926.00 children=47893.00 corrected=47893.00 zero=false file=About Time draft 0326.pdf
+bs=1058 co=224 fy=2026 pe=2026-03-30 doc=1601 cat=Company Accounts total=52422.00 deferred=6926.00 children=45496.00 corrected=45496.00 zero=false file=About Time draft 0326.pdf
+bs=1078 co=228 fy=2023 pe=2023-03-31 doc=1765 cat=Deal Documents total=49478.00 deferred=4434.00 children=45044.00 corrected=45044.00 zero=false file=154764 - Midland Air Conditioning & Facility Management Ltd.pdf
+bs=1079 co=228 fy=2024 pe=2024-03-31 doc=1765 cat=Deal Documents total=319401.00 deferred=46935.00 children=272466.00 corrected=272466.00 zero=false file=154764 - Midland Air Conditioning & Facility Management Ltd.pdf
+bs=1088 co=228 fy=2025 pe=2025-03-31 doc=1775 cat=Company Accounts total=203413.40 deferred=46935.00 children=156478.40 corrected=156478.40 zero=false file=Balance Sheet.pdf
+bs=1089 co=230 fy=2023 pe=2023-12-31 doc=1781 cat=Company Accounts total=14398.00 deferred=14398.00 children=0.00 corrected=0.00 zero=true file=Summit Print Limited 31 December 2024 Full Accounts.pdf
+bs=1090 co=230 fy=2024 pe=2024-12-31 doc=1782 cat=Company Accounts total=16543.00 deferred=16543.00 children=0.00 corrected=0.00 zero=true file=Summit Print Limited 31 December 2025 Full Accounts.pdf
+bs=1091 co=230 fy=2025 pe=2025-12-31 doc=1782 cat=Company Accounts total=52137.00 deferred=29420.00 children=22717.00 corrected=22717.00 zero=false file=Summit Print Limited 31 December 2025 Full Accounts.pdf
+bs=1092 co=230 fy=2026 pe=2026-07-16 doc=1784 cat=YTD Balance Sheet total=55409.99 deferred=29419.76 children=25990.24 corrected=25990.23 zero=false file=BALANCE SHEET MAY 2026.pdf
+bs=1094 co=231 fy=2023 pe=2023-03-31 doc=NONE cat=- total=49478.00 deferred=4434.00 children=45044.00 corrected=45044.00 zero=false file=-
+bs=1098 co=232 fy=2024 pe=2024-09-30 doc=1792 cat=Company Accounts total=10554.00 deferred=669.00 children=9885.00 corrected=9885.00 zero=false file=Unaudited Fin Statements 01102024_30092025.pdf
+bs=1099 co=232 fy=2025 pe=2025-09-30 doc=1792 cat=Company Accounts total=28528.00 deferred=752.00 children=27776.00 corrected=27776.00 zero=false file=Unaudited Fin Statements 01102024_30092025.pdf
+bs=1127 co=240 fy=2022 pe=2022-08-31 doc=1823 cat=Company Accounts total=14346.00 deferred=10979.00 children=3367.00 corrected=3367.00 zero=false file=49214 2023 Accounts.pdf
+bs=1128 co=240 fy=2023 pe=2023-08-31 doc=1824 cat=Company Accounts total=6416.00 deferred=1116.00 children=5300.00 corrected=5300.00 zero=false file=49214 2024 Accounts.pdf
+bs=1129 co=240 fy=2024 pe=2024-08-31 doc=1825 cat=Company Accounts total=3612.00 deferred=12.00 children=3600.00 corrected=3600.00 zero=false file=49214 2025 Accounts.pdf
+bs=1130 co=240 fy=2025 pe=2025-08-31 doc=1825 cat=Company Accounts total=6349.00 deferred=2749.00 children=3600.00 corrected=3600.00 zero=false file=49214 2025 Accounts.pdf
+bs=1132 co=241 fy=2025 pe=2025-01-31 doc=1828 cat=Company Accounts total=29533.00 deferred=1328.00 children=28205.00 corrected=28205.00 zero=false file=annual-accounts-FY2025-full-disclosure.pdf
+bs=1133 co=241 fy=2026 pe=2026-01-31 doc=1829 cat=Company Accounts total=26865.00 deferred=670.00 children=26195.00 corrected=26195.00 zero=false file=annual-accounts-FY2026-full-disclosure.pdf
+bs=1141 co=242 fy=2021 pe=2021-11-30 doc=1841 cat=Company Accounts total=64236.00 deferred=27582.00 children=36654.00 corrected=36654.00 zero=false file=ACCOUN~1.PDF
+bs=1140 co=242 fy=2022 pe=2022-11-30 doc=1841 cat=Company Accounts total=97897.00 deferred=70446.00 children=27451.00 corrected=27451.00 zero=false file=ACCOUN~1.PDF
+bs=1139 co=242 fy=2023 pe=2023-11-30 doc=1840 cat=Company Accounts total=82820.00 deferred=65536.00 children=17284.00 corrected=17284.00 zero=false file=PGSLTD~1.PDF
+bs=1137 co=242 fy=2024 pe=2024-11-30 doc=1839 cat=Company Accounts total=73441.00 deferred=66396.00 children=7045.00 corrected=7045.00 zero=false file=2024_A~1.PDF
+bs=1138 co=242 fy=2025 pe=2025-11-30 doc=1838 cat=Company Accounts total=207042.00 deferred=91283.00 children=115759.00 corrected=115759.00 zero=false file=2025FU~1.PDF
+bs=1136 co=242 fy=2026 pe=2026-05-31 doc=1836 cat=Company Accounts total=91283.00 deferred=91283.00 children=0.00 corrected=0.00 zero=true file=DRAFTQ~1.PDF
+bs=1201 co=244 fy=2021 pe=2021-03-31 doc=1852 cat=Company Accounts total=51872.00 deferred=3261.00 children=48611.00 corrected=48611.00 zero=false file=Year End Accounts Pack 2022.pdf
+bs=1200 co=244 fy=2022 pe=2022-03-31 doc=1852 cat=Company Accounts total=43233.00 deferred=3525.00 children=39708.00 corrected=39708.00 zero=false file=Year End Accounts Pack 2022.pdf
+bs=1194 co=244 fy=2023 pe=2023-03-31 doc=1851 cat=Company Accounts total=33743.00 deferred=3801.00 children=29942.00 corrected=29942.00 zero=false file=Year End Accounts Pack 2023.pdf
+bs=1195 co=244 fy=2024 pe=2024-03-31 doc=1848 cat=Company Accounts total=24282.00 deferred=4361.00 children=19921.00 corrected=19921.00 zero=false file=Accounts pack 2024.pdf
+bs=1202 co=244 fy=2026 pe=2026-07-22 doc=1855 cat=YTD Balance Sheet total=581841.99 deferred=4361.48 children=577480.51 corrected=577480.51 zero=false file=Origin_Digital_Ltd_-_Balance_Sheet (2).pdf
+bs=1237 co=251 fy=2023 pe=2023-03-31 doc=1904 cat=Company Accounts total=97384.00 deferred=2556.00 children=94828.00 corrected=94828.00 zero=false file=2024 accounts.pdf
+bs=1236 co=251 fy=2024 pe=2024-03-31 doc=1904 cat=Company Accounts total=248292.00 deferred=12863.00 children=235429.00 corrected=235429.00 zero=false file=2024 accounts.pdf
+bs=1234 co=251 fy=2025 pe=2025-03-31 doc=1903 cat=Company Accounts total=322768.00 deferred=12202.00 children=310566.00 corrected=310566.00 zero=false file=2025 third draft accounts.pdf
+bs=1235 co=251 fy=2026 pe=2026-03-31 doc=1902 cat=Company Accounts total=524136.00 deferred=18398.00 children=505738.00 corrected=505738.00 zero=false file=2026 third draft accounts 12 June 2026.PDF
+bs=1240 co=252 fy=2021 pe=2022-02-28 doc=1909 cat=Company Accounts total=1081558.00 deferred=11210.00 children=1070348.00 corrected=1070348.00 zero=false file=Carpentry.VT28.02.2022.pdf
+bs=1238 co=252 fy=2022 pe=2022-02-28 doc=1909 cat=Company Accounts total=963542.00 deferred=9540.00 children=954002.00 corrected=954002.00 zero=false file=Carpentry.VT28.02.2022.pdf
+bs=1239 co=252 fy=2022 pe=2022-02-28 doc=1910 cat=Company Accounts total=963542.00 deferred=9540.00 children=954002.00 corrected=954002.00 zero=false file=Carpentry.VT28.02.2023.pdf
+bs=1241 co=252 fy=2023 pe=2023-02-28 doc=1910 cat=Company Accounts total=756457.00 deferred=6515.00 children=749942.00 corrected=749942.00 zero=false file=Carpentry.VT28.02.2023.pdf
+bs=1242 co=252 fy=2024 pe=2024-02-29 doc=1911 cat=Company Accounts total=712165.00 deferred=6515.00 children=705650.00 corrected=705650.00 zero=false file=Carpentry.VT29.02.2024.pdf
+bs=1243 co=252 fy=2025 pe=2025-02-28 doc=1912 cat=Company Accounts total=958975.00 deferred=6673.00 children=952302.00 corrected=952302.00 zero=false file=Draft Accounts YE Feb 2025.pdf
+bs=1251 co=257 fy=2021 pe=2021-06-30 doc=1921 cat=Company Accounts total=1109.00 deferred=1109.00 children=0.00 corrected=0.00 zero=true file=51445 - 22 Accounts.pdf
+bs=1252 co=257 fy=2022 pe=2022-06-30 doc=1921 cat=Company Accounts total=832.00 deferred=832.00 children=0.00 corrected=0.00 zero=true file=51445 - 22 Accounts.pdf
+bs=1253 co=257 fy=2023 pe=2023-06-30 doc=1922 cat=Company Accounts total=870.00 deferred=870.00 children=0.00 corrected=0.00 zero=true file=51445 - 23 Accounts.pdf
+bs=1254 co=257 fy=2024 pe=2024-06-30 doc=1923 cat=Company Accounts total=652.00 deferred=652.00 children=0.00 corrected=0.00 zero=true file=51445 - 24 Accounts.pdf
+bs=1255 co=257 fy=2025 pe=2025-06-30 doc=1924 cat=Company Accounts total=578.00 deferred=578.00 children=0.00 corrected=0.00 zero=true file=51445 - 25 Accounts.pdf
+bs=1266 co=259 fy=2021 pe=2021-06-30 doc=1954 cat=Company Accounts total=71530.00 deferred=6741.00 children=64789.00 corrected=64789.00 zero=false file=GMS_Management_Accounts_FY_to_June_2022.xls
+bs=1270 co=259 fy=2022 pe=2022-06-30 doc=1954 cat=Company Accounts total=71530.00 deferred=6741.00 children=64789.00 corrected=64789.00 zero=false file=GMS_Management_Accounts_FY_to_June_2022.xls
+bs=1275 co=259 fy=2023 pe=2023-06-30 doc=1955 cat=Company Accounts total=97574.00 deferred=6741.00 children=90833.00 corrected=90833.00 zero=false file=GMS_Management_Accounts_FY_to_June_2023.xls
+bs=1277 co=259 fy=2024 pe=2024-06-30 doc=1956 cat=Company Accounts total=69736.00 deferred=4737.00 children=64999.00 corrected=64999.00 zero=false file=GMS_Management_Accounts_FY_to_June_2024.xls
+bs=1278 co=259 fy=2025 pe=2026-06-30 doc=1959 cat=YTD Balance Sheet total=220176.00 deferred=4605.00 children=215571.00 corrected=215571.00 zero=false file=GMS_YTD_P&L_and_YTD_Balance_Sheet_to_July_2026.xls
+bs=1281 co=259 fy=2025 pe=2025-06-30 doc=1957 cat=Company Accounts total=370403.00 deferred=2095.00 children=368308.00 corrected=368308.00 zero=false file=GMS_Management_Accounts_FY_to_June_2025.xls
+bs=1279 co=259 fy=2026 pe=2026-06-30 doc=1958 cat=Company Accounts total=241090.00 deferred=4605.00 children=236485.00 corrected=236485.00 zero=false file=GMS_Management_Accounts_FY_to_June_2026.xls
+bs=1280 co=259 fy=2026 pe=2026-07-31 doc=1959 cat=YTD Balance Sheet total=220176.00 deferred=4605.00 children=215571.00 corrected=215571.00 zero=false file=GMS_YTD_P&L_and_YTD_Balance_Sheet_to_July_2026.xls
+
+=== NON-FIRING RESIDUE (non-zero deferred, predicate does not fire) ===
+bs=393 co=88 fy=2025 doc=NONE total=170481.61 deferred=108160.00 children=180705.52 gap=-118383.91
+bs=675 co=97 fy=2021 doc=978 total=530948.00 deferred=89256.00 children=341667.00 gap=100025.00
+bs=491 co=120 fy=2021 doc=682 total=78404.00 deferred=36737.00 children=83334.00 gap=-41667.00
+bs=489 co=120 fy=2022 doc=682 total=69248.00 deferred=37581.00 children=63334.00 gap=-31667.00
+bs=490 co=120 fy=2023 doc=681 total=59133.00 deferred=37456.00 children=43354.00 gap=-21677.00
+bs=555 co=132 fy=2021 doc=803 total=59444.00 deferred=9447.00 children=59444.00 gap=-9447.00
+bs=556 co=132 fy=2022 doc=803 total=342534.00 deferred=8355.00 children=342534.00 gap=-8355.00
+bs=579 co=137 fy=2024 doc=846 total=35096.00 deferred=7899.00 children=35096.00 gap=-7899.00
