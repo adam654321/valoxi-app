@@ -849,20 +849,47 @@ export class FinancialDataService {
     const overheads = yd?.overheads_breakdown || pl?.overheads_breakdown || null;
     if (!overheads || typeof overheads !== 'object') return extracted;
 
-    let sum = 0;
-    for (const key of [
-      'staff_wages_salaries',
-      'employers_national_insurance',
-      'staff_pension_contributions',
-    ]) {
+    const read = (key: string): number | null => {
       const v = this.parseDecimal((overheads as any)[key]);
-      if (v === null) return extracted;
+      if (v === null) return null;
       const n = Number(v);
-      if (!Number.isFinite(n)) return extracted;
-      sum += n;
-    }
+      return Number.isFinite(n) ? n : null;
+    };
 
-    return this.toMoney(sum);
+    const wages    = read('staff_wages_salaries');
+    const ni       = read('employers_national_insurance');
+    const pension  = read('staff_pension_contributions');
+    const training = read('staff_training_recruitment');
+
+    if (wages === null || ni === null || pension === null) return extracted;
+
+    // A breakdown reporting zero wages is not describing a payroll. Prod row 1036 has
+    // wages 0, NI 0, pension 0 against a stored 519,174; deriving from it would write 0.
+    // parseDecimal(0) returns "0", not null, so a null check alone does not catch this.
+    if (wages <= 0) return extracted;
+
+    const contract = this.toMoney(wages + ni + pension);
+
+    // Nothing stored: deriving adds information rather than overwriting it.
+    if (extracted === null) return contract;
+
+    const stored = Number(extracted);
+    if (!Number.isFinite(stored)) return contract;
+
+    const tol = Math.max(1, Math.abs(stored) * 0.0001);
+    const near = (candidate: number) => Math.abs(stored - candidate) <= tol;
+
+    // Overwrite ONLY where the stored aggregate matches a formula we can name.
+    // Measured on prod 20 Aug: of 119 would-change rows, 51 include training, 22 drop
+    // employer's NI, and 46 match NOTHING. Those 46 are not understood, so they are left
+    // alone and surface as a cross-source conflict at step 3 rather than being rewritten.
+    const t = training === null ? 0 : training;
+    const includesTraining = near(wages + ni + pension + t);
+    const niDropped        = near(wages + pension + t);
+
+    if (includesTraining || niDropped) return contract;
+
+    return extracted;
   }
 
   private parseDecimal(value: any): string | null {
