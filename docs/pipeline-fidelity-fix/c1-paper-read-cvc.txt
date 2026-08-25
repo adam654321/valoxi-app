@@ -1,0 +1,68 @@
+database=neondb  balance_sheets=697   (prod=697, dev=216)
+
+==============================================================================
+doc=650  co=114  cat=Company Accounts
+file=CVC - Unaudited Financial Statements YE 31-03-2023.pdf
+bytes=2077376
+two-pass figure agreement: IDENTICAL
+page=7  footer=The notes form part of these financial statements
+
+Page 5
+
+continued...
+deferred tax appears: in_a_note_only
+columns: ["31.3.23","31.3.22"]
+creditors>1yr printed: false  label="-"  values=[null,null]
+provisions printed:    true  label="PROVISIONS FOR LIABILITIES"  values=["72,958","41,479"]
+EVERY LINE BETWEEN TOTAL ASSETS LESS CURRENT LIABILITIES AND NET ASSETS:
+   "PROVISIONS FOR LIABILITIES"  ["72,958","41,479"]
+creditors note present: false  components=[]
+
+-- bs=460 fy=2022 pe=2022-03-31
+   stored    total=41479.00 deferred=41479.00 children=0.00 corrected=0.00
+   column    [1] "31.3.22"
+   printed   creditors>1yr="-" (null)   provisions="41,479" (41479.00)
+   recon     1272491.00 - 0.00 - 41479.00 = 1231012.00   net assets 1231012.00   OK
+   VERDICT   CONTRACT 1 HOLDS — printed creditors equals total minus deferred
+             provisions match stored deferred
+
+-- bs=461 fy=2023 pe=2023-03-31
+   stored    total=72958.00 deferred=72958.00 children=0.00 corrected=0.00
+   column    [0] "31.3.23"
+   printed   creditors>1yr="-" (null)   provisions="72,958" (72958.00)
+   recon     1353286.00 - 0.00 - 72958.00 = 1280328.00   net assets 1280328.00   OK
+   VERDICT   CONTRACT 1 HOLDS — printed creditors equals total minus deferred
+             provisions match stored deferred
+
+==============================================================================
+doc=652  co=114  cat=Company Accounts
+file=CVC - Unaudited Financial Statements YE 31-03-2025.pdf
+bytes=2453644
+two-pass figure agreement: IDENTICAL
+page=7  footer=The notes on pages 8 to 13 form an integral part of these financial statements.
+Page 5
+deferred tax appears: in_a_note_only
+columns: ["2025\n£","2024\n£"]
+creditors>1yr printed: false  label="-"  values=[null,null]
+provisions printed:    true  label="Provisions for liabilities"  values=["(62,121)","(102,560)"]
+EVERY LINE BETWEEN TOTAL ASSETS LESS CURRENT LIABILITIES AND NET ASSETS:
+   "Provisions for liabilities"  ["(62,121)","(102,560)"]
+creditors note present: false  components=[]
+
+-- bs=462 fy=2024 pe=2024-03-31
+   stored    total=102560.00 deferred=102560.00 children=0.00 corrected=0.00
+   column    [1] "2024
+£"
+   printed   creditors>1yr="-" (null)   provisions="(102,560)" (-102560.00)
+   recon     1463856.00 - 0.00 - 102560.00 = 1361296.00   net assets 1361296.00   OK
+   VERDICT   CONTRACT 1 HOLDS — printed creditors equals total minus deferred
+             provisions match stored deferred
+
+-- bs=459 fy=2025 pe=2025-03-31
+   stored    total=62121.00 deferred=62121.00 children=0.00 corrected=0.00
+   column    [0] "2025
+£"
+   printed   creditors>1yr="-" (null)   provisions="(62,121)" (-62121.00)
+   recon     1552705.00 - 0.00 - 62121.00 = 1490584.00   net assets 1490584.00   OK
+   VERDICT   CONTRACT 1 HOLDS — printed creditors equals total minus deferred
+             provisions match stored deferred
