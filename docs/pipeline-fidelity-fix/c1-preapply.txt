@@ -1,0 +1,63 @@
+database=neondb  balance_sheets=697   (prod=697)
+
+changing: balance_sheets 281 (expect 281), contributions 312 (expect 312)
+
+=== 1. CHANGING CONTRIBUTIONS WITH NO MATCHING balance_sheets CHANGE: 32 ===
+fc     co    fy    doc    tier                           total  verdict
+1681   252   2023  1911   statutory                  756457.00  winner elsewhere, bs doc(s)=1910* (starred = also changing)
+1685   252   2024  1912   statutory                  712165.00  winner elsewhere, bs doc(s)=1911* (starred = also changing)
+1652   251   2025  1902   statutory                  322768.00  winner elsewhere, bs doc(s)=1903* (starred = also changing)
+1807   259   2024  1957   management                 291636.00  winner elsewhere, bs doc(s)=1956* (starred = also changing)
+1124   122   2025  702    statutory                  286398.25  winner elsewhere, bs doc(s)=704* (starred = also changing)
+1656   251   2024  1903   statutory                  248292.00  winner elsewhere, bs doc(s)=1904* (starred = also changing)
+1811   259   2025  1958   management                 241090.00  winner elsewhere, bs doc(s)=1957*,1959* (starred = also changing)
+1000   108   2026  618    statutory                  161574.00  winner elsewhere, bs doc(s)=619* (starred = also changing)
+35     242   2022  1840   statutory                   97897.00  winner elsewhere, bs doc(s)=1841* (starred = also changing)
+31     242   2023  1839   statutory                   82820.00  winner elsewhere, bs doc(s)=1840* (starred = also changing)
+1799   259   2022  1955   management                  80908.00  winner elsewhere, bs doc(s)=1954* (starred = also changing)
+1803   259   2023  1956   management                  75569.00  winner elsewhere, bs doc(s)=1955* (starred = also changing)
+27     242   2024  1838   statutory                   73441.00  winner elsewhere, bs doc(s)=1839* (starred = also changing)
+1439   137   2026  1597   management                  46871.56  winner elsewhere, bs doc(s)=1299* (starred = also changing)
+1440   137   2027  1597   management                  45708.21  NO balance_sheets ROW FOR THIS COMPANY-YEAR AT ALL
+1522   244   2022  1851   statutory                   43233.00  winner elsewhere, bs doc(s)=1852* (starred = also changing)
+1513   244   2023  1848   statutory                   33743.00  winner elsewhere, bs doc(s)=1851* (starred = also changing)
+9      241   2025  1829   statutory                   29533.00  winner elsewhere, bs doc(s)=1828* (starred = also changing)
+1247   188   2025  NONE   statutory                    4806.00  winner elsewhere, bs doc(s)=1937* (starred = also changing)
+1752   188   2025  1933   information_memorandum       4806.00  winner elsewhere, bs doc(s)=1937* (starred = also changing)
+1315   188   2024  NONE   statutory                    4006.00  winner elsewhere, bs doc(s)=1938* (starred = also changing)
+1751   188   2024  1933   information_memorandum       4006.00  winner elsewhere, bs doc(s)=1938* (starred = also changing)
+1759   188   2024  1937   statutory                    4006.00  winner elsewhere, bs doc(s)=1938* (starred = also changing)
+1319   139   2025  1795   information_memorandum       2879.00  winner elsewhere, bs doc(s)=855* (starred = also changing)
+1332   139   2024  1795   information_memorandum       2879.00  winner elsewhere, bs doc(s)=856* (starred = also changing)
+1749   188   2022  1933   information_memorandum       2798.00  winner elsewhere, bs doc(s)=1939*,NONE* (starred = also changing)
+1322   188   2023  NONE   statutory                    2402.00  winner elsewhere, bs doc(s)=1939* (starred = also changing)
+1750   188   2023  1933   information_memorandum       2402.00  winner elsewhere, bs doc(s)=1939* (starred = also changing)
+1763   188   2023  1938   statutory                    2402.00  winner elsewhere, bs doc(s)=1939* (starred = also changing)
+1717   257   2023  1923   statutory                     870.00  winner elsewhere, bs doc(s)=1922* (starred = also changing)
+1713   257   2022  1922   statutory                     832.00  winner elsewhere, bs doc(s)=1921* (starred = also changing)
+1721   257   2024  1924   statutory                     652.00  winner elsewhere, bs doc(s)=1923* (starred = also changing)
+
+tally:
+  31  winner elsewhere
+  1  NO balance_sheets ROW FOR THIS COMPANY-YEAR AT ALL
+
+=== 2. CHANGING balance_sheets ROWS WITH NO CONTRIBUTION: 1 ===
+bs=1094 co=231 fy=2023 doc=NONE total=49478.00 deferred=4434.00
+   contributions for that company-year: NONE
+
+=== 3. JSON VALUE TYPES INSIDE figures ===
+total       deferred    bankLoans      rows
+string      null        null            290
+string      string      null            174
+string      string      string          156
+string      null        string          139
+null        null        null             59
+
+raw samples, exact stored form:
+  fc=5  total="23097"  deferred=null
+  fc=6  total="29533"  deferred="1328"
+  fc=9  total="29533"  deferred="1328"
+  fc=10  total="26865"  deferred="670"
+  fc=24  total="91283"  deferred="91283"
+
+Nothing was written. SELECT statements only.
