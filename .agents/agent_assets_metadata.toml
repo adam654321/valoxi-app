@@ -62,3 +62,17 @@ uri = "file://docs/pipeline-fidelity-fix/c1-paper-read.txt"
 type = "text"
 title = "Contract 1 paper verification report"
 description = "Complete verbatim two-pass transcription output for the seven requested production documents."
+
+[[outputs]]
+id = "h5Toh-Xv408H8zqKDov1x"
+uri = "file://docs/pipeline-fidelity-fix/c1-backfill-dryrun.txt"
+type = "text"
+title = "Contract 1 dry-run report"
+description = "Read-only computed population, cross-check, cohort, and planned-apply report."
+
+[[outputs]]
+id = "Ll8u7kRgxKGtMbASfkBag"
+uri = "file://docs/pipeline-fidelity-fix/c1-backfill-plan.json"
+type = "unspecified"
+title = "Contract 1 dry-run plan"
+description = "Computed before/after and rollback artefact; no database changes were applied."

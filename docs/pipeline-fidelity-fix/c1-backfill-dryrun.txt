@@ -1,0 +1,754 @@
+=== IDENTITY ===
+database=neondb  balance_sheets=697  (prod=697, dev=216)
+financial_contributions balance rows=818
+
+=== TARGET 1  balance_sheets.total_long_term_liabilities ===
+rows to change        : 281   MATCH 281
+deferred removed      : 9925991.99   MATCH
+rows going to zero    : 98   MATCH 98
+subtraction vs children disagree by >0.005 : 1
+   bs=1092 co=230 fy=2026 corrected=25990.23 children=25990.24
+
+=== TARGET 2  financial_contributions.figures->totalLongTermLiabilities ===
+balance rows                 : 818
+carrying a long term total   : 759   (v81.2 recorded 818)
+rows to change               : 312
+deferred removed             : 10609336.94
+rows going to zero           : 113
+
+=== CROSS-CHECK (join on company + fiscal_year + source_document_id) ===
+target 2 rows matching a changing target 1 row : 280
+target 2 rows with NO matching target 1 change : 32
+   of those, a balance_sheets row exists but does not change : 0
+target 1 rows with NO matching target 2 row    : 1
+STORED TOTALS DISAGREE between the two tables  : 0
+
+=== canonical_figure on the LTL path: 0   (v81.2 recorded prod 0) ===
+
+=== COHORT EYEBALL: every target 1 row going to ZERO ===
+bs     co    company                   fy    doc           current  file
+505    123   Printing Company          2022  697         366979.00  2023 Full Accounts_Printing Company.pdf
+500    122       Clifford Press Limited2024  704         332100.00  2025 Full Accounts Clifford Press Limited (New).pdf
+507    123   Printing Company          2024  698         332100.00  2024 Full Accounts_Printing Company.pdf
+503    122       Clifford Press Limited2023  703         318179.00  2024 Full Accounts Clifford Press Limited (New).pdf
+506    123   Printing Company          2023  697         318179.00  2023 Full Accounts_Printing Company.pdf
+499    122       Clifford Press Limited2026  702         286398.25  Management Report January 2026 (New).pdf
+1157   123   Printing Company          2025  699         286398.25  Management_Report January 2026_Printing Company.pdf
+1158   123   Printing Company          2026  699         286398.25  Management_Report January 2026_Printing Company.pdf
+498    122       Clifford Press Limited2025  704         286398.00  2025 Full Accounts Clifford Press Limited (New).pdf
+374    82    Astorbush                 2022  534         249175.00  Limited company accounts 2023.PDF
+462    114   Chew Valley Construction L2024  652         102560.00  CVC - Unaudited Financial Statements YE 31-03-2025.pdf
+1136   242   Premier Garden Supplies Li2026  1836         91283.00  DRAFTQ~1.PDF
+461    114   Chew Valley Construction L2023  650          72958.00  CVC - Unaudited Financial Statements YE 31-03-2023.pdf
+441    108   RCT MANUFACTURING LIMITED 2026  619          72823.00  1.Bal Sheet Feb 26.pdf
+459    114   Chew Valley Construction L2025  652          62121.00  CVC - Unaudited Financial Statements YE 31-03-2025.pdf
+363    97    Palatial leisure          2023  976          61710.00  companies_house_document (2).pdf
+797    173   Advanced scaffolding      2024  NONE         59530.00  NO DOC
+487    120   acme1                     2024  680          59295.00  2024 final accounts.pdf
+488    120   acme1                     2025  679          52695.00  2025 - Final Accounts.pdf
+460    114   Chew Valley Construction L2022  650          41479.00  CVC - Unaudited Financial Statements YE 31-03-2023.pdf
+504    123   Printing Company          2021  696          37643.00  2022 Full Accounts_Printing Company.pdf
+670    155   LW Haddow                 2026  965          37514.00  2026 Accs.pdf
+1142   83    Newbie&Me                 2023  524          35233.00  S1968 N&MLeeds FY24.pdf
+796    173   Advanced scaffolding      2023  NONE         34246.00  NO DOC
+847    179   Little Agnes Nursery      2025  NONE         31747.00  NO DOC
+791    172   Ideal scaffolding         2024  1424         25420.00  year end 24.pdf
+760    168   Jessup Electrical Wholesal2022  NONE         25298.00  NO DOC
+816    180   M&M Scaffolding           2024  NONE         23961.00  NO DOC
+950    212   Spring Europe Limited     2021  NONE         18443.00  NO DOC
+795    173   Advanced scaffolding      2022  NONE         17432.00  NO DOC
+949    212   Spring Europe Limited     2022  NONE         17405.00  NO DOC
+1090   230   Summit Print              2024  1782         16543.00  Summit Print Limited 31 December 2025 Full Accounts.pdf
+1089   230   Summit Print              2023  1781         14398.00  Summit Print Limited 31 December 2024 Full Accounts.pdf
+372    83    Newbie&Me                 2022  522          14282.00  S1968 N&MBirmingham FY23.pdf
+631    145   Elecktec Limited          2023  909          13419.00  Elecktec Limited 2023-2024.pdf
+629    145   Elecktec Limited          2024  909          12303.00  Elecktec Limited 2023-2024.pdf
+916    206   Westcliffe joiners        2023  1342         10563.00  WESTCLIFFE JOINERS  2024 accounts.pdf
+918    206   Westcliffe joiners        2021  1343         10450.00  WESTCLIFFE JOINERS  2022 accounts.pdf
+917    206   Westcliffe joiners        2024  1342          8859.00  WESTCLIFFE JOINERS  2024 accounts.pdf
+630    145   Elecktec Limited          2025  908           8232.00  Elecktec Limited 2025.pdf
+325    81    Revolution Skate Park Limi2024  NONE          8216.00  NO DOC
+915    206   Westcliffe joiners        2022  1343          8099.00  WESTCLIFFE JOINERS  2022 accounts.pdf
+470    116   Woodfield Building Service2023  663           7751.00  Full accounts 31-08-24.pdf
+913    206   Westcliffe joiners        2025  1341          7346.00  WESTCLIFFE JOINERS  2025 accounts.pdf
+841    177   Crickets Montessori       2023  NONE          6514.00  NO DOC
+324    81    Revolution Skate Park Limi2023  NONE          6368.00  NO DOC
+471    116   Woodfield Building Service2024  664           5992.00  Woodfield Building Svs 31-08-25 full.pdf
+914    206   Westcliffe joiners        2026  1339          5805.00  WESTCLIFFE JOINERS 2026 accounts.pdf
+328    81    Revolution Skate Park Limi2025  NONE          5354.00  NO DOC
+519    125   Cordell Engineering Limite2025  711           5141.00  2025 accounts.pdf
+639    147   Cordell                   2025  922           5141.00  2025 accounts.pdf
+910    188   Commercial Cleaning Compan2025  1937          4806.00  2025 Accounts.pdf
+569    135   Vici Dental               2023  825           4740.00  Pudsey Statutory accounts March 2024.pdf
+472    116   Woodfield Building Service2025  664           4502.00  Woodfield Building Svs 31-08-25 full.pdf
+468    115   Asher Care Ltd            2024  657           4237.00  Asher Care trading summary.pdf
+1057   224   About Time Creative       2023  1599          4235.00  A85_Full accounts 0324.pdf
+593    139   Cleaning and Gardening Cre2023  1041          4206.00  2023-04-30 The Cleaning & Gardening Crew Ltd signed accounts.pdf
+909    188   Commercial Cleaning Compan2024  1938          4006.00  2024 Accounts.pdf
+747    166   Barn Nursery              2023  1091          3900.00  2024.1 Accounts.pdf
+643    149   Civil Engineering         2024  936           3676.00  _Balance_Sheet 2025.pdf
+644    149   Civil Engineering         2025  936           3676.00  _Balance_Sheet 2025.pdf
+647    150   Civil Engineering         2024  942           3676.00  H176-Full accounts (final)-MH-20250409-160834-382 2024.08.31.PDF
+648    150   Civil Engineering         2025  940           3676.00  Beckwith___Hanlon_Consulting_Engineers_Limited_-_Balance_Sheet 2025.pdf
+653    151   Civils                    2024  948           3676.00  _Balance_Sheet 2025.pdf
+654    151   Civils                    2025  948           3676.00  _Balance_Sheet 2025.pdf
+659    152   Civils 2                  2024  953           3676.00  H176-UPDATED 2025 ACCOUNTS 25.1-LTD-MH-20251124.PDF
+467    115   Asher Care Ltd            2023  657           3501.00  Asher Care trading summary.pdf
+660    152   Civils 2                  2025  953           3492.00  H176-UPDATED 2025 ACCOUNTS 25.1-LTD-MH-20251124.PDF
+1039   191   Frametech Essex Limited   2026  1582          3387.00  ACCOUNTS MARCH 26..pdf
+693    156   Apple Homecare Limited    2021  1015          3146.00  2022-Full accounts .pdf
+591    139   Cleaning and Gardening Cre2024  856           2879.00  2024-04-30 The Cleaning & Gardening Crew Ltd signed accounts.pdf
+743    165   Daycare                   2024  1088          2820.00  2025 accounts.pdf
+911    188   Commercial Cleaning Compan2022  1939          2798.00  2023 Accounts.pdf
+1265   188   Commercial Cleaning Compan2022  NONE          2798.00  NO DOC
+570    135   Vici Dental               2024  833           2757.00  Vici Dental Pudsey Limited - Final Accounts 2025.pdf
+778    71    Acme Manufacturing Ltd    2022  1127          2503.00  2023 accounts.PDF
+741    165   Daycare                   2022  1086          2503.00  2023 accounts.PDF
+369    83    Newbie&Me                 2024  871           2446.00  Newbie and Me Ltd Ye30Nov25 Draft Accounts.pdf
+744    165   Daycare                   2025  1088          2433.00  2025 accounts.pdf
+912    188   Commercial Cleaning Compan2023  1939          2402.00  2023 Accounts.pdf
+779    71    Acme Manufacturing Ltd    2023  1127          2342.00  2023 accounts.PDF
+742    165   Daycare                   2023  1087          2342.00  2024_Accounts.PDF
+592    139   Cleaning and Gardening Cre2025  855           1975.00  The Cleaning  Gardening Crew Limited full ACCOUNTS 2025.pdf
+931    209   Litge_Nursery             2025  1371          1854.00  LGNS Ltd - SIGNED acs 31-03-2026.pdf
+930    209   Litge_Nursery             2024  1370          1663.00  LGNS Ltd - SIGNED FULL acs 31-03-2025 (1).pdf
+932    209   Litge_Nursery             2026  1371          1319.00  LGNS Ltd - SIGNED acs 31-03-2026.pdf
+1251   257   Croston                   2021  1921          1109.00  51445 - 22 Accounts.pdf
+1253   257   Croston                   2023  1922           870.00  51445 - 23 Accounts.pdf
+1252   257   Croston                   2022  1921           832.00  51445 - 22 Accounts.pdf
+1151   117   Habit 5                   2025  670            825.00  HABI3608-Habit5 Limited company accounts FINAL to 30 June 2025.pdf
+1254   257   Croston                   2024  1923           652.00  51445 - 24 Accounts.pdf
+1255   257   Croston                   2025  1924           578.00  51445 - 25 Accounts.pdf
+645    149   Civil Engineering         2023  936            403.00  _Balance_Sheet 2025.pdf
+649    150   Civil Engineering         2023  942            403.00  H176-Full accounts (final)-MH-20250409-160834-382 2024.08.31.PDF
+655    151   Civils                    2023  948            403.00  _Balance_Sheet 2025.pdf
+658    152   Civils 2                  2023  952            403.00  H176-Accounts to the registrar (final)-MH-20240304-120338-124 2023.08.31.PDF
+759    168   Jessup Electrical Wholesal2023  NONE            37.00  NO DOC
+757    168   Jessup Electrical Wholesal2024  NONE            12.00  NO DOC
+
+=== TOP 20 BY VALUE REMOVED, all target 1 rows ===
+bs     co    company                   fy            before         after       removed
+505    123   Printing Company          2022       366979.00          0.00     366979.00
+500    122       Clifford Press Limited2024       332100.00          0.00     332100.00
+507    123   Printing Company          2024       332100.00          0.00     332100.00
+503    122       Clifford Press Limited2023       318179.00          0.00     318179.00
+506    123   Printing Company          2023       318179.00          0.00     318179.00
+499    122       Clifford Press Limited2026       286398.25          0.00     286398.25
+1157   123   Printing Company          2025       286398.25          0.00     286398.25
+1158   123   Printing Company          2026       286398.25          0.00     286398.25
+498    122       Clifford Press Limited2025       286398.00          0.00     286398.00
+376    82    Astorbush                 2024      1685312.00    1400000.00     285312.00
+375    82    Astorbush                 2023      1675988.00    1400000.00     275988.00
+374    82    Astorbush                 2022       249175.00          0.00     249175.00
+273    67    DNA                       2022      1426603.00    1263955.00     162648.00
+373    82    Astorbush                 2021      1562629.00    1400000.00     162629.00
+1143   88    Kitchen Generator Limited 2024       154874.71        871.71     154003.00
+420    80    Indirock Limited          2024       397563.00     258868.00     138695.00
+395    88    Kitchen Generator Limited 2022       314472.54     182936.54     131536.00
+276    67    DNA                       2021      1559765.00    1434033.00     125732.00
+396    88    Kitchen Generator Limited 2023       195016.97      72029.97     122987.00
+1020   160   Climb Quest (Walthew Leisu2023       414311.04     292629.04     121682.00
+
+=== PLANNED APPLY, NOT RUN ===
+one transaction, target 1 first (281 rows), then target 2 (312 rows)
+total deferred removed: target 1 9925991.99, target 2 10609336.94
+NOTHING WAS WRITTEN. This run issued SELECT statements only.
+
+=== FULL TARGET 1 PLAN ===
+bs=253 co=60 fy=2018 doc=338 before=82182.00 after=60000.00 removed=22182.00 zero=false
+bs=254 co=60 fy=2019 doc=339 before=52952.00 after=36250.00 removed=16702.00 zero=false
+bs=256 co=60 fy=2021 doc=341 before=176173.00 after=166453.00 removed=9720.00 zero=false
+bs=257 co=60 fy=2022 doc=341 before=161435.00 after=154239.00 removed=7196.00 zero=false
+bs=276 co=67 fy=2021 doc=383 before=1559765.00 after=1434033.00 removed=125732.00 zero=false
+bs=273 co=67 fy=2022 doc=383 before=1426603.00 after=1263955.00 removed=162648.00 zero=false
+bs=778 co=71 fy=2022 doc=1127 before=2503.00 after=0.00 removed=2503.00 zero=true
+bs=779 co=71 fy=2023 doc=1127 before=2342.00 after=0.00 removed=2342.00 zero=true
+bs=424 co=80 fy=2021 doc=NONE before=69539.00 after=68975.00 removed=564.00 zero=false
+bs=420 co=80 fy=2024 doc=NONE before=397563.00 after=258868.00 removed=138695.00 zero=false
+bs=326 co=81 fy=2020 doc=NONE before=25489.00 after=16881.00 removed=8608.00 zero=false
+bs=327 co=81 fy=2021 doc=NONE before=49365.00 after=42500.00 removed=6865.00 zero=false
+bs=324 co=81 fy=2023 doc=NONE before=6368.00 after=0.00 removed=6368.00 zero=true
+bs=325 co=81 fy=2024 doc=NONE before=8216.00 after=0.00 removed=8216.00 zero=true
+bs=328 co=81 fy=2025 doc=NONE before=5354.00 after=0.00 removed=5354.00 zero=true
+bs=373 co=82 fy=2021 doc=532 before=1562629.00 after=1400000.00 removed=162629.00 zero=false
+bs=374 co=82 fy=2022 doc=534 before=249175.00 after=0.00 removed=249175.00 zero=true
+bs=375 co=82 fy=2023 doc=534 before=1675988.00 after=1400000.00 removed=275988.00 zero=false
+bs=376 co=82 fy=2024 doc=531 before=1685312.00 after=1400000.00 removed=285312.00 zero=false
+bs=372 co=83 fy=2022 doc=522 before=14282.00 after=0.00 removed=14282.00 zero=true
+bs=1142 co=83 fy=2023 doc=524 before=35233.00 after=0.00 removed=35233.00 zero=true
+bs=369 co=83 fy=2024 doc=871 before=2446.00 after=0.00 removed=2446.00 zero=true
+bs=337 co=87 fy=2023 doc=475 before=182775.00 after=128307.00 removed=54468.00 zero=false
+bs=338 co=87 fy=2024 doc=476 before=131159.00 after=83479.00 removed=47680.00 zero=false
+bs=339 co=87 fy=2025 doc=476 before=83170.00 after=34523.00 removed=48647.00 zero=false
+bs=395 co=88 fy=2022 doc=NONE before=314472.54 after=182936.54 removed=131536.00 zero=false
+bs=396 co=88 fy=2023 doc=NONE before=195016.97 after=72029.97 removed=122987.00 zero=false
+bs=1143 co=88 fy=2024 doc=NONE before=154874.71 after=871.71 removed=154003.00 zero=false
+bs=392 co=89 fy=2021 doc=NONE before=158735.00 after=80112.00 removed=78623.00 zero=false
+bs=363 co=97 fy=2023 doc=976 before=61710.00 after=0.00 removed=61710.00 zero=true
+bs=386 co=100 fy=2023 doc=546 before=35601.00 after=27479.00 removed=8122.00 zero=false
+bs=384 co=100 fy=2024 doc=546 before=26774.00 after=18652.00 removed=8122.00 zero=false
+bs=385 co=100 fy=2025 doc=545 before=17000.00 after=8878.00 removed=8122.00 zero=false
+bs=438 co=107 fy=2020 doc=617 before=58573.00 after=57810.00 removed=763.00 zero=false
+bs=439 co=107 fy=2021 doc=617 before=40947.00 after=40375.00 removed=572.00 zero=false
+bs=434 co=107 fy=2022 doc=614 before=36709.00 after=36301.00 removed=408.00 zero=false
+bs=435 co=107 fy=2023 doc=615 before=30978.00 after=30576.00 removed=402.00 zero=false
+bs=436 co=107 fy=2024 doc=616 before=26958.00 after=24873.00 removed=2085.00 zero=false
+bs=1075 co=107 fy=2025 doc=616 before=32664.00 after=27537.00 removed=5127.00 zero=false
+bs=534 co=108 fy=2022 doc=737 before=74162.00 after=45762.00 removed=28400.00 zero=false
+bs=535 co=108 fy=2023 doc=737 before=176403.00 after=104509.00 removed=71894.00 zero=false
+bs=536 co=108 fy=2024 doc=736 before=291971.00 after=231755.00 removed=60216.00 zero=false
+bs=440 co=108 fy=2025 doc=618 before=226435.00 after=153612.00 removed=72823.00 zero=false
+bs=441 co=108 fy=2026 doc=619 before=72823.00 after=0.00 removed=72823.00 zero=true
+bs=444 co=109 fy=2024 doc=623 before=14595.00 after=14088.00 removed=507.00 zero=false
+bs=445 co=109 fy=2025 doc=623 before=5054.00 after=4769.00 removed=285.00 zero=false
+bs=452 co=112 fy=2022 doc=633 before=228778.00 after=227043.00 removed=1735.00 zero=false
+bs=453 co=112 fy=2023 doc=707 before=147142.00 after=145577.00 removed=1565.00 zero=false
+bs=514 co=112 fy=2024 doc=707 before=77257.00 after=74925.00 removed=2332.00 zero=false
+bs=460 co=114 fy=2022 doc=650 before=41479.00 after=0.00 removed=41479.00 zero=true
+bs=461 co=114 fy=2023 doc=650 before=72958.00 after=0.00 removed=72958.00 zero=true
+bs=462 co=114 fy=2024 doc=652 before=102560.00 after=0.00 removed=102560.00 zero=true
+bs=459 co=114 fy=2025 doc=652 before=62121.00 after=0.00 removed=62121.00 zero=true
+bs=467 co=115 fy=2023 doc=657 before=3501.00 after=0.00 removed=3501.00 zero=true
+bs=468 co=115 fy=2024 doc=657 before=4237.00 after=0.00 removed=4237.00 zero=true
+bs=470 co=116 fy=2023 doc=663 before=7751.00 after=0.00 removed=7751.00 zero=true
+bs=471 co=116 fy=2024 doc=664 before=5992.00 after=0.00 removed=5992.00 zero=true
+bs=472 co=116 fy=2025 doc=664 before=4502.00 after=0.00 removed=4502.00 zero=true
+bs=1152 co=117 fy=2022 doc=669 before=16233.00 after=15075.00 removed=1158.00 zero=false
+bs=1153 co=117 fy=2023 doc=669 before=10932.00 after=9979.00 removed=953.00 zero=false
+bs=1150 co=117 fy=2024 doc=670 before=5748.00 after=4790.00 removed=958.00 zero=false
+bs=1151 co=117 fy=2025 doc=670 before=825.00 after=0.00 removed=825.00 zero=true
+bs=487 co=120 fy=2024 doc=680 before=59295.00 after=0.00 removed=59295.00 zero=true
+bs=488 co=120 fy=2025 doc=679 before=52695.00 after=0.00 removed=52695.00 zero=true
+bs=495 co=121 fy=2024 doc=NONE before=76481.00 after=69089.00 removed=7392.00 zero=false
+bs=503 co=122 fy=2023 doc=703 before=318179.00 after=0.00 removed=318179.00 zero=true
+bs=500 co=122 fy=2024 doc=704 before=332100.00 after=0.00 removed=332100.00 zero=true
+bs=498 co=122 fy=2025 doc=704 before=286398.00 after=0.00 removed=286398.00 zero=true
+bs=499 co=122 fy=2026 doc=702 before=286398.25 after=0.00 removed=286398.25 zero=true
+bs=504 co=123 fy=2021 doc=696 before=37643.00 after=0.00 removed=37643.00 zero=true
+bs=505 co=123 fy=2022 doc=697 before=366979.00 after=0.00 removed=366979.00 zero=true
+bs=506 co=123 fy=2023 doc=697 before=318179.00 after=0.00 removed=318179.00 zero=true
+bs=507 co=123 fy=2024 doc=698 before=332100.00 after=0.00 removed=332100.00 zero=true
+bs=1157 co=123 fy=2025 doc=699 before=286398.25 after=0.00 removed=286398.25 zero=true
+bs=1158 co=123 fy=2026 doc=699 before=286398.25 after=0.00 removed=286398.25 zero=true
+bs=537 co=124 fy=2022 doc=738 before=2340.00 after=2030.00 removed=310.00 zero=false
+bs=1159 co=124 fy=2023 doc=741 before=75410.00 after=75100.00 removed=310.00 zero=false
+bs=1160 co=124 fy=2024 doc=742 before=318104.00 after=317794.00 removed=310.00 zero=false
+bs=1161 co=124 fy=2025 doc=742 before=198036.00 after=197726.00 removed=310.00 zero=false
+bs=520 co=125 fy=2022 doc=712 before=74720.00 after=65109.00 removed=9611.00 zero=false
+bs=517 co=125 fy=2023 doc=712 before=24592.00 after=13030.00 removed=11562.00 zero=false
+bs=518 co=125 fy=2024 doc=711 before=14650.00 after=2317.00 removed=12333.00 zero=false
+bs=519 co=125 fy=2025 doc=711 before=5141.00 after=0.00 removed=5141.00 zero=true
+bs=528 co=127 fy=2021 doc=727 before=103173.00 after=93366.00 removed=9807.00 zero=false
+bs=529 co=127 fy=2022 doc=728 before=101498.00 after=82394.00 removed=19104.00 zero=false
+bs=530 co=127 fy=2023 doc=729 before=123876.00 after=46214.00 removed=77662.00 zero=false
+bs=531 co=127 fy=2024 doc=732 before=92207.00 after=18335.00 removed=73872.00 zero=false
+bs=532 co=127 fy=2025 doc=732 before=75180.00 after=3770.00 removed=71410.00 zero=false
+bs=533 co=127 fy=2026 doc=735 before=147646.75 after=76236.75 removed=71410.00 zero=false
+bs=1163 co=128 fy=2025 doc=746 before=380898.00 after=378533.00 removed=2365.00 zero=false
+bs=557 co=132 fy=2023 doc=802 before=622369.00 after=595900.00 removed=26469.00 zero=false
+bs=1167 co=132 fy=2024 doc=802 before=471263.00 after=465286.00 removed=5977.00 zero=false
+bs=562 co=133 fy=2022 doc=807 before=233997.00 after=188230.00 removed=45767.00 zero=false
+bs=563 co=133 fy=2023 doc=808 before=284259.00 after=216728.00 removed=67531.00 zero=false
+bs=559 co=133 fy=2024 doc=809 before=165973.00 after=118996.00 removed=46977.00 zero=false
+bs=560 co=133 fy=2025 doc=809 before=115183.00 after=68206.00 removed=46977.00 zero=false
+bs=567 co=134 fy=2022 doc=815 before=710275.00 after=686975.00 removed=23300.00 zero=false
+bs=564 co=134 fy=2023 doc=815 before=586777.00 after=561282.00 removed=25495.00 zero=false
+bs=565 co=134 fy=2024 doc=814 before=533476.00 after=500086.00 removed=33390.00 zero=false
+bs=568 co=134 fy=2025 doc=814 before=699043.00 after=677726.00 removed=21317.00 zero=false
+bs=569 co=135 fy=2023 doc=825 before=4740.00 after=0.00 removed=4740.00 zero=true
+bs=570 co=135 fy=2024 doc=833 before=2757.00 after=0.00 removed=2757.00 zero=true
+bs=571 co=135 fy=2025 doc=833 before=43996.00 after=32516.00 removed=11480.00 zero=false
+bs=577 co=136 fy=2021 doc=839 before=154381.00 after=126000.00 removed=28381.00 zero=false
+bs=576 co=136 fy=2022 doc=839 before=658073.00 after=627468.00 removed=30605.00 zero=false
+bs=573 co=136 fy=2023 doc=838 before=580733.00 after=559455.00 removed=21278.00 zero=false
+bs=574 co=136 fy=2024 doc=837 before=516734.00 after=503110.00 removed=13624.00 zero=false
+bs=1076 co=137 fy=2025 doc=1299 before=21467.00 after=16725.00 removed=4742.00 zero=false
+bs=1077 co=137 fy=2026 doc=1299 before=32378.00 after=22924.00 removed=9454.00 zero=false
+bs=593 co=139 fy=2023 doc=1041 before=4206.00 after=0.00 removed=4206.00 zero=true
+bs=591 co=139 fy=2024 doc=856 before=2879.00 after=0.00 removed=2879.00 zero=true
+bs=592 co=139 fy=2025 doc=855 before=1975.00 after=0.00 removed=1975.00 zero=true
+bs=617 co=142 fy=2021 doc=NONE before=161435.00 after=141248.00 removed=20187.00 zero=false
+bs=616 co=142 fy=2022 doc=NONE before=408120.00 after=384199.00 removed=23921.00 zero=false
+bs=615 co=142 fy=2024 doc=NONE before=434999.00 after=399991.00 removed=35008.00 zero=false
+bs=631 co=145 fy=2023 doc=909 before=13419.00 after=0.00 removed=13419.00 zero=true
+bs=629 co=145 fy=2024 doc=909 before=12303.00 after=0.00 removed=12303.00 zero=true
+bs=630 co=145 fy=2025 doc=908 before=8232.00 after=0.00 removed=8232.00 zero=true
+bs=638 co=147 fy=2022 doc=923 before=74720.00 after=65109.00 removed=9611.00 zero=false
+bs=636 co=147 fy=2023 doc=923 before=24592.00 after=13030.00 removed=11562.00 zero=false
+bs=637 co=147 fy=2024 doc=922 before=14650.00 after=2317.00 removed=12333.00 zero=false
+bs=639 co=147 fy=2025 doc=922 before=5141.00 after=0.00 removed=5141.00 zero=true
+bs=645 co=149 fy=2023 doc=936 before=403.00 after=0.00 removed=403.00 zero=true
+bs=643 co=149 fy=2024 doc=936 before=3676.00 after=0.00 removed=3676.00 zero=true
+bs=644 co=149 fy=2025 doc=936 before=3676.00 after=0.00 removed=3676.00 zero=true
+bs=649 co=150 fy=2023 doc=942 before=403.00 after=0.00 removed=403.00 zero=true
+bs=647 co=150 fy=2024 doc=942 before=3676.00 after=0.00 removed=3676.00 zero=true
+bs=648 co=150 fy=2025 doc=940 before=3676.00 after=0.00 removed=3676.00 zero=true
+bs=655 co=151 fy=2023 doc=948 before=403.00 after=0.00 removed=403.00 zero=true
+bs=653 co=151 fy=2024 doc=948 before=3676.00 after=0.00 removed=3676.00 zero=true
+bs=654 co=151 fy=2025 doc=948 before=3676.00 after=0.00 removed=3676.00 zero=true
+bs=658 co=152 fy=2023 doc=952 before=403.00 after=0.00 removed=403.00 zero=true
+bs=659 co=152 fy=2024 doc=953 before=3676.00 after=0.00 removed=3676.00 zero=true
+bs=660 co=152 fy=2025 doc=953 before=3492.00 after=0.00 removed=3492.00 zero=true
+bs=671 co=155 fy=2022 doc=967 before=59509.00 after=51339.00 removed=8170.00 zero=false
+bs=672 co=155 fy=2023 doc=968 before=48489.00 after=34377.00 removed=14112.00 zero=false
+bs=673 co=155 fy=2024 doc=969 before=39136.00 after=13949.00 removed=25187.00 zero=false
+bs=669 co=155 fy=2025 doc=969 before=71594.00 after=3530.00 removed=68064.00 zero=false
+bs=670 co=155 fy=2026 doc=965 before=37514.00 after=0.00 removed=37514.00 zero=true
+bs=693 co=156 fy=2021 doc=1015 before=3146.00 after=0.00 removed=3146.00 zero=true
+bs=1021 co=160 fy=2022 doc=1564 before=505291.80 after=389760.80 removed=115531.00 zero=false
+bs=1020 co=160 fy=2023 doc=1564 before=414311.04 after=292629.04 removed=121682.00 zero=false
+bs=1018 co=160 fy=2024 doc=1564 before=385395.66 after=263713.66 removed=121682.00 zero=false
+bs=1019 co=160 fy=2025 doc=1564 before=369973.27 after=257020.77 removed=112952.50 zero=false
+bs=1022 co=160 fy=2026 doc=1564 before=365266.63 after=252314.13 removed=112952.50 zero=false
+bs=730 co=163 fy=2023 doc=1073 before=14911.00 after=3584.00 removed=11327.00 zero=false
+bs=729 co=163 fy=2024 doc=1073 before=23979.00 after=9234.00 removed=14745.00 zero=false
+bs=727 co=163 fy=2025 doc=1298 before=30638.00 after=12180.00 removed=18458.00 zero=false
+bs=728 co=163 fy=2026 doc=1298 before=31231.00 after=10202.00 removed=21029.00 zero=false
+bs=741 co=165 fy=2022 doc=1086 before=2503.00 after=0.00 removed=2503.00 zero=true
+bs=742 co=165 fy=2023 doc=1087 before=2342.00 after=0.00 removed=2342.00 zero=true
+bs=743 co=165 fy=2024 doc=1088 before=2820.00 after=0.00 removed=2820.00 zero=true
+bs=744 co=165 fy=2025 doc=1088 before=2433.00 after=0.00 removed=2433.00 zero=true
+bs=745 co=166 fy=2021 doc=1089 before=53059.00 after=49061.00 removed=3998.00 zero=false
+bs=746 co=166 fy=2022 doc=1090 before=48786.00 after=44670.00 removed=4116.00 zero=false
+bs=747 co=166 fy=2023 doc=1091 before=3900.00 after=0.00 removed=3900.00 zero=true
+bs=748 co=166 fy=2024 doc=1092 before=3779.00 after=486.00 removed=3293.00 zero=false
+bs=749 co=166 fy=2025 doc=1092 before=2769.00 after=469.00 removed=2300.00 zero=false
+bs=770 co=167 fy=2021 doc=NONE before=47927.00 after=33263.00 removed=14664.00 zero=false
+bs=768 co=167 fy=2022 doc=NONE before=18602.00 after=7955.00 removed=10647.00 zero=false
+bs=769 co=167 fy=2023 doc=NONE before=70241.00 after=61667.00 removed=8574.00 zero=false
+bs=766 co=167 fy=2024 doc=NONE before=97877.00 after=93907.00 removed=3970.00 zero=false
+bs=760 co=168 fy=2022 doc=NONE before=25298.00 after=0.00 removed=25298.00 zero=true
+bs=759 co=168 fy=2023 doc=NONE before=37.00 after=0.00 removed=37.00 zero=true
+bs=757 co=168 fy=2024 doc=NONE before=12.00 after=0.00 removed=12.00 zero=true
+bs=765 co=169 fy=2022 doc=NONE before=33282.00 after=32500.00 removed=782.00 zero=false
+bs=763 co=169 fy=2023 doc=NONE before=23282.00 after=22500.00 removed=782.00 zero=false
+bs=761 co=169 fy=2024 doc=NONE before=18926.00 after=12747.00 removed=6179.00 zero=false
+bs=857 co=172 fy=2022 doc=1423 before=119236.00 after=57581.00 removed=61655.00 zero=false
+bs=790 co=172 fy=2023 doc=1424 before=99078.00 after=40437.00 removed=58641.00 zero=false
+bs=791 co=172 fy=2024 doc=1424 before=25420.00 after=0.00 removed=25420.00 zero=true
+bs=789 co=172 fy=2025 doc=1422 before=97681.00 after=57200.00 removed=40481.00 zero=false
+bs=795 co=173 fy=2022 doc=NONE before=17432.00 after=0.00 removed=17432.00 zero=true
+bs=796 co=173 fy=2023 doc=NONE before=34246.00 after=0.00 removed=34246.00 zero=true
+bs=797 co=173 fy=2024 doc=NONE before=59530.00 after=0.00 removed=59530.00 zero=true
+bs=901 co=174 fy=2022 doc=NONE before=38162.00 after=20386.00 removed=17776.00 zero=false
+bs=835 co=174 fy=2023 doc=NONE before=406139.00 after=383980.00 removed=22159.00 zero=false
+bs=1175 co=174 fy=2024 doc=NONE before=399865.00 after=369642.00 removed=30223.00 zero=false
+bs=1174 co=174 fy=2025 doc=NONE before=374496.00 after=358638.00 removed=15858.00 zero=false
+bs=832 co=174 fy=2026 doc=NONE before=461779.00 after=384668.00 removed=77111.00 zero=false
+bs=841 co=177 fy=2023 doc=NONE before=6514.00 after=0.00 removed=6514.00 zero=true
+bs=847 co=179 fy=2025 doc=NONE before=31747.00 after=0.00 removed=31747.00 zero=true
+bs=811 co=180 fy=2022 doc=NONE before=40323.00 after=10781.00 removed=29542.00 zero=false
+bs=815 co=180 fy=2023 doc=NONE before=32101.00 after=7252.00 removed=24849.00 zero=false
+bs=816 co=180 fy=2024 doc=NONE before=23961.00 after=0.00 removed=23961.00 zero=true
+bs=814 co=180 fy=2025 doc=NONE before=56949.00 after=20185.00 removed=36764.00 zero=false
+bs=911 co=188 fy=2022 doc=1939 before=2798.00 after=0.00 removed=2798.00 zero=true
+bs=1265 co=188 fy=2022 doc=NONE before=2798.00 after=0.00 removed=2798.00 zero=true
+bs=912 co=188 fy=2023 doc=1939 before=2402.00 after=0.00 removed=2402.00 zero=true
+bs=909 co=188 fy=2024 doc=1938 before=4006.00 after=0.00 removed=4006.00 zero=true
+bs=910 co=188 fy=2025 doc=1937 before=4806.00 after=0.00 removed=4806.00 zero=true
+bs=804 co=189 fy=2024 doc=1163 before=42995.00 after=35096.00 removed=7899.00 zero=false
+bs=805 co=189 fy=2025 doc=1164 before=21467.00 after=16725.00 removed=4742.00 zero=false
+bs=806 co=189 fy=2026 doc=1164 before=32378.00 after=22924.00 removed=9454.00 zero=false
+bs=1042 co=191 fy=2022 doc=1585 before=56624.00 after=50558.00 removed=6066.00 zero=false
+bs=1041 co=191 fy=2023 doc=1585 before=30604.00 after=22883.00 removed=7721.00 zero=false
+bs=1040 co=191 fy=2024 doc=1584 before=15133.00 after=9315.00 removed=5818.00 zero=false
+bs=1038 co=191 fy=2025 doc=1583 before=7898.00 after=2266.00 removed=5632.00 zero=false
+bs=1039 co=191 fy=2026 doc=1582 before=3387.00 after=0.00 removed=3387.00 zero=true
+bs=1067 co=196 fy=2023 doc=1617 before=25373.00 after=21333.00 removed=4040.00 zero=false
+bs=1066 co=196 fy=2024 doc=1617 before=16376.00 after=13333.00 removed=3043.00 zero=false
+bs=1064 co=196 fy=2025 doc=1616 before=7451.00 after=5333.00 removed=2118.00 zero=false
+bs=964 co=197 fy=2023 doc=1555 before=95177.00 after=86587.00 removed=8590.00 zero=false
+bs=870 co=198 fy=2023 doc=1281 before=583625.00 after=560019.00 removed=23606.00 zero=false
+bs=871 co=198 fy=2024 doc=1280 before=434999.00 after=399991.00 removed=35008.00 zero=false
+bs=918 co=206 fy=2021 doc=1343 before=10450.00 after=0.00 removed=10450.00 zero=true
+bs=915 co=206 fy=2022 doc=1343 before=8099.00 after=0.00 removed=8099.00 zero=true
+bs=916 co=206 fy=2023 doc=1342 before=10563.00 after=0.00 removed=10563.00 zero=true
+bs=917 co=206 fy=2024 doc=1342 before=8859.00 after=0.00 removed=8859.00 zero=true
+bs=913 co=206 fy=2025 doc=1341 before=7346.00 after=0.00 removed=7346.00 zero=true
+bs=914 co=206 fy=2026 doc=1339 before=5805.00 after=0.00 removed=5805.00 zero=true
+bs=930 co=209 fy=2024 doc=1370 before=1663.00 after=0.00 removed=1663.00 zero=true
+bs=931 co=209 fy=2025 doc=1371 before=1854.00 after=0.00 removed=1854.00 zero=true
+bs=932 co=209 fy=2026 doc=1371 before=1319.00 after=0.00 removed=1319.00 zero=true
+bs=945 co=211 fy=2022 doc=NONE before=96823.00 after=92289.00 removed=4534.00 zero=false
+bs=944 co=211 fy=2023 doc=NONE before=87299.00 after=80274.00 removed=7025.00 zero=false
+bs=943 co=211 fy=2025 doc=NONE before=18043.00 after=12540.00 removed=5503.00 zero=false
+bs=950 co=212 fy=2021 doc=NONE before=18443.00 after=0.00 removed=18443.00 zero=true
+bs=949 co=212 fy=2022 doc=NONE before=17405.00 after=0.00 removed=17405.00 zero=true
+bs=948 co=212 fy=2023 doc=NONE before=166711.00 after=146322.00 removed=20389.00 zero=false
+bs=946 co=212 fy=2024 doc=NONE before=111994.00 after=76655.00 removed=35339.00 zero=false
+bs=947 co=212 fy=2025 doc=NONE before=97345.00 after=58805.00 removed=38540.00 zero=false
+bs=981 co=217 fy=2022 doc=1481 before=334622.00 after=250430.00 removed=84192.00 zero=false
+bs=978 co=217 fy=2023 doc=1481 before=264543.00 after=199323.00 removed=65220.00 zero=false
+bs=979 co=217 fy=2024 doc=1480 before=191716.00 after=142579.00 removed=49137.00 zero=false
+bs=980 co=217 fy=2025 doc=1480 before=80536.00 after=4794.00 removed=75742.00 zero=false
+bs=1184 co=217 fy=2026 doc=1483 before=80140.55 after=4398.55 removed=75742.00 zero=false
+bs=1057 co=224 fy=2023 doc=1599 before=4235.00 after=0.00 removed=4235.00 zero=true
+bs=1055 co=224 fy=2024 doc=1599 before=64429.00 after=57548.00 removed=6881.00 zero=false
+bs=1056 co=224 fy=2025 doc=1601 before=54819.00 after=47893.00 removed=6926.00 zero=false
+bs=1058 co=224 fy=2026 doc=1601 before=52422.00 after=45496.00 removed=6926.00 zero=false
+bs=1078 co=228 fy=2023 doc=1765 before=49478.00 after=45044.00 removed=4434.00 zero=false
+bs=1079 co=228 fy=2024 doc=1765 before=319401.00 after=272466.00 removed=46935.00 zero=false
+bs=1088 co=228 fy=2025 doc=1775 before=203413.40 after=156478.40 removed=46935.00 zero=false
+bs=1089 co=230 fy=2023 doc=1781 before=14398.00 after=0.00 removed=14398.00 zero=true
+bs=1090 co=230 fy=2024 doc=1782 before=16543.00 after=0.00 removed=16543.00 zero=true
+bs=1091 co=230 fy=2025 doc=1782 before=52137.00 after=22717.00 removed=29420.00 zero=false
+bs=1092 co=230 fy=2026 doc=1784 before=55409.99 after=25990.23 removed=29419.76 zero=false
+bs=1094 co=231 fy=2023 doc=NONE before=49478.00 after=45044.00 removed=4434.00 zero=false
+bs=1098 co=232 fy=2024 doc=1792 before=10554.00 after=9885.00 removed=669.00 zero=false
+bs=1099 co=232 fy=2025 doc=1792 before=28528.00 after=27776.00 removed=752.00 zero=false
+bs=1127 co=240 fy=2022 doc=1823 before=14346.00 after=3367.00 removed=10979.00 zero=false
+bs=1128 co=240 fy=2023 doc=1824 before=6416.00 after=5300.00 removed=1116.00 zero=false
+bs=1129 co=240 fy=2024 doc=1825 before=3612.00 after=3600.00 removed=12.00 zero=false
+bs=1130 co=240 fy=2025 doc=1825 before=6349.00 after=3600.00 removed=2749.00 zero=false
+bs=1132 co=241 fy=2025 doc=1828 before=29533.00 after=28205.00 removed=1328.00 zero=false
+bs=1133 co=241 fy=2026 doc=1829 before=26865.00 after=26195.00 removed=670.00 zero=false
+bs=1141 co=242 fy=2021 doc=1841 before=64236.00 after=36654.00 removed=27582.00 zero=false
+bs=1140 co=242 fy=2022 doc=1841 before=97897.00 after=27451.00 removed=70446.00 zero=false
+bs=1139 co=242 fy=2023 doc=1840 before=82820.00 after=17284.00 removed=65536.00 zero=false
+bs=1137 co=242 fy=2024 doc=1839 before=73441.00 after=7045.00 removed=66396.00 zero=false
+bs=1138 co=242 fy=2025 doc=1838 before=207042.00 after=115759.00 removed=91283.00 zero=false
+bs=1136 co=242 fy=2026 doc=1836 before=91283.00 after=0.00 removed=91283.00 zero=true
+bs=1201 co=244 fy=2021 doc=1852 before=51872.00 after=48611.00 removed=3261.00 zero=false
+bs=1200 co=244 fy=2022 doc=1852 before=43233.00 after=39708.00 removed=3525.00 zero=false
+bs=1194 co=244 fy=2023 doc=1851 before=33743.00 after=29942.00 removed=3801.00 zero=false
+bs=1195 co=244 fy=2024 doc=1848 before=24282.00 after=19921.00 removed=4361.00 zero=false
+bs=1202 co=244 fy=2026 doc=1855 before=581841.99 after=577480.51 removed=4361.48 zero=false
+bs=1237 co=251 fy=2023 doc=1904 before=97384.00 after=94828.00 removed=2556.00 zero=false
+bs=1236 co=251 fy=2024 doc=1904 before=248292.00 after=235429.00 removed=12863.00 zero=false
+bs=1234 co=251 fy=2025 doc=1903 before=322768.00 after=310566.00 removed=12202.00 zero=false
+bs=1235 co=251 fy=2026 doc=1902 before=524136.00 after=505738.00 removed=18398.00 zero=false
+bs=1240 co=252 fy=2021 doc=1909 before=1081558.00 after=1070348.00 removed=11210.00 zero=false
+bs=1238 co=252 fy=2022 doc=1909 before=963542.00 after=954002.00 removed=9540.00 zero=false
+bs=1239 co=252 fy=2022 doc=1910 before=963542.00 after=954002.00 removed=9540.00 zero=false
+bs=1241 co=252 fy=2023 doc=1910 before=756457.00 after=749942.00 removed=6515.00 zero=false
+bs=1242 co=252 fy=2024 doc=1911 before=712165.00 after=705650.00 removed=6515.00 zero=false
+bs=1243 co=252 fy=2025 doc=1912 before=958975.00 after=952302.00 removed=6673.00 zero=false
+bs=1251 co=257 fy=2021 doc=1921 before=1109.00 after=0.00 removed=1109.00 zero=true
+bs=1252 co=257 fy=2022 doc=1921 before=832.00 after=0.00 removed=832.00 zero=true
+bs=1253 co=257 fy=2023 doc=1922 before=870.00 after=0.00 removed=870.00 zero=true
+bs=1254 co=257 fy=2024 doc=1923 before=652.00 after=0.00 removed=652.00 zero=true
+bs=1255 co=257 fy=2025 doc=1924 before=578.00 after=0.00 removed=578.00 zero=true
+bs=1266 co=259 fy=2021 doc=1954 before=71530.00 after=64789.00 removed=6741.00 zero=false
+bs=1270 co=259 fy=2022 doc=1954 before=71530.00 after=64789.00 removed=6741.00 zero=false
+bs=1275 co=259 fy=2023 doc=1955 before=97574.00 after=90833.00 removed=6741.00 zero=false
+bs=1277 co=259 fy=2024 doc=1956 before=69736.00 after=64999.00 removed=4737.00 zero=false
+bs=1278 co=259 fy=2025 doc=1959 before=220176.00 after=215571.00 removed=4605.00 zero=false
+bs=1281 co=259 fy=2025 doc=1957 before=370403.00 after=368308.00 removed=2095.00 zero=false
+bs=1279 co=259 fy=2026 doc=1958 before=241090.00 after=236485.00 removed=4605.00 zero=false
+bs=1280 co=259 fy=2026 doc=1959 before=220176.00 after=215571.00 removed=4605.00 zero=false
+
+=== FULL TARGET 2 PLAN ===
+fc=1071 co=60 fy=2018 doc=338 tier=statutory before=82182.00 after=60000.00 removed=22182.00 zero=false
+fc=1073 co=60 fy=2019 doc=339 tier=statutory before=52952.00 after=36250.00 removed=16702.00 zero=false
+fc=1075 co=60 fy=2021 doc=341 tier=statutory before=176173.00 after=166453.00 removed=9720.00 zero=false
+fc=1076 co=60 fy=2022 doc=341 tier=statutory before=161435.00 after=154239.00 removed=7196.00 zero=false
+fc=1089 co=67 fy=2021 doc=383 tier=statutory before=1559765.00 after=1434033.00 removed=125732.00 zero=false
+fc=1090 co=67 fy=2022 doc=383 tier=statutory before=1426603.00 after=1263955.00 removed=162648.00 zero=false
+fc=1337 co=71 fy=2022 doc=1127 tier=statutory before=2503.00 after=0.00 removed=2503.00 zero=true
+fc=1338 co=71 fy=2023 doc=1127 tier=statutory before=2342.00 after=0.00 removed=2342.00 zero=true
+fc=1283 co=80 fy=2021 doc=NONE tier=statutory before=69539.00 after=68975.00 removed=564.00 zero=false
+fc=1282 co=80 fy=2024 doc=NONE tier=statutory before=397563.00 after=258868.00 removed=138695.00 zero=false
+fc=871 co=81 fy=2020 doc=NONE tier=statutory before=25489.00 after=16881.00 removed=8608.00 zero=false
+fc=872 co=81 fy=2021 doc=NONE tier=statutory before=49365.00 after=42500.00 removed=6865.00 zero=false
+fc=829 co=81 fy=2023 doc=NONE tier=statutory before=6368.00 after=0.00 removed=6368.00 zero=true
+fc=1257 co=81 fy=2024 doc=NONE tier=statutory before=8216.00 after=0.00 removed=8216.00 zero=true
+fc=932 co=81 fy=2025 doc=NONE tier=statutory before=5354.00 after=0.00 removed=5354.00 zero=true
+fc=948 co=82 fy=2021 doc=532 tier=statutory before=1562629.00 after=1400000.00 removed=162629.00 zero=false
+fc=950 co=82 fy=2022 doc=534 tier=statutory before=249175.00 after=0.00 removed=249175.00 zero=true
+fc=951 co=82 fy=2023 doc=534 tier=statutory before=1675988.00 after=1400000.00 removed=275988.00 zero=false
+fc=947 co=82 fy=2024 doc=531 tier=statutory before=1685312.00 after=1400000.00 removed=285312.00 zero=false
+fc=907 co=83 fy=2022 doc=522 tier=information_memorandum before=14282.00 after=0.00 removed=14282.00 zero=true
+fc=868 co=83 fy=2023 doc=524 tier=statutory before=35233.00 after=0.00 removed=35233.00 zero=true
+fc=836 co=83 fy=2024 doc=871 tier=information_memorandum before=2446.00 after=0.00 removed=2446.00 zero=true
+fc=985 co=87 fy=2023 doc=475 tier=statutory before=182775.00 after=128307.00 removed=54468.00 zero=false
+fc=986 co=87 fy=2024 doc=476 tier=statutory before=131159.00 after=83479.00 removed=47680.00 zero=false
+fc=944 co=87 fy=2025 doc=476 tier=statutory before=83170.00 after=34523.00 removed=48647.00 zero=false
+fc=1259 co=88 fy=2022 doc=NONE tier=statutory before=314472.54 after=182936.54 removed=131536.00 zero=false
+fc=933 co=88 fy=2023 doc=NONE tier=statutory before=195016.97 after=72029.97 removed=122987.00 zero=false
+fc=896 co=88 fy=2024 doc=NONE tier=statutory before=154874.71 after=871.71 removed=154003.00 zero=false
+fc=895 co=89 fy=2021 doc=NONE tier=statutory before=158735.00 after=80112.00 removed=78623.00 zero=false
+fc=822 co=97 fy=2023 doc=976 tier=information_memorandum before=61710.00 after=0.00 removed=61710.00 zero=true
+fc=882 co=100 fy=2023 doc=546 tier=statutory before=35601.00 after=27479.00 removed=8122.00 zero=false
+fc=828 co=100 fy=2024 doc=546 tier=statutory before=26774.00 after=18652.00 removed=8122.00 zero=false
+fc=838 co=100 fy=2025 doc=545 tier=statutory before=17000.00 after=8878.00 removed=8122.00 zero=false
+fc=1036 co=107 fy=2020 doc=617 tier=statutory before=58573.00 after=57810.00 removed=763.00 zero=false
+fc=1037 co=107 fy=2021 doc=617 tier=statutory before=40947.00 after=40375.00 removed=572.00 zero=false
+fc=997 co=107 fy=2022 doc=614 tier=statutory before=36709.00 after=36301.00 removed=408.00 zero=false
+fc=998 co=107 fy=2023 doc=615 tier=statutory before=30978.00 after=30576.00 removed=402.00 zero=false
+fc=1039 co=107 fy=2024 doc=616 tier=statutory before=26958.00 after=24873.00 removed=2085.00 zero=false
+fc=1329 co=107 fy=2025 doc=616 tier=statutory before=32664.00 after=27537.00 removed=5127.00 zero=false
+fc=1139 co=108 fy=2022 doc=737 tier=statutory before=74162.00 after=45762.00 removed=28400.00 zero=false
+fc=1140 co=108 fy=2023 doc=737 tier=statutory before=176403.00 after=104509.00 removed=71894.00 zero=false
+fc=1138 co=108 fy=2024 doc=736 tier=statutory before=291971.00 after=231755.00 removed=60216.00 zero=false
+fc=999 co=108 fy=2025 doc=618 tier=statutory before=226435.00 after=153612.00 removed=72823.00 zero=false
+fc=1000 co=108 fy=2026 doc=618 tier=statutory before=161574.00 after=86152.00 removed=75422.00 zero=false
+fc=1038 co=108 fy=2026 doc=619 tier=statutory before=72823.00 after=0.00 removed=72823.00 zero=true
+fc=1084 co=109 fy=2024 doc=623 tier=statutory before=14595.00 after=14088.00 removed=507.00 zero=false
+fc=1117 co=109 fy=2025 doc=623 tier=statutory before=5054.00 after=4769.00 removed=285.00 zero=false
+fc=1085 co=112 fy=2022 doc=633 tier=statutory before=228778.00 after=227043.00 removed=1735.00 zero=false
+fc=1088 co=112 fy=2023 doc=707 tier=statutory before=147142.00 after=145577.00 removed=1565.00 zero=false
+fc=1126 co=112 fy=2024 doc=707 tier=statutory before=77257.00 after=74925.00 removed=2332.00 zero=false
+fc=1035 co=114 fy=2022 doc=650 tier=statutory before=41479.00 after=0.00 removed=41479.00 zero=true
+fc=1040 co=114 fy=2023 doc=650 tier=statutory before=72958.00 after=0.00 removed=72958.00 zero=true
+fc=1041 co=114 fy=2024 doc=652 tier=statutory before=102560.00 after=0.00 removed=102560.00 zero=true
+fc=1004 co=114 fy=2025 doc=652 tier=statutory before=62121.00 after=0.00 removed=62121.00 zero=true
+fc=1031 co=115 fy=2023 doc=657 tier=statutory before=3501.00 after=0.00 removed=3501.00 zero=true
+fc=1032 co=115 fy=2024 doc=657 tier=statutory before=4237.00 after=0.00 removed=4237.00 zero=true
+fc=1010 co=116 fy=2023 doc=663 tier=statutory before=7751.00 after=0.00 removed=7751.00 zero=true
+fc=1011 co=116 fy=2024 doc=664 tier=statutory before=5992.00 after=0.00 removed=5992.00 zero=true
+fc=1042 co=116 fy=2025 doc=664 tier=statutory before=4502.00 after=0.00 removed=4502.00 zero=true
+fc=1043 co=117 fy=2022 doc=669 tier=statutory before=16233.00 after=15075.00 removed=1158.00 zero=false
+fc=1044 co=117 fy=2023 doc=669 tier=statutory before=10932.00 after=9979.00 removed=953.00 zero=false
+fc=1077 co=117 fy=2024 doc=670 tier=statutory before=5748.00 after=4790.00 removed=958.00 zero=false
+fc=1078 co=117 fy=2025 doc=670 tier=statutory before=825.00 after=0.00 removed=825.00 zero=true
+fc=1016 co=120 fy=2024 doc=680 tier=statutory before=59295.00 after=0.00 removed=59295.00 zero=true
+fc=1015 co=120 fy=2025 doc=679 tier=statutory before=52695.00 after=0.00 removed=52695.00 zero=true
+fc=1285 co=121 fy=2024 doc=NONE tier=statutory before=76481.00 after=69089.00 removed=7392.00 zero=false
+fc=915 co=122 fy=2023 doc=703 tier=statutory before=318179.00 after=0.00 removed=318179.00 zero=true
+fc=884 co=122 fy=2024 doc=704 tier=statutory before=332100.00 after=0.00 removed=332100.00 zero=true
+fc=885 co=122 fy=2025 doc=704 tier=statutory before=286398.00 after=0.00 removed=286398.00 zero=true
+fc=1124 co=122 fy=2025 doc=702 tier=statutory before=286398.25 after=0.00 removed=286398.25 zero=true
+fc=1125 co=122 fy=2026 doc=702 tier=statutory before=286398.25 after=0.00 removed=286398.25 zero=true
+fc=1149 co=123 fy=2021 doc=696 tier=statutory before=37643.00 after=0.00 removed=37643.00 zero=true
+fc=1368 co=123 fy=2022 doc=697 tier=statutory before=366979.00 after=0.00 removed=366979.00 zero=true
+fc=1369 co=123 fy=2023 doc=697 tier=statutory before=318179.00 after=0.00 removed=318179.00 zero=true
+fc=886 co=123 fy=2024 doc=698 tier=statutory before=332100.00 after=0.00 removed=332100.00 zero=true
+fc=911 co=123 fy=2025 doc=699 tier=statutory before=286398.25 after=0.00 removed=286398.25 zero=true
+fc=912 co=123 fy=2026 doc=699 tier=statutory before=286398.25 after=0.00 removed=286398.25 zero=true
+fc=1141 co=124 fy=2022 doc=738 tier=statutory before=2340.00 after=2030.00 removed=310.00 zero=false
+fc=1143 co=124 fy=2023 doc=741 tier=statutory before=75410.00 after=75100.00 removed=310.00 zero=false
+fc=1145 co=124 fy=2024 doc=742 tier=statutory before=318104.00 after=317794.00 removed=310.00 zero=false
+fc=1146 co=124 fy=2025 doc=742 tier=statutory before=198036.00 after=197726.00 removed=310.00 zero=false
+fc=888 co=125 fy=2022 doc=712 tier=statutory before=74720.00 after=65109.00 removed=9611.00 zero=false
+fc=1129 co=125 fy=2023 doc=712 tier=statutory before=24592.00 after=13030.00 removed=11562.00 zero=false
+fc=1127 co=125 fy=2024 doc=711 tier=statutory before=14650.00 after=2317.00 removed=12333.00 zero=false
+fc=1128 co=125 fy=2025 doc=711 tier=statutory before=5141.00 after=0.00 removed=5141.00 zero=true
+fc=1137 co=127 fy=2021 doc=727 tier=statutory before=103173.00 after=93366.00 removed=9807.00 zero=false
+fc=1119 co=127 fy=2022 doc=728 tier=statutory before=101498.00 after=82394.00 removed=19104.00 zero=false
+fc=883 co=127 fy=2023 doc=729 tier=statutory before=123876.00 after=46214.00 removed=77662.00 zero=false
+fc=887 co=127 fy=2024 doc=732 tier=statutory before=92207.00 after=18335.00 removed=73872.00 zero=false
+fc=916 co=127 fy=2025 doc=732 tier=statutory before=75180.00 after=3770.00 removed=71410.00 zero=false
+fc=889 co=127 fy=2026 doc=735 tier=management before=147646.75 after=76236.75 removed=71410.00 zero=false
+fc=1147 co=128 fy=2025 doc=746 tier=information_memorandum before=380898.00 after=378533.00 removed=2365.00 zero=false
+fc=1093 co=132 fy=2023 doc=802 tier=statutory before=622369.00 after=595900.00 removed=26469.00 zero=false
+fc=955 co=132 fy=2024 doc=802 tier=statutory before=471263.00 after=465286.00 removed=5977.00 zero=false
+fc=958 co=133 fy=2022 doc=807 tier=statutory before=233997.00 after=188230.00 removed=45767.00 zero=false
+fc=1096 co=133 fy=2023 doc=808 tier=statutory before=284259.00 after=216728.00 removed=67531.00 zero=false
+fc=959 co=133 fy=2024 doc=809 tier=statutory before=165973.00 after=118996.00 removed=46977.00 zero=false
+fc=960 co=133 fy=2025 doc=809 tier=statutory before=115183.00 after=68206.00 removed=46977.00 zero=false
+fc=1104 co=134 fy=2022 doc=815 tier=statutory before=710275.00 after=686975.00 removed=23300.00 zero=false
+fc=949 co=134 fy=2023 doc=815 tier=statutory before=586777.00 after=561282.00 removed=25495.00 zero=false
+fc=946 co=134 fy=2024 doc=814 tier=statutory before=533476.00 after=500086.00 removed=33390.00 zero=false
+fc=1150 co=134 fy=2025 doc=814 tier=statutory before=699043.00 after=677726.00 removed=21317.00 zero=false
+fc=965 co=135 fy=2023 doc=825 tier=statutory before=4740.00 after=0.00 removed=4740.00 zero=true
+fc=970 co=135 fy=2024 doc=833 tier=information_memorandum before=2757.00 after=0.00 removed=2757.00 zero=true
+fc=1109 co=135 fy=2025 doc=833 tier=information_memorandum before=43996.00 after=32516.00 removed=11480.00 zero=false
+fc=921 co=136 fy=2021 doc=839 tier=statutory before=154381.00 after=126000.00 removed=28381.00 zero=false
+fc=922 co=136 fy=2022 doc=839 tier=statutory before=658073.00 after=627468.00 removed=30605.00 zero=false
+fc=966 co=136 fy=2023 doc=838 tier=statutory before=580733.00 after=559455.00 removed=21278.00 zero=false
+fc=961 co=136 fy=2024 doc=837 tier=statutory before=516734.00 after=503110.00 removed=13624.00 zero=false
+fc=1454 co=137 fy=2025 doc=1299 tier=statutory before=21467.00 after=16725.00 removed=4742.00 zero=false
+fc=1439 co=137 fy=2026 doc=1597 tier=management before=46871.56 after=37417.71 removed=9453.85 zero=false
+fc=1455 co=137 fy=2026 doc=1299 tier=statutory before=32378.00 after=22924.00 removed=9454.00 zero=false
+fc=1440 co=137 fy=2027 doc=1597 tier=management before=45708.21 after=36254.36 removed=9453.85 zero=false
+fc=1110 co=139 fy=2023 doc=1041 tier=statutory before=4206.00 after=0.00 removed=4206.00 zero=true
+fc=978 co=139 fy=2024 doc=856 tier=statutory before=2879.00 after=0.00 removed=2879.00 zero=true
+fc=1332 co=139 fy=2024 doc=1795 tier=information_memorandum before=2879.00 after=0.00 removed=2879.00 zero=true
+fc=977 co=139 fy=2025 doc=855 tier=statutory before=1975.00 after=0.00 removed=1975.00 zero=true
+fc=1319 co=139 fy=2025 doc=1795 tier=information_memorandum before=2879.00 after=0.00 removed=2879.00 zero=true
+fc=1179 co=142 fy=2021 doc=NONE tier=statutory before=161435.00 after=141248.00 removed=20187.00 zero=false
+fc=1182 co=142 fy=2022 doc=NONE tier=statutory before=408120.00 after=384199.00 removed=23921.00 zero=false
+fc=1281 co=142 fy=2024 doc=NONE tier=statutory before=434999.00 after=399991.00 removed=35008.00 zero=false
+fc=1165 co=145 fy=2023 doc=909 tier=statutory before=13419.00 after=0.00 removed=13419.00 zero=true
+fc=1166 co=145 fy=2024 doc=909 tier=statutory before=12303.00 after=0.00 removed=12303.00 zero=true
+fc=1164 co=145 fy=2025 doc=908 tier=statutory before=8232.00 after=0.00 removed=8232.00 zero=true
+fc=1172 co=147 fy=2022 doc=923 tier=statutory before=74720.00 after=65109.00 removed=9611.00 zero=false
+fc=1173 co=147 fy=2023 doc=923 tier=statutory before=24592.00 after=13030.00 removed=11562.00 zero=false
+fc=1169 co=147 fy=2024 doc=922 tier=statutory before=14650.00 after=2317.00 removed=12333.00 zero=false
+fc=1153 co=147 fy=2025 doc=922 tier=statutory before=5141.00 after=0.00 removed=5141.00 zero=true
+fc=1170 co=149 fy=2023 doc=936 tier=statutory before=403.00 after=0.00 removed=403.00 zero=true
+fc=1171 co=149 fy=2024 doc=936 tier=statutory before=3676.00 after=0.00 removed=3676.00 zero=true
+fc=1174 co=149 fy=2025 doc=936 tier=statutory before=3676.00 after=0.00 removed=3676.00 zero=true
+fc=1180 co=150 fy=2023 doc=942 tier=statutory before=403.00 after=0.00 removed=403.00 zero=true
+fc=1181 co=150 fy=2024 doc=942 tier=statutory before=3676.00 after=0.00 removed=3676.00 zero=true
+fc=1176 co=150 fy=2025 doc=940 tier=statutory before=3676.00 after=0.00 removed=3676.00 zero=true
+fc=1195 co=151 fy=2023 doc=948 tier=statutory before=403.00 after=0.00 removed=403.00 zero=true
+fc=1196 co=151 fy=2024 doc=948 tier=statutory before=3676.00 after=0.00 removed=3676.00 zero=true
+fc=1197 co=151 fy=2025 doc=948 tier=statutory before=3676.00 after=0.00 removed=3676.00 zero=true
+fc=1200 co=152 fy=2023 doc=952 tier=statutory before=403.00 after=0.00 removed=403.00 zero=true
+fc=1201 co=152 fy=2024 doc=953 tier=statutory before=3676.00 after=0.00 removed=3676.00 zero=true
+fc=1202 co=152 fy=2025 doc=953 tier=statutory before=3492.00 after=0.00 removed=3492.00 zero=true
+fc=1209 co=155 fy=2022 doc=967 tier=statutory before=59509.00 after=51339.00 removed=8170.00 zero=false
+fc=1212 co=155 fy=2023 doc=968 tier=statutory before=48489.00 after=34377.00 removed=14112.00 zero=false
+fc=1213 co=155 fy=2024 doc=969 tier=statutory before=39136.00 after=13949.00 removed=25187.00 zero=false
+fc=1216 co=155 fy=2025 doc=969 tier=statutory before=71594.00 after=3530.00 removed=68064.00 zero=false
+fc=1208 co=155 fy=2026 doc=965 tier=statutory before=37514.00 after=0.00 removed=37514.00 zero=true
+fc=1237 co=156 fy=2021 doc=1015 tier=statutory before=3146.00 after=0.00 removed=3146.00 zero=true
+fc=1361 co=160 fy=2022 doc=1564 tier=statutory before=505291.80 after=389760.80 removed=115531.00 zero=false
+fc=1420 co=160 fy=2023 doc=1564 tier=statutory before=414311.04 after=292629.04 removed=121682.00 zero=false
+fc=1362 co=160 fy=2024 doc=1564 tier=statutory before=385395.66 after=263713.66 removed=121682.00 zero=false
+fc=1363 co=160 fy=2025 doc=1564 tier=statutory before=369973.27 after=257020.77 removed=112952.50 zero=false
+fc=1364 co=160 fy=2026 doc=1564 tier=statutory before=365266.63 after=252314.13 removed=112952.50 zero=false
+fc=1300 co=163 fy=2023 doc=1073 tier=statutory before=14911.00 after=3584.00 removed=11327.00 zero=false
+fc=1301 co=163 fy=2024 doc=1073 tier=statutory before=23979.00 after=9234.00 removed=14745.00 zero=false
+fc=1345 co=163 fy=2025 doc=1298 tier=statutory before=30638.00 after=12180.00 removed=18458.00 zero=false
+fc=1303 co=163 fy=2026 doc=1298 tier=statutory before=31231.00 after=10202.00 removed=21029.00 zero=false
+fc=1299 co=165 fy=2022 doc=1086 tier=statutory before=2503.00 after=0.00 removed=2503.00 zero=true
+fc=1306 co=165 fy=2023 doc=1087 tier=statutory before=2342.00 after=0.00 removed=2342.00 zero=true
+fc=1307 co=165 fy=2024 doc=1088 tier=statutory before=2820.00 after=0.00 removed=2820.00 zero=true
+fc=1308 co=165 fy=2025 doc=1088 tier=statutory before=2433.00 after=0.00 removed=2433.00 zero=true
+fc=1309 co=166 fy=2021 doc=1089 tier=statutory before=53059.00 after=49061.00 removed=3998.00 zero=false
+fc=1310 co=166 fy=2022 doc=1090 tier=statutory before=48786.00 after=44670.00 removed=4116.00 zero=false
+fc=1311 co=166 fy=2023 doc=1091 tier=statutory before=3900.00 after=0.00 removed=3900.00 zero=true
+fc=1312 co=166 fy=2024 doc=1092 tier=statutory before=3779.00 after=486.00 removed=3293.00 zero=false
+fc=1313 co=166 fy=2025 doc=1092 tier=statutory before=2769.00 after=469.00 removed=2300.00 zero=false
+fc=1412 co=167 fy=2021 doc=NONE tier=statutory before=47927.00 after=33263.00 removed=14664.00 zero=false
+fc=1413 co=167 fy=2022 doc=NONE tier=statutory before=18602.00 after=7955.00 removed=10647.00 zero=false
+fc=1410 co=167 fy=2023 doc=NONE tier=statutory before=70241.00 after=61667.00 removed=8574.00 zero=false
+fc=1411 co=167 fy=2024 doc=NONE tier=statutory before=97877.00 after=93907.00 removed=3970.00 zero=false
+fc=1402 co=168 fy=2022 doc=NONE tier=statutory before=25298.00 after=0.00 removed=25298.00 zero=true
+fc=1403 co=168 fy=2023 doc=NONE tier=statutory before=37.00 after=0.00 removed=37.00 zero=true
+fc=1401 co=168 fy=2024 doc=NONE tier=statutory before=12.00 after=0.00 removed=12.00 zero=true
+fc=1407 co=169 fy=2022 doc=NONE tier=statutory before=33282.00 after=32500.00 removed=782.00 zero=false
+fc=1408 co=169 fy=2023 doc=NONE tier=statutory before=23282.00 after=22500.00 removed=782.00 zero=false
+fc=1404 co=169 fy=2024 doc=NONE tier=statutory before=18926.00 after=12747.00 removed=6179.00 zero=false
+fc=1494 co=172 fy=2022 doc=1423 tier=statutory before=119236.00 after=57581.00 removed=61655.00 zero=false
+fc=1327 co=172 fy=2023 doc=1424 tier=statutory before=99078.00 after=40437.00 removed=58641.00 zero=false
+fc=1328 co=172 fy=2024 doc=1424 tier=statutory before=25420.00 after=0.00 removed=25420.00 zero=true
+fc=1325 co=172 fy=2025 doc=1422 tier=statutory before=97681.00 after=57200.00 removed=40481.00 zero=false
+fc=1341 co=173 fy=2022 doc=NONE tier=statutory before=17432.00 after=0.00 removed=17432.00 zero=true
+fc=1342 co=173 fy=2023 doc=NONE tier=statutory before=34246.00 after=0.00 removed=34246.00 zero=true
+fc=1343 co=173 fy=2024 doc=NONE tier=statutory before=59530.00 after=0.00 removed=59530.00 zero=true
+fc=938 co=174 fy=2022 doc=NONE tier=statutory before=38162.00 after=20386.00 removed=17776.00 zero=false
+fc=1467 co=174 fy=2023 doc=NONE tier=statutory before=406139.00 after=383980.00 removed=22159.00 zero=false
+fc=1466 co=174 fy=2024 doc=NONE tier=statutory before=399865.00 after=369642.00 removed=30223.00 zero=false
+fc=839 co=174 fy=2025 doc=NONE tier=statutory before=374496.00 after=358638.00 removed=15858.00 zero=false
+fc=1344 co=174 fy=2026 doc=NONE tier=statutory before=461779.00 after=384668.00 removed=77111.00 zero=false
+fc=1059 co=177 fy=2023 doc=NONE tier=statutory before=6514.00 after=0.00 removed=6514.00 zero=true
+fc=1293 co=179 fy=2025 doc=NONE tier=statutory before=31747.00 after=0.00 removed=31747.00 zero=true
+fc=905 co=180 fy=2022 doc=NONE tier=statutory before=40323.00 after=10781.00 removed=29542.00 zero=false
+fc=996 co=180 fy=2023 doc=NONE tier=statutory before=32101.00 after=7252.00 removed=24849.00 zero=false
+fc=1066 co=180 fy=2024 doc=NONE tier=statutory before=23961.00 after=0.00 removed=23961.00 zero=true
+fc=936 co=180 fy=2025 doc=NONE tier=statutory before=56949.00 after=20185.00 removed=36764.00 zero=false
+fc=1304 co=188 fy=2022 doc=NONE tier=statutory before=2798.00 after=0.00 removed=2798.00 zero=true
+fc=1749 co=188 fy=2022 doc=1933 tier=information_memorandum before=2798.00 after=0.00 removed=2798.00 zero=true
+fc=1767 co=188 fy=2022 doc=1939 tier=statutory before=2798.00 after=0.00 removed=2798.00 zero=true
+fc=1322 co=188 fy=2023 doc=NONE tier=statutory before=2402.00 after=0.00 removed=2402.00 zero=true
+fc=1750 co=188 fy=2023 doc=1933 tier=information_memorandum before=2402.00 after=0.00 removed=2402.00 zero=true
+fc=1763 co=188 fy=2023 doc=1938 tier=statutory before=2402.00 after=0.00 removed=2402.00 zero=true
+fc=1768 co=188 fy=2023 doc=1939 tier=statutory before=2402.00 after=0.00 removed=2402.00 zero=true
+fc=1315 co=188 fy=2024 doc=NONE tier=statutory before=4006.00 after=0.00 removed=4006.00 zero=true
+fc=1751 co=188 fy=2024 doc=1933 tier=information_memorandum before=4006.00 after=0.00 removed=4006.00 zero=true
+fc=1759 co=188 fy=2024 doc=1937 tier=statutory before=4006.00 after=0.00 removed=4006.00 zero=true
+fc=1764 co=188 fy=2024 doc=1938 tier=statutory before=4006.00 after=0.00 removed=4006.00 zero=true
+fc=1247 co=188 fy=2025 doc=NONE tier=statutory before=4806.00 after=0.00 removed=4806.00 zero=true
+fc=1752 co=188 fy=2025 doc=1933 tier=information_memorandum before=4806.00 after=0.00 removed=4806.00 zero=true
+fc=1760 co=188 fy=2025 doc=1937 tier=statutory before=4806.00 after=0.00 removed=4806.00 zero=true
+fc=866 co=189 fy=2024 doc=1163 tier=statutory before=42995.00 after=35096.00 removed=7899.00 zero=false
+fc=867 co=189 fy=2025 doc=1164 tier=statutory before=21467.00 after=16725.00 removed=4742.00 zero=false
+fc=869 co=189 fy=2026 doc=1164 tier=statutory before=32378.00 after=22924.00 removed=9454.00 zero=false
+fc=1424 co=191 fy=2022 doc=1585 tier=statutory before=56624.00 after=50558.00 removed=6066.00 zero=false
+fc=1373 co=191 fy=2023 doc=1585 tier=statutory before=30604.00 after=22883.00 removed=7721.00 zero=false
+fc=1372 co=191 fy=2024 doc=1584 tier=statutory before=15133.00 after=9315.00 removed=5818.00 zero=false
+fc=1371 co=191 fy=2025 doc=1583 tier=statutory before=7898.00 after=2266.00 removed=5632.00 zero=false
+fc=1370 co=191 fy=2026 doc=1582 tier=statutory before=3387.00 after=0.00 removed=3387.00 zero=true
+fc=877 co=196 fy=2023 doc=1617 tier=statutory before=25373.00 after=21333.00 removed=4040.00 zero=false
+fc=852 co=196 fy=2024 doc=1617 tier=statutory before=16376.00 after=13333.00 removed=3043.00 zero=false
+fc=1483 co=196 fy=2025 doc=1616 tier=statutory before=7451.00 after=5333.00 removed=2118.00 zero=false
+fc=1481 co=197 fy=2023 doc=1555 tier=statutory before=95177.00 after=86587.00 removed=8590.00 zero=false
+fc=1204 co=198 fy=2023 doc=1281 tier=statutory before=583625.00 after=560019.00 removed=23606.00 zero=false
+fc=1185 co=198 fy=2024 doc=1280 tier=statutory before=434999.00 after=399991.00 removed=35008.00 zero=false
+fc=1226 co=206 fy=2021 doc=1343 tier=statutory before=10450.00 after=0.00 removed=10450.00 zero=true
+fc=1227 co=206 fy=2022 doc=1343 tier=statutory before=8099.00 after=0.00 removed=8099.00 zero=true
+fc=1224 co=206 fy=2023 doc=1342 tier=statutory before=10563.00 after=0.00 removed=10563.00 zero=true
+fc=1225 co=206 fy=2024 doc=1342 tier=statutory before=8859.00 after=0.00 removed=8859.00 zero=true
+fc=1223 co=206 fy=2025 doc=1341 tier=statutory before=7346.00 after=0.00 removed=7346.00 zero=true
+fc=1222 co=206 fy=2026 doc=1339 tier=statutory before=5805.00 after=0.00 removed=5805.00 zero=true
+fc=1415 co=209 fy=2024 doc=1370 tier=statutory before=1663.00 after=0.00 removed=1663.00 zero=true
+fc=1416 co=209 fy=2025 doc=1371 tier=statutory before=1854.00 after=0.00 removed=1854.00 zero=true
+fc=1417 co=209 fy=2026 doc=1371 tier=statutory before=1319.00 after=0.00 removed=1319.00 zero=true
+fc=1445 co=211 fy=2022 doc=NONE tier=statutory before=96823.00 after=92289.00 removed=4534.00 zero=false
+fc=1446 co=211 fy=2023 doc=NONE tier=statutory before=87299.00 after=80274.00 removed=7025.00 zero=false
+fc=1443 co=211 fy=2025 doc=NONE tier=statutory before=18043.00 after=12540.00 removed=5503.00 zero=false
+fc=1450 co=212 fy=2021 doc=NONE tier=statutory before=18443.00 after=0.00 removed=18443.00 zero=true
+fc=1451 co=212 fy=2022 doc=NONE tier=statutory before=17405.00 after=0.00 removed=17405.00 zero=true
+fc=1449 co=212 fy=2023 doc=NONE tier=statutory before=166711.00 after=146322.00 removed=20389.00 zero=false
+fc=1448 co=212 fy=2024 doc=NONE tier=statutory before=111994.00 after=76655.00 removed=35339.00 zero=false
+fc=1447 co=212 fy=2025 doc=NONE tier=statutory before=97345.00 after=58805.00 removed=38540.00 zero=false
+fc=904 co=217 fy=2022 doc=1481 tier=statutory before=334622.00 after=250430.00 removed=84192.00 zero=false
+fc=847 co=217 fy=2023 doc=1481 tier=statutory before=264543.00 after=199323.00 removed=65220.00 zero=false
+fc=870 co=217 fy=2024 doc=1480 tier=statutory before=191716.00 after=142579.00 removed=49137.00 zero=false
+fc=875 co=217 fy=2025 doc=1480 tier=statutory before=80536.00 after=4794.00 removed=75742.00 zero=false
+fc=1469 co=217 fy=2026 doc=1483 tier=statutory before=80140.55 after=4398.55 removed=75742.00 zero=false
+fc=1490 co=224 fy=2023 doc=1599 tier=statutory before=4235.00 after=0.00 removed=4235.00 zero=true
+fc=1491 co=224 fy=2024 doc=1599 tier=statutory before=64429.00 after=57548.00 removed=6881.00 zero=false
+fc=1461 co=224 fy=2025 doc=1601 tier=statutory before=54819.00 after=47893.00 removed=6926.00 zero=false
+fc=1472 co=224 fy=2026 doc=1601 tier=statutory before=52422.00 after=45496.00 removed=6926.00 zero=false
+fc=855 co=228 fy=2023 doc=1765 tier=information_memorandum before=49478.00 after=45044.00 removed=4434.00 zero=false
+fc=854 co=228 fy=2024 doc=1765 tier=information_memorandum before=319401.00 after=272466.00 removed=46935.00 zero=false
+fc=1498 co=228 fy=2025 doc=1775 tier=statutory before=203413.40 after=156478.40 removed=46935.00 zero=false
+fc=1376 co=230 fy=2023 doc=1781 tier=statutory before=14398.00 after=0.00 removed=14398.00 zero=true
+fc=1377 co=230 fy=2024 doc=1782 tier=statutory before=16543.00 after=0.00 removed=16543.00 zero=true
+fc=1456 co=230 fy=2025 doc=1782 tier=statutory before=52137.00 after=22717.00 removed=29420.00 zero=false
+fc=1330 co=230 fy=2026 doc=1784 tier=management before=55409.99 after=25990.23 removed=29419.76 zero=false
+fc=1430 co=232 fy=2024 doc=1792 tier=statutory before=10554.00 after=9885.00 removed=669.00 zero=false
+fc=1457 co=232 fy=2025 doc=1792 tier=statutory before=28528.00 after=27776.00 removed=752.00 zero=false
+fc=1323 co=240 fy=2022 doc=1823 tier=statutory before=14346.00 after=3367.00 removed=10979.00 zero=false
+fc=1326 co=240 fy=2023 doc=1824 tier=statutory before=6416.00 after=5300.00 removed=1116.00 zero=false
+fc=1390 co=240 fy=2024 doc=1825 tier=statutory before=3612.00 after=3600.00 removed=12.00 zero=false
+fc=1391 co=240 fy=2025 doc=1825 tier=statutory before=6349.00 after=3600.00 removed=2749.00 zero=false
+fc=6 co=241 fy=2025 doc=1828 tier=statutory before=29533.00 after=28205.00 removed=1328.00 zero=false
+fc=9 co=241 fy=2025 doc=1829 tier=statutory before=29533.00 after=28205.00 removed=1328.00 zero=false
+fc=10 co=241 fy=2026 doc=1829 tier=statutory before=26865.00 after=26195.00 removed=670.00 zero=false
+fc=39 co=242 fy=2021 doc=1841 tier=statutory before=64236.00 after=36654.00 removed=27582.00 zero=false
+fc=35 co=242 fy=2022 doc=1840 tier=statutory before=97897.00 after=27451.00 removed=70446.00 zero=false
+fc=40 co=242 fy=2022 doc=1841 tier=statutory before=97897.00 after=27451.00 removed=70446.00 zero=false
+fc=31 co=242 fy=2023 doc=1839 tier=statutory before=82820.00 after=17284.00 removed=65536.00 zero=false
+fc=36 co=242 fy=2023 doc=1840 tier=statutory before=82820.00 after=17284.00 removed=65536.00 zero=false
+fc=27 co=242 fy=2024 doc=1838 tier=statutory before=73441.00 after=7045.00 removed=66396.00 zero=false
+fc=32 co=242 fy=2024 doc=1839 tier=statutory before=73441.00 after=7045.00 removed=66396.00 zero=false
+fc=28 co=242 fy=2025 doc=1838 tier=statutory before=207042.00 after=115759.00 removed=91283.00 zero=false
+fc=24 co=242 fy=2026 doc=1836 tier=management before=91283.00 after=0.00 removed=91283.00 zero=true
+fc=1526 co=244 fy=2021 doc=1852 tier=statutory before=51872.00 after=48611.00 removed=3261.00 zero=false
+fc=1522 co=244 fy=2022 doc=1851 tier=statutory before=43233.00 after=39708.00 removed=3525.00 zero=false
+fc=1527 co=244 fy=2022 doc=1852 tier=statutory before=43233.00 after=39708.00 removed=3525.00 zero=false
+fc=1513 co=244 fy=2023 doc=1848 tier=statutory before=33743.00 after=29942.00 removed=3801.00 zero=false
+fc=1523 co=244 fy=2023 doc=1851 tier=statutory before=33743.00 after=29942.00 removed=3801.00 zero=false
+fc=1514 co=244 fy=2024 doc=1848 tier=statutory before=24282.00 after=19921.00 removed=4361.00 zero=false
+fc=1529 co=244 fy=2026 doc=1855 tier=management before=581841.99 after=577480.51 removed=4361.48 zero=false
+fc=1660 co=251 fy=2023 doc=1904 tier=statutory before=97384.00 after=94828.00 removed=2556.00 zero=false
+fc=1656 co=251 fy=2024 doc=1903 tier=statutory before=248292.00 after=235429.00 removed=12863.00 zero=false
+fc=1661 co=251 fy=2024 doc=1904 tier=statutory before=248292.00 after=235429.00 removed=12863.00 zero=false
+fc=1652 co=251 fy=2025 doc=1902 tier=statutory before=322768.00 after=310566.00 removed=12202.00 zero=false
+fc=1657 co=251 fy=2025 doc=1903 tier=statutory before=322768.00 after=310566.00 removed=12202.00 zero=false
+fc=1653 co=251 fy=2026 doc=1902 tier=statutory before=524136.00 after=505738.00 removed=18398.00 zero=false
+fc=1673 co=252 fy=2021 doc=1909 tier=statutory before=1081558.00 after=1070348.00 removed=11210.00 zero=false
+fc=1674 co=252 fy=2022 doc=1909 tier=statutory before=963542.00 after=954002.00 removed=9540.00 zero=false
+fc=1677 co=252 fy=2022 doc=1910 tier=statutory before=963542.00 after=954002.00 removed=9540.00 zero=false
+fc=1678 co=252 fy=2023 doc=1910 tier=statutory before=756457.00 after=749942.00 removed=6515.00 zero=false
+fc=1681 co=252 fy=2023 doc=1911 tier=statutory before=756457.00 after=749942.00 removed=6515.00 zero=false
+fc=1682 co=252 fy=2024 doc=1911 tier=statutory before=712165.00 after=705650.00 removed=6515.00 zero=false
+fc=1685 co=252 fy=2024 doc=1912 tier=statutory before=712165.00 after=705650.00 removed=6515.00 zero=false
+fc=1686 co=252 fy=2025 doc=1912 tier=statutory before=958975.00 after=952302.00 removed=6673.00 zero=false
+fc=1709 co=257 fy=2021 doc=1921 tier=statutory before=1109.00 after=0.00 removed=1109.00 zero=true
+fc=1710 co=257 fy=2022 doc=1921 tier=statutory before=832.00 after=0.00 removed=832.00 zero=true
+fc=1713 co=257 fy=2022 doc=1922 tier=statutory before=832.00 after=0.00 removed=832.00 zero=true
+fc=1714 co=257 fy=2023 doc=1922 tier=statutory before=870.00 after=0.00 removed=870.00 zero=true
+fc=1717 co=257 fy=2023 doc=1923 tier=statutory before=870.00 after=0.00 removed=870.00 zero=true
+fc=1718 co=257 fy=2024 doc=1923 tier=statutory before=652.00 after=0.00 removed=652.00 zero=true
+fc=1721 co=257 fy=2024 doc=1924 tier=statutory before=652.00 after=0.00 removed=652.00 zero=true
+fc=1722 co=257 fy=2025 doc=1924 tier=statutory before=578.00 after=0.00 removed=578.00 zero=true
+fc=1795 co=259 fy=2021 doc=1954 tier=management before=71530.00 after=64789.00 removed=6741.00 zero=false
+fc=1796 co=259 fy=2022 doc=1954 tier=management before=71530.00 after=64789.00 removed=6741.00 zero=false
+fc=1799 co=259 fy=2022 doc=1955 tier=management before=80908.00 after=74167.00 removed=6741.00 zero=false
+fc=1800 co=259 fy=2023 doc=1955 tier=management before=97574.00 after=90833.00 removed=6741.00 zero=false
+fc=1803 co=259 fy=2023 doc=1956 tier=management before=75569.00 after=70832.00 removed=4737.00 zero=false
+fc=1804 co=259 fy=2024 doc=1956 tier=management before=69736.00 after=64999.00 removed=4737.00 zero=false
+fc=1807 co=259 fy=2024 doc=1957 tier=management before=291636.00 after=289541.00 removed=2095.00 zero=false
+fc=1808 co=259 fy=2025 doc=1957 tier=management before=370403.00 after=368308.00 removed=2095.00 zero=false
+fc=1811 co=259 fy=2025 doc=1958 tier=management before=241090.00 after=236485.00 removed=4605.00 zero=false
+fc=1813 co=259 fy=2025 doc=1959 tier=management before=220176.00 after=215571.00 removed=4605.00 zero=false
+fc=1812 co=259 fy=2026 doc=1958 tier=management before=241090.00 after=236485.00 removed=4605.00 zero=false
+fc=1814 co=259 fy=2026 doc=1959 tier=management before=220176.00 after=215571.00 removed=4605.00 zero=false
+
+=== FULL DRIFT LIST ===
