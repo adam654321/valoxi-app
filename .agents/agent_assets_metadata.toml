@@ -55,3 +55,10 @@ uri = "file://docs/pipeline-fidelity-fix/c1-paper-sample-assess.txt"
 type = "text"
 title = "Contract 1 paper sample assessment"
 description = "Read-only production population assessment report with sizing, company/category cohorts, shortlist, and R2 HEAD checks."
+
+[[outputs]]
+id = "ZWQ9UB20TT6moqDJfa9oi"
+uri = "file://docs/pipeline-fidelity-fix/c1-paper-read.txt"
+type = "text"
+title = "Contract 1 paper verification report"
+description = "Complete verbatim two-pass transcription output for the seven requested production documents."

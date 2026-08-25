@@ -1,0 +1,1237 @@
+=== IDENTITY ===
+database=neondb  balance_sheets=697   (prod=697, dev=216)
+
+==============================================================================
+doc=534  co=82  cat=Company Accounts
+file=Limited company accounts 2023.PDF
+key=companies/82/doc-1777209217225-375066359.pdf
+bytes=30257
+two-pass determinism: MISMATCH — verdicts VOID for this document
+page=6  footer=The notes form part of these financial statements
+Page 4
+deferred tax appears: in_a_note_only
+columns: ["2023 £","2023 £","2022 £","2022 £"]
+creditors>1yr printed: true  label="CREDITORS Amounts falling due after more than one year"  values=["(1,400,000)",null,"-",null]
+provisions printed:    true  label="PROVISIONS FOR LIABILITIES"  values=["(275,988)",null,"(249,175)",null]
+
+-- bs=374 fy=2022 pe=2022-09-30
+   stored    total=249175.00 deferred=249175.00 children=0.00 corrected=0.00
+   printed   creditors>1yr="-" (null)   provisions="(249,175)" (-249175.00)
+   recon     NOT POSSIBLE, TALCL or net assets not transcribed
+   VERDICT   VOID — two passes disagree
+             provisions match stored deferred
+
+-- bs=375 fy=2023 pe=2023-09-30
+   stored    total=1675988.00 deferred=275988.00 children=1400000.00 corrected=1400000.00
+   printed   creditors>1yr="(1,400,000)" (-1400000.00)   provisions="(275,988)" (-275988.00)
+   recon     NOT POSSIBLE, TALCL or net assets not transcribed
+   VERDICT   VOID — two passes disagree
+             provisions match stored deferred
+
+--- FULL PASS 1 JSON ---
+{
+  "balance_sheet_page": 6,
+  "page_footer_text": "The notes form part of these financial statements\nPage 4",
+  "is_marked_not_part_of_statutory_statements": false,
+  "column_headings": [
+    "2023 £",
+    "2023 £",
+    "2022 £",
+    "2022 £"
+  ],
+  "total_assets_less_current_liabilities": [
+    null,
+    "4,142,402",
+    null,
+    "2,654,578"
+  ],
+  "creditors_due_after_more_than_one_year": {
+    "line_is_printed": true,
+    "label_as_printed": "CREDITORS Amounts falling due after more than one year",
+    "note_ref": "8",
+    "values": [
+      "(1,400,000)",
+      null,
+      "-",
+      null
+    ]
+  },
+  "provisions_for_liabilities": {
+    "line_is_printed": true,
+    "label_as_printed": "PROVISIONS FOR LIABILITIES",
+    "values": [
+      "(275,988)",
+      null,
+      "(249,175)",
+      null
+    ]
+  },
+  "net_assets": [
+    null,
+    "2,466,414",
+    null,
+    "2,405,403"
+  ],
+  "all_lines_between_total_assets_less_current_liabilities_and_net_assets": [
+    {
+      "label_as_printed": "CREDITORS Amounts falling due after more than one year",
+      "values": [
+        "(1,400,000)",
+        null,
+        "-",
+        null
+      ]
+    },
+    {
+      "label_as_printed": "PROVISIONS FOR LIABILITIES",
+      "values": [
+        "(275,988)",
+        null,
+        "(249,175)",
+        null
+      ]
+    }
+  ],
+  "creditors_over_one_year_note": {
+    "note_is_present": true,
+    "note_number": "8",
+    "components": [
+      {
+        "label_as_printed": "Bank loans - 2 to 5 years",
+        "values": [
+          "1,400,000",
+          "-"
+        ]
+      }
+    ],
+    "note_total": [
+      "1,400,000",
+      "-"
+    ]
+  },
+  "where_deferred_tax_appears": "in_a_note_only"
+}
+--- FULL PASS 2 JSON ---
+{
+  "balance_sheet_page": 6,
+  "page_footer_text": "The notes form part of these financial statements\nPage 4",
+  "is_marked_not_part_of_statutory_statements": false,
+  "column_headings": [
+    "2023",
+    "2022"
+  ],
+  "total_assets_less_current_liabilities": [
+    "4,142,402",
+    "2,654,578"
+  ],
+  "creditors_due_after_more_than_one_year": {
+    "line_is_printed": true,
+    "label_as_printed": "CREDITORS Amounts falling due after more than one year",
+    "note_ref": "8",
+    "values": [
+      "(1,400,000)",
+      "-"
+    ]
+  },
+  "provisions_for_liabilities": {
+    "line_is_printed": true,
+    "label_as_printed": "PROVISIONS FOR LIABILITIES",
+    "values": [
+      "(275,988)",
+      "(249,175)"
+    ]
+  },
+  "net_assets": [
+    "2,466,414",
+    "2,405,403"
+  ],
+  "all_lines_between_total_assets_less_current_liabilities_and_net_assets": [
+    {
+      "label_as_printed": "CREDITORS Amounts falling due after more than one year",
+      "values": [
+        "(1,400,000)",
+        "-"
+      ]
+    },
+    {
+      "label_as_printed": "PROVISIONS FOR LIABILITIES",
+      "values": [
+        "(275,988)",
+        "(249,175)"
+      ]
+    }
+  ],
+  "creditors_over_one_year_note": {
+    "note_is_present": true,
+    "note_number": "8",
+    "components": [
+      {
+        "label_as_printed": "Bank loans - 2 to 5 years",
+        "values": [
+          "1,400,000",
+          "-"
+        ]
+      }
+    ],
+    "note_total": [
+      "1,400,000",
+      "-"
+    ]
+  },
+  "where_deferred_tax_appears": "in_a_note_only"
+}
+
+==============================================================================
+doc=1782  co=230  cat=Company Accounts
+file=Summit Print Limited 31 December 2025 Full Accounts.pdf
+key=companies/230/doc-1784240321705-953174849.pdf
+bytes=2527911
+two-pass determinism: IDENTICAL
+page=6  footer=- 4 -
+deferred tax appears: in_a_note_only
+columns: ["2025","2024"]
+creditors>1yr printed: true  label="Creditors: amounts falling due after more than one year"  values=["(22,717)","-"]
+provisions printed:    true  label="Provisions for liabilities"  values=["(29,420)","(16,543)"]
+
+-- bs=1090 fy=2024 pe=2024-12-31
+   stored    total=16543.00 deferred=16543.00 children=0.00 corrected=0.00
+   printed   creditors>1yr="-" (null)   provisions="(16,543)" (-16543.00)
+   recon     TALCL 194655.00 - 0.00 - 16543.00 = 178112.00   net assets 178112.00   OK
+   VERDICT   CONTRACT 1 HOLDS — printed creditors equals total minus deferred
+             provisions match stored deferred
+
+-- bs=1091 fy=2025 pe=2025-12-31
+   stored    total=52137.00 deferred=29420.00 children=22717.00 corrected=22717.00
+   printed   creditors>1yr="(22,717)" (-22717.00)   provisions="(29,420)" (-29420.00)
+   recon     TALCL 246015.00 - 22717.00 - 29420.00 = 193878.00   net assets 193878.00   OK
+   VERDICT   CONTRACT 1 HOLDS — printed creditors equals total minus deferred
+             provisions match stored deferred
+
+--- FULL PASS 1 JSON ---
+{
+  "balance_sheet_page": 6,
+  "page_footer_text": "- 4 -",
+  "is_marked_not_part_of_statutory_statements": false,
+  "column_headings": [
+    "2025",
+    "2024"
+  ],
+  "total_assets_less_current_liabilities": [
+    "246,015",
+    "194,655"
+  ],
+  "creditors_due_after_more_than_one_year": {
+    "line_is_printed": true,
+    "label_as_printed": "Creditors: amounts falling due after more than one year",
+    "note_ref": "8",
+    "values": [
+      "(22,717)",
+      "-"
+    ]
+  },
+  "provisions_for_liabilities": {
+    "line_is_printed": true,
+    "label_as_printed": "Provisions for liabilities",
+    "values": [
+      "(29,420)",
+      "(16,543)"
+    ]
+  },
+  "net_assets": [
+    "193,878",
+    "178,112"
+  ],
+  "all_lines_between_total_assets_less_current_liabilities_and_net_assets": [
+    {
+      "label_as_printed": "Creditors: amounts falling due after more than one year",
+      "values": [
+        "(22,717)",
+        "-"
+      ]
+    },
+    {
+      "label_as_printed": "Provisions for liabilities",
+      "values": [
+        "(29,420)",
+        "(16,543)"
+      ]
+    }
+  ],
+  "creditors_over_one_year_note": {
+    "note_is_present": true,
+    "note_number": "8",
+    "components": [
+      {
+        "label_as_printed": "Obligations under hire purchase agreements",
+        "values": [
+          "22,717",
+          "-"
+        ]
+      }
+    ],
+    "note_total": [
+      "22,717",
+      "-"
+    ]
+  },
+  "where_deferred_tax_appears": "in_a_note_only"
+}
+--- FULL PASS 2 JSON ---
+{
+  "balance_sheet_page": 6,
+  "page_footer_text": "- 4 -",
+  "is_marked_not_part_of_statutory_statements": false,
+  "column_headings": [
+    "2025",
+    "2024"
+  ],
+  "total_assets_less_current_liabilities": [
+    "246,015",
+    "194,655"
+  ],
+  "creditors_due_after_more_than_one_year": {
+    "line_is_printed": true,
+    "label_as_printed": "Creditors: amounts falling due after more than one year",
+    "note_ref": "8",
+    "values": [
+      "(22,717)",
+      "-"
+    ]
+  },
+  "provisions_for_liabilities": {
+    "line_is_printed": true,
+    "label_as_printed": "Provisions for liabilities",
+    "values": [
+      "(29,420)",
+      "(16,543)"
+    ]
+  },
+  "net_assets": [
+    "193,878",
+    "178,112"
+  ],
+  "all_lines_between_total_assets_less_current_liabilities_and_net_assets": [
+    {
+      "label_as_printed": "Creditors: amounts falling due after more than one year",
+      "values": [
+        "(22,717)",
+        "-"
+      ]
+    },
+    {
+      "label_as_printed": "Provisions for liabilities",
+      "values": [
+        "(29,420)",
+        "(16,543)"
+      ]
+    }
+  ],
+  "creditors_over_one_year_note": {
+    "note_is_present": true,
+    "note_number": "8",
+    "components": [
+      {
+        "label_as_printed": "Obligations under hire purchase agreements",
+        "values": [
+          "22,717",
+          "-"
+        ]
+      }
+    ],
+    "note_total": [
+      "22,717",
+      "-"
+    ]
+  },
+  "where_deferred_tax_appears": "in_a_note_only"
+}
+
+==============================================================================
+doc=1599  co=224  cat=Company Accounts
+file=A85_Full accounts 0324.pdf
+key=companies/224/doc-1783938756235-752242076.pdf
+bytes=321751
+two-pass determinism: IDENTICAL
+page=6  footer=The notes form part of these financial statements
+Page 4
+deferred tax appears: in_a_note_only
+columns: ["30.3.24","30.3.23"]
+creditors>1yr printed: true  label="CREDITORS Amounts falling due after more than one year"  values=["(57,548)","-"]
+provisions printed:    true  label="PROVISIONS FOR LIABILITIES"  values=["(6,881)","(4,235)"]
+
+-- bs=1057 fy=2023 pe=2023-03-30
+   stored    total=4235.00 deferred=4235.00 children=0.00 corrected=0.00
+   VERDICT   NO COLUMN MATCHED for 2023 in ["30.3.24","30.3.23"]
+
+-- bs=1055 fy=2024 pe=2024-03-30
+   stored    total=64429.00 deferred=6881.00 children=57548.00 corrected=57548.00
+   VERDICT   NO COLUMN MATCHED for 2024 in ["30.3.24","30.3.23"]
+
+--- FULL PASS 1 JSON ---
+{
+  "balance_sheet_page": 6,
+  "page_footer_text": "The notes form part of these financial statements\nPage 4",
+  "is_marked_not_part_of_statutory_statements": false,
+  "column_headings": [
+    "30.3.24",
+    "30.3.23"
+  ],
+  "total_assets_less_current_liabilities": [
+    "247,638",
+    "54,930"
+  ],
+  "creditors_due_after_more_than_one_year": {
+    "line_is_printed": true,
+    "label_as_printed": "CREDITORS Amounts falling due after more than one year",
+    "note_ref": "10",
+    "values": [
+      "(57,548)",
+      "-"
+    ]
+  },
+  "provisions_for_liabilities": {
+    "line_is_printed": true,
+    "label_as_printed": "PROVISIONS FOR LIABILITIES",
+    "values": [
+      "(6,881)",
+      "(4,235)"
+    ]
+  },
+  "net_assets": [
+    "183,209",
+    "50,695"
+  ],
+  "all_lines_between_total_assets_less_current_liabilities_and_net_assets": [
+    {
+      "label_as_printed": "CREDITORS Amounts falling due after more than one year",
+      "values": [
+        "(57,548)",
+        "-"
+      ]
+    },
+    {
+      "label_as_printed": "PROVISIONS FOR LIABILITIES",
+      "values": [
+        "(6,881)",
+        "(4,235)"
+      ]
+    }
+  ],
+  "creditors_over_one_year_note": {
+    "note_is_present": true,
+    "note_number": "10",
+    "components": [
+      {
+        "label_as_printed": "Hire purchase contracts",
+        "values": [
+          "57,548",
+          "-"
+        ]
+      }
+    ],
+    "note_total": [
+      "57,548",
+      "-"
+    ]
+  },
+  "where_deferred_tax_appears": "in_a_note_only"
+}
+--- FULL PASS 2 JSON ---
+{
+  "balance_sheet_page": 6,
+  "page_footer_text": "The notes form part of these financial statements\nPage 4",
+  "is_marked_not_part_of_statutory_statements": false,
+  "column_headings": [
+    "30.3.24",
+    "30.3.23"
+  ],
+  "total_assets_less_current_liabilities": [
+    "247,638",
+    "54,930"
+  ],
+  "creditors_due_after_more_than_one_year": {
+    "line_is_printed": true,
+    "label_as_printed": "CREDITORS\nAmounts falling due after more than one\nyear",
+    "note_ref": "10",
+    "values": [
+      "(57,548)",
+      "-"
+    ]
+  },
+  "provisions_for_liabilities": {
+    "line_is_printed": true,
+    "label_as_printed": "PROVISIONS FOR LIABILITIES",
+    "values": [
+      "(6,881)",
+      "(4,235)"
+    ]
+  },
+  "net_assets": [
+    "183,209",
+    "50,695"
+  ],
+  "all_lines_between_total_assets_less_current_liabilities_and_net_assets": [
+    {
+      "label_as_printed": "CREDITORS\nAmounts falling due after more than one\nyear",
+      "values": [
+        "(57,548)",
+        "-"
+      ]
+    },
+    {
+      "label_as_printed": "PROVISIONS FOR LIABILITIES",
+      "values": [
+        "(6,881)",
+        "(4,235)"
+      ]
+    }
+  ],
+  "creditors_over_one_year_note": {
+    "note_is_present": true,
+    "note_number": "10",
+    "components": [
+      {
+        "label_as_printed": "Hire purchase contracts",
+        "values": [
+          "57,548",
+          "-"
+        ]
+      }
+    ],
+    "note_total": [
+      "57,548",
+      "-"
+    ]
+  },
+  "where_deferred_tax_appears": "in_a_note_only"
+}
+
+==============================================================================
+doc=1424  co=172  cat=Company Accounts
+file=year end 24.pdf
+key=companies/172/doc-1782745628074-406531217.pdf
+bytes=362236
+two-pass determinism: MISMATCH — verdicts VOID for this document
+page=7  footer=Page 4
+deferred tax appears: own_line_on_balance_sheet_face
+columns: ["2024 £","2023 £"]
+creditors>1yr printed: true  label="Creditors: amounts falling due after more than one year"  values=["-","(40,437)"]
+provisions printed:    true  label="Provisions for liabilities"  values=["(25,420)","(58,641)"]
+
+-- bs=790 fy=2023 pe=2023-03-31
+   stored    total=99078.00 deferred=58641.00 children=40437.00 corrected=40437.00
+   printed   creditors>1yr="(40,437)" (-40437.00)   provisions="(58,641)" (-58641.00)
+   recon     TALCL 958418.00 - 40437.00 - 58641.00 = 859340.00   net assets 859340.00   OK
+   VERDICT   VOID — two passes disagree
+             provisions match stored deferred
+
+-- bs=791 fy=2024 pe=2024-03-31
+   stored    total=25420.00 deferred=25420.00 children=0.00 corrected=0.00
+   printed   creditors>1yr="-" (null)   provisions="(25,420)" (-25420.00)
+   recon     TALCL 388265.00 - 0.00 - 25420.00 = 362845.00   net assets 362845.00   OK
+   VERDICT   VOID — two passes disagree
+             provisions match stored deferred
+
+--- FULL PASS 1 JSON ---
+{
+  "balance_sheet_page": 7,
+  "page_footer_text": "Page 4",
+  "is_marked_not_part_of_statutory_statements": false,
+  "column_headings": [
+    "2024 £",
+    "2023 £"
+  ],
+  "total_assets_less_current_liabilities": [
+    "388,265",
+    "958,418"
+  ],
+  "creditors_due_after_more_than_one_year": {
+    "line_is_printed": true,
+    "label_as_printed": "Creditors: amounts falling due after more than one year",
+    "note_ref": "8",
+    "values": [
+      "-",
+      "(40,437)"
+    ]
+  },
+  "provisions_for_liabilities": {
+    "line_is_printed": true,
+    "label_as_printed": "Provisions for liabilities",
+    "values": [
+      "(25,420)",
+      "(58,641)"
+    ]
+  },
+  "net_assets": [
+    "362,845",
+    "859,340"
+  ],
+  "all_lines_between_total_assets_less_current_liabilities_and_net_assets": [
+    {
+      "label_as_printed": "Creditors: amounts falling due after more than one year",
+      "values": [
+        "-",
+        "(40,437)"
+      ]
+    },
+    {
+      "label_as_printed": "Provisions for liabilities",
+      "values": [
+        null,
+        null
+      ]
+    },
+    {
+      "label_as_printed": "Deferred tax",
+      "values": [
+        "(25,420)",
+        "(58,641)"
+      ]
+    }
+  ],
+  "creditors_over_one_year_note": {
+    "note_is_present": true,
+    "note_number": "8",
+    "components": [
+      {
+        "label_as_printed": "Bank loans",
+        "values": [
+          "-",
+          "36,463"
+        ]
+      },
+      {
+        "label_as_printed": "Net obligations under finance leases and hire purchase contracts",
+        "values": [
+          "-",
+          "3,974"
+        ]
+      }
+    ],
+    "note_total": [
+      "-",
+      "40,437"
+    ]
+  },
+  "where_deferred_tax_appears": "own_line_on_balance_sheet_face"
+}
+--- FULL PASS 2 JSON ---
+{
+  "balance_sheet_page": 7,
+  "page_footer_text": "Page 4",
+  "is_marked_not_part_of_statutory_statements": false,
+  "column_headings": [
+    "2024 £",
+    "2023 £"
+  ],
+  "total_assets_less_current_liabilities": [
+    "388,265",
+    "958,418"
+  ],
+  "creditors_due_after_more_than_one_year": {
+    "line_is_printed": true,
+    "label_as_printed": "Creditors: amounts falling due after more than one year",
+    "note_ref": "8",
+    "values": [
+      "-",
+      "(40,437)"
+    ]
+  },
+  "provisions_for_liabilities": {
+    "line_is_printed": true,
+    "label_as_printed": "Provisions for liabilities",
+    "values": [
+      null,
+      null
+    ]
+  },
+  "net_assets": [
+    "362,845",
+    "859,340"
+  ],
+  "all_lines_between_total_assets_less_current_liabilities_and_net_assets": [
+    {
+      "label_as_printed": "Creditors: amounts falling due after more than one year",
+      "values": [
+        "-",
+        "(40,437)"
+      ]
+    },
+    {
+      "label_as_printed": "Provisions for liabilities",
+      "values": [
+        null,
+        null
+      ]
+    },
+    {
+      "label_as_printed": "Deferred tax",
+      "values": [
+        "(25,420)",
+        "(58,641)"
+      ]
+    },
+    {
+      "label_as_printed": null,
+      "values": [
+        "(25,420)",
+        "(58,641)"
+      ]
+    }
+  ],
+  "creditors_over_one_year_note": {
+    "note_is_present": true,
+    "note_number": "8",
+    "components": [
+      {
+        "label_as_printed": "Bank loans",
+        "values": [
+          "-",
+          "36,463"
+        ]
+      },
+      {
+        "label_as_printed": "Net obligations under finance leases and hire purchase contracts",
+        "values": [
+          "-",
+          "3,974"
+        ]
+      }
+    ],
+    "note_total": [
+      "-",
+      "40,437"
+    ]
+  },
+  "where_deferred_tax_appears": "own_line_on_balance_sheet_face"
+}
+
+==============================================================================
+doc=711  co=125  cat=Company Accounts
+file=2025 accounts.pdf
+key=companies/125/doc-1777990430714-686644706.pdf
+bytes=1502019
+two-pass determinism: IDENTICAL
+page=7  footer=Page 5
+deferred tax appears: own_line_on_balance_sheet_face
+columns: ["2025","2024"]
+creditors>1yr printed: true  label="Creditors: Amounts Falling Due After More Than One Year"  values=["-","(2,317)"]
+provisions printed:    true  label="PROVISIONS FOR LIABILITIES"  values=[null,null]
+
+-- bs=518 fy=2024 pe=2024-12-31
+   stored    total=14650.00 deferred=12333.00 children=2317.00 corrected=2317.00
+   printed   creditors>1yr="(2,317)" (-2317.00)   provisions="-" (null)
+   recon     TALCL 216641.00 - 2317.00 - 0.00 = 214324.00   net assets 201991.00   FAILS
+   VERDICT   VOID — transcription does not reconcile
+             provisions 0.00 vs stored deferred 12333.00
+
+-- bs=519 fy=2025 pe=2025-12-31
+   stored    total=5141.00 deferred=5141.00 children=0.00 corrected=0.00
+   printed   creditors>1yr="-" (null)   provisions="-" (null)
+   recon     TALCL 285324.00 - 0.00 - 0.00 = 285324.00   net assets 279907.00   FAILS
+   VERDICT   VOID — transcription does not reconcile
+             provisions 0.00 vs stored deferred 5141.00
+
+--- FULL PASS 1 JSON ---
+{
+  "balance_sheet_page": 7,
+  "page_footer_text": "Page 5",
+  "is_marked_not_part_of_statutory_statements": false,
+  "column_headings": [
+    "2025",
+    "2024"
+  ],
+  "total_assets_less_current_liabilities": [
+    "285,324",
+    "216,641"
+  ],
+  "creditors_due_after_more_than_one_year": {
+    "line_is_printed": true,
+    "label_as_printed": "Creditors: Amounts Falling Due After More Than One Year",
+    "note_ref": "8",
+    "values": [
+      "-",
+      "(2,317)"
+    ]
+  },
+  "provisions_for_liabilities": {
+    "line_is_printed": true,
+    "label_as_printed": "PROVISIONS FOR LIABILITIES",
+    "values": [
+      null,
+      null
+    ]
+  },
+  "net_assets": [
+    "279,907",
+    "201,991"
+  ],
+  "all_lines_between_total_assets_less_current_liabilities_and_net_assets": [
+    {
+      "label_as_printed": "Creditors: Amounts Falling Due After More Than One Year",
+      "values": [
+        "-",
+        "(2,317)"
+      ]
+    },
+    {
+      "label_as_printed": "PROVISIONS FOR LIABILITIES",
+      "values": [
+        null,
+        null
+      ]
+    },
+    {
+      "label_as_printed": "Provisions For Charges",
+      "values": [
+        "(276)",
+        "-"
+      ]
+    },
+    {
+      "label_as_printed": "Deferred Taxation",
+      "values": [
+        "(5,141)",
+        "(12,333)"
+      ]
+    }
+  ],
+  "creditors_over_one_year_note": {
+    "note_is_present": true,
+    "note_number": "8",
+    "components": [
+      {
+        "label_as_printed": "Net obligations under finance lease and hire purchase contracts",
+        "values": [
+          "-",
+          "2,317"
+        ]
+      }
+    ],
+    "note_total": [
+      "-",
+      "2,317"
+    ]
+  },
+  "where_deferred_tax_appears": "own_line_on_balance_sheet_face"
+}
+--- FULL PASS 2 JSON ---
+{
+  "balance_sheet_page": 7,
+  "page_footer_text": "Page 5",
+  "is_marked_not_part_of_statutory_statements": false,
+  "column_headings": [
+    "2025",
+    "2024"
+  ],
+  "total_assets_less_current_liabilities": [
+    "285,324",
+    "216,641"
+  ],
+  "creditors_due_after_more_than_one_year": {
+    "line_is_printed": true,
+    "label_as_printed": "Creditors: Amounts Falling Due After More Than One Year",
+    "note_ref": "8",
+    "values": [
+      "-",
+      "(2,317)"
+    ]
+  },
+  "provisions_for_liabilities": {
+    "line_is_printed": true,
+    "label_as_printed": "PROVISIONS FOR LIABILITIES",
+    "values": [
+      null,
+      null
+    ]
+  },
+  "net_assets": [
+    "279,907",
+    "201,991"
+  ],
+  "all_lines_between_total_assets_less_current_liabilities_and_net_assets": [
+    {
+      "label_as_printed": "Creditors: Amounts Falling Due After More Than One Year",
+      "values": [
+        "-",
+        "(2,317)"
+      ]
+    },
+    {
+      "label_as_printed": "PROVISIONS FOR LIABILITIES",
+      "values": [
+        null,
+        null
+      ]
+    },
+    {
+      "label_as_printed": "Provisions For Charges",
+      "values": [
+        "(276)",
+        "-"
+      ]
+    },
+    {
+      "label_as_printed": "Deferred Taxation",
+      "values": [
+        "(5,141)",
+        "(12,333)"
+      ]
+    }
+  ],
+  "creditors_over_one_year_note": {
+    "note_is_present": true,
+    "note_number": "8",
+    "components": [
+      {
+        "label_as_printed": "Net obligations under finance lease and hire purchase contracts",
+        "values": [
+          "-",
+          "2,317"
+        ]
+      }
+    ],
+    "note_total": [
+      "-",
+      "2,317"
+    ]
+  },
+  "where_deferred_tax_appears": "own_line_on_balance_sheet_face"
+}
+
+==============================================================================
+doc=697  co=123  cat=Company Accounts
+file=2023 Full Accounts_Printing Company.pdf
+key=companies/123/doc-1777902104446-818798687.pdf
+bytes=1198300
+two-pass determinism: MISMATCH — verdicts VOID for this document
+page=8  footer=- 5 -
+deferred tax appears: in_a_note_only
+columns: ["2023","2022"]
+creditors>1yr printed: false  label="-"  values=[null,null]
+provisions printed:    true  label="Provisions for liabilities"  values=["(318,179)","(366,979)"]
+
+-- bs=505 fy=2022 pe=2022-03-31
+   stored    total=366979.00 deferred=366979.00 children=0.00 corrected=0.00
+   printed   creditors>1yr="-" (null)   provisions="(366,979)" (-366979.00)
+   recon     TALCL 2305441.00 - 0.00 - 366979.00 = 1938462.00   net assets 1938462.00   OK
+   VERDICT   VOID — two passes disagree
+             provisions match stored deferred
+
+-- bs=506 fy=2023 pe=2023-03-31
+   stored    total=318179.00 deferred=318179.00 children=0.00 corrected=0.00
+   printed   creditors>1yr="-" (null)   provisions="(318,179)" (-318179.00)
+   recon     TALCL 1975615.00 - 0.00 - 318179.00 = 1657436.00   net assets 1657436.00   OK
+   VERDICT   VOID — two passes disagree
+             provisions match stored deferred
+
+--- FULL PASS 1 JSON ---
+{
+  "balance_sheet_page": 8,
+  "page_footer_text": "- 5 -",
+  "is_marked_not_part_of_statutory_statements": false,
+  "column_headings": [
+    "2023",
+    "2022"
+  ],
+  "total_assets_less_current_liabilities": [
+    "1,975,615",
+    "2,305,441"
+  ],
+  "creditors_due_after_more_than_one_year": {
+    "line_is_printed": false,
+    "label_as_printed": null,
+    "note_ref": null,
+    "values": [
+      null,
+      null
+    ]
+  },
+  "provisions_for_liabilities": {
+    "line_is_printed": true,
+    "label_as_printed": "Provisions for liabilities",
+    "values": [
+      "(318,179)",
+      "(366,979)"
+    ]
+  },
+  "net_assets": [
+    "1,657,436",
+    "1,938,462"
+  ],
+  "all_lines_between_total_assets_less_current_liabilities_and_net_assets": [
+    {
+      "label_as_printed": "Provisions for liabilities",
+      "values": [
+        "(318,179)",
+        "(366,979)"
+      ]
+    }
+  ],
+  "creditors_over_one_year_note": {
+    "note_is_present": false,
+    "note_number": null,
+    "components": [],
+    "note_total": [
+      null,
+      null
+    ]
+  },
+  "where_deferred_tax_appears": "in_a_note_only"
+}
+--- FULL PASS 2 JSON ---
+{
+  "balance_sheet_page": 8,
+  "page_footer_text": "- 5 -",
+  "is_marked_not_part_of_statutory_statements": false,
+  "column_headings": [
+    "2023 £",
+    "2023 £",
+    "2022 £",
+    "2022 £"
+  ],
+  "total_assets_less_current_liabilities": [
+    null,
+    "1,975,615",
+    null,
+    "2,305,441"
+  ],
+  "creditors_due_after_more_than_one_year": {
+    "line_is_printed": false,
+    "label_as_printed": null,
+    "note_ref": null,
+    "values": [
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "provisions_for_liabilities": {
+    "line_is_printed": true,
+    "label_as_printed": "Provisions for liabilities",
+    "values": [
+      null,
+      "(318,179)",
+      null,
+      "(366,979)"
+    ]
+  },
+  "net_assets": [
+    null,
+    "1,657,436",
+    null,
+    "1,938,462"
+  ],
+  "all_lines_between_total_assets_less_current_liabilities_and_net_assets": [
+    {
+      "label_as_printed": "Provisions for liabilities",
+      "values": [
+        null,
+        "(318,179)",
+        null,
+        "(366,979)"
+      ]
+    }
+  ],
+  "creditors_over_one_year_note": {
+    "note_is_present": false,
+    "note_number": null,
+    "components": [],
+    "note_total": []
+  },
+  "where_deferred_tax_appears": "in_a_note_only"
+}
+
+==============================================================================
+doc=383  co=67  cat=Company Accounts
+file=Shearfab Ltd - Accounts 31 January 2022.pdf
+key=companies/67/doc-1776239222361-663730003.pdf
+bytes=335425
+two-pass determinism: MISMATCH — verdicts VOID for this document
+page=7  footer=- 4 -
+deferred tax appears: in_a_note_only
+columns: ["2022 £","2022 £","2021 £","2021 £"]
+creditors>1yr printed: true  label="Creditors: amounts falling due after more than one year"  values=[null,"(1,263,955)",null,"(1,434,033)"]
+provisions printed:    true  label="Provisions for liabilities"  values=[null,"(162,648)",null,"(125,732)"]
+
+-- bs=276 fy=2021 pe=2021-01-31
+   stored    total=1559765.00 deferred=125732.00 children=1434033.00 corrected=1434033.00
+   printed   creditors>1yr="-" (null)   provisions="-" (null)
+   recon     NOT POSSIBLE, TALCL or net assets not transcribed
+   VERDICT   VOID — two passes disagree
+             provisions 0.00 vs stored deferred 125732.00
+
+-- bs=273 fy=2022 pe=2022-01-31
+   stored    total=1426603.00 deferred=162648.00 children=1263955.00 corrected=1263955.00
+   printed   creditors>1yr="-" (null)   provisions="-" (null)
+   recon     NOT POSSIBLE, TALCL or net assets not transcribed
+   VERDICT   VOID — two passes disagree
+             provisions 0.00 vs stored deferred 162648.00
+
+--- FULL PASS 1 JSON ---
+{
+  "balance_sheet_page": 7,
+  "page_footer_text": "- 4 -",
+  "is_marked_not_part_of_statutory_statements": false,
+  "column_headings": [
+    "2022 £",
+    "2022 £",
+    "2021 £",
+    "2021 £"
+  ],
+  "total_assets_less_current_liabilities": [
+    null,
+    "3,032,467",
+    null,
+    "3,031,834"
+  ],
+  "creditors_due_after_more_than_one_year": {
+    "line_is_printed": true,
+    "label_as_printed": "Creditors: amounts falling due after more than one year",
+    "note_ref": "7",
+    "values": [
+      null,
+      "(1,263,955)",
+      null,
+      "(1,434,033)"
+    ]
+  },
+  "provisions_for_liabilities": {
+    "line_is_printed": true,
+    "label_as_printed": "Provisions for liabilities",
+    "values": [
+      null,
+      "(162,648)",
+      null,
+      "(125,732)"
+    ]
+  },
+  "net_assets": [
+    null,
+    "1,605,864",
+    null,
+    "1,472,069"
+  ],
+  "all_lines_between_total_assets_less_current_liabilities_and_net_assets": [
+    {
+      "label_as_printed": "Creditors: amounts falling due after more than one year",
+      "values": [
+        null,
+        "(1,263,955)",
+        null,
+        "(1,434,033)"
+      ]
+    },
+    {
+      "label_as_printed": "Provisions for liabilities",
+      "values": [
+        null,
+        "(162,648)",
+        null,
+        "(125,732)"
+      ]
+    }
+  ],
+  "creditors_over_one_year_note": {
+    "note_is_present": true,
+    "note_number": "7",
+    "components": [
+      {
+        "label_as_printed": "Bank loans and overdrafts",
+        "values": [
+          "1,145,708",
+          "1,280,321"
+        ]
+      },
+      {
+        "label_as_printed": "Other creditors",
+        "values": [
+          "118,247",
+          "153,712"
+        ]
+      }
+    ],
+    "note_total": [
+      "1,263,955",
+      "1,434,033"
+    ]
+  },
+  "where_deferred_tax_appears": "in_a_note_only"
+}
+--- FULL PASS 2 JSON ---
+{
+  "balance_sheet_page": 7,
+  "page_footer_text": "- 4 -",
+  "is_marked_not_part_of_statutory_statements": false,
+  "column_headings": [
+    "2022",
+    "2021"
+  ],
+  "total_assets_less_current_liabilities": [
+    "3,032,467",
+    "3,031,834"
+  ],
+  "creditors_due_after_more_than_one_year": {
+    "line_is_printed": true,
+    "label_as_printed": "Creditors: amounts falling due after more than one year",
+    "note_ref": "7",
+    "values": [
+      "(1,263,955)",
+      "(1,434,033)"
+    ]
+  },
+  "provisions_for_liabilities": {
+    "line_is_printed": true,
+    "label_as_printed": "Provisions for liabilities",
+    "values": [
+      "(162,648)",
+      "(125,732)"
+    ]
+  },
+  "net_assets": [
+    "1,605,864",
+    "1,472,069"
+  ],
+  "all_lines_between_total_assets_less_current_liabilities_and_net_assets": [
+    {
+      "label_as_printed": "Creditors: amounts falling due after more than one year",
+      "values": [
+        "(1,263,955)",
+        "(1,434,033)"
+      ]
+    },
+    {
+      "label_as_printed": "Provisions for liabilities",
+      "values": [
+        "(162,648)",
+        "(125,732)"
+      ]
+    }
+  ],
+  "creditors_over_one_year_note": {
+    "note_is_present": true,
+    "note_number": "7",
+    "components": [
+      {
+        "label_as_printed": "Bank loans and overdrafts",
+        "values": [
+          "1,145,708",
+          "1,280,321"
+        ]
+      },
+      {
+        "label_as_printed": "Other creditors",
+        "values": [
+          "118,247",
+          "153,712"
+        ]
+      }
+    ],
+    "note_total": [
+      "1,263,955",
+      "1,434,033"
+    ]
+  },
+  "where_deferred_tax_appears": "in_a_note_only"
+}
