@@ -1,0 +1,20 @@
+MODE: rehearsal, will NOT write
+
+=== IDENTITY ===
+database=neondb  balance_sheets=697  fc_balance=818
+SUM total_long_term_liabilities BEFORE : 160420985.36
+SUM deferred_taxation BEFORE           : 10260882.99
+
+=== PLAN ASSERTIONS ===
+  PASS  target 1 rows        281   actual 281
+  PASS  target 1 sum  9925991.99   actual 9925991.99
+  PASS  target 1 zeros        98   actual 98
+  PASS  target 2 rows        312   actual 312
+  PASS  target 2 sum 10609336.94   actual 10609336.94
+  PASS  target 2 zeros       113   actual 113
+  JSONB format: 293 bare integer, 19 with a decimal point
+
+rollback artefact written: docs/pipeline-fidelity-fix/c1-backfill-rollback.json
+
+REHEARSAL COMPLETE. All assertions passed. Nothing was written.
+Re-run with --fire to apply.

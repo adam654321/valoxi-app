@@ -1,0 +1,2381 @@
+{
+  "database": "neondb",
+  "ltlSumBefore": "160420985.36",
+  "deferredSumBefore": "10260882.99",
+  "balanceSheets": [
+    {
+      "id": 253,
+      "priorValue": 82182
+    },
+    {
+      "id": 254,
+      "priorValue": 52952
+    },
+    {
+      "id": 256,
+      "priorValue": 176173
+    },
+    {
+      "id": 257,
+      "priorValue": 161435
+    },
+    {
+      "id": 273,
+      "priorValue": 1426603
+    },
+    {
+      "id": 276,
+      "priorValue": 1559765
+    },
+    {
+      "id": 324,
+      "priorValue": 6368
+    },
+    {
+      "id": 325,
+      "priorValue": 8216
+    },
+    {
+      "id": 326,
+      "priorValue": 25489
+    },
+    {
+      "id": 327,
+      "priorValue": 49365
+    },
+    {
+      "id": 328,
+      "priorValue": 5354
+    },
+    {
+      "id": 337,
+      "priorValue": 182775
+    },
+    {
+      "id": 338,
+      "priorValue": 131159
+    },
+    {
+      "id": 339,
+      "priorValue": 83170
+    },
+    {
+      "id": 363,
+      "priorValue": 61710
+    },
+    {
+      "id": 369,
+      "priorValue": 2446
+    },
+    {
+      "id": 372,
+      "priorValue": 14282
+    },
+    {
+      "id": 373,
+      "priorValue": 1562629
+    },
+    {
+      "id": 374,
+      "priorValue": 249175
+    },
+    {
+      "id": 375,
+      "priorValue": 1675988
+    },
+    {
+      "id": 376,
+      "priorValue": 1685312
+    },
+    {
+      "id": 384,
+      "priorValue": 26774
+    },
+    {
+      "id": 385,
+      "priorValue": 17000
+    },
+    {
+      "id": 386,
+      "priorValue": 35601
+    },
+    {
+      "id": 392,
+      "priorValue": 158735
+    },
+    {
+      "id": 395,
+      "priorValue": 314472.54
+    },
+    {
+      "id": 396,
+      "priorValue": 195016.97
+    },
+    {
+      "id": 420,
+      "priorValue": 397563
+    },
+    {
+      "id": 424,
+      "priorValue": 69539
+    },
+    {
+      "id": 434,
+      "priorValue": 36709
+    },
+    {
+      "id": 435,
+      "priorValue": 30978
+    },
+    {
+      "id": 436,
+      "priorValue": 26958
+    },
+    {
+      "id": 438,
+      "priorValue": 58573
+    },
+    {
+      "id": 439,
+      "priorValue": 40947
+    },
+    {
+      "id": 440,
+      "priorValue": 226435
+    },
+    {
+      "id": 441,
+      "priorValue": 72823
+    },
+    {
+      "id": 444,
+      "priorValue": 14595
+    },
+    {
+      "id": 445,
+      "priorValue": 5054
+    },
+    {
+      "id": 452,
+      "priorValue": 228778
+    },
+    {
+      "id": 453,
+      "priorValue": 147142
+    },
+    {
+      "id": 459,
+      "priorValue": 62121
+    },
+    {
+      "id": 460,
+      "priorValue": 41479
+    },
+    {
+      "id": 461,
+      "priorValue": 72958
+    },
+    {
+      "id": 462,
+      "priorValue": 102560
+    },
+    {
+      "id": 467,
+      "priorValue": 3501
+    },
+    {
+      "id": 468,
+      "priorValue": 4237
+    },
+    {
+      "id": 470,
+      "priorValue": 7751
+    },
+    {
+      "id": 471,
+      "priorValue": 5992
+    },
+    {
+      "id": 472,
+      "priorValue": 4502
+    },
+    {
+      "id": 487,
+      "priorValue": 59295
+    },
+    {
+      "id": 488,
+      "priorValue": 52695
+    },
+    {
+      "id": 495,
+      "priorValue": 76481
+    },
+    {
+      "id": 498,
+      "priorValue": 286398
+    },
+    {
+      "id": 499,
+      "priorValue": 286398.25
+    },
+    {
+      "id": 500,
+      "priorValue": 332100
+    },
+    {
+      "id": 503,
+      "priorValue": 318179
+    },
+    {
+      "id": 504,
+      "priorValue": 37643
+    },
+    {
+      "id": 505,
+      "priorValue": 366979
+    },
+    {
+      "id": 506,
+      "priorValue": 318179
+    },
+    {
+      "id": 507,
+      "priorValue": 332100
+    },
+    {
+      "id": 514,
+      "priorValue": 77257
+    },
+    {
+      "id": 517,
+      "priorValue": 24592
+    },
+    {
+      "id": 518,
+      "priorValue": 14650
+    },
+    {
+      "id": 519,
+      "priorValue": 5141
+    },
+    {
+      "id": 520,
+      "priorValue": 74720
+    },
+    {
+      "id": 528,
+      "priorValue": 103173
+    },
+    {
+      "id": 529,
+      "priorValue": 101498
+    },
+    {
+      "id": 530,
+      "priorValue": 123876
+    },
+    {
+      "id": 531,
+      "priorValue": 92207
+    },
+    {
+      "id": 532,
+      "priorValue": 75180
+    },
+    {
+      "id": 533,
+      "priorValue": 147646.75
+    },
+    {
+      "id": 534,
+      "priorValue": 74162
+    },
+    {
+      "id": 535,
+      "priorValue": 176403
+    },
+    {
+      "id": 536,
+      "priorValue": 291971
+    },
+    {
+      "id": 537,
+      "priorValue": 2340
+    },
+    {
+      "id": 557,
+      "priorValue": 622369
+    },
+    {
+      "id": 559,
+      "priorValue": 165973
+    },
+    {
+      "id": 560,
+      "priorValue": 115183
+    },
+    {
+      "id": 562,
+      "priorValue": 233997
+    },
+    {
+      "id": 563,
+      "priorValue": 284259
+    },
+    {
+      "id": 564,
+      "priorValue": 586777
+    },
+    {
+      "id": 565,
+      "priorValue": 533476
+    },
+    {
+      "id": 567,
+      "priorValue": 710275
+    },
+    {
+      "id": 568,
+      "priorValue": 699043
+    },
+    {
+      "id": 569,
+      "priorValue": 4740
+    },
+    {
+      "id": 570,
+      "priorValue": 2757
+    },
+    {
+      "id": 571,
+      "priorValue": 43996
+    },
+    {
+      "id": 573,
+      "priorValue": 580733
+    },
+    {
+      "id": 574,
+      "priorValue": 516734
+    },
+    {
+      "id": 576,
+      "priorValue": 658073
+    },
+    {
+      "id": 577,
+      "priorValue": 154381
+    },
+    {
+      "id": 591,
+      "priorValue": 2879
+    },
+    {
+      "id": 592,
+      "priorValue": 1975
+    },
+    {
+      "id": 593,
+      "priorValue": 4206
+    },
+    {
+      "id": 615,
+      "priorValue": 434999
+    },
+    {
+      "id": 616,
+      "priorValue": 408120
+    },
+    {
+      "id": 617,
+      "priorValue": 161435
+    },
+    {
+      "id": 629,
+      "priorValue": 12303
+    },
+    {
+      "id": 630,
+      "priorValue": 8232
+    },
+    {
+      "id": 631,
+      "priorValue": 13419
+    },
+    {
+      "id": 636,
+      "priorValue": 24592
+    },
+    {
+      "id": 637,
+      "priorValue": 14650
+    },
+    {
+      "id": 638,
+      "priorValue": 74720
+    },
+    {
+      "id": 639,
+      "priorValue": 5141
+    },
+    {
+      "id": 643,
+      "priorValue": 3676
+    },
+    {
+      "id": 644,
+      "priorValue": 3676
+    },
+    {
+      "id": 645,
+      "priorValue": 403
+    },
+    {
+      "id": 647,
+      "priorValue": 3676
+    },
+    {
+      "id": 648,
+      "priorValue": 3676
+    },
+    {
+      "id": 649,
+      "priorValue": 403
+    },
+    {
+      "id": 653,
+      "priorValue": 3676
+    },
+    {
+      "id": 654,
+      "priorValue": 3676
+    },
+    {
+      "id": 655,
+      "priorValue": 403
+    },
+    {
+      "id": 658,
+      "priorValue": 403
+    },
+    {
+      "id": 659,
+      "priorValue": 3676
+    },
+    {
+      "id": 660,
+      "priorValue": 3492
+    },
+    {
+      "id": 669,
+      "priorValue": 71594
+    },
+    {
+      "id": 670,
+      "priorValue": 37514
+    },
+    {
+      "id": 671,
+      "priorValue": 59509
+    },
+    {
+      "id": 672,
+      "priorValue": 48489
+    },
+    {
+      "id": 673,
+      "priorValue": 39136
+    },
+    {
+      "id": 693,
+      "priorValue": 3146
+    },
+    {
+      "id": 727,
+      "priorValue": 30638
+    },
+    {
+      "id": 728,
+      "priorValue": 31231
+    },
+    {
+      "id": 729,
+      "priorValue": 23979
+    },
+    {
+      "id": 730,
+      "priorValue": 14911
+    },
+    {
+      "id": 741,
+      "priorValue": 2503
+    },
+    {
+      "id": 742,
+      "priorValue": 2342
+    },
+    {
+      "id": 743,
+      "priorValue": 2820
+    },
+    {
+      "id": 744,
+      "priorValue": 2433
+    },
+    {
+      "id": 745,
+      "priorValue": 53059
+    },
+    {
+      "id": 746,
+      "priorValue": 48786
+    },
+    {
+      "id": 747,
+      "priorValue": 3900
+    },
+    {
+      "id": 748,
+      "priorValue": 3779
+    },
+    {
+      "id": 749,
+      "priorValue": 2769
+    },
+    {
+      "id": 757,
+      "priorValue": 12
+    },
+    {
+      "id": 759,
+      "priorValue": 37
+    },
+    {
+      "id": 760,
+      "priorValue": 25298
+    },
+    {
+      "id": 761,
+      "priorValue": 18926
+    },
+    {
+      "id": 763,
+      "priorValue": 23282
+    },
+    {
+      "id": 765,
+      "priorValue": 33282
+    },
+    {
+      "id": 766,
+      "priorValue": 97877
+    },
+    {
+      "id": 768,
+      "priorValue": 18602
+    },
+    {
+      "id": 769,
+      "priorValue": 70241
+    },
+    {
+      "id": 770,
+      "priorValue": 47927
+    },
+    {
+      "id": 778,
+      "priorValue": 2503
+    },
+    {
+      "id": 779,
+      "priorValue": 2342
+    },
+    {
+      "id": 789,
+      "priorValue": 97681
+    },
+    {
+      "id": 790,
+      "priorValue": 99078
+    },
+    {
+      "id": 791,
+      "priorValue": 25420
+    },
+    {
+      "id": 795,
+      "priorValue": 17432
+    },
+    {
+      "id": 796,
+      "priorValue": 34246
+    },
+    {
+      "id": 797,
+      "priorValue": 59530
+    },
+    {
+      "id": 804,
+      "priorValue": 42995
+    },
+    {
+      "id": 805,
+      "priorValue": 21467
+    },
+    {
+      "id": 806,
+      "priorValue": 32378
+    },
+    {
+      "id": 811,
+      "priorValue": 40323
+    },
+    {
+      "id": 814,
+      "priorValue": 56949
+    },
+    {
+      "id": 815,
+      "priorValue": 32101
+    },
+    {
+      "id": 816,
+      "priorValue": 23961
+    },
+    {
+      "id": 832,
+      "priorValue": 461779
+    },
+    {
+      "id": 835,
+      "priorValue": 406139
+    },
+    {
+      "id": 841,
+      "priorValue": 6514
+    },
+    {
+      "id": 847,
+      "priorValue": 31747
+    },
+    {
+      "id": 857,
+      "priorValue": 119236
+    },
+    {
+      "id": 870,
+      "priorValue": 583625
+    },
+    {
+      "id": 871,
+      "priorValue": 434999
+    },
+    {
+      "id": 901,
+      "priorValue": 38162
+    },
+    {
+      "id": 909,
+      "priorValue": 4006
+    },
+    {
+      "id": 910,
+      "priorValue": 4806
+    },
+    {
+      "id": 911,
+      "priorValue": 2798
+    },
+    {
+      "id": 912,
+      "priorValue": 2402
+    },
+    {
+      "id": 913,
+      "priorValue": 7346
+    },
+    {
+      "id": 914,
+      "priorValue": 5805
+    },
+    {
+      "id": 915,
+      "priorValue": 8099
+    },
+    {
+      "id": 916,
+      "priorValue": 10563
+    },
+    {
+      "id": 917,
+      "priorValue": 8859
+    },
+    {
+      "id": 918,
+      "priorValue": 10450
+    },
+    {
+      "id": 930,
+      "priorValue": 1663
+    },
+    {
+      "id": 931,
+      "priorValue": 1854
+    },
+    {
+      "id": 932,
+      "priorValue": 1319
+    },
+    {
+      "id": 943,
+      "priorValue": 18043
+    },
+    {
+      "id": 944,
+      "priorValue": 87299
+    },
+    {
+      "id": 945,
+      "priorValue": 96823
+    },
+    {
+      "id": 946,
+      "priorValue": 111994
+    },
+    {
+      "id": 947,
+      "priorValue": 97345
+    },
+    {
+      "id": 948,
+      "priorValue": 166711
+    },
+    {
+      "id": 949,
+      "priorValue": 17405
+    },
+    {
+      "id": 950,
+      "priorValue": 18443
+    },
+    {
+      "id": 964,
+      "priorValue": 95177
+    },
+    {
+      "id": 978,
+      "priorValue": 264543
+    },
+    {
+      "id": 979,
+      "priorValue": 191716
+    },
+    {
+      "id": 980,
+      "priorValue": 80536
+    },
+    {
+      "id": 981,
+      "priorValue": 334622
+    },
+    {
+      "id": 1018,
+      "priorValue": 385395.66
+    },
+    {
+      "id": 1019,
+      "priorValue": 369973.27
+    },
+    {
+      "id": 1020,
+      "priorValue": 414311.04
+    },
+    {
+      "id": 1021,
+      "priorValue": 505291.8
+    },
+    {
+      "id": 1022,
+      "priorValue": 365266.63
+    },
+    {
+      "id": 1038,
+      "priorValue": 7898
+    },
+    {
+      "id": 1039,
+      "priorValue": 3387
+    },
+    {
+      "id": 1040,
+      "priorValue": 15133
+    },
+    {
+      "id": 1041,
+      "priorValue": 30604
+    },
+    {
+      "id": 1042,
+      "priorValue": 56624
+    },
+    {
+      "id": 1055,
+      "priorValue": 64429
+    },
+    {
+      "id": 1056,
+      "priorValue": 54819
+    },
+    {
+      "id": 1057,
+      "priorValue": 4235
+    },
+    {
+      "id": 1058,
+      "priorValue": 52422
+    },
+    {
+      "id": 1064,
+      "priorValue": 7451
+    },
+    {
+      "id": 1066,
+      "priorValue": 16376
+    },
+    {
+      "id": 1067,
+      "priorValue": 25373
+    },
+    {
+      "id": 1075,
+      "priorValue": 32664
+    },
+    {
+      "id": 1076,
+      "priorValue": 21467
+    },
+    {
+      "id": 1077,
+      "priorValue": 32378
+    },
+    {
+      "id": 1078,
+      "priorValue": 49478
+    },
+    {
+      "id": 1079,
+      "priorValue": 319401
+    },
+    {
+      "id": 1088,
+      "priorValue": 203413.4
+    },
+    {
+      "id": 1089,
+      "priorValue": 14398
+    },
+    {
+      "id": 1090,
+      "priorValue": 16543
+    },
+    {
+      "id": 1091,
+      "priorValue": 52137
+    },
+    {
+      "id": 1092,
+      "priorValue": 55409.99
+    },
+    {
+      "id": 1094,
+      "priorValue": 49478
+    },
+    {
+      "id": 1098,
+      "priorValue": 10554
+    },
+    {
+      "id": 1099,
+      "priorValue": 28528
+    },
+    {
+      "id": 1127,
+      "priorValue": 14346
+    },
+    {
+      "id": 1128,
+      "priorValue": 6416
+    },
+    {
+      "id": 1129,
+      "priorValue": 3612
+    },
+    {
+      "id": 1130,
+      "priorValue": 6349
+    },
+    {
+      "id": 1132,
+      "priorValue": 29533
+    },
+    {
+      "id": 1133,
+      "priorValue": 26865
+    },
+    {
+      "id": 1136,
+      "priorValue": 91283
+    },
+    {
+      "id": 1137,
+      "priorValue": 73441
+    },
+    {
+      "id": 1138,
+      "priorValue": 207042
+    },
+    {
+      "id": 1139,
+      "priorValue": 82820
+    },
+    {
+      "id": 1140,
+      "priorValue": 97897
+    },
+    {
+      "id": 1141,
+      "priorValue": 64236
+    },
+    {
+      "id": 1142,
+      "priorValue": 35233
+    },
+    {
+      "id": 1143,
+      "priorValue": 154874.71
+    },
+    {
+      "id": 1150,
+      "priorValue": 5748
+    },
+    {
+      "id": 1151,
+      "priorValue": 825
+    },
+    {
+      "id": 1152,
+      "priorValue": 16233
+    },
+    {
+      "id": 1153,
+      "priorValue": 10932
+    },
+    {
+      "id": 1157,
+      "priorValue": 286398.25
+    },
+    {
+      "id": 1158,
+      "priorValue": 286398.25
+    },
+    {
+      "id": 1159,
+      "priorValue": 75410
+    },
+    {
+      "id": 1160,
+      "priorValue": 318104
+    },
+    {
+      "id": 1161,
+      "priorValue": 198036
+    },
+    {
+      "id": 1163,
+      "priorValue": 380898
+    },
+    {
+      "id": 1167,
+      "priorValue": 471263
+    },
+    {
+      "id": 1174,
+      "priorValue": 374496
+    },
+    {
+      "id": 1175,
+      "priorValue": 399865
+    },
+    {
+      "id": 1184,
+      "priorValue": 80140.55
+    },
+    {
+      "id": 1194,
+      "priorValue": 33743
+    },
+    {
+      "id": 1195,
+      "priorValue": 24282
+    },
+    {
+      "id": 1200,
+      "priorValue": 43233
+    },
+    {
+      "id": 1201,
+      "priorValue": 51872
+    },
+    {
+      "id": 1202,
+      "priorValue": 581841.99
+    },
+    {
+      "id": 1234,
+      "priorValue": 322768
+    },
+    {
+      "id": 1235,
+      "priorValue": 524136
+    },
+    {
+      "id": 1236,
+      "priorValue": 248292
+    },
+    {
+      "id": 1237,
+      "priorValue": 97384
+    },
+    {
+      "id": 1238,
+      "priorValue": 963542
+    },
+    {
+      "id": 1239,
+      "priorValue": 963542
+    },
+    {
+      "id": 1240,
+      "priorValue": 1081558
+    },
+    {
+      "id": 1241,
+      "priorValue": 756457
+    },
+    {
+      "id": 1242,
+      "priorValue": 712165
+    },
+    {
+      "id": 1243,
+      "priorValue": 958975
+    },
+    {
+      "id": 1251,
+      "priorValue": 1109
+    },
+    {
+      "id": 1252,
+      "priorValue": 832
+    },
+    {
+      "id": 1253,
+      "priorValue": 870
+    },
+    {
+      "id": 1254,
+      "priorValue": 652
+    },
+    {
+      "id": 1255,
+      "priorValue": 578
+    },
+    {
+      "id": 1265,
+      "priorValue": 2798
+    },
+    {
+      "id": 1266,
+      "priorValue": 71530
+    },
+    {
+      "id": 1270,
+      "priorValue": 71530
+    },
+    {
+      "id": 1275,
+      "priorValue": 97574
+    },
+    {
+      "id": 1277,
+      "priorValue": 69736
+    },
+    {
+      "id": 1278,
+      "priorValue": 220176
+    },
+    {
+      "id": 1279,
+      "priorValue": 241090
+    },
+    {
+      "id": 1280,
+      "priorValue": 220176
+    },
+    {
+      "id": 1281,
+      "priorValue": 370403
+    }
+  ],
+  "contributions": [
+    {
+      "id": 6,
+      "priorValueRaw": "29533"
+    },
+    {
+      "id": 9,
+      "priorValueRaw": "29533"
+    },
+    {
+      "id": 10,
+      "priorValueRaw": "26865"
+    },
+    {
+      "id": 24,
+      "priorValueRaw": "91283"
+    },
+    {
+      "id": 27,
+      "priorValueRaw": "73441"
+    },
+    {
+      "id": 28,
+      "priorValueRaw": "207042"
+    },
+    {
+      "id": 31,
+      "priorValueRaw": "82820"
+    },
+    {
+      "id": 32,
+      "priorValueRaw": "73441"
+    },
+    {
+      "id": 35,
+      "priorValueRaw": "97897"
+    },
+    {
+      "id": 36,
+      "priorValueRaw": "82820"
+    },
+    {
+      "id": 39,
+      "priorValueRaw": "64236"
+    },
+    {
+      "id": 40,
+      "priorValueRaw": "97897"
+    },
+    {
+      "id": 822,
+      "priorValueRaw": "61710"
+    },
+    {
+      "id": 828,
+      "priorValueRaw": "26774"
+    },
+    {
+      "id": 829,
+      "priorValueRaw": "6368"
+    },
+    {
+      "id": 836,
+      "priorValueRaw": "2446"
+    },
+    {
+      "id": 838,
+      "priorValueRaw": "17000"
+    },
+    {
+      "id": 839,
+      "priorValueRaw": "374496"
+    },
+    {
+      "id": 847,
+      "priorValueRaw": "264543"
+    },
+    {
+      "id": 852,
+      "priorValueRaw": "16376"
+    },
+    {
+      "id": 854,
+      "priorValueRaw": "319401"
+    },
+    {
+      "id": 855,
+      "priorValueRaw": "49478"
+    },
+    {
+      "id": 866,
+      "priorValueRaw": "42995"
+    },
+    {
+      "id": 867,
+      "priorValueRaw": "21467"
+    },
+    {
+      "id": 868,
+      "priorValueRaw": "35233"
+    },
+    {
+      "id": 869,
+      "priorValueRaw": "32378"
+    },
+    {
+      "id": 870,
+      "priorValueRaw": "191716"
+    },
+    {
+      "id": 871,
+      "priorValueRaw": "25489"
+    },
+    {
+      "id": 872,
+      "priorValueRaw": "49365"
+    },
+    {
+      "id": 875,
+      "priorValueRaw": "80536"
+    },
+    {
+      "id": 877,
+      "priorValueRaw": "25373"
+    },
+    {
+      "id": 882,
+      "priorValueRaw": "35601"
+    },
+    {
+      "id": 883,
+      "priorValueRaw": "123876"
+    },
+    {
+      "id": 884,
+      "priorValueRaw": "332100"
+    },
+    {
+      "id": 885,
+      "priorValueRaw": "286398"
+    },
+    {
+      "id": 886,
+      "priorValueRaw": "332100"
+    },
+    {
+      "id": 887,
+      "priorValueRaw": "92207"
+    },
+    {
+      "id": 888,
+      "priorValueRaw": "74720"
+    },
+    {
+      "id": 889,
+      "priorValueRaw": "147646.75"
+    },
+    {
+      "id": 895,
+      "priorValueRaw": "158735"
+    },
+    {
+      "id": 896,
+      "priorValueRaw": "154874.71"
+    },
+    {
+      "id": 904,
+      "priorValueRaw": "334622"
+    },
+    {
+      "id": 905,
+      "priorValueRaw": "40323"
+    },
+    {
+      "id": 907,
+      "priorValueRaw": "14282"
+    },
+    {
+      "id": 911,
+      "priorValueRaw": "286398.25"
+    },
+    {
+      "id": 912,
+      "priorValueRaw": "286398.25"
+    },
+    {
+      "id": 915,
+      "priorValueRaw": "318179"
+    },
+    {
+      "id": 916,
+      "priorValueRaw": "75180"
+    },
+    {
+      "id": 921,
+      "priorValueRaw": "154381"
+    },
+    {
+      "id": 922,
+      "priorValueRaw": "658073"
+    },
+    {
+      "id": 932,
+      "priorValueRaw": "5354"
+    },
+    {
+      "id": 933,
+      "priorValueRaw": "195016.97"
+    },
+    {
+      "id": 936,
+      "priorValueRaw": "56949"
+    },
+    {
+      "id": 938,
+      "priorValueRaw": "38162"
+    },
+    {
+      "id": 944,
+      "priorValueRaw": "83170"
+    },
+    {
+      "id": 946,
+      "priorValueRaw": "533476"
+    },
+    {
+      "id": 947,
+      "priorValueRaw": "1685312"
+    },
+    {
+      "id": 948,
+      "priorValueRaw": "1562629"
+    },
+    {
+      "id": 949,
+      "priorValueRaw": "586777"
+    },
+    {
+      "id": 950,
+      "priorValueRaw": "249175"
+    },
+    {
+      "id": 951,
+      "priorValueRaw": "1675988"
+    },
+    {
+      "id": 955,
+      "priorValueRaw": "471263"
+    },
+    {
+      "id": 958,
+      "priorValueRaw": "233997"
+    },
+    {
+      "id": 959,
+      "priorValueRaw": "165973"
+    },
+    {
+      "id": 960,
+      "priorValueRaw": "115183"
+    },
+    {
+      "id": 961,
+      "priorValueRaw": "516734"
+    },
+    {
+      "id": 965,
+      "priorValueRaw": "4740"
+    },
+    {
+      "id": 966,
+      "priorValueRaw": "580733"
+    },
+    {
+      "id": 970,
+      "priorValueRaw": "2757"
+    },
+    {
+      "id": 977,
+      "priorValueRaw": "1975"
+    },
+    {
+      "id": 978,
+      "priorValueRaw": "2879"
+    },
+    {
+      "id": 985,
+      "priorValueRaw": "182775"
+    },
+    {
+      "id": 986,
+      "priorValueRaw": "131159"
+    },
+    {
+      "id": 996,
+      "priorValueRaw": "32101"
+    },
+    {
+      "id": 997,
+      "priorValueRaw": "36709"
+    },
+    {
+      "id": 998,
+      "priorValueRaw": "30978"
+    },
+    {
+      "id": 999,
+      "priorValueRaw": "226435"
+    },
+    {
+      "id": 1000,
+      "priorValueRaw": "161574"
+    },
+    {
+      "id": 1004,
+      "priorValueRaw": "62121"
+    },
+    {
+      "id": 1010,
+      "priorValueRaw": "7751"
+    },
+    {
+      "id": 1011,
+      "priorValueRaw": "5992"
+    },
+    {
+      "id": 1015,
+      "priorValueRaw": "52695"
+    },
+    {
+      "id": 1016,
+      "priorValueRaw": "59295"
+    },
+    {
+      "id": 1031,
+      "priorValueRaw": "3501"
+    },
+    {
+      "id": 1032,
+      "priorValueRaw": "4237"
+    },
+    {
+      "id": 1035,
+      "priorValueRaw": "41479"
+    },
+    {
+      "id": 1036,
+      "priorValueRaw": "58573"
+    },
+    {
+      "id": 1037,
+      "priorValueRaw": "40947"
+    },
+    {
+      "id": 1038,
+      "priorValueRaw": "72823"
+    },
+    {
+      "id": 1039,
+      "priorValueRaw": "26958"
+    },
+    {
+      "id": 1040,
+      "priorValueRaw": "72958"
+    },
+    {
+      "id": 1041,
+      "priorValueRaw": "102560"
+    },
+    {
+      "id": 1042,
+      "priorValueRaw": "4502"
+    },
+    {
+      "id": 1043,
+      "priorValueRaw": "16233"
+    },
+    {
+      "id": 1044,
+      "priorValueRaw": "10932"
+    },
+    {
+      "id": 1059,
+      "priorValueRaw": "6514"
+    },
+    {
+      "id": 1066,
+      "priorValueRaw": "23961"
+    },
+    {
+      "id": 1071,
+      "priorValueRaw": "82182"
+    },
+    {
+      "id": 1073,
+      "priorValueRaw": "52952"
+    },
+    {
+      "id": 1075,
+      "priorValueRaw": "176173"
+    },
+    {
+      "id": 1076,
+      "priorValueRaw": "161435"
+    },
+    {
+      "id": 1077,
+      "priorValueRaw": "5748"
+    },
+    {
+      "id": 1078,
+      "priorValueRaw": "825"
+    },
+    {
+      "id": 1084,
+      "priorValueRaw": "14595"
+    },
+    {
+      "id": 1085,
+      "priorValueRaw": "228778"
+    },
+    {
+      "id": 1088,
+      "priorValueRaw": "147142"
+    },
+    {
+      "id": 1089,
+      "priorValueRaw": "1559765"
+    },
+    {
+      "id": 1090,
+      "priorValueRaw": "1426603"
+    },
+    {
+      "id": 1093,
+      "priorValueRaw": "622369"
+    },
+    {
+      "id": 1096,
+      "priorValueRaw": "284259"
+    },
+    {
+      "id": 1104,
+      "priorValueRaw": "710275"
+    },
+    {
+      "id": 1109,
+      "priorValueRaw": "43996"
+    },
+    {
+      "id": 1110,
+      "priorValueRaw": "4206"
+    },
+    {
+      "id": 1117,
+      "priorValueRaw": "5054"
+    },
+    {
+      "id": 1119,
+      "priorValueRaw": "101498"
+    },
+    {
+      "id": 1124,
+      "priorValueRaw": "286398.25"
+    },
+    {
+      "id": 1125,
+      "priorValueRaw": "286398.25"
+    },
+    {
+      "id": 1126,
+      "priorValueRaw": "77257"
+    },
+    {
+      "id": 1127,
+      "priorValueRaw": "14650"
+    },
+    {
+      "id": 1128,
+      "priorValueRaw": "5141"
+    },
+    {
+      "id": 1129,
+      "priorValueRaw": "24592"
+    },
+    {
+      "id": 1137,
+      "priorValueRaw": "103173"
+    },
+    {
+      "id": 1138,
+      "priorValueRaw": "291971"
+    },
+    {
+      "id": 1139,
+      "priorValueRaw": "74162"
+    },
+    {
+      "id": 1140,
+      "priorValueRaw": "176403"
+    },
+    {
+      "id": 1141,
+      "priorValueRaw": "2340"
+    },
+    {
+      "id": 1143,
+      "priorValueRaw": "75410"
+    },
+    {
+      "id": 1145,
+      "priorValueRaw": "318104"
+    },
+    {
+      "id": 1146,
+      "priorValueRaw": "198036"
+    },
+    {
+      "id": 1147,
+      "priorValueRaw": "380898"
+    },
+    {
+      "id": 1149,
+      "priorValueRaw": "37643"
+    },
+    {
+      "id": 1150,
+      "priorValueRaw": "699043"
+    },
+    {
+      "id": 1153,
+      "priorValueRaw": "5141"
+    },
+    {
+      "id": 1164,
+      "priorValueRaw": "8232"
+    },
+    {
+      "id": 1165,
+      "priorValueRaw": "13419"
+    },
+    {
+      "id": 1166,
+      "priorValueRaw": "12303"
+    },
+    {
+      "id": 1169,
+      "priorValueRaw": "14650"
+    },
+    {
+      "id": 1170,
+      "priorValueRaw": "403"
+    },
+    {
+      "id": 1171,
+      "priorValueRaw": "3676"
+    },
+    {
+      "id": 1172,
+      "priorValueRaw": "74720"
+    },
+    {
+      "id": 1173,
+      "priorValueRaw": "24592"
+    },
+    {
+      "id": 1174,
+      "priorValueRaw": "3676"
+    },
+    {
+      "id": 1176,
+      "priorValueRaw": "3676"
+    },
+    {
+      "id": 1179,
+      "priorValueRaw": "161435"
+    },
+    {
+      "id": 1180,
+      "priorValueRaw": "403"
+    },
+    {
+      "id": 1181,
+      "priorValueRaw": "3676"
+    },
+    {
+      "id": 1182,
+      "priorValueRaw": "408120"
+    },
+    {
+      "id": 1185,
+      "priorValueRaw": "434999"
+    },
+    {
+      "id": 1195,
+      "priorValueRaw": "403"
+    },
+    {
+      "id": 1196,
+      "priorValueRaw": "3676"
+    },
+    {
+      "id": 1197,
+      "priorValueRaw": "3676"
+    },
+    {
+      "id": 1200,
+      "priorValueRaw": "403"
+    },
+    {
+      "id": 1201,
+      "priorValueRaw": "3676"
+    },
+    {
+      "id": 1202,
+      "priorValueRaw": "3492"
+    },
+    {
+      "id": 1204,
+      "priorValueRaw": "583625"
+    },
+    {
+      "id": 1208,
+      "priorValueRaw": "37514"
+    },
+    {
+      "id": 1209,
+      "priorValueRaw": "59509"
+    },
+    {
+      "id": 1212,
+      "priorValueRaw": "48489"
+    },
+    {
+      "id": 1213,
+      "priorValueRaw": "39136"
+    },
+    {
+      "id": 1216,
+      "priorValueRaw": "71594"
+    },
+    {
+      "id": 1222,
+      "priorValueRaw": "5805"
+    },
+    {
+      "id": 1223,
+      "priorValueRaw": "7346"
+    },
+    {
+      "id": 1224,
+      "priorValueRaw": "10563"
+    },
+    {
+      "id": 1225,
+      "priorValueRaw": "8859"
+    },
+    {
+      "id": 1226,
+      "priorValueRaw": "10450"
+    },
+    {
+      "id": 1227,
+      "priorValueRaw": "8099"
+    },
+    {
+      "id": 1237,
+      "priorValueRaw": "3146"
+    },
+    {
+      "id": 1247,
+      "priorValueRaw": "4806"
+    },
+    {
+      "id": 1257,
+      "priorValueRaw": "8216"
+    },
+    {
+      "id": 1259,
+      "priorValueRaw": "314472.54"
+    },
+    {
+      "id": 1281,
+      "priorValueRaw": "434999"
+    },
+    {
+      "id": 1282,
+      "priorValueRaw": "397563"
+    },
+    {
+      "id": 1283,
+      "priorValueRaw": "69539"
+    },
+    {
+      "id": 1285,
+      "priorValueRaw": "76481"
+    },
+    {
+      "id": 1293,
+      "priorValueRaw": "31747"
+    },
+    {
+      "id": 1299,
+      "priorValueRaw": "2503"
+    },
+    {
+      "id": 1300,
+      "priorValueRaw": "14911"
+    },
+    {
+      "id": 1301,
+      "priorValueRaw": "23979"
+    },
+    {
+      "id": 1303,
+      "priorValueRaw": "31231"
+    },
+    {
+      "id": 1304,
+      "priorValueRaw": "2798"
+    },
+    {
+      "id": 1306,
+      "priorValueRaw": "2342"
+    },
+    {
+      "id": 1307,
+      "priorValueRaw": "2820"
+    },
+    {
+      "id": 1308,
+      "priorValueRaw": "2433"
+    },
+    {
+      "id": 1309,
+      "priorValueRaw": "53059"
+    },
+    {
+      "id": 1310,
+      "priorValueRaw": "48786"
+    },
+    {
+      "id": 1311,
+      "priorValueRaw": "3900"
+    },
+    {
+      "id": 1312,
+      "priorValueRaw": "3779"
+    },
+    {
+      "id": 1313,
+      "priorValueRaw": "2769"
+    },
+    {
+      "id": 1315,
+      "priorValueRaw": "4006"
+    },
+    {
+      "id": 1319,
+      "priorValueRaw": "2879"
+    },
+    {
+      "id": 1322,
+      "priorValueRaw": "2402"
+    },
+    {
+      "id": 1323,
+      "priorValueRaw": "14346"
+    },
+    {
+      "id": 1325,
+      "priorValueRaw": "97681"
+    },
+    {
+      "id": 1326,
+      "priorValueRaw": "6416"
+    },
+    {
+      "id": 1327,
+      "priorValueRaw": "99078"
+    },
+    {
+      "id": 1328,
+      "priorValueRaw": "25420"
+    },
+    {
+      "id": 1329,
+      "priorValueRaw": "32664"
+    },
+    {
+      "id": 1330,
+      "priorValueRaw": "55409.99"
+    },
+    {
+      "id": 1332,
+      "priorValueRaw": "2879"
+    },
+    {
+      "id": 1337,
+      "priorValueRaw": "2503"
+    },
+    {
+      "id": 1338,
+      "priorValueRaw": "2342"
+    },
+    {
+      "id": 1341,
+      "priorValueRaw": "17432"
+    },
+    {
+      "id": 1342,
+      "priorValueRaw": "34246"
+    },
+    {
+      "id": 1343,
+      "priorValueRaw": "59530"
+    },
+    {
+      "id": 1344,
+      "priorValueRaw": "461779"
+    },
+    {
+      "id": 1345,
+      "priorValueRaw": "30638"
+    },
+    {
+      "id": 1361,
+      "priorValueRaw": "505291.8"
+    },
+    {
+      "id": 1362,
+      "priorValueRaw": "385395.66"
+    },
+    {
+      "id": 1363,
+      "priorValueRaw": "369973.27"
+    },
+    {
+      "id": 1364,
+      "priorValueRaw": "365266.63"
+    },
+    {
+      "id": 1368,
+      "priorValueRaw": "366979"
+    },
+    {
+      "id": 1369,
+      "priorValueRaw": "318179"
+    },
+    {
+      "id": 1370,
+      "priorValueRaw": "3387"
+    },
+    {
+      "id": 1371,
+      "priorValueRaw": "7898"
+    },
+    {
+      "id": 1372,
+      "priorValueRaw": "15133"
+    },
+    {
+      "id": 1373,
+      "priorValueRaw": "30604"
+    },
+    {
+      "id": 1376,
+      "priorValueRaw": "14398"
+    },
+    {
+      "id": 1377,
+      "priorValueRaw": "16543"
+    },
+    {
+      "id": 1390,
+      "priorValueRaw": "3612"
+    },
+    {
+      "id": 1391,
+      "priorValueRaw": "6349"
+    },
+    {
+      "id": 1401,
+      "priorValueRaw": "12"
+    },
+    {
+      "id": 1402,
+      "priorValueRaw": "25298"
+    },
+    {
+      "id": 1403,
+      "priorValueRaw": "37"
+    },
+    {
+      "id": 1404,
+      "priorValueRaw": "18926"
+    },
+    {
+      "id": 1407,
+      "priorValueRaw": "33282"
+    },
+    {
+      "id": 1408,
+      "priorValueRaw": "23282"
+    },
+    {
+      "id": 1410,
+      "priorValueRaw": "70241"
+    },
+    {
+      "id": 1411,
+      "priorValueRaw": "97877"
+    },
+    {
+      "id": 1412,
+      "priorValueRaw": "47927"
+    },
+    {
+      "id": 1413,
+      "priorValueRaw": "18602"
+    },
+    {
+      "id": 1415,
+      "priorValueRaw": "1663"
+    },
+    {
+      "id": 1416,
+      "priorValueRaw": "1854"
+    },
+    {
+      "id": 1417,
+      "priorValueRaw": "1319"
+    },
+    {
+      "id": 1420,
+      "priorValueRaw": "414311.04"
+    },
+    {
+      "id": 1424,
+      "priorValueRaw": "56624"
+    },
+    {
+      "id": 1430,
+      "priorValueRaw": "10554"
+    },
+    {
+      "id": 1439,
+      "priorValueRaw": "46871.56"
+    },
+    {
+      "id": 1440,
+      "priorValueRaw": "45708.21"
+    },
+    {
+      "id": 1443,
+      "priorValueRaw": "18043"
+    },
+    {
+      "id": 1445,
+      "priorValueRaw": "96823"
+    },
+    {
+      "id": 1446,
+      "priorValueRaw": "87299"
+    },
+    {
+      "id": 1447,
+      "priorValueRaw": "97345"
+    },
+    {
+      "id": 1448,
+      "priorValueRaw": "111994"
+    },
+    {
+      "id": 1449,
+      "priorValueRaw": "166711"
+    },
+    {
+      "id": 1450,
+      "priorValueRaw": "18443"
+    },
+    {
+      "id": 1451,
+      "priorValueRaw": "17405"
+    },
+    {
+      "id": 1454,
+      "priorValueRaw": "21467"
+    },
+    {
+      "id": 1455,
+      "priorValueRaw": "32378"
+    },
+    {
+      "id": 1456,
+      "priorValueRaw": "52137"
+    },
+    {
+      "id": 1457,
+      "priorValueRaw": "28528"
+    },
+    {
+      "id": 1461,
+      "priorValueRaw": "54819"
+    },
+    {
+      "id": 1466,
+      "priorValueRaw": "399865"
+    },
+    {
+      "id": 1467,
+      "priorValueRaw": "406139"
+    },
+    {
+      "id": 1469,
+      "priorValueRaw": "80140.55"
+    },
+    {
+      "id": 1472,
+      "priorValueRaw": "52422"
+    },
+    {
+      "id": 1481,
+      "priorValueRaw": "95177"
+    },
+    {
+      "id": 1483,
+      "priorValueRaw": "7451"
+    },
+    {
+      "id": 1490,
+      "priorValueRaw": "4235"
+    },
+    {
+      "id": 1491,
+      "priorValueRaw": "64429"
+    },
+    {
+      "id": 1494,
+      "priorValueRaw": "119236"
+    },
+    {
+      "id": 1498,
+      "priorValueRaw": "203413.4"
+    },
+    {
+      "id": 1513,
+      "priorValueRaw": "33743"
+    },
+    {
+      "id": 1514,
+      "priorValueRaw": "24282"
+    },
+    {
+      "id": 1522,
+      "priorValueRaw": "43233"
+    },
+    {
+      "id": 1523,
+      "priorValueRaw": "33743"
+    },
+    {
+      "id": 1526,
+      "priorValueRaw": "51872"
+    },
+    {
+      "id": 1527,
+      "priorValueRaw": "43233"
+    },
+    {
+      "id": 1529,
+      "priorValueRaw": "581841.99"
+    },
+    {
+      "id": 1652,
+      "priorValueRaw": "322768"
+    },
+    {
+      "id": 1653,
+      "priorValueRaw": "524136"
+    },
+    {
+      "id": 1656,
+      "priorValueRaw": "248292"
+    },
+    {
+      "id": 1657,
+      "priorValueRaw": "322768"
+    },
+    {
+      "id": 1660,
+      "priorValueRaw": "97384"
+    },
+    {
+      "id": 1661,
+      "priorValueRaw": "248292"
+    },
+    {
+      "id": 1673,
+      "priorValueRaw": "1081558"
+    },
+    {
+      "id": 1674,
+      "priorValueRaw": "963542"
+    },
+    {
+      "id": 1677,
+      "priorValueRaw": "963542"
+    },
+    {
+      "id": 1678,
+      "priorValueRaw": "756457"
+    },
+    {
+      "id": 1681,
+      "priorValueRaw": "756457"
+    },
+    {
+      "id": 1682,
+      "priorValueRaw": "712165"
+    },
+    {
+      "id": 1685,
+      "priorValueRaw": "712165"
+    },
+    {
+      "id": 1686,
+      "priorValueRaw": "958975"
+    },
+    {
+      "id": 1709,
+      "priorValueRaw": "1109"
+    },
+    {
+      "id": 1710,
+      "priorValueRaw": "832"
+    },
+    {
+      "id": 1713,
+      "priorValueRaw": "832"
+    },
+    {
+      "id": 1714,
+      "priorValueRaw": "870"
+    },
+    {
+      "id": 1717,
+      "priorValueRaw": "870"
+    },
+    {
+      "id": 1718,
+      "priorValueRaw": "652"
+    },
+    {
+      "id": 1721,
+      "priorValueRaw": "652"
+    },
+    {
+      "id": 1722,
+      "priorValueRaw": "578"
+    },
+    {
+      "id": 1749,
+      "priorValueRaw": "2798"
+    },
+    {
+      "id": 1750,
+      "priorValueRaw": "2402"
+    },
+    {
+      "id": 1751,
+      "priorValueRaw": "4006"
+    },
+    {
+      "id": 1752,
+      "priorValueRaw": "4806"
+    },
+    {
+      "id": 1759,
+      "priorValueRaw": "4006"
+    },
+    {
+      "id": 1760,
+      "priorValueRaw": "4806"
+    },
+    {
+      "id": 1763,
+      "priorValueRaw": "2402"
+    },
+    {
+      "id": 1764,
+      "priorValueRaw": "4006"
+    },
+    {
+      "id": 1767,
+      "priorValueRaw": "2798"
+    },
+    {
+      "id": 1768,
+      "priorValueRaw": "2402"
+    },
+    {
+      "id": 1795,
+      "priorValueRaw": "71530"
+    },
+    {
+      "id": 1796,
+      "priorValueRaw": "71530"
+    },
+    {
+      "id": 1799,
+      "priorValueRaw": "80908"
+    },
+    {
+      "id": 1800,
+      "priorValueRaw": "97574"
+    },
+    {
+      "id": 1803,
+      "priorValueRaw": "75569"
+    },
+    {
+      "id": 1804,
+      "priorValueRaw": "69736"
+    },
+    {
+      "id": 1807,
+      "priorValueRaw": "291636"
+    },
+    {
+      "id": 1808,
+      "priorValueRaw": "370403"
+    },
+    {
+      "id": 1811,
+      "priorValueRaw": "241090"
+    },
+    {
+      "id": 1812,
+      "priorValueRaw": "241090"
+    },
+    {
+      "id": 1813,
+      "priorValueRaw": "220176"
+    },
+    {
+      "id": 1814,
+      "priorValueRaw": "220176"
+    }
+  ]
+}
