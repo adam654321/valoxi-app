@@ -3379,11 +3379,12 @@ per BRIEF-extraction-accuracy-audit.md SCOPE and item 429.
 
 In scope, less conflicts that are documented not-a-defect: the Midland FY2023
 restatement (5830 vs 5831) and conflicts between md5-identical inputs.
-Every excluded row is itemised in S8.
+Every excluded row is itemised in S8. Confounded rows, where the pair is a
+restatement but the field difference is an extraction defect, are NOT excluded.
 
 | Tier pair | AGREE | CONFLICT | GRANULARITY | GRAN_REV | ENRICHED | ERASED | Accuracy rate (AGREE / sample) | Sample size |
 |---|---|---|---|---|---|---|---|---|
-| T1a → T1a | 115 | 1 | 1 | 2 | 9 | 1 | 99.14% (115/116) | 116 |
+| T1a → T1a | 115 | 2 | 1 | 2 | 9 | 1 | 98.29% (115/117) | 117 |
 | T1a → T1b | 21 | 3 | 0 | 0 | 0 | 13 | 87.50% (21/24) | 24 |
 | T1b → T1b | 42 | 2 | 2 | 0 | 3 | 2 | 95.45% (42/44) | 44 |
 | T2 → T1a | 0 | 18 | 0 | 0 | 6 | 6 | 0.00% (0/18) | 18 |
@@ -3500,7 +3501,7 @@ All CONFLICT rows where the previous and new documents have the same tier. Docum
 | Innova Design Group Limited | 2025 | IS | `staffCosts` | 712676 | 716147 | 5857 | 5867 | IDENTICAL_INPUT |
 | Thor-CON (Midland Air Conditioning) | 2023 | BS | `retainedEarnings` | 164400 | 168834 | 5830 | 5831 | RESTATEMENT |
 | Thor-CON (Midland Air Conditioning) | 2023 | BS | `totalEquity` | 164500 | 168934 | 5830 | 5831 | RESTATEMENT |
-| Thor-CON (Midland Air Conditioning) | 2023 | BS | `totalLongTermLiabilities` | 49478 | 45044 | 5830 | 5831 | RESTATEMENT |
+| Thor-CON (Midland Air Conditioning) | 2023 | BS | `totalLongTermLiabilities` | 49478 | 45044 | 5830 | 5831 | UNEXPLAINED |
 | Thor-CON (Midland Air Conditioning) | 2023 | IS | `corporationTax` | 36214 | 31780 | 5830 | 5831 | RESTATEMENT |
 | Thor-CON (Midland Air Conditioning) | 2023 | IS | `netProfit` | 132092 | 136526 | 5830 | 5831 | RESTATEMENT |
 
@@ -3554,6 +3555,5 @@ Every in-scope CONFLICT row excluded from the S3.3 rate, with its reason.
 | IDENTICAL_INPUT | Innova Design Group Limited | 2025 | IS | `staffCosts` | 712676 | 716147 | 5857 | 5867 |
 | RESTATEMENT | Thor-CON (Midland Air Conditioning) | 2023 | BS | `retainedEarnings` | 164400 | 168834 | 5830 | 5831 |
 | RESTATEMENT | Thor-CON (Midland Air Conditioning) | 2023 | BS | `totalEquity` | 164500 | 168934 | 5830 | 5831 |
-| RESTATEMENT | Thor-CON (Midland Air Conditioning) | 2023 | BS | `totalLongTermLiabilities` | 49478 | 45044 | 5830 | 5831 |
 | RESTATEMENT | Thor-CON (Midland Air Conditioning) | 2023 | IS | `corporationTax` | 36214 | 31780 | 5830 | 5831 |
 | RESTATEMENT | Thor-CON (Midland Air Conditioning) | 2023 | IS | `netProfit` | 132092 | 136526 | 5830 | 5831 |

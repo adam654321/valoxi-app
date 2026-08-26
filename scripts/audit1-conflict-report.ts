@@ -129,6 +129,21 @@ const IDENTICAL_INPUT_PAIRS = new Set<string>([
   '5857|5867', '5867|5857', '5861|5868', '5868|5861',
 ]);
 
+/** CONFOUNDED rows. The document pair is a genuine restatement, but this FIELD's
+ *  difference is not. Key: `${previousSourceDocId}|${devDocId}|${field}`.
+ *  Checked BEFORE the pair sets, so the row counts in the rate.
+ *
+ *  5830|5831|totalLongTermLiabilities — ruled 20 Aug 2026, confirmed on paper
+ *  25 Aug 2026 across eight companies and nine documents. Restated FY2023 shows
+ *  Creditors falling due after more than one year at 45,044 on BOTH readings, so
+ *  49,478 is doc 5830 folding deferred taxation 4,434 into the total. That is a
+ *  contract 1 extraction defect, not a restatement, and excluding it inflated the
+ *  T1a to T1a rate to 99.14%. The honest rate is 98.29%.
+ *  See CONTRACT-field-composition.md and ACTION-LOG-PACK-v81.3. */
+const CONFOUNDED_ROWS = new Set<string>([
+  '5830|5831|totalLongTermLiabilities',
+]);
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type Classification =
@@ -575,6 +590,7 @@ function isAdjudicatedOut(ev: WriteEvent): 'RESTATEMENT' | 'IDENTICAL_INPUT' | n
   if (ev.classification !== 'CONFLICT') return null;
   if (ev.previousSourceDocId === null) return null;
   const pair = `${ev.previousSourceDocId}|${ev.devDocId}`;
+  if (CONFOUNDED_ROWS.has(`${pair}|${ev.field}`)) return null;
   if (RESTATEMENT_PAIRS.has(pair)) return 'RESTATEMENT';
   if (IDENTICAL_INPUT_PAIRS.has(pair)) return 'IDENTICAL_INPUT';
   return null;
@@ -780,7 +796,8 @@ function buildReport(allEvents: WriteEvent[], reverseHits: ReverseGranularityHit
   lines.push('');
   lines.push('In scope, less conflicts that are documented not-a-defect: the Midland FY2023');
   lines.push('restatement (5830 vs 5831) and conflicts between md5-identical inputs.');
-  lines.push('Every excluded row is itemised in S8.');
+  lines.push('Every excluded row is itemised in S8. Confounded rows, where the pair is a');
+  lines.push('restatement but the field difference is an extraction defect, are NOT excluded.');
   lines.push('');
   lines.push(...tierPairTable(ev => ev.inScope && isAdjudicatedOut(ev) === null));
 
