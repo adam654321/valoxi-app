@@ -1,4 +1,4 @@
-MODE: rehearsal, will NOT write
+MODE: *** FIRE, WILL WRITE ***
 
 === IDENTITY ===
 database=neondb  balance_sheets=697  fc_balance=818
@@ -16,5 +16,16 @@ SUM deferred_taxation BEFORE           : 10260882.99
 
 rollback artefact written: docs/pipeline-fidelity-fix/c1-backfill-rollback.json
 
-REHEARSAL COMPLETE. All assertions passed. Nothing was written.
-Re-run with --fire to apply.
+TRANSACTION COMMITTED. target 1 281 rows, target 2 312 rows.
+
+=== POST-WRITE VERIFICATION ===
+  PASS  balance_sheets row count unchanged: 697
+  PASS  fc balance row count unchanged: 818
+  PASS  LTL sum fell by exactly 9925991.99: fell by 9925991.99
+        before 160420985.36   after 150494993.37
+  PASS  deferred_taxation sum UNCHANGED: undefined then 10260882.99
+  PASS  JSONB key still a string on 759 rows: 759
+  PASS  predicate now fires on 0 balance_sheets rows: 0
+  PASS  predicate now fires on 0 contribution rows: 0
+
+Rollback: docs/pipeline-fidelity-fix/c1-backfill-rollback.json holds every prior value.
