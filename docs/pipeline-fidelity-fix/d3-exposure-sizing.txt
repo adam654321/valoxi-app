@@ -1,0 +1,305 @@
+IDENTITY
+```sql
+SELECT current_database();
+```
+```text
+ current_database
+------------------
+ neondb
+```
+
+STEP 1 - MIRROR THE CODE, DO NOT APPROXIMATE IT
+```text
+server/services/reconciled-financials.service.ts
+    65	export function isBalanceSheetEmpty(row: Record<string, unknown>): boolean {
+    66	  return BS_CORE_FIELDS.every((f) => row[f] == null);
+    67	}
+```
+```text
+GUARDS REPRODUCED: period_end IS NOT NULL; fiscal_year IS NOT NULL; period_end <= CURRENT_DATE; and NOT all-null across cashAtBank, tradeDebtors, totalCurrentAssets, tradeCreditors, totalCurrentLiabilities, totalEquity, retainedEarnings, tangibleFixedAssets, stockInventory; latest row per target_company_id by period_end DESC; no fiscal-year filter; no tier precedence.
+```
+
+STEP 2 - THE ROW THE DEAL MODEL WOULD SEE, PER COMPANY
+```sql
+SELECT count(DISTINCT target_company_id) AS companies_with_balance_rows
+FROM balance_sheets;
+```
+```text
+ companies_with_balance_rows
+-----------------------------
+                         156
+```
+```text
+ target_company_id | balance_sheet_id | fiscal_year | period_end |      source_tier       | source_document_id | trade_debtors | other_debtors | prepayments
+-------------------+------------------+-------------+------------+------------------------+--------------------+---------------+---------------+------------
+                14 |               42 |        2025 | 2025-02-19 | management             |                 69 |        438500 |               |
+                23 |              227 |        2025 | 2025-02-19 | management             |                298 |        438500 |               |
+                45 |              183 |        2024 | 2024-12-15 | management             |                234 |        378450 |               |
+                60 |              257 |        2022 | 2022-04-30 | statutory              |                341 |        384404 |          7716 |
+                67 |              275 |        2024 | 2024-01-31 | statutory              |                380 |               |           267 |
+                70 |              287 |        2024 | 2024-12-15 | management             |                401 |        378450 |               |
+                71 |              292 |        2024 | 2024-12-15 | management             |                408 |       2986667 |               |
+                76 |              310 |        2024 | 2024-12-15 | management             |                438 |       2986667 |               |
+                77 |              315 |        2024 | 2024-03-31 | statutory              |                446 |       3174188 |               |
+                78 |              321 |        2024 | 2024-03-31 | statutory              |                456 |       3174188 |               |
+                79 |              323 |        2020 | 2020-03-31 | statutory              |                464 |       4750000 |               |
+                80 |              425 |        2026 | 2026-03-31 | statutory              |                    |          2998 |       2457.31 |    20632.36
+                81 |              328 |        2025 | 2025-03-31 | statutory              |                    |               |         61024 |
+                82 |              376 |        2024 | 2024-09-30 | statutory              |                531 |        104197 |             0 |       22775
+                83 |              370 |        2025 | 2025-11-30 | information_memorandum |                871 |        218598 |               |
+                84 |              378 |        2025 | 2025-11-30 | information_memorandum |                537 |        143257 |               |
+                85 |              400 |        2025 | 2025-03-31 | statutory              |                567 |         95385 |         26201 |
+                86 |              334 |        2025 | 2025-03-31 | statutory              |                471 |        298806 |        886764 |
+                87 |              339 |        2025 | 2025-08-31 | statutory              |                476 |          6537 |               |
+                88 |             1144 |        2026 | 2026-04-29 | statutory              |                    |     117836.14 |               |
+                89 |             1145 |        2026 | 2026-05-31 | statutory              |                    |        480236 |         12211 |       80360
+                90 |             1146 |        2026 | 2026-05-27 | statutory              |                    |         21470 |             0 |     6874.18
+                92 |              341 |        2025 | 2025-12-31 | statutory              |                477 |               |         25779 |        5000
+                94 |              345 |        2025 | 2025-11-30 | statutory              |                485 |               |          2907 |       11125
+                95 |              353 |        2024 | 2024-03-31 | statutory              |                491 |         56879 |             0 |
+                96 |             1148 |        2026 | 2026-05-28 | statutory              |               1014 |      51990.01 |      11439.14 |         432
+                97 |              362 |        2024 | 2024-12-31 | information_memorandum |                976 |          5743 |        287421 |       83605
+                98 |              368 |        2024 | 2024-08-31 | statutory              |                511 |        137586 |          4686 |
+               100 |              385 |        2025 | 2025-03-31 | statutory              |                545 |        225344 |         55498 |
+               101 |             1026 |        2025 | 2025-04-30 | statutory              |               1575 |        357838 |               |        6621
+               104 |              406 |        2026 | 2026-01-31 | management             |                575 |     442784.41 |      74925.46 |     9011.71
+               105 |              416 |        2025 | 2025-03-31 | statutory              |                589 |        100939 |          1200 |       48830
+               107 |              602 |        2026 | 2026-04-30 | statutory              |                875 |       28590.8 |     -19464.33 |
+               108 |              441 |        2026 | 2026-02-01 | statutory              |                619 |     382747.65 |         21900 |     -172.49
+               109 |              445 |        2025 | 2025-04-30 | statutory              |                623 |        396079 |               |
+               112 |              514 |        2024 | 2024-12-31 | statutory              |                707 |          3956 |               |        2155
+               114 |              459 |        2025 | 2025-03-31 | statutory              |                652 |        512864 |           580 |       64047
+               115 |              468 |        2024 | 2024-03-31 | statutory              |                657 |          4045 |         53698 |          55
+               116 |              472 |        2025 | 2025-08-31 | statutory              |                664 |         12341 |               |
+               117 |             1151 |        2025 | 2025-06-30 | statutory              |                670 |          7007 |           694 |
+               119 |              492 |        2026 | 2026-03-31 | statutory              |                686 |      77022.67 |       -950.77 |           0
+               120 |              488 |        2025 | 2025-03-31 | statutory              |                679 |         86324 |        190873 |
+               121 |              495 |        2024 | 2024-07-31 | statutory              |                    |        187161 |         75893 |
+               122 |              499 |        2026 | 2026-01-31 | statutory              |                702 |     889669.98 |          1000 |     50691.4
+               123 |             1158 |        2026 | 2026-01-31 | statutory              |                699 |     889669.98 |          1000 |     50691.4
+               124 |              539 |        2026 | 2026-01-31 | statutory              |                739 |       2067749 |               |
+               125 |             1162 |        2026 | 2026-02-20 | management             |                713 |               |               |
+               126 |              527 |        2026 | 2026-03-31 | statutory              |                726 |      20035.01 |     -47745.99 |     7478.38
+               127 |              533 |        2026 | 2026-01-31 | management             |                735 |     106300.16 |           5.5 |
+               128 |             1163 |        2025 | 2025-03-31 | information_memorandum |                746 |        659572 |          1045 |       31164
+               130 |              596 |        2025 | 2025-11-30 | management             |               1880 |     358524.86 |               |
+               131 |              553 |        2023 | 2023-12-31 | statutory              |                765 |       1001790 |               |       49937
+               132 |              817 |        2026 | 2026-03-31 | information_memorandum |               1179 |        345611 |             0 |        9655
+               133 |              560 |        2025 | 2025-03-31 | statutory              |                809 |               |         15000 |           0
+               134 |              568 |        2025 | 2025-03-31 | statutory              |                814 |        888538 |               |
+               135 |              571 |        2025 | 2025-03-31 | information_memorandum |                833 |         25729 |        349314 |
+               136 |             1168 |        2025 | 2025-08-31 | information_memorandum |                836 |               |               |
+               137 |             1077 |        2026 | 2026-03-31 | statutory              |               1299 |        358723 |        165485 |           0
+               138 |              908 |        2026 | 2026-06-25 | statutory              |               1432 |               |      32171.51 |     7616.93
+               139 |              592 |        2025 | 2025-04-30 | statutory              |                855 |         79011 |           300 |        4134
+               140 |              604 |        2023 | 2023-12-31 | information_memorandum |                879 |               |               |
+               142 |             1169 |        2025 | 2025-12-31 | statutory              |                    |               |               |
+               143 |              622 |        2025 | 2025-03-31 | information_memorandum |                899 |          2665 |               |
+               145 |              630 |        2025 | 2025-03-31 | statutory              |                908 |        163090 |          5544 |
+               147 |              639 |        2025 | 2025-12-31 | statutory              |                922 |         72491 |         22393 |
+               149 |              644 |        2025 | 2025-08-31 | statutory              |                936 |        130956 |         29000 |        4127
+               150 |              648 |        2025 | 2025-08-31 | statutory              |                940 |        130956 |         29000 |        4127
+               151 |              654 |        2025 | 2025-08-31 | statutory              |                948 |        130956 |         29000 |        4127
+               152 |              660 |        2025 | 2025-08-31 | statutory              |                953 |        130956 |         33132 |
+               155 |              670 |        2026 | 2026-02-28 | statutory              |                965 |        224198 |          6313 |       13409
+               156 |              696 |        2024 | 2024-11-30 | statutory              |               1019 |         14131 |               |
+               157 |             1170 |        2026 | 2026-05-31 | statutory              |                991 |       7381.81 |            65 |    -4295.92
+               159 |              691 |        2025 | 2025-01-31 | statutory              |               1000 |        363337 |         91298 |        5651
+               160 |             1022 |        2026 | 2026-03-31 | statutory              |               1564 |      18116.47 |      14817.36 |   120582.16
+               161 |             1171 |        2026 | 2026-04-30 | management             |               1043 |          7249 |         23718 |        3154
+               162 |             1172 |        2026 | 2026-05-31 | statutory              |                    |      44221.55 |      43261.79 |
+               163 |              728 |        2026 | 2026-03-31 | statutory              |               1298 |        805725 |        152322 |
+               166 |              749 |        2025 | 2025-10-31 | statutory              |               1092 |               |               |
+               167 |              767 |        2025 | 2025-03-31 | statutory              |                    |         50564 |        135176 |
+               168 |              758 |        2025 | 2025-12-31 | statutory              |                    |         24824 |          2265 |
+               169 |              762 |        2025 | 2025-06-30 | statutory              |                    |          3599 |         83612 |
+               171 |              777 |        2025 | 2025-03-31 | statutory              |               1125 |          5913 |          1336 |         137
+               172 |              858 |        2026 | 2026-03-31 | statutory              |               1420 |     250591.03 |      21230.63 |
+               173 |              797 |        2024 | 2024-09-30 | statutory              |                    |        717734 |               |
+               174 |              832 |        2026 | 2026-04-30 | statutory              |                    |        105031 |               |
+               175 |              826 |        2026 | 2026-04-05 | statutory              |                    |               |               |
+               176 |              839 |        2025 | 2025-04-30 | statutory              |                    |        624206 |           363 |       15243
+               177 |              843 |        2025 | 2025-03-31 | statutory              |                    |               |        133750 |        5976
+               179 |              847 |        2025 | 2025-08-31 | statutory              |                    |         16203 |         81774 |
+               180 |              814 |        2025 | 2025-03-31 | statutory              |                    |        197041 |         23127 |        3084
+               185 |             1176 |        2026 | 2026-05-27 | statutory              |                    |         21470 |             0 |     6874.18
+               188 |             1177 |        2026 | 2026-06-30 | statutory              |                    |               |               |
+               189 |              806 |        2026 | 2026-03-31 | statutory              |               1164 |        358723 |        165485 |
+               190 |              821 |        2026 | 2026-06-09 | statutory              |                    |      83058.26 |          2160 |    16187.94
+               191 |             1039 |        2026 | 2026-03-31 | statutory              |               1582 |         44546 |         51458 |        4223
+               193 |              863 |        2026 | 2026-03-31 | management             |               1263 |        434380 |        200929 |        7089
+               194 |              865 |        2025 | 2025-07-31 | statutory              |               1274 |         39721 |               |
+               196 |             1214 |        2026 | 2026-02-28 | statutory              |               1881 |         98020 |               |
+               197 |              963 |        2025 | 2025-07-31 | statutory              |               1553 |        425601 |             0 |       73283
+               198 |              871 |        2024 | 2024-10-31 | statutory              |               1280 |        519768 |        559953 |       42589
+               199 |              877 |        2025 | 2025-08-31 | statutory              |                    |        174000 |               |        1500
+               200 |              883 |        2025 | 2025-08-31 | statutory              |               1302 |               |          4418 |
+               201 |              887 |        2026 | 2026-03-31 | statutory              |               1305 |         48275 |        257274 |
+               202 |             1203 |        2026 | 2026-04-05 | management             |               1857 |               |               |
+               204 |              903 |        2025 | 2025-12-31 | statutory              |                    |          1735 |           888 |
+               205 |             1179 |        2026 | 2026-03-31 | statutory              |               1589 |       1525383 |         16037 |      109437
+               206 |              914 |        2026 | 2026-01-31 | statutory              |               1339 |         43891 |          2523 |
+               207 |              920 |        2025 | 2025-12-31 | statutory              |               1354 |        424992 |               |
+               208 |              926 |        2025 | 2025-09-29 | statutory              |               1365 |        322032 |               |      355785
+               209 |              932 |        2026 | 2026-03-31 | statutory              |               1371 |           894 |               |        1050
+```
+```text
+Printed table: first 120 lines.
+True selected row count: 154.
+```
+
+STEP 3 - WHICH OF THOSE CARRY THE BUNDLED SIGNATURE
+```text
+  classification   | count
+-------------------+------
+ BUNDLED-SIGNATURE |    20
+ SPLIT             |    67
+ NO-TRADE-DEBTORS  |     9
+ NO-PAYLOAD        |    58
+```
+```text
+ target_company_id | balance_sheet_id | fiscal_year | period_end |      source_tier       | source_document_id | trade_debtors | other_debtors | prepayments
+-------------------+------------------+-------------+------------+------------------------+--------------------+---------------+---------------+------------
+                77 |              315 |        2024 | 2024-03-31 | statutory              |                446 |       3174188 |               |
+                78 |              321 |        2024 | 2024-03-31 | statutory              |                456 |       3174188 |               |
+                79 |              323 |        2020 | 2020-03-31 | statutory              |                464 |       4750000 |               |
+                83 |              370 |        2025 | 2025-11-30 | information_memorandum |                871 |        218598 |               |
+                84 |              378 |        2025 | 2025-11-30 | information_memorandum |                537 |        143257 |               |
+                87 |              339 |        2025 | 2025-08-31 | statutory              |                476 |          6537 |               |
+               109 |              445 |        2025 | 2025-04-30 | statutory              |                623 |        396079 |               |
+               116 |              472 |        2025 | 2025-08-31 | statutory              |                664 |         12341 |               |
+               130 |              596 |        2025 | 2025-11-30 | management             |               1880 |     358524.86 |               |
+               134 |              568 |        2025 | 2025-03-31 | statutory              |                814 |        888538 |               |
+               143 |              622 |        2025 | 2025-03-31 | information_memorandum |                899 |          2665 |               |
+               156 |              696 |        2024 | 2024-11-30 | statutory              |               1019 |         14131 |               |
+               194 |              865 |        2025 | 2025-07-31 | statutory              |               1274 |         39721 |               |
+               196 |             1214 |        2026 | 2026-02-28 | statutory              |               1881 |         98020 |               |
+               225 |             1063 |        2026 | 2026-02-28 | information_memorandum |               1614 |        166466 |               |
+               227 |             1073 |        2025 | 2025-07-31 | statutory              |               1623 |               |               |
+               232 |             1099 |        2025 | 2025-09-30 | statutory              |               1792 |         87884 |               |
+               234 |             1109 |        2025 | 2025-03-31 | statutory              |               1870 |          3459 |               |
+               246 |             1217 |        2021 | 2021-07-31 | statutory              |               1882 |        330000 |               |
+               264 |             1300 |        2026 | 2026-03-31 | statutory              |               1995 |         11000 |               |
+```
+
+STEP 4 - WHICH BUNDLED-SIGNATURE ROWS ARE PROVEN BUNDLED
+```text
+ company | fiscal_year | bundled_doc | split_doc | bundled_value | true_trade_debtors | overstatement
+---------+-------------+-------------+-----------+---------------+--------------------+--------------
+      84 |        2025 |         537 |       535 |        143257 |              45084 |         98173
+     156 |        2024 |        1019 |      1017 |         14131 |               5156 |          8975
+```
+```text
+PROVEN BUNDLED ROWS REACHING THE DEAL MODEL: 2
+TOTAL RECEIVABLES OVERSTATEMENT: 107148
+```
+
+STEP 5 - THE INVERSE SHAPE
+```text
+ prod_payload_periods
+----------------------
+                 1039
+```
+```text
+ periods_other_present_trade_null
+----------------------------------
+                               46
+```
+```text
+document_id: 380
+target_company_id: 67
+fiscal_year: 2023
+{
+    "stock": null,
+    "total": 267,
+    "prepayments": null,
+    "cash_at_bank": null,
+    "other_debtors": 267,
+    "trade_debtors": null,
+    "amounts_owed_by_directors": null,
+    "directors_current_account": null,
+    "amounts_owed_by_connected_companies": null
+}
+COMPONENT SUM: 267
+PRINTED TOTAL: 267
+RECONCILES: YES
+```
+```text
+document_id: 380
+target_company_id: 67
+fiscal_year: 2024
+{
+    "stock": null,
+    "total": 267,
+    "prepayments": null,
+    "cash_at_bank": null,
+    "other_debtors": 267,
+    "trade_debtors": null,
+    "amounts_owed_by_directors": null,
+    "directors_current_account": null,
+    "amounts_owed_by_connected_companies": null
+}
+COMPONENT SUM: 267
+PRINTED TOTAL: 267
+RECONCILES: YES
+```
+```text
+document_id: 382
+target_company_id: 67
+fiscal_year: 2022
+{
+    "stock": null,
+    "total": 267,
+    "prepayments": null,
+    "cash_at_bank": null,
+    "other_debtors": 267,
+    "trade_debtors": null,
+    "amounts_owed_by_directors": null,
+    "directors_current_account": null,
+    "amounts_owed_by_connected_companies": null
+}
+COMPONENT SUM: 267
+PRINTED TOTAL: 267
+RECONCILES: YES
+```
+```text
+document_id: 382
+target_company_id: 67
+fiscal_year: 2023
+{
+    "stock": null,
+    "total": 267,
+    "prepayments": null,
+    "cash_at_bank": null,
+    "other_debtors": 267,
+    "trade_debtors": null,
+    "amounts_owed_by_directors": null,
+    "directors_current_account": null,
+    "amounts_owed_by_connected_companies": null
+}
+COMPONENT SUM: 267
+PRINTED TOTAL: 267
+RECONCILES: YES
+```
+```text
+document_id: 477
+target_company_id: 92
+fiscal_year: 2024
+{
+    "stock": null,
+    "total": 46660,
+    "prepayments": 5000,
+    "cash_at_bank": 34663,
+    "other_debtors": 6997,
+    "trade_debtors": null,
+    "amounts_owed_by_directors": null,
+    "directors_current_account": null,
+    "amounts_owed_by_connected_companies": null
+}
+COMPONENT SUM: 46660
+PRINTED TOTAL: 46660
+RECONCILES: YES
+```
+```text
+The five sampled inverse-shape periods reconcile without trade debtors: their non-trade current-asset components equal the printed total. On this evidence, the inverse shape is genuine no-trade-debtors data, not a second bundled-trade-debtors shape.
+```
