@@ -1,0 +1,76 @@
+IDENTITY
+```sql
+SELECT current_database();
+```
+```text
+ current_database
+------------------
+ neondb
+(1 row)
+```
+
+STEP 1 - THE SHAPE OF WHAT WINS
+```text
+      source_tier       | count | percentage
+------------------------+-------+------------
+ statutory              |   116 |      75.32
+ management             |    26 |      16.88
+ information_memorandum |    12 |       7.79
+(3 rows)
+
+TRUE WINNER ROW COUNT: 154
+```
+
+STEP 2 - WHERE A BETTER SOURCE EXISTS AND LOSES
+```text
+NON-STATUTORY WINNERS: 38
+...WITH A STATUTORY ROW FOR THE SAME YEAR: 2
+...WITH A STATUTORY ROW FOR ANY YEAR: 32
+...WITH NO STATUTORY ROW AT ALL: 6
+```
+
+STEP 3 - THE SIZE OF THE DISAGREEMENT
+```text
+ company | fiscal_year | winning_tier | winning_doc | statutory_doc | winner_trade_debtors | statutory_trade_debtors | trade_debtors_delta | winner_total_equity | statutory_total_equity | total_equity_delta
+---------+-------------+--------------+-------------+---------------+----------------------+-------------------------+---------------------+---------------------+------------------------+-------------------
+      45 |        2024 | management   |         234 |           232 |               378450 |                  328512 |               49938 |             1770050 |                1570752 |             199298
+      70 |        2024 | management   |         401 |           420 |               378450 |                 3174188 |            -2795738 |             1770050 |               11452337 |           -9682287
+(2 rows)
+```
+```text
+ROWS WHERE A NON-STATUTORY SOURCE OUTRANKS A STATUTORY ONE FOR THE SAME YEAR: 2
+ABSOLUTE TRADE DEBTORS DELTA: 2845676
+ABSOLUTE TOTAL EQUITY DELTA: 9881585
+```
+
+STEP 4 - THE FUTURE-DATED AND EMPTY GUARDS
+```text
+ joined_balance_sheet_rows | period_end_null | fiscal_year_null | future_dated_total | empty_total | excluded_only_by_future_date | excluded_only_by_empty_guard
+---------------------------+-----------------+------------------+--------------------+-------------+------------------------------+-----------------------------
+                       696 |               0 |                0 |                  0 |           7 |                            0 |                            7
+(1 row)
+
+ROWS EXCLUDED ONLY BY period_end > CURRENT_DATE: 0
+ROWS EXCLUDED ONLY BY isBalanceSheetEmpty: 7
+```
+
+EXCLUDED ONLY BY period_end > CURRENT_DATE (UP TO 10)
+```text
+ company | fiscal_year | period_end | source_tier
+---------+-------------+------------+------------
+(0 rows)
+```
+
+EXCLUDED ONLY BY isBalanceSheetEmpty (UP TO 10)
+```text
+ company | fiscal_year | period_end | source_tier
+---------+-------------+------------+------------
+     192 |        2026 | 2026-04-12 | statutory
+     115 |        2026 | 2026-01-31 | management
+     115 |        2025 | 2025-03-31 | management
+     186 |        2025 | 2025-03-31 | statutory
+     186 |        2024 | 2024-03-31 | statutory
+     214 |        2023 | 2023-12-31 | statutory
+     220 |        2022 | 2022-05-31 | management
+(7 rows)
+```
