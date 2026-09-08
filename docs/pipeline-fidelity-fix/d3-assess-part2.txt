@@ -1,0 +1,364 @@
+SECTION 6a-PROOF - THE LEVER
+
+Identity block
+```text
+SELECT current_database();
+
+ current_database
+------------------
+ neondb
+```
+
+6a-i. Literal JSON path
+```text
+analysis_data->'balance_sheet'->'years'->'<year>'->'balance_sheet'->'current_assets'
+```
+
+6a-ii. Debtors blocks, pretty printed verbatim
+```json
+doc 1898 year 2023
+{
+    "stock": 30000,
+    "total": 61923,
+    "prepayments": null,
+    "cash_at_bank": 23002,
+    "other_debtors": 8921,
+    "trade_debtors": null,
+    "amounts_owed_by_directors": null,
+    "directors_current_account": null,
+    "amounts_owed_by_connected_companies": null
+}
+doc 1898 year 2024
+{
+    "stock": 20000,
+    "total": 122153,
+    "prepayments": null,
+    "cash_at_bank": 6250,
+    "other_debtors": 19300,
+    "trade_debtors": null,
+    "amounts_owed_by_directors": 76603,
+    "directors_current_account": 76603,
+    "amounts_owed_by_connected_companies": null
+}
+doc 1902 year 2025
+{
+    "stock": 159601,
+    "total": 650545,
+    "prepayments": null,
+    "cash_at_bank": 56593,
+    "other_debtors": 127571,
+    "trade_debtors": 306780,
+    "amounts_owed_by_directors": null,
+    "directors_current_account": null,
+    "amounts_owed_by_connected_companies": null
+}
+doc 1902 year 2026
+{
+    "stock": 94500,
+    "total": 968383,
+    "prepayments": null,
+    "cash_at_bank": 123763,
+    "other_debtors": 158516,
+    "trade_debtors": 591604,
+    "amounts_owed_by_directors": null,
+    "directors_current_account": null,
+    "amounts_owed_by_connected_companies": null
+}
+```
+
+6a-iii. OTHER-DEBTORS KEY (latest year in each document)
+```text
+doc 1898: OTHER-DEBTORS KEY = PRESENT-WITH-VALUE 19300
+doc 1902: OTHER-DEBTORS KEY = PRESENT-WITH-VALUE 158516
+```
+
+6a-iv. PREPAYMENTS KEY (latest year in each document)
+```text
+doc 1898: PREPAYMENTS KEY = PRESENT-WITH-NULL
+doc 1902: PREPAYMENTS KEY = PRESENT-WITH-NULL
+```
+
+Second pair: OTHER-DEBTORS KEY (latest year in each document)
+```text
+doc 1864: OTHER-DEBTORS KEY = PRESENT-WITH-NULL
+doc 1861: OTHER-DEBTORS KEY = PRESENT-WITH-VALUE 381141
+```
+
+Second pair: PREPAYMENTS KEY (latest year in each document)
+```text
+doc 1864: PREPAYMENTS KEY = PRESENT-WITH-NULL
+doc 1861: PREPAYMENTS KEY = PRESENT-WITH-NULL
+```
+
+The raw bundled payload does not omit either key. It emits null for
+other_debtors in doc 1864 and for prepayments in both bundled documents.
+
+SECTION 5 - PAYLOAD AND PROMPT SHAPE
+
+5a. File list
+```text
+shared/schema/evidence.ts
+shared/utils/evidence-mapper.ts
+shared/utils/__tests__/evidence-mapper-anchors.test.ts
+scripts/diff-evidence-versions.ts
+server/prompts/step2-balance-sheet-prompt.ts
+server/prompts/step2-profit-and-loss-prompt.ts
+```
+
+5b. Blocks asking for debtors, prepayments or current assets
+```text
+server/prompts/step2-balance-sheet-prompt.ts
+    30	2. Extract the following Balance Sheet fields per year
+    31	Only extract or calculate numeric values:
+    32	• No £ symbols
+    33	• No commas
+    34	• No text
+    35	Use null if a value is missing or cannot be calculated.
+    36
+    37	FIXED ASSETS:
+    38	• intangible_assets (goodwill, brand, IP)
+    39	• tangible_assets (total of all below if not broken down)
+    40	• freehold_property
+    41	• leasehold_property
+    42	• plant_machinery
+    43	• fixtures_fittings
+    44	• motor_vehicles
+    45	• computer_equipment
+    46
+    47	CURRENT ASSETS:
+    48	• stock (inventory)
+    49	• trade_debtors (receivables)
+    50	• prepayments
+    51	• amounts_owed_by_directors
+    52	• amounts_owed_by_connected_companies (intercompany receivables)
+    53	• directors_current_account (if in debit/asset position)
+    54	• other_debtors
+    55	• cash_at_bank (cash at bank and in hand, sum all bank accounts)
+    56	• total (total current assets)
+```
+
+```text
+shared/schema/evidence.ts: NO MATCHING BLOCK
+shared/utils/evidence-mapper.ts: NO MATCHING BLOCK
+shared/utils/__tests__/evidence-mapper-anchors.test.ts: NO MATCHING BLOCK
+scripts/diff-evidence-versions.ts: NO MATCHING BLOCK
+server/prompts/step2-profit-and-loss-prompt.ts: NO MATCHING BLOCK
+```
+
+5c. Extraction payload balance-sheet debtors shape
+```text
+server/prompts/step2-balance-sheet-prompt.ts
+   168	        "current_assets": {
+   169	          "stock": null,
+   170	          "trade_debtors": null,
+   171	          "prepayments": null,
+   172	          "amounts_owed_by_directors": null,
+   173	          "amounts_owed_by_connected_companies": null,
+   174	          "directors_current_account": null,
+   175	          "other_debtors": null,
+   176	          "cash_at_bank": null,
+   177	          "total": null
+```
+
+```text
+shared/schema/financials.ts
+    55	// Balance sheets - one row per financial period
+    56	export const balanceSheets = pgTable("balance_sheets", {
+    57	  id: serial("id").primaryKey(),
+    58	  financialPeriodId: integer("financial_period_id").references(() => financialPeriods.id).notNull(),
+    59	  targetCompanyId: integer("target_company_id").references(() => targetCompanies.id).notNull(),
+    60	  intangibleAssets: decimal("intangible_assets"),
+    61	  tangibleFixedAssets: decimal("tangible_fixed_assets"),
+    62	  freeholdProperty: decimal("freehold_property"),
+    63	  leaseholdProperty: decimal("leasehold_property"),
+    64	  plantMachinery: decimal("plant_machinery"),
+    65	  fixturesFittings: decimal("fixtures_fittings"),
+    66	  motorVehicles: decimal("motor_vehicles"),
+    67	  computerEquipment: decimal("computer_equipment"),
+    68	  stockInventory: decimal("stock_inventory"),
+    69	  tradeDebtors: decimal("trade_debtors"),
+    70	  prepayments: decimal("prepayments"),
+    71	  amountsOwedByDirectors: decimal("amounts_owed_by_directors"),
+    72	  amountsOwedByConnectedCompanies: decimal("amounts_owed_by_connected_companies"),
+    73	  directorsCurrentAccount: decimal("directors_current_account"),
+    74	  otherDebtors: decimal("other_debtors"),
+    75	  cashAtBank: decimal("cash_at_bank"),
+    76	  totalCurrentAssets: decimal("total_current_assets"),
+```
+
+No TypeScript type or zod schema specifically defines the raw extraction payload's
+balance-sheet debtors object. The extraction contract is the prompt JSON shape above;
+the persisted Drizzle schema is also shown.
+
+5d. Field classification
+```text
+tradeDebtors: NULLABLE
+otherDebtors: NULLABLE
+prepayments: NULLABLE
+```
+
+SECTION 7 - CONSUMERS
+
+7a. Counts
+```text
+shared/utils/has-any-value.ts:1
+scripts/_d3-assess-readonly.ts:4
+scripts/audit1-conflict-report.ts:2
+shared/utils/__tests__/evidence-mapper-casts.test.ts:1
+server/scripts/backfill-financial-contributions.ts:2
+scripts/audit1-phase1-compare.ts:1
+shared/utils/__tests__/fixtures/dar-1151-balance-sheet.json:1
+scripts/audit1-extract-capture.ts:1
+shared/utils/__tests__/has-any-value.test.ts:4
+scripts/measure-extraction-stability.ts:1
+shared/calculators/canonical-live-map.ts:2
+scripts/diff-canonical-vs-live.ts:2
+scripts/comms-relock-slice22.ts:2
+scripts/comms-analysis.ts:2
+shared/schema/financials.ts:2
+scripts/slice20-vcheck.ts:2
+scripts/slice18-vcheck.ts:2
+scripts/slice17-vcheck.ts:2
+scripts/deep-trace.ts:2
+scripts/part-b-clone-and-diff.ts:2
+scripts/phase2-backfill-reselect.ts:1
+scripts/verify-clone.cjs:2
+scripts/clone-prod-to-dev.cjs:1
+scripts/clone-prod-to-dev.js:1
+scripts/replay-balance-sheets.ts:5
+client/src/components/deal-modeller/BalanceSheetSection.tsx:1
+server/routes/financial-data.routes.ts:2
+client/src/lib/period-utils.ts:1
+server/services/financial-data.service.ts:3
+client/src/components/document-viewer/AnalysisDisplay.tsx:3
+server/services/reconciled-financials.service.ts:1
+server/services/deal-model-mapping.service.ts:6
+server/services/projection-reselect.service.ts:1
+server/services/__tests__/reconciled-financials.test.ts:7
+client/src/components/deal-modeller/CashFlowSection.tsx:1
+server/prompts/step2-sales-ledger-prompt.ts:2
+server/prompts/stage0-data-quality-prompt.ts:2
+server/services/__tests__/fixtures/sc10-company-accounts-bs-only.json:1
+server/services/__tests__/fixtures/sc12-bs-phantom-net-profit.json:1
+server/services/__tests__/fixtures/sc11-data-balance.json:1
+server/prompts/step2-balance-sheet-prompt.ts:3
+```
+
+7b. Counts
+```text
+server/services/deal-model-mapping.service.ts:8
+```
+
+7c. Targeted hits
+```text
+shared/calculators/canonical-live-map.ts:71:  'trade_debtors',
+shared/calculators/canonical-live-map.ts:129:  'balance_sheet.current_assets.trade_debtors': { table: 'balance', column: 'trade_debtors' },
+server/routes/financial-data.routes.ts:224:        trade_debtors: sheet.tradeDebtors,
+server/routes/financial-data.routes.ts:270:      total_trade_debtors: latestDebtors.totalTradeDebtors,
+server/services/financial-data.service.ts:404:          tradeDebtors: this.parseDecimal(currentAssets.trade_debtors || currentAssets.receivables),
+server/services/financial-data.service.ts:501:          tradeDebtors: this.parseDecimal(currentAssets.trade_debtors),
+server/services/financial-data.service.ts:650:        totalTradeDebtors: this.parseDecimal(summary.total_trade_debtors || summary.total),
+server/services/deal-model-mapping.service.ts:175:    const latestBalance = await this.getLatestBalanceSheet(targetCompanyId);
+server/services/deal-model-mapping.service.ts:179:    if (latestBalance?.corporationTaxDue) {
+server/services/deal-model-mapping.service.ts:180:      modelValues.minusCorpTaxDue = String(latestBalance.corporationTaxDue);
+server/services/deal-model-mapping.service.ts:203:      balanceSheet: latestBalance || null,
+server/services/deal-model-mapping.service.ts:219:    await this.createFundingLineSeeds(dealModel.id, targetCompanyId, latestBalance, latestAssets);
+server/services/deal-model-mapping.service.ts:392:    latestBalance: Record<string, any> | null,
+server/services/deal-model-mapping.service.ts:398:      if (latestBalance?.tradeDebtors) {
+server/services/deal-model-mapping.service.ts:399:        const tradeDebtors = Number(latestBalance.tradeDebtors);
+server/services/deal-model-mapping.service.ts:400:        if (!isNaN(tradeDebtors) && tradeDebtors > 0) {
+server/services/deal-model-mapping.service.ts:401:          const available = tradeDebtors * 0.8;
+server/services/deal-model-mapping.service.ts:406:            assetBaseValue: String(tradeDebtors),
+server/services/deal-model-mapping.service.ts:416:          console.log(`[DEAL_MODEL_MAPPING] Created receivables_finance line: base=${tradeDebtors}, available=${Math.round(available)}`);
+server/prompts/step2-balance-sheet-prompt.ts:49:• trade_debtors (receivables)
+server/prompts/step2-sales-ledger-prompt.ts:11:• total_trade_debtors – Total balance of trade debtors/receivables
+client/src/components/deal-modeller/BalanceSheetSection.tsx:50:      ['tradeDebtors', 'Trade Debtors'],
+client/src/components/deal-modeller/CashFlowSection.tsx:168:  const wcDebtors = n(priorBs.tradeDebtors) - n(bs.tradeDebtors);
+```
+
+7d. latestBalance definition and population
+```text
+server/services/deal-model-mapping.service.ts
+   175	    const latestBalance = await this.getLatestBalanceSheet(targetCompanyId);
+   176	    const latestAssets = await this.getLatestFixedAssets(targetCompanyId);
+   177	    const latestIncome = await this.getLatestIncomeStatement(targetCompanyId);
+
+   511	  private async getLatestBalanceSheet(targetCompanyId: number): Promise<Record<string, any> | null> {
+   512	    try {
+   513	      const reconciled = await getReconciledFinancials(targetCompanyId);
+   514	      return reconciled.currentBalanceSheet;
+   515	    } catch (err) {
+   516	      console.log(`[DEAL_MODEL_MAPPING] Warning: Could not fetch balance sheet`, err);
+   517	      return null;
+   518	    }
+   519	  }
+
+server/services/reconciled-financials.service.ts
+   178	  // ── Balance sheets: collect all eligible rows ─────────────────────────────
+   179	  // Guards applied per row:
+   180	  //   (a) not future-dated: periodEnd <= today
+   181	  //   (b) not all-null core fields (empty row)
+   182	  // Fetched periodEnd DESC so eligibleRows[0] is the globally latest passing row.
+   183	  const bsRows = await db
+   184	    .select()
+   185	    .from(balanceSheets)
+   186	    .innerJoin(financialPeriods, eq(balanceSheets.financialPeriodId, financialPeriods.id))
+   187	    .where(eq(balanceSheets.targetCompanyId, companyId))
+   188	    .orderBy(desc(financialPeriods.periodEnd));
+   189
+   190	  const eligibleRows: EligibleBsRow[] = [];
+   191
+   192	  for (const row of bsRows) {
+   193	    const bs = row.balance_sheets as Record<string, unknown>;
+   194	    const fp = row.financial_periods;
+   195	    const periodEnd = fp.periodEnd as string | null;
+   196	    const fiscalYear = fp.fiscalYear as number | null;
+   197	    const sourceTier = (fp.sourceTier as string | null) ?? null;
+   198
+   199	    if (periodEnd == null || fiscalYear == null) continue;
+   200	    if (periodEnd > today) continue; // future-dated guard
+   201	    if (isBalanceSheetEmpty(bs)) continue; // empty row guard
+
+   236	  // ── currentBalanceSheet: latest passing row overall (periodEnd DESC) ───────
+   237	  // Does NOT apply tier precedence — always the most recent snapshot regardless of tier.
+   238	  // Carries _label so the LLM knows this is the current position.
+   239	  let currentBalanceSheet: Record<string, unknown> | null = null;
+   240	  if (eligibleRows.length > 0) {
+   241	    const latest = eligibleRows[0]; // already ordered DESC by periodEnd
+   242	    currentBalanceSheet = {
+   243	      ...latest.bs,
+   244	      fiscalYear: latest.fiscalYear,
+   245	      periodEnd: latest.periodEnd,
+   246	      sourceTier: latest.sourceTier,
+   247	      _label: 'CURRENT POSITION',
+```
+
+7e. THE DECIDING QUESTION
+```text
+RECEIVABLES SIZING READS: balance_sheets   at server/services/deal-model-mapping.service.ts:398
+```
+
+7f. Equivalent production SELECT
+```sql
+SELECT bs.id AS balance_sheet_id, bs.financial_period_id,
+       fp.fiscal_year, fp.period_end, fp.source_tier,
+       bs.trade_debtors
+FROM balance_sheets bs
+INNER JOIN financial_periods fp
+  ON bs.financial_period_id = fp.id
+WHERE bs.target_company_id = 251
+  AND fp.fiscal_year = 2026
+  AND fp.period_end <= CURRENT_DATE
+ORDER BY fp.period_end DESC
+LIMIT 1;
+```
+
+```text
+ balance_sheet_id | financial_period_id | fiscal_year | period_end | source_tier | trade_debtors
+------------------+---------------------+-------------+------------+-------------+---------------
+             1235 |                1500 |        2026 | 2026-03-31 | statutory   |        591604
+```
+
+```text
+FIGURE THE DEAL MODEL WOULD SEE FOR co 251 (prod) FY2026: 591604
+```
