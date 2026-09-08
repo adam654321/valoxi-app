@@ -6,48 +6,56 @@ id = "-3WtAB61hXXofgAgBQepk"
 uri = "file://.local/tasks/launch-brief-corrections.md"
 type = "text"
 title = "Launch Brief Corrections"
+logical_id = "0c639a2a-ed86-427a-ad04-06b4f9b2cb6d"
 
 [[outputs]]
 id = "Ic9CMml8qfFZ4PM7kGcdk"
 uri = "file://.local/us-localisation-scope.md"
 type = "text"
 title = "Valoxi US Localisation — Scope & Research Brief"
+logical_id = "233e5459-a42f-4285-b55d-c4ade21d5fd8"
 
 [[outputs]]
 id = "z0B1QHv2X57_TWFoFz1d2"
 uri = "file://downloads/Clifford_Press_Flyer.pdf"
 type = "pdf"
 title = "Clifford Press — Flyer (doc 700, 373 KB)"
+logical_id = "63732cc6-02e7-48ad-b389-af9dd7159170"
 
 [[outputs]]
 id = "CMyGaWEntrC4nOptPvWC0"
 uri = "file://downloads/Homecare_People_Financial_Results_Dec2024.pdf"
 type = "pdf"
 title = "Homecare People — Financial Results Dec 2024 (doc 1049, 99 KB)"
+logical_id = "bba87042-f472-4584-b4b4-656f2874f12a"
 
 [[outputs]]
 id = "jWK_qvAl5u1V8e7y5uxgx"
 uri = "file://downloads/Homecare_People_Year_on_Year_2023-2026.pdf"
 type = "pdf"
 title = "Homecare People — Year on Year 2023–2026 (doc 1051, 145 KB)"
+logical_id = "e94256c3-ae73-4594-aadf-e57883ee7c1e"
 
 [[outputs]]
 id = "oF7JHgWHff_aPvz4chNbK"
 uri = "file://downloads/Canoports_Staff_Matrix_tenant107.pdf"
 type = "pdf"
 title = "Canoports Staff Matrix — tenant 107, company 218 (doc 1486, 4.5 KB)"
+logical_id = "473371f5-1c92-4e5d-b283-0deccc5e9c78"
 
 [[outputs]]
 id = "mnW84ndr8mgkQt7kTtIGf"
 uri = "file://downloads/Canoports_Staff_Matrix_tenant108.pdf"
 type = "pdf"
 title = "Canoports Staff Matrix — tenant 108, company 220 (doc 1542, 6.2 KB)"
+logical_id = "7642d736-0115-4f22-b114-adcdf2275cb8"
 
 [[outputs]]
 id = "KJzUrzTLbz1YLo0uK_TIz"
 uri = "file://valoxi-prod-p4-rehearsal.dump"
 type = "unspecified"
 title = "valoxi-prod-p4-rehearsal.dump (pre-Phase 4 rollback point)"
+logical_id = "252e7393-dafb-4ff9-9cdd-511f65aeb219"
 
 [[outputs]]
 id = "fe53CXNSypUeSHYdRfLqk"
@@ -55,6 +63,7 @@ uri = "file://docs/pipeline-fidelity-fix/c1-paper-sample-assess.txt"
 type = "text"
 title = "Contract 1 paper sample assessment"
 description = "Read-only production population assessment report with sizing, company/category cohorts, shortlist, and R2 HEAD checks."
+logical_id = "fa5eb3e4-ab5c-4ec2-8e02-ea90d54d40a1"
 
 [[outputs]]
 id = "ZWQ9UB20TT6moqDJfa9oi"
@@ -62,6 +71,7 @@ uri = "file://docs/pipeline-fidelity-fix/c1-paper-read.txt"
 type = "text"
 title = "Contract 1 paper verification report"
 description = "Complete verbatim two-pass transcription output for the seven requested production documents."
+logical_id = "5768343d-b756-46d5-97e4-ccad21d1d30b"
 
 [[outputs]]
 id = "h5Toh-Xv408H8zqKDov1x"
@@ -69,6 +79,7 @@ uri = "file://docs/pipeline-fidelity-fix/c1-backfill-dryrun.txt"
 type = "text"
 title = "Contract 1 dry-run report"
 description = "Read-only computed population, cross-check, cohort, and planned-apply report."
+logical_id = "01afccb0-730a-40ae-b0f7-b02d97923c7c"
 
 [[outputs]]
 id = "Ll8u7kRgxKGtMbASfkBag"
@@ -76,3 +87,18 @@ uri = "file://docs/pipeline-fidelity-fix/c1-backfill-plan.json"
 type = "unspecified"
 title = "Contract 1 dry-run plan"
 description = "Computed before/after and rollback artefact; no database changes were applied."
+logical_id = "dc657b8b-9002-4c82-bd4e-1055bd230e0f"
+
+[[outputs]]
+id = "75YTdQdKOsWk5RoE9bE7E"
+uri = "file://docs/pipeline-fidelity-fix/identity-pass.txt"
+type = "text"
+title = "Identity Pass"
+description = "Read-only production identity report with repeated financial figures, company and document records, and model-extracted identity results. Public-token values are redacted."
+logical_id = "5208092b-22ba-48bf-bdbd-c0b0fe67615e"
+content_hash = "sha256:b065d556fb7c07936dd10231c8650b1fffd45e3d62d09add7bdbd14e65ba9a9b"
+size = 58577
+mtime_ms = 1788876143868
+storage_uri = "gcs://replit-rams-assets-kirk/rams/assets/repl:85fb53ef-8f2a-4b29-b64b-c651f49dfeb5/5208092b-22ba-48bf-bdbd-c0b0fe67615e/6f27359f-7164-4a34-bdaf-abeab113810f"
+storage_version_token = "1788876164177440"
+content_type = "text/plain"

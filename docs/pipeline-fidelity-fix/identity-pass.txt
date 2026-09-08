@@ -1,0 +1,405 @@
+```text
+IDENTITY
+ current_database 
+------------------
+ neondb
+(1 row)
+
+
+STEP 1 - THE REPEATED FIGURES
+MIRRORED getLatestBalanceSheet WINNER ROW COUNT: 154
+ balance_sheets_rows 
+---------------------
+                 696
+(1 row)
+
+REPEATED total_equity VALUES
+   value    | distinct_companies |    company_ids    
+------------+--------------------+-------------------
+      15269 |                  4 | {149,150,151,152}
+   12169263 |                  4 | {70,76,77,78}
+   13740000 |                  4 | {71,76,77,78}
+   14025000 |                  4 | {76,77,78,79}
+     -37641 |                  3 | {171,235,236}
+     -25345 |                  3 | {171,235,236}
+      -3450 |                  3 | {171,235,236}
+     149886 |                  3 | {149,150,151}
+   11452337 |                  3 | {70,77,78}
+   12931125 |                  3 | {76,77,78}
+     -26421 |                  2 | {235,236}
+      77908 |                  2 | {228,231}
+      89665 |                  2 | {149,151}
+      90116 |                  2 | {150,152}
+      96346 |                  2 | {149,151}
+      96798 |                  2 | {150,152}
+     107938 |                  2 | {90,185}
+     119760 |                  2 | {125,147}
+  120461.95 |                  2 | {90,185}
+     128138 |                  2 | {175,216}
+     142478 |                  2 | {175,216}
+     144802 |                  2 | {175,216}
+     164500 |                  2 | {228,231}
+  165418.79 |                  2 | {90,185}
+     194086 |                  2 | {142,198}
+     194502 |                  2 | {137,189}
+     201376 |                  2 | {175,216}
+     201991 |                  2 | {125,147}
+     230213 |                  2 | {137,189}
+     273899 |                  2 | {125,147}
+     279907 |                  2 | {125,147}
+     299612 |                  2 | {175,216}
+     327501 |                  2 | {142,198}
+     349299 |                  2 | {142,198}
+     388530 |                  2 | {45,70}
+     436800 |                  2 | {14,23}
+     478229 |                  2 | {137,189}
+     484400 |                  2 | {14,23}
+     552900 |                  2 | {14,23}
+     609500 |                  2 | {14,23}
+     617782 |                  2 | {45,70}
+     661400 |                  2 | {14,23}
+     681600 |                  2 | {14,23}
+     715203 |                  2 | {142,198}
+     717070 |                  2 | {137,189}
+     885925 |                  2 | {45,70}
+    1657436 |                  2 | {122,123}
+    1770050 |                  2 | {45,70}
+    1938462 |                  2 | {122,123}
+ 1976022.64 |                  2 | {122,123}
+    2108679 |                  2 | {122,123}
+    4755914 |                  2 | {218,220}
+    5022306 |                  2 | {218,220}
+    6851802 |                  2 | {218,220}
+    7873818 |                  2 | {218,220}
+   10323894 |                  2 | {71,76}
+(56 rows)
+
+TRUE REPEATED total_equity VALUE COUNT: 56
+REPEATED trade_debtors VALUES
+   value   | distinct_companies |    company_ids    
+-----------+--------------------+-------------------
+     48090 |                  4 | {149,150,151,152}
+     82836 |                  4 | {149,150,151,152}
+    104735 |                  4 | {149,150,151,152}
+    130956 |                  4 | {149,150,151,152}
+   3526875 |                  4 | {70,76,77,78}
+   4353750 |                  4 | {71,76,77,78}
+   4750000 |                  4 | {76,77,78,79}
+      1458 |                  3 | {171,235,236}
+      3665 |                  3 | {171,235,236}
+      5913 |                  3 | {171,235,236}
+     12716 |                  3 | {171,235,236}
+   3174188 |                  3 | {70,77,78}
+   3918750 |                  3 | {76,77,78}
+       316 |                  2 | {142,198}
+     21470 |                  2 | {90,185}
+  28734.93 |                  2 | {90,185}
+     38605 |                  2 | {125,147}
+     65470 |                  2 | {90,185}
+     66915 |                  2 | {125,147}
+     72491 |                  2 | {125,147}
+     75690 |                  2 | {137,189}
+     78470 |                  2 | {125,147}
+    113707 |                  2 | {228,231}
+    158782 |                  2 | {228,231}
+    187350 |                  2 | {45,70}
+    214592 |                  2 | {137,189}
+    215692 |                  2 | {45,70}
+    248245 |                  2 | {45,70}
+    286551 |                  2 | {137,189}
+    358723 |                  2 | {137,189}
+    368500 |                  2 | {14,23}
+    378450 |                  2 | {45,70}
+```
+
+```text
+    385200 |                  2 | {14,23}
+    398500 |                  2 | {14,23}
+    412800 |                  2 | {14,23}
+    425600 |                  2 | {14,23}
+    438500 |                  2 | {14,23}
+    519768 |                  2 | {142,198}
+    883945 |                  2 | {122,123}
+ 889669.98 |                  2 | {122,123}
+    939674 |                  2 | {122,123}
+   2015706 |                  2 | {218,220}
+   2257001 |                  2 | {218,220}
+   2398191 |                  2 | {218,220}
+   2986667 |                  2 | {71,76}
+   3165261 |                  2 | {218,220}
+(46 rows)
+
+TRUE REPEATED trade_debtors VALUE COUNT: 46
+
+STEP 2 - PUT NAMES TO THEM
+ ordinal_position |          column_name          |          data_type          
+------------------+-------------------------------+-----------------------------
+                1 | id                            | integer
+                2 | user_company_id               | integer
+                3 | company_name                  | character varying
+                4 | industry                      | character varying
+                5 | website                       | character varying
+                6 | phone                         | character varying
+                7 | email                         | character varying
+                8 | address                       | text
+                9 | annual_revenue                | numeric
+               10 | employee_count                | integer
+               11 | year_established              | integer
+               12 | description                   | text
+               13 | created_by                    | integer
+               14 | created_at                    | timestamp without time zone
+               15 | stage                         | character varying
+               16 | stage_updated_at              | timestamp without time zone
+               17 | stage_updated_by              | integer
+               18 | website_analysis              | text
+               19 | website_analysis_processed_at | timestamp without time zone
+               20 | sub_sector                    | character varying
+               21 | initial_discussion_completed  | boolean
+               22 | initial_discussion_date       | timestamp without time zone
+               23 | initial_discussion_notes      | text
+               24 | initial_discussion_by         | integer
+               25 | is_archived                   | boolean
+               26 | archived_at                   | timestamp without time zone
+               27 | company_number                | character varying
+(27 rows)
+
+ id  |           company_name            | company_number |         created_at         
+-----+-----------------------------------+----------------+----------------------------
+  14 | Test Company                      |                | 2026-03-19 00:46:35.054147
+  23 | Test Company 1                    |                | 2026-03-23 12:07:26.745877
+  45 | Team Test Co                      |                | 2026-03-27 11:50:13.491003
+  70 | Aithon Solutions                  |                | 2026-04-16 16:51:56.989138
+  71 | Acme Manufacturing Ltd            |                | 2026-04-16 17:13:25.1581
+  76 | App Test Co                       |                | 2026-04-20 11:56:04.813843
+  77 | Brand New Company                 |                | 2026-04-20 18:21:10.527607
+  78 | Latest company Ltd                |                | 2026-04-21 08:43:13.532849
+  79 | Target Co                         |                | 2026-04-24 13:25:31.30809
+  90 | Trade Double Glazing Limited      |                | 2026-04-25 07:54:20.667845
+ 122 |     Clifford Press Limited        |                | 2026-05-04 13:18:23.044915
+ 123 | Printing Company                  |                | 2026-05-04 13:41:17.659596
+ 125 | Cordell Engineering Limited       |                | 2026-05-05 14:09:58.637092
+ 137 | MANOR BUILDING SOLUTIONS (UK) LTD |                | 2026-05-14 12:46:07.654168
+ 142 | CR Building Contractors Limited   |                | 2026-05-19 17:48:59.339503
+ 147 | Cordell                           |                | 2026-05-22 11:39:54.335904
+ 149 | Civil Engineering                 |                | 2026-05-23 06:11:55.362932
+ 150 | Civil Engineering                 |                | 2026-05-23 18:21:30.407945
+ 151 | Civils                            |                | 2026-05-24 10:01:03.992201
+ 152 | Civils 2                          |                | 2026-05-24 10:11:14.495481
+ 171 | Sto_Nursery                       |                | 2026-06-05 22:03:29.996954
+ 175 | Baytree Park                      |                | 2026-06-08 04:10:41.556867
+ 185 | trade double glazing              |                | 2026-06-08 04:53:49.373964
+ 189 | Manor Building Solutions (UK) Ltd |                | 2026-06-08 20:22:29.156964
+ 198 | CR Building                       |                | 2026-06-13 07:36:25.846008
+ 216 | Baytree nursery                   |                | 2026-06-30 12:23:13.421919
+ 218 | Canoports UK Limited              |                | 2026-07-01 08:42:59.089887
+ 220 | Canoports UK Limited              |                | 2026-07-03 12:51:38.40723
+ 228 | Thor-CON                          |                | 2026-07-16 13:19:39.699958
+ 231 | Triple test                       |                | 2026-07-20 01:32:42.989742
+ 235 | LiLI Nursery                      |                | 2026-07-21 11:23:55.098792
+ 236 | BB_nursery                        |                | 2026-07-21 16:10:46.396851
+(32 rows)
+
+
+STEP 3 - PUT FILENAMES TO THEM
+ ordinal_position |      column_name       |          data_type          
+------------------+------------------------+-----------------------------
+                1 | id                     | integer
+                2 | target_company_id      | integer
+                3 | uploaded_by            | integer
+                4 | document_name          | character varying
+                5 | original_filename      | character varying
+                6 | file_path              | character varying
+                7 | file_size              | integer
+                8 | file_type              | character varying
+                9 | document_category      | character varying
+               10 | description            | text
+               11 | is_confidential        | boolean
+               12 | upload_date            | timestamp without time zone
+               13 | last_accessed          | timestamp without time zone
+               14 | access_count           | integer
+               15 | created_at             | timestamp without time zone
+               16 | external_submission_id | integer
+               17 | secondary_category     | text
+               18 | public_token           | character varying
+(18 rows)
+
+```
+
+```text
+  id  | target_company_id |                              original_filename                               | document_category |         created_at         | uploaded_by | external_submission_id 
+------+-------------------+------------------------------------------------------------------------------+-------------------+----------------------------+-------------+------------------------
+   63 |                14 | Test_Company_Statutory_Accounts_2021.pdf                                     | Company Accounts  | 2026-03-19 00:48:31.033087 |           1 |                     57
+   66 |                14 | Test_Company_Statutory_Accounts_2022.pdf                                     | Company Accounts  | 2026-03-19 00:49:15.79673  |           1 |                     60
+   68 |                14 | Test_Company_Statutory_Accounts_2023.pdf                                     | Company Accounts  | 2026-03-19 00:50:13.314266 |           1 |                     62
+   69 |                14 | Test_Company_Current_Balance_Sheet.pdf                                       | Balance Sheet     | 2026-03-19 00:50:24.431786 |           1 |                     63
+   71 |                14 | Test_Company_Statutory_Accounts_2024.pdf                                     | Company Accounts  | 2026-03-19 00:51:06.475667 |           1 |                     65
+  228 |                45 | Aithon_Solutions_Statutory_Accounts_2021.pdf                                 | Company Accounts  | 2026-03-27 11:52:38.774653 |           2 |                       
+  229 |                45 | Aithon_Solutions_Statutory_Accounts_2022.pdf                                 | Company Accounts  | 2026-03-27 11:53:18.591283 |           2 |                       
+  230 |                45 | Aithon_Solutions_Statutory_Accounts_2023.pdf                                 | Company Accounts  | 2026-03-27 11:54:04.220187 |           2 |                       
+  234 |                45 | Aithon_Solutions_Current_Balance_Sheet.pdf                                   | Balance Sheet     | 2026-03-27 11:57:28.281925 |           2 |                       
+  298 |                23 | Test_Company_Current_Balance_Sheet.pdf                                       | YTD Balance Sheet | 2026-04-02 10:47:30.457942 |           1 |                       
+  300 |                23 | Test_Company_Statutory_Accounts_2022.pdf                                     | Company Accounts  | 2026-04-02 10:48:33.968242 |           1 |                       
+  301 |                23 | Test_Company_Statutory_Accounts_2020.pdf                                     | Company Accounts  | 2026-04-02 10:50:17.313323 |           1 |                       
+  302 |                23 | Test_Company_Statutory_Accounts_2024.pdf                                     | Company Accounts  | 2026-04-02 10:50:27.514852 |           1 |                       
+  396 |                70 | Aithon_Solutions_Statutory_Accounts_2021.pdf                                 | Company Accounts  | 2026-04-16 16:54:28.685757 |           2 |                       
+  397 |                70 | Aithon_Solutions_Statutory_Accounts_2022.pdf                                 | Company Accounts  | 2026-04-16 16:55:13.910196 |           2 |                       
+  398 |                70 | Aithon_Solutions_Statutory_Accounts_2023.pdf                                 | Company Accounts  | 2026-04-16 16:57:17.683777 |           2 |                       
+  401 |                70 | Aithon_Solutions_Current_Balance_Sheet.pdf                                   | YTD Balance Sheet | 2026-04-16 17:00:27.149114 |           2 |                       
+  405 |                71 | 3 Acme_Manufacturing_Limited_Statutory_Accounts_2022.pdf                     | Company Accounts  | 2026-04-16 17:20:25.68649  |           2 |                       
+  408 |                71 | 7 Acme_Manufacturing_Limited_Current_Balance_Sheet.pdf                       | YTD Balance Sheet | 2026-04-16 17:25:59.076255 |           2 |                       
+  420 |                70 | 5 Acme_Manufacturing_Limited_Statutory_Accounts_2024.pdf                     | Due Diligence     | 2026-04-16 18:50:48.883805 |           1 |                     82
+  431 |                76 | 2 Acme_Manufacturing_Limited_Statutory_Accounts_2021.pdf                     | Company Accounts  | 2026-04-20 12:30:30.704299 |           2 |                       
+  433 |                76 | 3 Acme_Manufacturing_Limited_Statutory_Accounts_2022.pdf                     | Company Accounts  | 2026-04-20 12:36:55.931888 |           1 |                     83
+  434 |                76 | 4 Acme_Manufacturing_Limited_Statutory_Accounts_2023.pdf                     | Company Accounts  | 2026-04-20 12:51:31.444471 |           1 |                     84
+  438 |                76 | 7 Acme_Manufacturing_Limited_Current_Balance_Sheet.pdf                       | Balance Sheet     | 2026-04-20 13:14:02.164394 |           1 |                     87
+  443 |                77 | 2 Acme_Manufacturing_Limited_Statutory_Accounts_2021.pdf                     | Company Accounts  | 2026-04-20 18:30:48.498434 |           1 |                     90
+  444 |                77 | 3 Acme_Manufacturing_Limited_Statutory_Accounts_2022.pdf                     | Company Accounts  | 2026-04-20 18:32:04.593727 |           1 |                     91
+  445 |                77 | 4 Acme_Manufacturing_Limited_Statutory_Accounts_2023.pdf                     | Company Accounts  | 2026-04-20 18:33:56.766426 |           1 |                     92
+  446 |                77 | 5 Acme_Manufacturing_Limited_Statutory_Accounts_2024.pdf                     | Company Accounts  | 2026-04-20 18:36:14.622717 |           1 |                     93
+  453 |                78 | 1 Acme_Manufacturing_Limited_Statutory_Accounts_2020.pdf                     | Company Accounts  | 2026-04-21 10:06:58.281902 |          34 |                       
+  454 |                78 | 3 Acme_Manufacturing_Limited_Statutory_Accounts_2022.pdf                     | Company Accounts  | 2026-04-21 10:07:54.265247 |          34 |                       
+  455 |                78 | 4 Acme_Manufacturing_Limited_Statutory_Accounts_2023.pdf                     | Company Accounts  | 2026-04-21 10:08:30.749964 |          34 |                       
+  456 |                78 | 5 Acme_Manufacturing_Limited_Statutory_Accounts_2024.pdf                     | Company Accounts  | 2026-04-21 10:09:04.362328 |          34 |                       
+  464 |                79 | 1 Acme_Manufacturing_Limited_Statutory_Accounts_2020.pdf                     | Company Accounts  | 2026-04-24 13:27:22.496284 |          37 |                       
+  697 |               123 | 2023 Full Accounts_Printing Company.pdf                                      | Company Accounts  | 2026-05-04 13:41:45.001594 |          11 |                       
+  698 |               123 | 2024 Full Accounts_Printing Company.pdf                                      | Company Accounts  | 2026-05-04 13:41:56.022384 |          11 |                       
+  699 |               123 | Management_Report January 2026_Printing Company.pdf                          | Company Accounts  | 2026-05-04 13:42:06.692267 |          11 |                       
+  702 |               122 | Management Report January 2026 (New).pdf                                     | YTD Balance Sheet | 2026-05-04 20:35:33.688558 |          70 |                       
+  703 |               122 | 2024 Full Accounts Clifford Press Limited (New).pdf                          | Sales Ledger      | 2026-05-04 20:36:48.166334 |          70 |                       
+  704 |               122 | 2025 Full Accounts Clifford Press Limited (New).pdf                          | Company Accounts  | 2026-05-04 20:37:05.531957 |          70 |                       
+  711 |               125 | 2025 accounts.pdf                                                            | Company Accounts  | 2026-05-05 14:13:51.639379 |          41 |                       
+  712 |               125 | Annual Accounts YE 31.12.2023 (Final Acounts).pdf                            | Company Accounts  | 2026-05-05 14:14:03.653858 |          41 |                       
+  846 |               137 | HPM304_Information_Memorandum_Manor_Building_Solutions_(UK)_Ltd_1.pdf        | Deal Documents    | 2026-05-14 12:48:39.590423 |          39 |                       
+  922 |               147 | 2025 accounts.pdf                                                            | Company Accounts  | 2026-05-22 11:46:40.067201 |          39 |                       
+  923 |               147 | Annual Accounts YE 31.12.2023 (Final Acounts).pdf                            | Company Accounts  | 2026-05-22 11:48:36.565627 |          39 |                       
+  935 |               149 | H176-Accounts to the registrar (final)-MH-20240304-120338-124 2023.08.31.PDF | Company Accounts  | 2026-05-23 06:12:59.880405 |          11 |                       
+  936 |               149 | _Balance_Sheet 2025.pdf                                                      | YTD Balance Sheet | 2026-05-23 06:13:46.23248  |          11 |                       
+  940 |               150 | Beckwith___Hanlon_Consulting_Engineers_Limited_-_Balance_Sheet 2025.pdf      | YTD Balance Sheet | 2026-05-23 18:25:05.476447 |           2 |                       
+  942 |               150 | H176-Full accounts (final)-MH-20250409-160834-382 2024.08.31.PDF             | Company Accounts  | 2026-05-23 18:27:59.443512 |           2 |                       
+  943 |               150 | H176-Full accounts (final)-MH-20221202-083905-618 2022.07.31.PDF             | Company Accounts  | 2026-05-23 18:28:57.221138 |           2 |                       
+  948 |               151 | _Balance_Sheet 2025.pdf                                                      | YTD Balance Sheet | 2026-05-24 10:02:05.649411 |          11 |                       
+  949 |               151 | H176-Full accounts (final)-MH-20221202-083905-618 2022.07.31.PDF             | Company Accounts  | 2026-05-24 10:03:42.890909 |          11 |                       
+  952 |               152 | H176-Accounts to the registrar (final)-MH-20240304-120338-124 2023.08.31.PDF | Company Accounts  | 2026-05-24 10:11:57.429796 |          11 |                       
+  953 |               152 | H176-UPDATED 2025 ACCOUNTS 25.1-LTD-MH-20251124.PDF                          | Company Accounts  | 2026-05-24 10:12:14.867037 |          11 |                       
+ 1123 |               171 | 48375 - Accounts 2023.pdf                                                    | Company Accounts  | 2026-06-05 22:04:16.037578 |         106 |                       
+ 1124 |               171 | 48375- Accounts 2024.pdf                                                     | Company Accounts  | 2026-06-05 22:04:37.537729 |         106 |                       
+ 1125 |               171 | 48375- Accounts 2025.pdf                                                     | Company Accounts  | 2026-06-05 22:04:56.714767 |         106 |                       
+ 1162 |               189 | Unaudtited Financial Statements YE 31-03-2024 - Manor Building Solutions.pdf | Company Accounts  | 2026-06-08 20:23:25.678088 |          47 |                       
+ 1163 |               189 | Unaudtited Financial Statements YE 31-03-2025 - Manor Building Solutions.pdf | Company Accounts  | 2026-06-08 20:23:43.814422 |          47 |                       
+ 1164 |               189 | Draft Accounts YE 31-03-2026 - Manor Building Solutions.pdf                  | Company Accounts  | 2026-06-08 20:24:02.353979 |          47 |                       
+ 1280 |               198 | Full_accounts_-_YE_31-10-24.pdf                                              | Company Accounts  | 2026-06-13 07:41:16.488768 |          48 |                       
+ 1281 |               198 | Fillted accounts - YE 31-10-23.pdf                                           | Company Accounts  | 2026-06-13 07:41:33.658031 |          48 |                       
+ 1282 |               198 | Full accounts - YE 31-10-22.pdf                                              | Company Accounts  | 2026-06-13 07:41:49.735254 |          48 |                       
+ 1299 |               137 | Manor 2025-26 draft accounts.pdf                                             | Company Accounts  | 2026-06-15 15:01:06.872569 |          39 |                       
+ 1458 |               216 | Sole Trader Accounts 5th April 2024 (1).pdf                                  | Company Accounts  | 2026-07-01 07:44:56.951287 |         109 |                       
+ 1460 |               216 | Sole Trader Accounts 5th April 2023 (1).pdf                                  | Deal Documents    | 2026-07-01 07:45:31.540863 |         109 |                       
+ 1464 |               216 | Accounts April 2026 page 3 of 4 (1).pdf                                      | Deal Documents    | 2026-07-01 07:46:35.155348 |         109 |                       
+ 1488 |               218 | Doc1_Company_Accounts.pdf                                                    | Company Accounts  | 2026-07-01 11:27:27.728926 |         110 |                       
+ 1505 |               218 | Doc8_Company_Accounts_FY26.pdf                                               | Company Accounts  | 2026-07-02 11:21:58.068749 |         110 |                       
+ 1522 |               220 | Canoports_YTD_Balance_Sheet.pdf                                              | YTD Balance Sheet | 2026-07-03 20:46:55.919832 |         111 |                       
+ 1535 |               220 | Canoports_Company_Accounts_FY24.pdf                                          | Company Accounts  | 2026-07-04 08:31:22.487989 |         111 |                       
+ 1536 |               220 | Canoports_Company_Accounts_FY23.pdf                                          | Company Accounts  | 2026-07-04 08:31:34.987238 |         111 |                       
+ 1765 |               228 | 154764 - Midland Air Conditioning & Facility Management Ltd.pdf              | Deal Documents    | 2026-07-16 15:50:27.112022 |           1 |                       
+ 1788 |               231 | Year Ending 31.03.2023.pdf                                                   | Company Accounts  | 2026-07-20 01:34:55.892026 |           1 |                       
+ 1803 |               235 | 48375 - Accounts 2023.pdf                                                    | Company Accounts  | 2026-07-21 11:24:34.046184 |         106 |                       
+ 1804 |               235 | 48375- Accounts 2024.pdf                                                     | Company Accounts  | 2026-07-21 11:24:49.856573 |         106 |                       
+ 1805 |               235 | 48375- Accounts 2025.pdf                                                     | Company Accounts  | 2026-07-21 11:25:04.774977 |         106 |                       
+ 1812 |               236 | 48375 - Accounts 2023.pdf                                                    | Company Accounts  | 2026-07-21 16:11:15.759368 |         106 |                       
+ 1813 |               236 | 48375- Accounts 2024.pdf                                                     | Company Accounts  | 2026-07-21 16:11:34.607053 |         106 |                       
+ 1814 |               236 | 48375- Accounts 2025.pdf                                                     | Company Accounts  | 2026-07-21 16:11:50.936577 |         106 |                       
+(79 rows)
+
+
+STEP 4 - THE co 45 / co 70 PAIR IN FULL
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              full_balance_sheet_and_period                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"id":177,"financial_period_id":217,"target_company_id":45,"intangible_assets":124500,"tangible_fixed_assets":85200,"freehold_property":null,"leasehold_property":null,"plant_machinery":null,"fixtures_fittings":null,"motor_vehicles":null,"computer_equipment":null,"stock_inventory":null,"trade_debtors":187350,"prepayments":null,"amounts_owed_by_directors":null,"amounts_owed_by_connected_companies":null,"directors_current_account":null,"other_debtors":null,"cash_at_bank":245680,"total_current_assets":433030,"trade_creditors":null,"taxation_social_security":null,"vat_payable":null,"corporation_tax_due":39226,"bank_loans_overdraft_current":null,"hire_purchase_current":null,"accruals":null,"amounts_owed_to_directors":null,"other_creditors":null,"total_current_liabilities":156200,"bank_loans_long_term":null,"hire_purchase_long_term":null,"deferred_taxation":null,"other_long_term_debt":98000,"total_long_term_liabilities":98000,"share_capital":100,"retained_earnings":388430,"total_equity":388530,"debtors_list":null,"creditors_list":null,"fixed_assets_detail":null,"source_document_id":228,"created_at":"2026-03-27T11:51:42.847253","updated_at":"2026-07-26T22:13:48.663","fiscal_year":2020,"period_end":"2020-03-31","source_tier":"statutory","period_source_document_id":228}
+ {"id":178,"financial_period_id":218,"target_company_id":45,"intangible_assets":156800,"tangible_fixed_assets":112400,"freehold_property":null,"leasehold_property":null,"plant_machinery":null,"fixtures_fittings":null,"motor_vehicles":null,"computer_equipment":null,"stock_inventory":null,"trade_debtors":215692,"prepayments":null,"amounts_owed_by_directors":null,"amounts_owed_by_connected_companies":null,"directors_current_account":null,"other_debtors":null,"cash_at_bank":387450,"total_current_assets":603142,"trade_creditors":null,"taxation_social_security":null,"vat_payable":null,"corporation_tax_due":null,"bank_loans_overdraft_current":null,"hire_purchase_current":null,"accruals":null,"amounts_owed_to_directors":null,"other_creditors":null,"total_current_liabilities":189560,"bank_loans_long_term":null,"hire_purchase_long_term":null,"deferred_taxation":null,"other_long_term_debt":65000,"total_long_term_liabilities":65000,"share_capital":100,"retained_earnings":617682,"total_equity":617782,"debtors_list":null,"creditors_list":null,"fixed_assets_detail":null,"source_document_id":229,"created_at":"2026-03-27T11:52:59.255727","updated_at":"2026-07-26T22:13:50.485","fiscal_year":2021,"period_end":"2021-03-31","source_tier":"statutory","period_source_document_id":229}
+ {"id":1074,"financial_period_id":219,"target_company_id":45,"intangible_assets":189200,"tangible_fixed_assets":145600,"freehold_property":null,"leasehold_property":null,"plant_machinery":null,"fixtures_fittings":null,"motor_vehicles":null,"computer_equipment":null,"stock_inventory":null,"trade_debtors":248245,"prepayments":null,"amounts_owed_by_directors":null,"amounts_owed_by_connected_companies":null,"directors_current_account":null,"other_debtors":null,"cash_at_bank":556780,"total_current_assets":805025,"trade_creditors":null,"taxation_social_security":null,"vat_payable":null,"corporation_tax_due":65454,"bank_loans_overdraft_current":null,"hire_purchase_current":null,"accruals":null,"amounts_owed_to_directors":null,"other_creditors":null,"total_current_liabilities":218900,"bank_loans_long_term":null,"hire_purchase_long_term":null,"deferred_taxation":null,"other_long_term_debt":35000,"total_long_term_liabilities":35000,"share_capital":100,"retained_earnings":885825,"total_equity":885925,"debtors_list":null,"creditors_list":null,"fixed_assets_detail":null,"source_document_id":230,"created_at":"2026-07-16T13:55:43.829571","updated_at":"2026-07-26T22:13:51.004","fiscal_year":2022,"period_end":"2022-03-31","source_tier":"statutory","period_source_document_id":230}
+ {"id":181,"financial_period_id":220,"target_company_id":45,"intangible_assets":224600,"tangible_fixed_assets":178900,"freehold_property":null,"leasehold_property":null,"plant_machinery":null,"fixtures_fittings":null,"motor_vehicles":null,"computer_equipment":null,"stock_inventory":null,"trade_debtors":285692,"prepayments":null,"amounts_owed_by_directors":null,"amounts_owed_by_connected_companies":null,"directors_current_account":null,"other_debtors":null,"cash_at_bank":784250,"total_current_assets":1069942,"trade_creditors":null,"taxation_social_security":null,"vat_payable":null,"corporation_tax_due":75515,"bank_loans_overdraft_current":null,"hire_purchase_current":null,"accruals":null,"amounts_owed_to_directors":null,"other_creditors":null,"total_current_liabilities":256840,"bank_loans_long_term":null,"hire_purchase_long_term":null,"deferred_taxation":null,"other_long_term_debt":15000,"total_long_term_liabilities":15000,"share_capital":100,"retained_earnings":1201502,"total_equity":1201602,"debtors_list":null,"creditors_list":null,"fixed_assets_detail":null,"source_document_id":230,"created_at":"2026-03-27T11:56:30.882098","updated_at":"2026-07-26T22:13:49.117","fiscal_year":2023,"period_end":"2023-03-31","source_tier":"statutory","period_source_document_id":230}
+ {"id":182,"financial_period_id":221,"target_company_id":45,"intangible_assets":268400,"tangible_fixed_assets":215600,"freehold_property":null,"leasehold_property":null,"plant_machinery":null,"fixtures_fittings":null,"motor_vehicles":null,"computer_equipment":null,"stock_inventory":null,"trade_debtors":328512,"prepayments":null,"amounts_owed_by_directors":null,"amounts_owed_by_connected_companies":null,"directors_current_account":null,"other_debtors":null,"cash_at_bank":1056890,"total_current_assets":1385402,"trade_creditors":null,"taxation_social_security":null,"vat_payable":null,"corporation_tax_due":90202,"bank_loans_overdraft_current":null,"hire_purchase_current":null,"accruals":null,"amounts_owed_to_directors":null,"other_creditors":null,"total_current_liabilities":298650,"bank_loans_long_term":null,"hire_purchase_long_term":null,"deferred_taxation":null,"other_long_term_debt":0,"total_long_term_liabilities":0,"share_capital":100,"retained_earnings":1570652,"total_equity":1570752,"debtors_list":null,"creditors_list":null,"fixed_assets_detail":null,"source_document_id":232,"created_at":"2026-03-27T11:56:30.978371","updated_at":"2026-07-26T22:13:49.572","fiscal_year":2024,"period_end":"2024-03-31","source_tier":"statutory","period_source_document_id":232}
+ {"id":183,"financial_period_id":222,"target_company_id":45,"intangible_assets":295600,"tangible_fixed_assets":248900,"freehold_property":null,"leasehold_property":null,"plant_machinery":null,"fixtures_fittings":null,"motor_vehicles":null,"computer_equipment":null,"stock_inventory":null,"trade_debtors":378450,"prepayments":null,"amounts_owed_by_directors":null,"amounts_owed_by_connected_companies":null,"directors_current_account":null,"other_debtors":null,"cash_at_bank":1189680,"total_current_assets":1568130,"trade_creditors":null,"taxation_social_security":null,"vat_payable":null,"corporation_tax_due":null,"bank_loans_overdraft_current":null,"hire_purchase_current":null,"accruals":null,"amounts_owed_to_directors":null,"other_creditors":342580,"total_current_liabilities":342580,"bank_loans_long_term":null,"hire_purchase_long_term":null,"deferred_taxation":null,"other_long_term_debt":0,"total_long_term_liabilities":0,"share_capital":100,"retained_earnings":1769950,"total_equity":1770050,"debtors_list":null,"creditors_list":null,"fixed_assets_detail":null,"source_document_id":234,"created_at":"2026-03-27T11:57:36.229749","updated_at":"2026-07-26T22:13:50.028","fiscal_year":2024,"period_end":"2024-12-15","source_tier":"management","period_source_document_id":234}
+ {"id":282,"financial_period_id":342,"target_company_id":70,"intangible_assets":124500,"tangible_fixed_assets":85200,"freehold_property":null,"leasehold_property":null,"plant_machinery":null,"fixtures_fittings":null,"motor_vehicles":null,"computer_equipment":null,"stock_inventory":null,"trade_debtors":187350,"prepayments":null,"amounts_owed_by_directors":null,"amounts_owed_by_connected_companies":null,"directors_current_account":null,"other_debtors":null,"cash_at_bank":245680,"total_current_assets":433030,"trade_creditors":null,"taxation_social_security":null,"vat_payable":null,"corporation_tax_due":null,"bank_loans_overdraft_current":null,"hire_purchase_current":null,"accruals":null,"amounts_owed_to_directors":null,"other_creditors":null,"total_current_liabilities":156200,"bank_loans_long_term":null,"hire_purchase_long_term":null,"deferred_taxation":null,"other_long_term_debt":98000,"total_long_term_liabilities":98000,"share_capital":100,"retained_earnings":388430,"total_equity":388530,"debtors_list":null,"creditors_list":null,"fixed_assets_detail":null,"source_document_id":396,"created_at":"2026-04-16T16:54:09.260495","updated_at":"2026-07-26T22:14:05.981","fiscal_year":2020,"period_end":"2020-03-31","source_tier":"statutory","period_source_document_id":396}
+ {"id":283,"financial_period_id":343,"target_company_id":70,"intangible_assets":156800,"tangible_fixed_assets":112400,"freehold_property":null,"leasehold_property":null,"plant_machinery":null,"fixtures_fittings":null,"motor_vehicles":null,"computer_equipment":null,"stock_inventory":null,"trade_debtors":215692,"prepayments":null,"amounts_owed_by_directors":null,"amounts_owed_by_connected_companies":null,"directors_current_account":null,"other_debtors":null,"cash_at_bank":387450,"total_current_assets":603142,"trade_creditors":null,"taxation_social_security":null,"vat_payable":null,"corporation_tax_due":null,"bank_loans_overdraft_current":null,"hire_purchase_current":null,"accruals":null,"amounts_owed_to_directors":null,"other_creditors":null,"total_current_liabilities":189560,"bank_loans_long_term":null,"hire_purchase_long_term":null,"deferred_taxation":null,"other_long_term_debt":65000,"total_long_term_liabilities":65000,"share_capital":100,"retained_earnings":617682,"total_equity":617782,"debtors_list":null,"creditors_list":null,"fixed_assets_detail":null,"source_document_id":397,"created_at":"2026-04-16T16:54:51.172953","updated_at":"2026-07-26T22:14:06.436","fiscal_year":2021,"period_end":"2021-03-31","source_tier":"statutory","period_source_document_id":397}
+ {"id":284,"financial_period_id":344,"target_company_id":70,"intangible_assets":189200,"tangible_fixed_assets":145600,"freehold_property":null,"leasehold_property":null,"plant_machinery":null,"fixtures_fittings":null,"motor_vehicles":null,"computer_equipment":null,"stock_inventory":null,"trade_debtors":248245,"prepayments":null,"amounts_owed_by_directors":null,"amounts_owed_by_connected_companies":null,"directors_current_account":null,"other_debtors":null,"cash_at_bank":556780,"total_current_assets":805025,"trade_creditors":null,"taxation_social_security":null,"vat_payable":null,"corporation_tax_due":null,"bank_loans_overdraft_current":null,"hire_purchase_current":null,"accruals":null,"amounts_owed_to_directors":null,"other_creditors":null,"total_current_liabilities":218900,"bank_loans_long_term":null,"hire_purchase_long_term":null,"deferred_taxation":null,"other_long_term_debt":35000,"total_long_term_liabilities":35000,"share_capital":100,"retained_earnings":885825,"total_equity":885925,"debtors_list":null,"creditors_list":null,"fixed_assets_detail":null,"source_document_id":398,"created_at":"2026-04-16T16:55:35.364085","updated_at":"2026-07-26T22:14:06.893","fiscal_year":2022,"period_end":"2022-03-31","source_tier":"statutory","period_source_document_id":398}
+ {"id":285,"financial_period_id":345,"target_company_id":70,"intangible_assets":619650,"tangible_fixed_assets":10656250,"freehold_property":null,"leasehold_property":null,"plant_machinery":null,"fixtures_fittings":null,"motor_vehicles":null,"computer_equipment":null,"stock_inventory":3174188,"trade_debtors":3526875,"prepayments":null,"amounts_owed_by_directors":null,"amounts_owed_by_connected_companies":null,"directors_current_account":null,"other_debtors":null,"cash_at_bank":1765800,"total_current_assets":8466863,"trade_creditors":null,"taxation_social_security":null,"vat_payable":null,"corporation_tax_due":null,"bank_loans_overdraft_current":null,"hire_purchase_current":null,"accruals":null,"amounts_owed_to_directors":null,"other_creditors":null,"total_current_liabilities":4232250,"bank_loans_long_term":null,"hire_purchase_long_term":null,"deferred_taxation":null,"other_long_term_debt":3341250,"total_long_term_liabilities":3341250,"share_capital":1000000,"retained_earnings":11169263,"total_equity":12169263,"debtors_list":null,"creditors_list":null,"fixed_assets_detail":null,"source_document_id":420,"created_at":"2026-04-16T16:57:36.131366","updated_at":"2026-07-26T22:14:08.266","fiscal_year":2023,"period_end":"2023-03-31","source_tier":"statutory","period_source_document_id":420}
+ {"id":286,"financial_period_id":346,"target_company_id":70,"intangible_assets":557685,"tangible_fixed_assets":10090625,"freehold_property":null,"leasehold_property":null,"plant_machinery":null,"fixtures_fittings":null,"motor_vehicles":null,"computer_equipment":null,"stock_inventory":2856769,"trade_debtors":3174188,"prepayments":null,"amounts_owed_by_directors":null,"amounts_owed_by_connected_companies":null,"directors_current_account":null,"other_debtors":null,"cash_at_bank":1589220,"total_current_assets":7620177,"trade_creditors":null,"taxation_social_security":null,"vat_payable":null,"corporation_tax_due":398043,"bank_loans_overdraft_current":null,"hire_purchase_current":null,"accruals":null,"amounts_owed_to_directors":null,"other_creditors":null,"total_current_liabilities":3809025,"bank_loans_long_term":null,"hire_purchase_long_term":null,"deferred_taxation":null,"other_long_term_debt":3007125,"total_long_term_liabilities":3007125,"share_capital":1000000,"retained_earnings":10452337,"total_equity":11452337,"debtors_list":null,"creditors_list":null,"fixed_assets_detail":null,"source_document_id":420,"created_at":"2026-04-16T16:58:32.270198","updated_at":"2026-07-26T22:14:07.353","fiscal_year":2024,"period_end":"2024-03-31","source_tier":"statutory","period_source_document_id":420}
+ {"id":287,"financial_period_id":347,"target_company_id":70,"intangible_assets":295600,"tangible_fixed_assets":248900,"freehold_property":null,"leasehold_property":null,"plant_machinery":null,"fixtures_fittings":null,"motor_vehicles":null,"computer_equipment":null,"stock_inventory":null,"trade_debtors":378450,"prepayments":null,"amounts_owed_by_directors":null,"amounts_owed_by_connected_companies":null,"directors_current_account":null,"other_debtors":null,"cash_at_bank":1189680,"total_current_assets":1568130,"trade_creditors":null,"taxation_social_security":null,"vat_payable":null,"corporation_tax_due":null,"bank_loans_overdraft_current":null,"hire_purchase_current":null,"accruals":null,"amounts_owed_to_directors":null,"other_creditors":342580,"total_current_liabilities":342580,"bank_loans_long_term":null,"hire_purchase_long_term":null,"deferred_taxation":null,"other_long_term_debt":0,"total_long_term_liabilities":0,"share_capital":100,"retained_earnings":1769950,"total_equity":1770050,"debtors_list":null,"creditors_list":null,"fixed_assets_detail":null,"source_document_id":401,"created_at":"2026-04-16T17:00:34.388954","updated_at":"2026-07-26T22:14:07.809","fiscal_year":2024,"period_end":"2024-12-15","source_tier":"management","period_source_document_id":401}
+(12 rows)
+
+                                                                                                                                                                                                                                                                                                                                                 full_document_row                                                                                                                                                                                                                                                                                                                                                  
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"id":228,"target_company_id":45,"uploaded_by":2,"document_name":"Aithon_Solutions_Statutory_Accounts_2021.pdf","original_filename":"Aithon_Solutions_Statutory_Accounts_2021.pdf","file_path":"companies/45/doc-1774612358328-230817852.pdf","file_size":21631,"file_type":"application/pdf","document_category":"Company Accounts","description":"","is_confidential":false,"upload_date":"2026-03-27T11:52:38.774653","last_accessed":null,"access_count":0,"created_at":"2026-03-27T11:52:38.774653","external_submission_id":null,"secondary_category":null,"public_token":"[REDACTED]"}
+ {"id":229,"target_company_id":45,"uploaded_by":2,"document_name":"Aithon_Solutions_Statutory_Accounts_2022.pdf","original_filename":"Aithon_Solutions_Statutory_Accounts_2022.pdf","file_path":"companies/45/doc-1774612397876-222817987.pdf","file_size":21632,"file_type":"application/pdf","document_category":"Company Accounts","description":"","is_confidential":false,"upload_date":"2026-03-27T11:53:18.591283","last_accessed":null,"access_count":0,"created_at":"2026-03-27T11:53:18.591283","external_submission_id":null,"secondary_category":null,"public_token":"[REDACTED]"}
+ {"id":230,"target_company_id":45,"uploaded_by":2,"document_name":"Aithon_Solutions_Statutory_Accounts_2023.pdf","original_filename":"Aithon_Solutions_Statutory_Accounts_2023.pdf","file_path":"companies/45/doc-1774612443749-777161093.pdf","file_size":21644,"file_type":"application/pdf","document_category":"Company Accounts","description":"","is_confidential":false,"upload_date":"2026-03-27T11:54:04.220187","last_accessed":null,"access_count":0,"created_at":"2026-03-27T11:54:04.220187","external_submission_id":null,"secondary_category":null,"public_token":"[REDACTED]"}
+ {"id":232,"target_company_id":45,"uploaded_by":2,"document_name":"Aithon_Solutions_Statutory_Accounts_2024.pdf","original_filename":"Aithon_Solutions_Statutory_Accounts_2024.pdf","file_path":"companies/45/doc-1774612567888-340480073.pdf","file_size":21655,"file_type":"application/pdf","document_category":"Company Accounts","description":"","is_confidential":false,"upload_date":"2026-03-27T11:56:08.895316","last_accessed":"2026-03-30T10:05:30.124","access_count":2,"created_at":"2026-03-27T11:56:08.895316","external_submission_id":null,"secondary_category":null,"public_token":"[REDACTED]"}
+ {"id":234,"target_company_id":45,"uploaded_by":2,"document_name":"Aithon_Solutions_Current_Balance_Sheet.pdf","original_filename":"Aithon_Solutions_Current_Balance_Sheet.pdf","file_path":"companies/45/doc-1774612647846-930043077.pdf","file_size":7794,"file_type":"application/pdf","document_category":"Balance Sheet","description":"","is_confidential":false,"upload_date":"2026-03-27T11:57:28.281925","last_accessed":null,"access_count":0,"created_at":"2026-03-27T11:57:28.281925","external_submission_id":null,"secondary_category":null,"public_token":"[REDACTED]"}
+ {"id":396,"target_company_id":70,"uploaded_by":2,"document_name":"Aithon_Solutions_Statutory_Accounts_2021.pdf","original_filename":"Aithon_Solutions_Statutory_Accounts_2021.pdf","file_path":"companies/70/doc-1776358468196-152056435.pdf","file_size":21631,"file_type":"application/pdf","document_category":"Company Accounts","description":"","is_confidential":false,"upload_date":"2026-04-16T16:54:28.685757","last_accessed":null,"access_count":0,"created_at":"2026-04-16T16:54:28.685757","external_submission_id":null,"secondary_category":null,"public_token":"[REDACTED]"}
+ {"id":397,"target_company_id":70,"uploaded_by":2,"document_name":"Aithon_Solutions_Statutory_Accounts_2022.pdf","original_filename":"Aithon_Solutions_Statutory_Accounts_2022.pdf","file_path":"companies/70/doc-1776358513404-419215278.pdf","file_size":21632,"file_type":"application/pdf","document_category":"Company Accounts","description":"","is_confidential":false,"upload_date":"2026-04-16T16:55:13.910196","last_accessed":null,"access_count":0,"created_at":"2026-04-16T16:55:13.910196","external_submission_id":null,"secondary_category":null,"public_token":"[REDACTED]"}
+```
+
+```text
+ {"id":398,"target_company_id":70,"uploaded_by":2,"document_name":"Aithon_Solutions_Statutory_Accounts_2023.pdf","original_filename":"Aithon_Solutions_Statutory_Accounts_2023.pdf","file_path":"companies/70/doc-1776358637157-652039544.pdf","file_size":21644,"file_type":"application/pdf","document_category":"Company Accounts","description":"","is_confidential":false,"upload_date":"2026-04-16T16:57:17.683777","last_accessed":null,"access_count":0,"created_at":"2026-04-16T16:57:17.683777","external_submission_id":null,"secondary_category":null,"public_token":"[REDACTED]"}
+ {"id":401,"target_company_id":70,"uploaded_by":2,"document_name":"Aithon_Solutions_Current_Balance_Sheet.pdf","original_filename":"Aithon_Solutions_Current_Balance_Sheet.pdf","file_path":"companies/70/doc-1776358826688-772025995.pdf","file_size":7794,"file_type":"application/pdf","document_category":"YTD Balance Sheet","description":"","is_confidential":false,"upload_date":"2026-04-16T17:00:27.149114","last_accessed":null,"access_count":0,"created_at":"2026-04-16T17:00:27.149114","external_submission_id":null,"secondary_category":null,"public_token":"[REDACTED]"}
+ {"id":420,"target_company_id":70,"uploaded_by":1,"document_name":"5 Acme_Manufacturing_Limited_Statutory_Accounts_2024.pdf","original_filename":"5 Acme_Manufacturing_Limited_Statutory_Accounts_2024.pdf","file_path":"portal/doc-1776365448095-423471179.pdf","file_size":22033,"file_type":"application/pdf","document_category":"Due Diligence","description":"Submitted via external portal","is_confidential":false,"upload_date":"2026-04-16T18:50:48.883805","last_accessed":"2026-04-16T18:51:15.376","access_count":1,"created_at":"2026-04-16T18:50:48.883805","external_submission_id":82,"secondary_category":"Corporate Information & Shares","public_token":"[REDACTED]"}
+(10 rows)
+
+DOCUMENT MODEL-EXTRACTED IDENTITY: DOCS 232, 234, 401, 420
+                                                     result                                                     
+----------------------------------------------------------------------------------------------------------------
+ DOC 232 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ DOC 234 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ DOC 401 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ DOC 420 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+(4 rows)
+
+
+STEP 5 - DOCUMENT SAYS COMPANY FOR THE OTHER CLUSTERS
+                                                        result                                                         
+-----------------------------------------------------------------------------------------------------------------------
+ CO 14 DOC 63 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 14 DOC 66 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 14 DOC 68 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 14 DOC 69 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 14 DOC 71 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 23 DOC 298 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 23 DOC 300 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 23 DOC 301 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 23 DOC 302 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 45 DOC 228 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 45 DOC 229 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 45 DOC 230 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 45 DOC 232 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 45 DOC 234 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 70 DOC 396 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 70 DOC 397 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 70 DOC 398 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 70 DOC 401 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 70 DOC 420 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 71 DOC 405 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 71 DOC 408 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 71 DOC 1127 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 76 DOC 431 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 76 DOC 433 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 76 DOC 434 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 76 DOC 438 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 77 DOC 443 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 77 DOC 444 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 77 DOC 445 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 77 DOC 446 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 78 DOC 453 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 78 DOC 454 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 78 DOC 455 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 78 DOC 456 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 149 DOC 935 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 149 DOC 936 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 150 DOC 940 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 150 DOC 942 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 150 DOC 943 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 151 DOC 948 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 151 DOC 949 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 152 DOC 952 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+ CO 152 DOC 953 DOCUMENT SAYS COMPANY: NOT PRESENT IN analysis_data; REGISTRATION NUMBER: NOT PRESENT IN analysis_data
+(43 rows)
+
+```
