@@ -101,6 +101,78 @@ export function toNum(value: string | number | null | undefined): number {
   return isNaN(num) ? 0 : num;
 }
 
+// ── Commercial guards (items #296 and #324) ──────────────────────────────────
+// Predicates only. They deliberately do NOT throw: buildOfferDataContext wraps the
+// calculator in a try/catch that swallows errors and leaves calculations empty, so a
+// throw here would fail OPEN. Callers must check these explicitly at each boundary.
+
+export const NO_VALUATION_ELIGIBLE_YEAR = 'NO_VALUATION_ELIGIBLE_YEAR';
+export const OFFER_NOT_SUPPORTABLE = 'OFFER_NOT_SUPPORTABLE';
+
+export type OfferBlockReason =
+  | typeof NO_VALUATION_ELIGIBLE_YEAR
+  | typeof OFFER_NOT_SUPPORTABLE;
+
+export type OfferSupportability =
+  | { supportable: true }
+  | { supportable: false; reason: OfferBlockReason; message: string };
+
+export const OFFER_BLOCK_MESSAGES: Record<OfferBlockReason, string> = {
+  [NO_VALUATION_ELIGIBLE_YEAR]:
+    'No valuation-eligible year. At least one completed full year of non-IM financial data is required before a deal model or an offer can be produced.',
+  [OFFER_NOT_SUPPORTABLE]:
+    'No offer supportable. The computed offer price is at or below zero.',
+};
+
+/**
+ * Item #296. A year is valuation-eligible if it survives the gates in
+ * getReconciledFinancials: is_full_year, source_tier not information_memorandum,
+ * period_end <= today, fiscal_year <= currentYear. This predicate takes the OUTPUT of
+ * that query, so a year present with a zero EBITDA still counts as an eligible year.
+ */
+export function hasValuationEligibleYear(
+  reportedEbitdaByYear: Record<string, number> | null | undefined,
+): boolean {
+  if (!reportedEbitdaByYear) return false;
+  return Object.keys(reportedEbitdaByYear).length > 0;
+}
+
+/**
+ * Item #324. An offer price at or below zero is a "no offer supportable" outcome.
+ * Zero is blocked as well as negative: zero is what the swallowed-calculator path
+ * produces. Known blocked instances: tc228 at minus 4,411, tc89 at minus 771,213.
+ */
+export function isOfferPriceSupportable(offerPrice: number | null | undefined): boolean {
+  if (offerPrice === null || offerPrice === undefined) return false;
+  if (typeof offerPrice !== 'number' || !Number.isFinite(offerPrice)) return false;
+  return offerPrice > 0;
+}
+
+/**
+ * Combined check. Eligibility is tested first: with no eligible year the price is
+ * meaningless, so that reason takes precedence.
+ */
+export function assessOfferSupportability(
+  reportedEbitdaByYear: Record<string, number> | null | undefined,
+  offerPrice: number | null | undefined,
+): OfferSupportability {
+  if (!hasValuationEligibleYear(reportedEbitdaByYear)) {
+    return {
+      supportable: false,
+      reason: NO_VALUATION_ELIGIBLE_YEAR,
+      message: OFFER_BLOCK_MESSAGES[NO_VALUATION_ELIGIBLE_YEAR],
+    };
+  }
+  if (!isOfferPriceSupportable(offerPrice)) {
+    return {
+      supportable: false,
+      reason: OFFER_NOT_SUPPORTABLE,
+      message: OFFER_BLOCK_MESSAGES[OFFER_NOT_SUPPORTABLE],
+    };
+  }
+  return { supportable: true };
+}
+
 export function calculateAdjustedEbitda(
   reportedEbitdaByYear: Record<string, number>,
   adjustments: AdjustmentInput[],
