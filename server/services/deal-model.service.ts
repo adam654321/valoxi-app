@@ -16,6 +16,8 @@ import {
   type ContingentConsiderationInput,
   type DealModelInput,
   type CalculationResult,
+  hasValuationEligibleYear,
+  isOfferPriceSupportable,
 } from '../../shared/calculators/deal-model.calc';
 import { NotFoundError, BadRequestError, ForbiddenError } from '../utils/errors';
 import { captureMetricsSnapshot } from './metrics-snapshot.service';
@@ -130,6 +132,19 @@ export class DealModelService {
     modelName?: string
   ): Promise<DealModelWithDetails & { calculations: CalculationResult }> {
     await verifyOwnership(targetCompanyId, userCompanyId);
+
+    // Commercial guard #296. No deal model without at least one valuation-eligible year.
+    // Checked before createDealModelFromExperts, which otherwise inserts a model row,
+    // seeds adjustments and creates funding lines for a company that cannot be valued.
+    const eligibilityCheck = await fetchReportedEbitdaByYear(targetCompanyId);
+    if (!hasValuationEligibleYear(eligibilityCheck)) {
+      console.warn(
+        `[DEAL_MODEL] Creation blocked for company ${targetCompanyId}: no valuation-eligible year`,
+      );
+      throw new BadRequestError(
+        'No valuation-eligible year. At least one completed full year of non-IM financial data is required before a deal model can be created.',
+      );
+    }
 
     const model = await dealModelMappingService.createDealModelFromExperts(
       targetCompanyId,
@@ -543,11 +558,25 @@ export class DealModelService {
 
     const result = calculateFullDealModel(reportedEbitda, adjustments, fundingLines, modelInput, sellerPayments, contingentConsideration);
 
-    const updatePayload: Record<string, string> = {
+    // Commercial guards #296 and #324, at the model store boundary. recalculate() runs on
+    // every save and every unlocked read, so it must not throw: that would break the screen
+    // for a company that cannot yet be valued. It writes the EBITDA working instead, and
+    // NULLS the two price columns rather than storing a price at or below zero or leaving a
+    // stale one behind. The screen keeps rendering; the price is simply absent.
+    const priceIsStorable =
+      hasValuationEligibleYear(reportedEbitda) && isOfferPriceSupportable(result.offerPrice);
+
+    if (!priceIsStorable) {
+      console.warn(
+        `[DEAL_MODEL] Price not storable for model ${model.id}, company ${model.targetCompanyId}: eligibleYears=${Object.keys(reportedEbitda).length} offerPrice=${result.offerPrice}`,
+      );
+    }
+
+    const updatePayload: Record<string, string | null> = {
       calculatedEbitda: String(result.averageAdjustedEbitda),
       adjustedEbitda: String(result.averageAdjustedEbitda),
-      enterpriseValue: String(result.enterpriseValue),
-      totalPurchasePrice: String(result.offerPrice),
+      enterpriseValue: priceIsStorable ? String(result.enterpriseValue) : null,
+      totalPurchasePrice: priceIsStorable ? String(result.offerPrice) : null,
       totalFundingAvailable: String(result.totalFunded),
       equityRequired: String(result.fundingGap),
     };
