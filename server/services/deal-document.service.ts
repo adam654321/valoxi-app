@@ -7,6 +7,7 @@ import { financialPeriods, incomeStatements, financialContributions } from '@sha
 import { isProvisionalFinancials } from '../../shared/utils/provisional-financials';
 import { eq, and, desc, not, inArray, sql } from 'drizzle-orm';
 import { fetchReportedEbitdaByYear } from './deal-model.service';
+import { isOfferPriceSupportable } from '@shared/calculators/deal-model.calc';
 import { dealDocumentTemplateService, DocumentDataContext } from './deal-document-template.service';
 import { extendPortalTokenForCompany } from './portal-token.service';
 import { buildNdaHtml } from '../utils/document-html-builders';
@@ -95,6 +96,22 @@ export class DealDocumentService {
     if (!doc) throw new Error('Document not found');
     if (doc.status !== 'draft') throw new Error(`Cannot send document in status: ${doc.status}`);
     if (!doc.generatedFileUrl) throw new Error('Document has not been generated yet');
+
+    // Commercial guard #324, at the send boundary. An offer letter cannot leave the
+    // building unless its stored price is above zero. A document carrying no verifiable
+    // price is blocked too: the generic create path produces an offer letter with no
+    // price fields at all, and an unverifiable price is not a sendable one.
+    if (doc.documentType === 'offer_letter') {
+      const storedOfferPrice = (doc.documentData as any)?._raw?.offerPrice;
+      if (!isOfferPriceSupportable(storedOfferPrice)) {
+        console.warn(
+          `[DEAL_DOCS] Send blocked for document ${documentId}: stored offer price ${String(storedOfferPrice)} is not supportable`,
+        );
+        throw new BadRequestError(
+          'No offer supportable. This offer letter has no verifiable price above zero and cannot be sent. Regenerate it from the deal model.',
+        );
+      }
+    }
 
     await this.markAsSent(documentId);
 
@@ -801,7 +818,7 @@ export class DealDocumentService {
     ]);
     const provisionalFinancials = isProvisionalFinancials(contributionTiers);
 
-    const { calculateFullDealModel } = await import('@shared/calculators/deal-model.calc');
+    const { calculateFullDealModel, assessOfferSupportability } = await import('@shared/calculators/deal-model.calc');
 
     const modelInput = {
       averagingYears: model.averagingYears || 3,
@@ -866,6 +883,22 @@ export class DealDocumentService {
       );
     } catch (err) {
       console.error('[DEAL_DOCS] Calculator error:', err);
+    }
+
+    // Commercial guards #296 and #324, at the compute boundary.
+    // Deliberately OUTSIDE the try/catch above: that catch swallows calculator errors and
+    // leaves calculations empty, so a guard placed inside it would fail OPEN. An absent
+    // offerPrice, which is exactly the swallowed-error case, is not supportable and is
+    // blocked here as well.
+    const supportability = assessOfferSupportability(
+      reportedEbitdaByYear,
+      calculations.offerPrice,
+    );
+    if (!supportability.supportable) {
+      console.warn(
+        `[DEAL_DOCS] Offer blocked for company ${targetCompanyId}, deal model ${dealModelId}: ${supportability.reason}`,
+      );
+      throw new BadRequestError(supportability.message);
     }
 
     const fmt = (val: any) => {
@@ -1174,6 +1207,18 @@ export class DealDocumentService {
   }) {
     const status = params.status || 'sent';
     const data = params.documentData as any;
+
+    // Commercial guard #324, at the store boundary. current_offers is the row the rest of
+    // the application reads as "the price", so nothing at or below zero may land in it.
+    // NOTE: three of this method's four callers wrap the call in a try/catch that only
+    // logs. This throw therefore stops the WRITE but does not stop the caller, which is
+    // why the send path and the manual-status route carry their own guards.
+    if (!isOfferPriceSupportable(data?._raw?.offerPrice)) {
+      throw new BadRequestError(
+        `Refusing to store an unsupportable offer price for target company ${params.targetCompanyId}, document ${params.dealDocumentId}.`,
+      );
+    }
+
     await db.insert(currentOffers).values({
       targetCompanyId: params.targetCompanyId,
       userCompanyId: params.userCompanyId,

@@ -10,6 +10,7 @@ import { sendSuccess } from '../utils/response';
 import { UnauthorizedError } from '../utils/errors';
 import { requirePermission } from '../middleware/auth';
 import { buildNdaHtml, buildOfferLetterHtml, buildHoTHtml, buildSignatureBlock, buildPhysicalSignatureBlock } from '../utils/document-html-builders';
+import { isOfferPriceSupportable } from '@shared/calculators/deal-model.calc';
 import { generatePdfFromHtml } from '../utils/pdf-generator';
 
 const router = Router();
@@ -336,6 +337,18 @@ router.post('/:id/manual-status', requirePermission('canCreateOffers'), asyncHan
 
   const { status, confirmedAt } = schema.parse(req.body);
   const confirmedDate = confirmedAt ? new Date(confirmedAt) : new Date();
+
+  // Commercial guard #324. An offline offer letter cannot be advanced to sent or accepted
+  // unless its stored price is above zero. Guarded here rather than relying on
+  // upsertCurrentOffer, because this route swallows that method's errors.
+  if (doc.documentType === 'offer_letter' && (status === 'sent' || status === 'accepted')) {
+    const storedOfferPrice = (doc.documentData as any)?._raw?.offerPrice;
+    if (!isOfferPriceSupportable(storedOfferPrice)) {
+      return res.status(400).json({
+        message: 'No offer supportable. This offer letter has no verifiable price above zero, so its status cannot be advanced.',
+      });
+    }
+  }
 
   if (status === 'accepted') {
     await db.update(dealDocuments).set({ status, respondedAt: confirmedDate }).where(eq(dealDocuments.id, id));
