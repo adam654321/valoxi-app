@@ -44,7 +44,8 @@ export async function generatePdfFromHtml(html: string): Promise<Buffer> {
 
   try {
     const page = await browser.newPage();
-    await page.setContent(fullHtml, { waitUntil: 'networkidle0' });
+    await page.setContent(fullHtml, { waitUntil: 'domcontentloaded' });
+    await page.waitForNetworkIdle({ concurrency: 0, idleTime: 500 });
     const pdfBuffer = Buffer.from(await page.pdf({
       format: 'A4',
       margin: { top: '20mm', bottom: '20mm', left: '15mm', right: '15mm' },

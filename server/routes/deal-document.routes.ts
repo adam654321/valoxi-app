@@ -300,11 +300,14 @@ router.get('/:id/download-word', asyncHandler(async (req, res) => {
   bodyHtml += buildPhysicalSignatureBlock(doc.documentType, data, doc.id);
 
   const HTMLtoDOCX = (await import('html-to-docx')).default;
-  const buffer = await HTMLtoDOCX(bodyHtml, null, {
+  const docx = await HTMLtoDOCX(bodyHtml, null, {
     table: { row: { cantSplit: true } },
     footer: false,
     pageNumber: false,
   });
+  const buffer = Buffer.isBuffer(docx)
+    ? docx
+    : Buffer.from(await docx.arrayBuffer());
 
   const docTypeNames: Record<string, string> = {
     nda: 'NDA',

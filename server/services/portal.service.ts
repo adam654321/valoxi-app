@@ -29,7 +29,13 @@ export class PortalService {
     };
   }
 
-  async createToken(data: { userCompanyId: number; targetCompanyId: number; targetContactId: number; createdBy: number; expiresInDays?: number; allowedActions?: any; customMessage?: string; timeframeDays?: number; includeNda?: boolean; }, baseUrl?: string): Promise<PortalAccessToken> {
+  async createToken(
+    data: { userCompanyId: number; targetCompanyId: number; targetContactId: number; createdBy: number; expiresInDays?: number; allowedActions?: any; customMessage?: string; timeframeDays?: number; includeNda?: boolean; },
+    baseUrl?: string,
+  ): Promise<{
+    token: PortalAccessToken;
+    sendResult: { success: boolean; sentVia: 'nylas' | 'resend'; fromEmail: string; replyToEmail: string | null } | null;
+  }> {
     // Deactivate any existing active tokens for this company to allow new token creation
     await portalRepository.deactivateTokensForCompany(data.targetCompanyId);
     
