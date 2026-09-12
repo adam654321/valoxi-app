@@ -118,3 +118,45 @@ $ git status --porcelain
 ```
 
 V-CHECK — git status: PASS (only the new runtime-smoke report is untracked).
+
+## REAL UPLOAD PATH FOLLOW-UP
+
+```text
+$ ls -la test_company_account1.pdf test_staff_matrix.csv
+-rw-r--r-- 1 runner runner  27 Aug 16  2025 test_company_account1.pdf
+-rw-r--r-- 1 runner runner 390 Aug 17  2025 test_staff_matrix.csv
+
+$ npx tsx -e "import('xlsx').then(async X => { const rows=[['Name','Role','Salary'],['A Person','Director','85000'],['B Person','Manager','42000']]; const ws=X.utils.aoa_to_sheet(rows); const wb=X.utils.book_new(); X.utils.book_append_sheet(wb,ws,'Staff'); const buf=X.write(wb,{type:'buffer',bookType:'xlsx'}); console.log('WROTE BYTES:', buf.length); const m = await import('./server/utils/spreadsheet-to-text.ts'); const text = m.convertSpreadsheetToText(buf,'smoke.xlsx'); console.log('--- CONVERTED TEXT ---'); console.log(text); }).catch(e => { console.error('FAILED:', e); process.exit(1); })"
+WROTE BYTES: 16151
+--- CONVERTED TEXT ---
+--- SHEET: Staff ---
+Name,Role,Salary
+A Person,Director,85000
+B Person,Manager,42000
+
+$ npx tsx -e "import('xlsx').then(X => { X.readFile('test_staff_matrix.csv'); }).catch(e => { console.error('READFILE ERROR:', e && e.message); console.error(e && e.stack); })"
+READFILE ERROR: Cannot access file test_staff_matrix.csv
+Error: Cannot access file test_staff_matrix.csv
+    at read_binary (file:///home/runner/workspace/node_modules/xlsx/xlsx.mjs:3362:8)
+    at readSync (file:///home/runner/workspace/node_modules/xlsx/xlsx.mjs:27231:69)
+    at Module.readFileSync (file:///home/runner/workspace/node_modules/xlsx/xlsx.mjs:27276:9)
+    at [eval]:24:5
+
+$ tail -200 /tmp/logs/Start_application_20260912_014939_383_355b54f4.log | rg -i "clerk|multer|rate.?limit|node|auth" | head -30
+Attention: Clerk collects telemetry data from its SDKs when connected to development instances.
+The data collected is used to inform Clerk's product roadmap.
+To learn more, including how to opt-out from the telemetry program, visit: https://clerk.com/docs/telemetry.
+10:50:59 PM [express] GET /api/v2/auth/me 401 in 19ms :: {"message":"Unauthorized"}
+10:50:59 PM [express] GET /api/v2/public/config 304 in 28ms :: {"success":true,"data":{"clerkEnabled"…
+1:18:47 AM [express] GET /api/v2/auth/me 401 in 317ms :: {"message":"Unauthorized"}
+1:48:39 AM [express] GET /api/v2/auth/me 401 in 330ms :: {"message":"Unauthorized"}
+```
+
+```text
+$ git status --porcelain
+ M docs/event-promo-release/SMOKE-A-runtime-paths.md
+
+$ git diff --stat
+ docs/event-promo-release/SMOKE-A-runtime-paths.md | 35 ++++++++++++++++++++++-
+ 1 file changed, 34 insertions(+), 1 deletion(-)
+```
