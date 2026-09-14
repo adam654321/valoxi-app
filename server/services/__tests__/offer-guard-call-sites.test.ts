@@ -184,6 +184,37 @@ describe('#324 — the SEND boundary is still gated (acknowledgement lands in sl
     expect(rows[0].unsupportedPriceAcknowledgedAt).toBeNull();
   });
 
+  it('acknowledging writes the timestamp and the user to the row', async () => {
+    const docId = await seedDraftOffer({ offerPrice: '-£4,411', _raw: { offerPrice: -4411 } });
+
+    const before = await db.select().from(dealDocuments).where(eq(dealDocuments.id, docId));
+    expect(before[0].unsupportedPriceAcknowledgedAt).toBeNull();
+    expect(before[0].unsupportedPriceAcknowledgedBy).toBeNull();
+
+    const result = await dealDocumentService.acknowledgeUnsupportedPrice(docId, userId);
+    expect(result.acknowledgedAt).toBeInstanceOf(Date);
+
+    const after = await db.select().from(dealDocuments).where(eq(dealDocuments.id, docId));
+    expect(after[0].unsupportedPriceAcknowledgedAt).not.toBeNull();
+    expect(after[0].unsupportedPriceAcknowledgedBy).toBe(userId);
+  });
+
+  it('an acknowledged document no longer fails on the supportability gate', async () => {
+    const docId = await seedDraftOffer({ offerPrice: '-£4,411', _raw: { offerPrice: -4411 } });
+    await dealDocumentService.acknowledgeUnsupportedPrice(docId, userId);
+
+    // sendDocument is NOT expected to succeed on a bare fixture: there is no real file and
+    // no portal recipient, so it may still fail downstream. What must no longer happen is
+    // a refusal on supportability grounds.
+    let message = '';
+    try {
+      await dealDocumentService.sendDocument(docId, userId);
+    } catch (err: any) {
+      message = String(err?.message ?? '');
+    }
+    expect(message).not.toMatch(/no offer supportable/i);
+  });
+
   it('an offer letter with no verifiable price cannot be sent unacknowledged', async () => {
     const docId = await seedDraftOffer({ offerPrice: '£250,000' });
     await expect(dealDocumentService.sendDocument(docId, userId))

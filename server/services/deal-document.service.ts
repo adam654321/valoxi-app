@@ -101,14 +101,26 @@ export class DealDocumentService {
     // building unless its stored price is above zero. A document carrying no verifiable
     // price is blocked too: the generic create path produces an offer letter with no
     // price fields at all, and an unverifiable price is not a sendable one.
+    // Commercial guard #324, at the send boundary. This is the ONLY remaining gate in the
+    // build. Everything upstream stores and displays the computed figures and warns.
+    //
+    // The gate exists because this document goes to the SELLER. An offer letter arriving
+    // at a business owner reading "-£4,411" is not a negotiating position. Whether to send
+    // it is still the acquirer's decision: it just has to be a deliberate one, and it is
+    // recorded on the row so it survives a log rotation.
     if (doc.documentType === 'offer_letter') {
       const storedOfferPrice = (doc.documentData as any)?._raw?.offerPrice;
       if (!isOfferPriceSupportable(storedOfferPrice)) {
+        if (!doc.unsupportedPriceAcknowledgedAt) {
+          console.warn(
+            `[DEAL_DOCS] Send blocked for document ${documentId}: stored offer price ${String(storedOfferPrice)} is not supportable and has not been acknowledged`,
+          );
+          throw new BadRequestError(
+            'No offer supportable. This offer letter has no verifiable price above zero. Confirm explicitly that you want to send it, or regenerate it from the deal model.',
+          );
+        }
         console.warn(
-          `[DEAL_DOCS] Send blocked for document ${documentId}: stored offer price ${String(storedOfferPrice)} is not supportable`,
-        );
-        throw new BadRequestError(
-          'No offer supportable. This offer letter has no verifiable price above zero and cannot be sent. Regenerate it from the deal model.',
+          `[DEAL_DOCS] Sending acknowledged unsupportable offer, document ${documentId}, price ${String(storedOfferPrice)}, acknowledged by user ${String(doc.unsupportedPriceAcknowledgedBy)} at ${doc.unsupportedPriceAcknowledgedAt.toISOString()}`,
         );
       }
     }
@@ -1195,6 +1207,35 @@ export class DealDocumentService {
         )
       )
       .orderBy(desc(dealDocuments.createdAt));
+  }
+
+  /**
+   * Records that a user has explicitly confirmed sending an offer whose computed price is
+   * at or below zero. Written before the send, read by sendDocument.
+   *
+   * Deliberately NOT a boolean toggle: there is no un-acknowledge. If the document is
+   * regenerated with a supportable price the guard stops applying anyway, and if it is
+   * regenerated still unsupportable the acquirer should confirm again, so the caller
+   * clears it on regeneration rather than this method offering a way to unset it.
+   */
+  async acknowledgeUnsupportedPrice(
+    documentId: number,
+    userId: number,
+  ): Promise<{ acknowledgedAt: Date }> {
+    const acknowledgedAt = new Date();
+    await db
+      .update(dealDocuments)
+      .set({
+        unsupportedPriceAcknowledgedAt: acknowledgedAt,
+        unsupportedPriceAcknowledgedBy: userId,
+      })
+      .where(eq(dealDocuments.id, documentId));
+
+    console.warn(
+      `[DEAL_DOCS] Unsupportable price acknowledged for document ${documentId} by user ${userId}`,
+    );
+
+    return { acknowledgedAt };
   }
 
   async upsertCurrentOffer(params: {
