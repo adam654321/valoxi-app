@@ -247,3 +247,53 @@ Stripe has one test-mode webhook endpoint and its status is `disabled`.
 The Stripe webhook signing secret is present.
 
 The full route Stripe must POST to is `/api/v2/billing/webhook/stripe`.
+
+## Webhook retry and provisioning verification
+
+```text
+psql "$DATABASE_URL" -c "SELECT id, event_type, status, error, stripe_event_id, created_at FROM webhook_events ORDER BY id DESC LIMIT 5;"
+ id  |         event_type         |  status   |                  error                   |       stripe_event_id        |         created_at         
+-----+----------------------------+-----------+------------------------------------------+------------------------------+----------------------------
+ 203 | checkout.session.completed | processed |                                          | evt_1UFZSA2N2rRCsCfrcsFZqhkr | 2026-09-14 12:57:47.501609
+ 202 | invoice.paid               | processed |                                          | evt_1UFZSA2N2rRCsCfroTVQzX4v | 2026-09-14 12:57:46.93871
+ 201 | checkout.session.completed | error     | duplicate_checkout_existing_subscription | evt_1UFZPj2N2rRCsCfrMcTl1RPt | 2026-09-14 12:55:15.843097
+ 200 | invoice.paid               | processed |                                          | evt_1UFZPj2N2rRCsCfrBPzBaDdf | 2026-09-14 12:55:15.477691
+ 199 | checkout.session.completed | processed |                                          | evt_1UFZNh2N2rRCsCfrkNR2upnW | 2026-09-14 12:53:09.764733
+(5 rows)
+
+psql "$DATABASE_URL" -c "SELECT u.id, u.email, u.user_company_id, u.assigned_promo_campaign_id, u.clerk_user_id, uc.company_name FROM users u JOIN user_companies uc ON uc.id = u.user_company_id ORDER BY u.id DESC LIMIT 3;"
+ id  |          email           | user_company_id | assigned_promo_campaign_id |          clerk_user_id           | company_name  
+-----+--------------------------+-----------------+----------------------------+----------------------------------+---------------
+ 124 | adam+finaltest@valoxi.ai |             258 |                         16 | user_3JJsrKSI8ti44isjGK9ShFDnXqE | Pending Setup
+ 123 | adam+79@valoxi.ai        |             257 |                         16 |                                  | Pending Setup
+ 122 | adam+test79@valoxi.com   |             256 |                         16 |                                  | Pending Setup
+(3 rows)
+
+psql "$DATABASE_URL" -c "SELECT user_company_id, plan_key, status, billing_interval, trial_ends_at, free_months_total, stripe_subscription_id FROM subscriptions ORDER BY id DESC LIMIT 3;"
+ user_company_id |   plan_key   |  status  | billing_interval |    trial_ends_at    | free_months_total |    stripe_subscription_id    
+-----------------+--------------+----------+------------------+---------------------+-------------------+------------------------------
+             258 | PROFESSIONAL | trialing | month            | 2026-10-14 12:57:44 |                 0 | sub_1UFZS92N2rRCsCfrGVSF8AtD
+             257 | PROFESSIONAL | trialing | month            | 2026-10-14 12:53:06 |                 0 | sub_1UFZNf2N2rRCsCfrdSDDamdB
+             256 | PROFESSIONAL | trialing | month            | 2026-10-14 12:47:16 |                 0 | sub_1UFZI22N2rRCsCfr3QHOdDHY
+(3 rows)
+
+rg -n "billing-webhook" /tmp/logs/Start_application_*.log | tail -20
+```
+
+PASS — A `checkout.session.completed` webhook dated today arrived with status `processed` and no error.
+
+OBSERVED — An earlier `checkout.session.completed` webhook arrived with status `error`: `duplicate_checkout_existing_subscription`.
+
+PASS — Latest provisioned `plan_key` expected `PROFESSIONAL`, received `PROFESSIONAL`.
+
+PASS — Latest provisioned status expected `trialing`, received `trialing`.
+
+PASS — Latest provisioned `trial_ends_at` expected about October 14, 2026 and not seven days out, received `2026-10-14 12:57:44`.
+
+PASS — Latest provisioned `assigned_promo_campaign_id` expected `16`, received `16`.
+
+FAIL — Expected `stripe_subscription_id` `sub_1UFYd82N2rRCsCfr6q642oyw`; the latest three provisioned rows contain different subscription IDs.
+
+PASS — Latest provisioned `free_months_total` expected `0`, received `0`.
+
+NO MATCHES — No `billing-webhook`, `DOUBLE-PAYMENT`, or `provisioning_failed` lines were returned by the prescribed log search.
