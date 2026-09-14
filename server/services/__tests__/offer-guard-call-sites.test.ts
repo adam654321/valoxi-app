@@ -102,19 +102,22 @@ describe('#296 — no deal model without a valuation-eligible year', () => {
   });
 });
 
-describe('#324 — an unsupportable price cannot be stored on the deal model', () => {
-  it('recalculate clears a stale price rather than storing an unsupportable one', async () => {
-    const before = await db.select().from(dealModels).where(eq(dealModels.id, modelId));
-    expect(before[0].totalPurchasePrice).not.toBeNull();
-
+describe('the deal model stores the computed figures, negative or not', () => {
+  it('recalculate stores the real negative price rather than nulling it', async () => {
     await dealModelService.getModel(modelId, userCompanyId);
 
     const after = await db.select().from(dealModels).where(eq(dealModels.id, modelId));
-    expect(after[0].totalPurchasePrice).toBeNull();
-    expect(after[0].enterpriseValue).toBeNull();
+    expect(after[0].totalPurchasePrice).not.toBeNull();
+    expect(Number(after[0].totalPurchasePrice)).toBe(-100000);
   });
 
-  it('but the EBITDA working is still written, so the screen keeps rendering', async () => {
+  it('and stores the enterprise value, which ValueCreationModeller reads directly', async () => {
+    const rows = await db.select().from(dealModels).where(eq(dealModels.id, modelId));
+    expect(rows[0].enterpriseValue).not.toBeNull();
+    expect(Number(rows[0].enterpriseValue)).toBe(0);
+  });
+
+  it('and the EBITDA working is written as before', async () => {
     const rows = await db.select().from(dealModels).where(eq(dealModels.id, modelId));
     expect(rows[0].calculatedEbitda).not.toBeNull();
   });

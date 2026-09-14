@@ -563,20 +563,23 @@ export class DealModelService {
     // for a company that cannot yet be valued. It writes the EBITDA working instead, and
     // NULLS the two price columns rather than storing a price at or below zero or leaving a
     // stale one behind. The screen keeps rendering; the price is simply absent.
-    const priceIsStorable =
-      hasValuationEligibleYear(reportedEbitda) && isOfferPriceSupportable(result.offerPrice);
-
-    if (!priceIsStorable) {
+    // The stored figures are the computed figures, always. A negative offer price is
+    // real information: it says the debt and adjustments exceed the enterprise value at
+    // this multiple. Suppressing it would overwrite a figure rather than explain it, and
+    // ValueCreationModeller reads this stored enterprise_value directly. The
+    // unsupportable case is surfaced as a warning on the screen and an explicit
+    // confirmation at the send boundary, not by removing the number.
+    if (!isOfferPriceSupportable(result.offerPrice)) {
       console.warn(
-        `[DEAL_MODEL] Price not storable for model ${model.id}, company ${model.targetCompanyId}: eligibleYears=${Object.keys(reportedEbitda).length} offerPrice=${result.offerPrice}`,
+        `[DEAL_MODEL] Unsupportable offer price for model ${model.id}, company ${model.targetCompanyId}: eligibleYears=${Object.keys(reportedEbitda).length} offerPrice=${result.offerPrice}. Stored as computed.`,
       );
     }
 
-    const updatePayload: Record<string, string | null> = {
+    const updatePayload: Record<string, string> = {
       calculatedEbitda: String(result.averageAdjustedEbitda),
       adjustedEbitda: String(result.averageAdjustedEbitda),
-      enterpriseValue: priceIsStorable ? String(result.enterpriseValue) : null,
-      totalPurchasePrice: priceIsStorable ? String(result.offerPrice) : null,
+      enterpriseValue: String(result.enterpriseValue),
+      totalPurchasePrice: String(result.offerPrice),
       totalFundingAvailable: String(result.totalFunded),
       equityRequired: String(result.fundingGap),
     };
