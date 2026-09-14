@@ -40,6 +40,12 @@ export const dealDocuments = pgTable("deal_documents", {
   respondedAt: timestamp("responded_at"),
   expiresAt: timestamp("expires_at"),
   createdAt: timestamp("created_at").defaultNow(),
+  // Set when a user explicitly confirms sending an offer whose computed price is at or
+  // below zero. Null means never acknowledged, which is what blocks the send. Persisted
+  // rather than logged: the offer letter goes to the seller, so the record of who chose
+  // to send it needs to outlive a log rotation.
+  unsupportedPriceAcknowledgedAt: timestamp("unsupported_price_acknowledged_at"),
+  unsupportedPriceAcknowledgedBy: integer("unsupported_price_acknowledged_by").references(() => users.id),
 });
 
 export const currentOffers = pgTable('current_offers', {
