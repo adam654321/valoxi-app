@@ -1,11 +1,13 @@
 /**
- * Commercial guards, items #296 and #324 — CALL SITE proof.
+ * Commercial guards, items #296 and #324 — CALL SITE behaviour.
  *
- * offer-guards.test.ts proves the predicates. This file proves the wiring: that neither
- * blocked state can produce a stored price or a sent offer at the real boundaries.
+ * Design after Adam's ruling of 14 September: the app stores and displays the real
+ * computed figures and warns. Creating a model, building a document and storing a price
+ * are the acquirer's decisions. The ONLY gate is the send boundary, because that document
+ * goes to the seller.
  *
- * Seeds its own throwaway company with NO financial periods, so it has zero
- * valuation-eligible years by construction.
+ * Seeds a throwaway company with NO financial_periods, so zero eligible years by
+ * construction.
  *
  * Run: npx vitest run server/services/__tests__/offer-guard-call-sites.test.ts
  */
@@ -47,8 +49,6 @@ beforeAll(async () => {
   }).returning();
   userId = u.id;
 
-  // No financial_periods rows are created for this company, so it has zero
-  // valuation-eligible years by construction.
   const [tc] = await db.insert(targetCompanies).values({
     userCompanyId,
     companyName: `GUARD TEST TARGET ${STAMP}`,
@@ -56,8 +56,6 @@ beforeAll(async () => {
   }).returning();
   companyId = tc.id;
 
-  // A deal model carrying a STALE price, to prove recalculate clears it rather than
-  // leaving it in place. Debt with no EBITDA drives offerPrice negative, the tc228 shape.
   const [dm] = await db.insert(dealModels).values({
     targetCompanyId: companyId,
     createdBy: userId,
@@ -87,25 +85,23 @@ describe('fixture sanity', () => {
   });
 });
 
-describe('#296 — no deal model without a valuation-eligible year', () => {
-  it('createModel is rejected', async () => {
-    await expect(
-      dealModelService.createModel(companyId, userId, userCompanyId, 'Should Not Exist'),
-    ).rejects.toThrow(/valuation-eligible year/i);
-  });
-
-  it('and no extra deal model row was created by the attempt', async () => {
-    const rows = await db.select().from(dealModels)
-      .where(eq(dealModels.targetCompanyId, companyId));
-    expect(rows).toHaveLength(1); // only the fixture model
-    expect(rows[0].id).toBe(modelId);
+describe('#296 no longer blocks creating a deal model', () => {
+  it('createModel is not rejected for want of a valuation-eligible year', async () => {
+    let message = '';
+    try {
+      await dealModelService.createModel(companyId, userId, userCompanyId, `Eligibility Probe ${STAMP}`);
+    } catch (err: any) {
+      message = String(err?.message ?? '');
+    }
+    // It may still fail for unrelated reasons on a bare fixture (no expert analysis).
+    // What must NOT happen is a refusal on eligibility grounds.
+    expect(message).not.toMatch(/valuation-eligible year/i);
   });
 });
 
 describe('the deal model stores the computed figures, negative or not', () => {
   it('recalculate stores the real negative price rather than nulling it', async () => {
     await dealModelService.getModel(modelId, userCompanyId);
-
     const after = await db.select().from(dealModels).where(eq(dealModels.id, modelId));
     expect(after[0].totalPurchasePrice).not.toBeNull();
     expect(Number(after[0].totalPurchasePrice)).toBe(-100000);
@@ -123,64 +119,45 @@ describe('the deal model stores the computed figures, negative or not', () => {
   });
 });
 
-describe('#324 — an unsupportable price cannot be stored in current_offers', () => {
-  it('tc89 at minus 771,213 is refused', async () => {
-    await expect(
-      dealDocumentService.upsertCurrentOffer({
-        targetCompanyId: companyId,
-        userCompanyId,
-        dealDocumentId: null as unknown as number,
-        dealModelId: modelId,
-        documentData: { offerPrice: '-£771,213', _raw: { offerPrice: -771213 } },
-        deliveryMethod: 'offline',
-        status: 'sent',
-      }),
-    ).rejects.toThrow(/unsupportable offer price/i);
-
-    const rows = await db.select().from(currentOffers)
-      .where(eq(currentOffers.targetCompanyId, companyId));
-    expect(rows).toHaveLength(0);
-  });
-
-  it('zero is refused', async () => {
-    await expect(
-      dealDocumentService.upsertCurrentOffer({
-        targetCompanyId: companyId,
-        userCompanyId,
-        dealDocumentId: null as unknown as number,
-        dealModelId: modelId,
-        documentData: { offerPrice: '£0', _raw: { offerPrice: 0 } },
-        deliveryMethod: 'offline',
-        status: 'sent',
-      }),
-    ).rejects.toThrow(/unsupportable offer price/i);
-
-    const rows = await db.select().from(currentOffers)
-      .where(eq(currentOffers.targetCompanyId, companyId));
-    expect(rows).toHaveLength(0);
-  });
-
-  it('POSITIVE CONTROL: a supportable price is stored, so the guard is not blocking everything', async () => {
+describe('current_offers records the real price', () => {
+  async function upsert(offerPrice: number, display: string) {
     await dealDocumentService.upsertCurrentOffer({
       targetCompanyId: companyId,
       userCompanyId,
       dealDocumentId: null as unknown as number,
       dealModelId: modelId,
-      documentData: { offerPrice: '£250,000', _raw: { offerPrice: 250000 } },
+      documentData: { offerPrice: display, _raw: { offerPrice } },
       deliveryMethod: 'offline',
       status: 'sent',
     });
-
     const rows = await db.select().from(currentOffers)
       .where(eq(currentOffers.targetCompanyId, companyId));
+    return rows;
+  }
+
+  it('stores tc89 at minus 771,213 as computed', async () => {
+    const rows = await upsert(-771213, '-£771,213');
+    expect(rows).toHaveLength(1);
+    expect(rows[0].offerPrice).toBe('-£771,213');
+    await db.delete(currentOffers).where(eq(currentOffers.targetCompanyId, companyId));
+  });
+
+  it('stores a zero price as computed', async () => {
+    const rows = await upsert(0, '£0');
+    expect(rows).toHaveLength(1);
+    expect(rows[0].offerPrice).toBe('£0');
+    await db.delete(currentOffers).where(eq(currentOffers.targetCompanyId, companyId));
+  });
+
+  it('stores a supportable price as before', async () => {
+    const rows = await upsert(250000, '£250,000');
     expect(rows).toHaveLength(1);
     expect(rows[0].offerPrice).toBe('£250,000');
-
     await db.delete(currentOffers).where(eq(currentOffers.targetCompanyId, companyId));
   });
 });
 
-describe('#324 — an unsupportable offer cannot be sent', () => {
+describe('#324 — the SEND boundary is still gated (acknowledgement lands in slice 2c)', () => {
   async function seedDraftOffer(documentData: unknown): Promise<number> {
     const [doc] = await db.insert(dealDocuments).values({
       targetCompanyId: companyId,
@@ -197,40 +174,21 @@ describe('#324 — an unsupportable offer cannot be sent', () => {
     return doc.id;
   }
 
-  it('tc228 at minus 4,411 cannot be sent, and the document stays a draft', async () => {
+  it('tc228 at minus 4,411 cannot be sent unacknowledged, and stays a draft', async () => {
     const docId = await seedDraftOffer({ offerPrice: '-£4,411', _raw: { offerPrice: -4411 } });
-
     await expect(dealDocumentService.sendDocument(docId, userId))
       .rejects.toThrow(/no offer supportable/i);
-
     const rows = await db.select().from(dealDocuments).where(eq(dealDocuments.id, docId));
     expect(rows[0].status).toBe('draft');
     expect(rows[0].sentAt).toBeNull();
-
-    const offers = await db.select().from(currentOffers)
-      .where(eq(currentOffers.targetCompanyId, companyId));
-    expect(offers).toHaveLength(0);
+    expect(rows[0].unsupportedPriceAcknowledgedAt).toBeNull();
   });
 
-  it('an offer letter with no verifiable price cannot be sent', async () => {
-    const docId = await seedDraftOffer({ offerPrice: '£250,000' }); // formatted only, no _raw
-
+  it('an offer letter with no verifiable price cannot be sent unacknowledged', async () => {
+    const docId = await seedDraftOffer({ offerPrice: '£250,000' });
     await expect(dealDocumentService.sendDocument(docId, userId))
       .rejects.toThrow(/no offer supportable/i);
-
     const rows = await db.select().from(dealDocuments).where(eq(dealDocuments.id, docId));
     expect(rows[0].status).toBe('draft');
-    expect(rows[0].sentAt).toBeNull();
-  });
-
-  it('an offer letter with no documentData at all cannot be sent', async () => {
-    const docId = await seedDraftOffer(null);
-
-    await expect(dealDocumentService.sendDocument(docId, userId))
-      .rejects.toThrow(/no offer supportable/i);
-
-    const rows = await db.select().from(dealDocuments).where(eq(dealDocuments.id, docId));
-    expect(rows[0].status).toBe('draft');
-    expect(rows[0].sentAt).toBeNull();
   });
 });

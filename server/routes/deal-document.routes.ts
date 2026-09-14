@@ -344,12 +344,14 @@ router.post('/:id/manual-status', requirePermission('canCreateOffers'), asyncHan
   // Commercial guard #324. An offline offer letter cannot be advanced to sent or accepted
   // unless its stored price is above zero. Guarded here rather than relying on
   // upsertCurrentOffer, because this route swallows that method's errors.
+  // Offline documents were sent by the user outside the system, so recording what
+  // happened is not our decision to block. Warn for the record and proceed.
   if (doc.documentType === 'offer_letter' && (status === 'sent' || status === 'accepted')) {
     const storedOfferPrice = (doc.documentData as any)?._raw?.offerPrice;
     if (!isOfferPriceSupportable(storedOfferPrice)) {
-      return res.status(400).json({
-        message: 'No offer supportable. This offer letter has no verifiable price above zero, so its status cannot be advanced.',
-      });
+      console.warn(
+        `[DEAL_DOCS] Offline status advance for document ${doc.id} with unsupportable price ${String(storedOfferPrice)}`,
+      );
     }
   }
 

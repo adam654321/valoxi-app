@@ -136,13 +136,13 @@ export class DealModelService {
     // Commercial guard #296. No deal model without at least one valuation-eligible year.
     // Checked before createDealModelFromExperts, which otherwise inserts a model row,
     // seeds adjustments and creates funding lines for a company that cannot be valued.
+    // A company with no valuation-eligible year can still have a deal model built. The
+    // figures rest on data that has not been verified against a completed full year, so
+    // the screen warns, but whether to model the deal is the acquirer's call.
     const eligibilityCheck = await fetchReportedEbitdaByYear(targetCompanyId);
     if (!hasValuationEligibleYear(eligibilityCheck)) {
       console.warn(
-        `[DEAL_MODEL] Creation blocked for company ${targetCompanyId}: no valuation-eligible year`,
-      );
-      throw new BadRequestError(
-        'No valuation-eligible year. At least one completed full year of non-IM financial data is required before a deal model can be created.',
+        `[DEAL_MODEL] No valuation-eligible year for company ${targetCompanyId}. Model created anyway; figures are unverified.`,
       );
     }
 

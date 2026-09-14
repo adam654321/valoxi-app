@@ -895,10 +895,13 @@ export class DealDocumentService {
       calculations.offerPrice,
     );
     if (!supportability.supportable) {
+      // Warn, do not refuse. Building the document is the acquirer's decision and the
+      // figures shown are the real computed ones. The gate is at the send boundary,
+      // where the document would leave for the seller, and it is derived there from the
+      // stored _raw.offerPrice rather than from a flag written here.
       console.warn(
-        `[DEAL_DOCS] Offer blocked for company ${targetCompanyId}, deal model ${dealModelId}: ${supportability.reason}`,
+        `[DEAL_DOCS] Unsupported offer for company ${targetCompanyId}, deal model ${dealModelId}: ${supportability.reason}. Document built as computed.`,
       );
-      throw new BadRequestError(supportability.message);
     }
 
     const fmt = (val: any) => {
@@ -1214,8 +1217,10 @@ export class DealDocumentService {
     // logs. This throw therefore stops the WRITE but does not stop the caller, which is
     // why the send path and the manual-status route carry their own guards.
     if (!isOfferPriceSupportable(data?._raw?.offerPrice)) {
-      throw new BadRequestError(
-        `Refusing to store an unsupportable offer price for target company ${params.targetCompanyId}, document ${params.dealDocumentId}.`,
+      // Stored as computed. current_offers must reflect what the model actually says,
+      // including a negative price, or the record disagrees with the deal model.
+      console.warn(
+        `[DEAL_DOCS] Storing unsupportable offer price for target company ${params.targetCompanyId}, document ${params.dealDocumentId}: ${String(data?._raw?.offerPrice)}`,
       );
     }
 
