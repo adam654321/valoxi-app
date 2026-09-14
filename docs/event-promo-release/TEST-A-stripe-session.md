@@ -117,3 +117,133 @@ FAIL — `assigned_promo_campaign_id` expected `16`; the completed checkout's us
 FAIL — `free_months_total` expected `0`; the completed checkout's subscription does not appear in the latest three Valoxi subscription rows.
 
 NOT DETERMINED — The prescribed webhook-events query failed because `webhook_events.processing_status` does not exist, so rows with processing status `error` could not be checked.
+
+## Webhook-delivery verification
+
+```text
+psql "$DATABASE_URL" -c "SELECT column_name, data_type FROM information_schema.columns WHERE table_name='webhook_events' ORDER BY ordinal_position;"
+   column_name   |          data_type          
+-----------------+-----------------------------
+ id              | integer
+ source          | character varying
+ event_type      | character varying
+ payload         | jsonb
+ status          | character varying
+ error           | text
+ processed_at    | timestamp without time zone
+ created_at      | timestamp without time zone
+ stripe_event_id | character varying
+(9 rows)
+
+rg -n "async function logWebhookEvent|function logWebhookEvent" server --glob "*.ts"
+server/routes/billing.routes.ts
+34:async function logWebhookEvent(
+
+sed -n '30,69p' server/routes/billing.routes.ts
+function deriveBillingInterval(lookupKey: string): BillingInterval {
+  return lookupKey.toLowerCase().includes('annual') ? 'year' : 'month';
+}
+
+async function logWebhookEvent(
+  eventType: string,
+  stripeEventId: string | null,
+  payload: unknown,
+  status: string,
+  error?: string
+) {
+  try {
+    await db.insert(webhookEvents).values({
+      source: 'stripe',
+      stripeEventId,
+      eventType,
+      payload: payload as Record<string, unknown>,
+      status,
+      error: error ?? null,
+      processedAt: new Date(),
+    });
+  } catch (err) {
+    console.error('[Billing] Failed to log webhook event:', err);
+  }
+}
+
+billingWebhookRoutes.post('/webhook/stripe', async (req: Request, res: Response) => {
+  if (!config.stripe.secretKey || !config.stripe.webhookSecret) {
+    console.error('[Billing] STRIPE_SECRET_KEY or STRIPE_WEBHOOK_SECRET not configured');
+    return res.status(500).json({ error: 'stripe_not_configured' });
+  }
+
+  const stripe = new Stripe(config.stripe.secretKey);
+  const signature = req.headers['stripe-signature'] as string;
+
+  let event: Stripe.Event;
+  try {
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      signature,
+
+psql "$DATABASE_URL" -c "SELECT event_type, status, error, created_at FROM webhook_events ORDER BY id DESC LIMIT 10;"
+          event_type           |  status   | error |         created_at         
+-------------------------------+-----------+-------+----------------------------
+ customer.subscription.deleted | processed |       | 2026-08-18 12:25:18.044853
+ customer.subscription.deleted | processed |       | 2026-08-18 12:14:50.194994
+ customer.subscription.deleted | processed |       | 2026-08-18 11:14:42.404691
+ invoice.paid                  | processed |       | 2026-08-17 04:33:50.565457
+ customer.subscription.updated | processed |       | 2026-08-17 03:32:55.212381
+ customer.subscription.deleted | processed |       | 2026-08-16 09:55:21.205445
+ customer.subscription.deleted | processed |       | 2026-08-16 09:23:41.364497
+ customer.subscription.deleted | processed |       | 2026-08-15 19:54:39.088837
+ customer.subscription.deleted | processed |       | 2026-08-15 19:53:10.168662
+ invoice.upcoming              | processed |       | 2026-08-11 10:32:27.04295
+(10 rows)
+
+psql "$DATABASE_URL" -c "SELECT count(*) AS total, max(created_at) AS newest FROM webhook_events;"
+ total |           newest           
+-------+----------------------------
+   195 | 2026-08-18 12:25:18.044853
+(1 row)
+
+npx tsx -e "import('stripe').then(async S => { const stripe = new S.default(process.env.STRIPE_SECRET_KEY); const eps = await stripe.webhookEndpoints.list({ limit: 10 }); console.log('ENDPOINT COUNT:', eps.data.length); eps.data.forEach(e => console.log('-', e.id, '| livemode:', e.livemode, '| status:', e.status, '| url:', e.url, '| events:', (e.enabled_events||[]).join(','))); }).catch(e => { console.error('FAILED:', e.message); })"
+ENDPOINT COUNT: 1
+- we_1TOS992N2rRCsCfrM2ymlgKb | livemode: false | status: disabled | url: https://85fb53ef-8f2a-4b29-b64b-c651f49dfeb5-00-2ooxl8jy2uoof.kirk.replit.dev/api/v2/billing/webhook/stripe | events: checkout.session.completed,customer.subscription.deleted,invoice.paid,invoice.payment_failed,invoice.upcoming,customer.subscription.updated
+
+npx tsx -e "import('stripe').then(async S => { const stripe = new S.default(process.env.STRIPE_SECRET_KEY); const evs = await stripe.events.list({ limit: 10, type: 'checkout.session.completed' }); console.log('EVENTS:', evs.data.length); evs.data.forEach(e => console.log('-', e.id, new Date(e.created*1000).toISOString(), '| pending webhooks:', e.pending_webhooks)); }).catch(e => { console.error('FAILED:', e.message); })"
+EVENTS: 1
+- evt_1UFYd92N2rRCsCfr573YK5zy 2026-09-14T12:05:03.000Z | pending webhooks: 0
+
+node -e "const k=process.env.STRIPE_WEBHOOK_SECRET||''; console.log('WEBHOOK SECRET PRESENT:', k.length>0, '| PREFIX:', k.slice(0,7));"
+WEBHOOK SECRET PRESENT: true | PREFIX: whsec_1
+
+rg -n "STRIPE_WEBHOOK_SECRET|constructEvent" server --glob "*.ts" | head -20
+server/config.ts:57:    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
+server/index.ts:81:    if (!process.env.STRIPE_WEBHOOK_SECRET) {
+server/index.ts:82:      console.warn('[billing] WARNING: STRIPE_WEBHOOK_SECRET not set — webhooks will not be verified');
+server/routes/billing.routes.ts:58:    console.error('[Billing] STRIPE_SECRET_KEY or STRIPE_WEBHOOK_SECRET not configured');
+server/routes/billing.routes.ts:67:    event = stripe.webhooks.constructEvent(
+
+rg -n "billingWebhookRoutes" server/routes/index.ts
+31:import billingRoutes, { billingWebhookRoutes } from './billing.routes';
+110:  app.use('/api/v2/billing', billingWebhookRoutes);
+
+rg -n "router.post" server/routes/billing.routes.ts | head -10
+815:router.post('/verify-session', isAuthenticated, validateCsrfToken, requirePermission('canManageCompany'), async (req: Request, res: Response) => {
+908:router.post('/checkout', isAuthenticated, validateCsrfToken, requirePermission('canManageCompany'), async (req: Request, res: Response) => {
+1098:router.post('/upgrade', isAuthenticated, validateCsrfToken, requirePermission('canManageCompany'), async (req: Request, res: Response) => {
+1213:router.post('/portal', isAuthenticated, validateCsrfToken, requirePermission('canManageCompany'), async (req: Request, res: Response) => {
+1249:router.post('/addon', isAuthenticated, validateCsrfToken, requirePermission('canManageCompany'), async (req: Request, res: Response) => {
+1345:router.post('/remove-slot', isAuthenticated, validateCsrfToken, requirePermission('canManageCompany'), async (req: Request, res: Response) => {
+1407:router.post('/remove-seat', isAuthenticated, validateCsrfToken, requirePermission('canManageCompany'), async (req: Request, res: Response) => {
+1469:router.post('/cancel', isAuthenticated, validateCsrfToken, requirePermission('canManageCompany'), async (req: Request, res: Response) => {
+1518:router.post('/reactivate', isAuthenticated, validateCsrfToken, requirePermission('canManageCompany'), async (req: Request, res: Response) => {
+```
+
+The real webhook-event columns are `status` and `error`.
+
+No webhook reached this app for the September 14 test checkout. The newest logged webhook is from August 18.
+
+Stripe emitted one `checkout.session.completed` event for the test checkout.
+
+Stripe has one test-mode webhook endpoint and its status is `disabled`.
+
+The Stripe webhook signing secret is present.
+
+The full route Stripe must POST to is `/api/v2/billing/webhook/stripe`.
