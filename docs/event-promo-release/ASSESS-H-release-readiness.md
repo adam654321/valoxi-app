@@ -519,3 +519,91 @@ Draft offer letters with `raw_offer_price` above zero: 8. These still send norma
 Draft offer letters with null `raw_offer_price`: 0.
 
 Draft offer letters with `raw_offer_price` at or below zero: 0.
+
+## Per-model production guard exposure
+
+```text
+psql "$PROD_DATABASE_URL" -c "SELECT dm.id AS model_id, dm.target_company_id, tc.company_name, dm.name AS model_name, dm.is_locked, dm.total_purchase_price, dm.enterprise_value, dm.calculated_ebitda, dm.ebitda_multiple, dm.updated_at FROM deal_models dm LEFT JOIN target_companies tc ON tc.id = dm.target_company_id WHERE dm.total_purchase_price IS NOT NULL AND CAST(dm.total_purchase_price AS numeric) <= 0 ORDER BY tc.company_name, dm.id;"
+ model_id | target_company_id |                company_name                |  model_name   | is_locked | total_purchase_price |  enterprise_value  |  calculated_ebitda  |   ebitda_multiple   |       updated_at        
+----------+-------------------+--------------------------------------------+---------------+-----------+----------------------+--------------------+---------------------+---------------------+-------------------------
+      169 |               224 | About Time Creative                        | Deal Model v1 | f         |               -62877 |              14553 |                6468 |                2.25 | 2026-08-21 08:04:35.227
+       54 |                71 | Acme Manufacturing Ltd                     | Deal Model v1 | t         |   -365082.1666666665 | 1755458.8333333335 |   501559.6666666667 |                 3.5 | 2026-06-28 00:48:24.418
+      139 |               197 | BESIXTH & Campus Group (MGA Media Limited) | Deal Model v1 | f         |            -166308.3 | -42468.29999999999 | -10617.074999999997 |                   4 | 2026-07-14 12:01:43.804
+       49 |                77 | Brand New Company                          | Deal Model v1 | f         |  -185146.09999999963 | 3894852.9000000004 |           2596568.6 |                 1.5 | 2026-04-21 08:34:14.529
+       50 |                77 | Brand New Company                          | Deal Model v2 | f         |  -185146.09999999963 | 3894852.9000000004 |           2596568.6 |                 1.5 | 2026-04-21 08:41:29.671
+       99 |               162 | CDC Engineering And Fabrication Limited    | Deal Model v1 | f         |   -6986.880000000005 | 12141.119999999995 |   3035.279999999999 |                   4 | 2026-06-07 18:27:28.271
+      173 |               251 | Capital Services Group                     | Deal Model v1 | f         |   -728774.8333333333 |  891019.1666666667 |   356407.6666666667 |                 2.5 | 2026-09-03 12:00:40.483
+       87 |               150 | Civil Engineering                          | Deal Model v1 | f         |   -98197.26249999998 |  93308.73750000002 |  33930.450000000004 |                2.75 | 2026-06-05 10:48:49.188
+       38 |                67 | DNA                                        | Deal Model v1 | f         |         -1032787.456 |        1277300.544 |           532208.56 |                 2.4 | 2026-05-04 13:40:42.06
+       52 |                87 | Dental Surgery 70171                       | Deal Model v1 | f         |              -281625 |             769678 |            307871.2 |                 2.5 | 2026-05-19 17:27:28.735
+       56 |               100 | EREKA and NECAB                            | Deal Model v1 | f         |            -300905.7 |           268616.3 |             70688.5 |                 3.8 | 2026-04-27 13:15:00.689
+      137 |               221 | Elizabeth's Rose Home Care                 | Deal Model v1 | f         |                    0 |              36813 | -26811.519999999997 | -1.3730292053565036 | 2026-08-18 15:36:26.849
+      161 |               239 | Fabeliz Services                           | Deal Model v1 | f         |               -65761 |             -63518 |              -31759 |                   2 | 2026-07-24 18:29:11.203
+       63 |                80 | Indirock Limited                           | Deal Model v1 | f         |              -251400 |             151768 |               75884 |                   2 | 2026-05-02 08:16:05.901
+       61 |                89 | Innova Design Group Limited                | Deal Model v1 | f         |            -771213.5 |          -541135.5 |           -180378.5 |                   3 | 2026-07-04 08:21:15.86
+      138 |                89 | Innova Design Group Limited                | Deal Model v2 | f         |                -1762 |             228316 |   76105.33333333333 |                   3 | 2026-07-14 12:02:33.332
+      154 |               225 | K Consultancy                              | Deal Model v1 | f         |               -23882 |                  0 |                   0 |                   4 | 2026-08-18 14:16:27.423
+      125 |               213 | KJ Roofing Services Limited                | Deal Model v1 | f         |   -53391.33333333334 | 180748.66666666666 |   90374.33333333333 |                   2 | 2026-06-23 20:39:05.881
+      101 |               169 | Kent Construction & Restoration Limited    | Deal Model v1 | f         |              -151063 |              56621 |             28310.5 |                   2 | 2026-06-05 18:16:55.364
+      160 |               238 | Kidco                                      | Deal Model v1 | f         |               -30645 |              21877 |             10938.5 |                   2 | 2026-07-28 16:30:39.674
+       80 |                88 | Kitchen Generator Limited                  | Deal Model v1 | f         |   -83039.39200000004 |  20976.85799999996 |   7491.734999999986 |                 2.8 | 2026-05-22 18:23:08.06
+       93 |               155 | LW Haddow                                  | Deal Model v1 | f         |               -95686 |             282393 |               94131 |                   3 | 2026-06-09 14:15:18.468
+       53 |                97 | Palatial leisure                           | Deal Model v1 | f         |              -672000 |             360639 |              120213 |                   3 | 2026-06-02 12:59:31.842
+       59 |               105 | Restoraction & DC Cotswolds                | Deal Model v1 | f         |              -959697 |             -95384 |              -47692 |                   2 | 2026-04-30 12:25:08.918
+      123 |               211 | Scotty Gates Limited                       | Deal Model v1 | f         |            -33347.97 |           247885.5 |  110171.33333333333 |                2.25 | 2026-06-23 19:51:47.531
+       75 |               133 | The Smile Gallery                          | Deal Model v1 | f         |               -62188 |            -251500 |              -62875 |                   4 | 2026-05-09 19:03:04.312
+      115 |               199 | Tipper Trunk Hire Business                 | Deal Model v1 | f         |   -968800.6666666667 | 130723.33333333333 |  65361.666666666664 |                   2 | 2026-06-14 20:22:00.897
+      116 |               199 | Tipper Trunk Hire Business                 | Deal Model v2 | f         |            -741498.5 |           171419.5 |            61221.25 |                 2.8 | 2026-06-24 19:58:25.022
+(28 rows)
+
+psql "$PROD_DATABASE_URL" -c "SELECT dm.id AS model_id, tc.company_name, EXISTS (SELECT 1 FROM financial_periods fp WHERE fp.target_company_id = dm.target_company_id AND fp.is_full_year = true AND (fp.source_tier IS NULL OR fp.source_tier <> 'information_memorandum') AND fp.period_end <= CURRENT_DATE) AS has_eligible_year FROM deal_models dm LEFT JOIN target_companies tc ON tc.id = dm.target_company_id WHERE dm.total_purchase_price IS NOT NULL AND CAST(dm.total_purchase_price AS numeric) <= 0 ORDER BY tc.company_name, dm.id;"
+ model_id |                company_name                | has_eligible_year 
+----------+--------------------------------------------+-------------------
+      169 | About Time Creative                        | t
+       54 | Acme Manufacturing Ltd                     | t
+      139 | BESIXTH & Campus Group (MGA Media Limited) | t
+       49 | Brand New Company                          | t
+       50 | Brand New Company                          | t
+       99 | CDC Engineering And Fabrication Limited    | t
+      173 | Capital Services Group                     | t
+       87 | Civil Engineering                          | t
+       38 | DNA                                        | t
+       52 | Dental Surgery 70171                       | t
+       56 | EREKA and NECAB                            | t
+      137 | Elizabeth's Rose Home Care                 | t
+      161 | Fabeliz Services                           | t
+       63 | Indirock Limited                           | t
+       61 | Innova Design Group Limited                | t
+      138 | Innova Design Group Limited                | t
+      154 | K Consultancy                              | f
+      125 | KJ Roofing Services Limited                | t
+      101 | Kent Construction & Restoration Limited    | t
+      160 | Kidco                                      | t
+       80 | Kitchen Generator Limited                  | t
+       93 | LW Haddow                                  | t
+       53 | Palatial leisure                           | f
+       59 | Restoraction & DC Cotswolds                | t
+      123 | Scotty Gates Limited                       | t
+       75 | The Smile Gallery                          | t
+      115 | Tipper Trunk Hire Business                 | t
+      116 | Tipper Trunk Hire Business                 | t
+(28 rows)
+
+psql "$PROD_DATABASE_URL" -c "SELECT DISTINCT tc.id, tc.company_name FROM deal_models dm JOIN target_companies tc ON tc.id = dm.target_company_id WHERE dm.total_purchase_price IS NOT NULL AND CAST(dm.total_purchase_price AS numeric) <= 0 AND EXISTS (SELECT 1 FROM current_offers co WHERE co.target_company_id = dm.target_company_id) ORDER BY tc.id;"
+ id |      company_name      
+----+------------------------
+ 71 | Acme Manufacturing Ltd
+ 87 | Dental Surgery 70171
+(2 rows)
+
+psql "$PROD_DATABASE_URL" -At -c "SELECT count(*) FROM deal_models WHERE total_purchase_price IS NOT NULL AND CAST(total_purchase_price AS numeric) <= 0;"
+28
+```
+
+The uncapped inventory contains 28 affected production deal models.
+
+Of those 28 models, 26 have a valuation-eligible year and 2 do not.
+
+The affected models without a valuation-eligible year are model 154 for K Consultancy and model 53 for Palatial leisure.
+
+Two affected companies have a current offer: Acme Manufacturing Ltd and Dental Surgery 70171.
