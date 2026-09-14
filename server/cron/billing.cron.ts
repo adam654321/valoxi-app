@@ -263,6 +263,21 @@ export async function runTrialExtensionJob(): Promise<void> {
         !latest.stripeSubscriptionId
       ) continue;
 
+      // The 24-hour extension and its email are written for the standard short
+      // trial: the copy says "over the last 48 hours". A promotional trial of a
+      // month must never receive it. While a subscription is trialing,
+      // currentPeriodStart is the trial start, so the trial length is derivable
+      // without a schema change. A null currentPeriodStart falls through to the
+      // existing behaviour rather than silently skipping.
+      const STANDARD_TRIAL_MAX_DAYS = 14;
+      const trialLengthDays = latest.currentPeriodStart
+        ? (latest.trialEndsAt.getTime() - latest.currentPeriodStart.getTime()) / (24 * 60 * 60 * 1000)
+        : 0;
+      if (trialLengthDays > STANDARD_TRIAL_MAX_DAYS) {
+        console.log(`[billing-cron] Trial extension skipped for company ${sub.userCompanyId}: promotional trial of ${Math.round(trialLengthDays)} days`);
+        continue;
+      }
+
       const newTrialEnd = new Date(latest.trialEndsAt.getTime() + 24 * 60 * 60 * 1000);
 
       await stripe.subscriptions.update(latest.stripeSubscriptionId, {

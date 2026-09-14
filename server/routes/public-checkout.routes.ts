@@ -106,6 +106,14 @@ router.post('/checkout', asyncHandler(async (req: Request, res: Response) => {
         });
       }
       couponId = campaign.postFreePeriodCouponId;
+    } else if (campaign.freeMonthsTotal > 0) {
+      // Trial-only promotional campaign (e.g. the event campaign). The free
+      // period IS the benefit and is delivered by the Stripe trial below.
+      // stripe_coupon_id is NOT NULL on the table, so such a campaign carries a
+      // placeholder value that must NOT be applied: applying it would stack a
+      // discount on top of the free period. Only post_free_period_coupon_id, if
+      // set, grants an ongoing discount after the trial ends.
+      couponId = campaign.postFreePeriodCouponId ?? null;
     } else {
       couponId = campaign.stripeCouponId;
     }
@@ -153,13 +161,24 @@ router.post('/checkout', asyncHandler(async (req: Request, res: Response) => {
   // collection: 'always') for the first post-trial bill. At trial end Stripe
   // bills CORE with the 15% coupon already attached. No Valoxi free-period
   // row, no cron.
-  if (campaign && isFiveD) {
+  // A Stripe-native trial delivers the free period for ANY campaign carrying
+  // free months, not just 5D. Invoices are 0 during the trial; the card is
+  // still collected (payment_method_collection: 'always') for the first
+  // post-trial bill. No Valoxi free-period row, no cron.
+  if (campaign && campaign.freeMonthsTotal > 0) {
     const trialEnd = new Date();
     // Calendar-month trial. setMonth can drift 1-2 days on month-end signups;
     // acceptable for a trial length.
     trialEnd.setMonth(trialEnd.getMonth() + campaign.freeMonthsTotal);
     const trialDays = Math.ceil((trialEnd.getTime() - Date.now()) / (24 * 60 * 60 * 1000));
-    checkoutParams.subscription_data = { trial_period_days: trialDays };
+    checkoutParams.subscription_data = {
+      trial_period_days: trialDays,
+      metadata: {
+        trial_type: isFiveD ? '5d_new_member' : 'promo_free_months',
+        promoSlug: campaign.slug,
+        freeMonthsTotal: String(campaign.freeMonthsTotal),
+      },
+    };
   } else {
     checkoutParams.subscription_data = {
       trial_period_days: 7,
