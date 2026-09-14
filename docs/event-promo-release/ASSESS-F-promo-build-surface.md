@@ -648,3 +648,420 @@ $ git diff --stat
 V-CHECK — git status: PASS (only the new assessment file is untracked).
 
 V-CHECK — git diff --stat: PASS (no tracked source-file changes).
+
+## TRIAL EXPIRY FOLLOW-UP
+
+### STEP 1 — THE TRIAL EXPIRY JOB, IN FULL
+
+```text
+$ sed -n '120,225p' server/cron/billing.cron.ts
+        },
+      });
+
+      await stripe.subscriptions.cancel(latest.stripeSubscriptionId);
+      console.log(`[billing-cron] Stripe sub ${latest.stripeSubscriptionId} cancelled (dunning) for company ${sub.userCompanyId}`);
+      // Local status flip and email both happen on the resulting
+      // customer.subscription.deleted webhook.
+    } catch (err) {
+      console.error(`[billing-cron] Day-14 dunning cancel failed for company ${sub.userCompanyId}:`, err);
+    }
+  }
+}
+
+export async function runTrialExpiryJob(): Promise<void> {
+  const stripe = new Stripe(config.stripe.secretKey);
+  try {
+    const expiring = await billingRepository.getSubscriptionsExpiringBefore(new Date());
+    const trialing = expiring.filter((s) => s.status === 'trialing' && s.freeMonthsTotal === 0 && (
+      (s.trialEnd && new Date(s.trialEnd) < new Date()) ||
+      (s.trialEndsAt && new Date(s.trialEndsAt) < new Date())
+    ));
+
+    const trialEndsAtExpired = await db
+      .select()
+      .from(subscriptions)
+      .where(
+        and(
+          isNotNull(subscriptions.trialEndsAt),
+          lt(subscriptions.trialEndsAt, new Date()),
+          eq(subscriptions.status, 'trialing'),
+          eq(subscriptions.freeMonthsTotal, 0)
+        )
+      );
+
+    const allExpiring = [...trialing];
+    for (const sub of trialEndsAtExpired) {
+      if (!allExpiring.find(s => s.id === sub.id)) {
+        allExpiring.push(sub);
+      }
+    }
+    console.log(`[billing-cron] Trial expiry: processing ${allExpiring.length} non-free-period trial(s). Free-period trials handled by separate cron at 09:15.`);
+
+    let count = 0;
+
+    for (const sub of allExpiring) {
+      try {
+        if (sub.stripeSubscriptionId) {
+          try {
+            const stripeSub = await stripe.subscriptions.retrieve(sub.stripeSubscriptionId);
+            if (stripeSub.status === 'active' || stripeSub.status === 'trialing') {
+              continue;
+            }
+          } catch (stripeErr) {
+            console.error(`[billing-cron] Failed to check Stripe sub for company ${sub.userCompanyId}:`, stripeErr);
+          }
+        }
+
+        if (!sub.stripeSubscriptionId && sub.stripeCustomerId) {
+          try {
+            const result = await stripe.subscriptions.list({
+              customer: sub.stripeCustomerId,
+              status: 'all',
+              limit: 10,
+            });
+            const liveStripeSub = result.data.find(
+              s => s.status === 'active' || s.status === 'trialing'
+            );
+            if (liveStripeSub) {
+              console.warn(
+                `[billing-cron] Trial expiry skipped for company ${sub.userCompanyId}: ` +
+                `stripeSubscriptionId is NULL but found live Stripe sub ${liveStripeSub.id} ` +
+                `(status=${liveStripeSub.status}) via customer ${sub.stripeCustomerId}. ` +
+                `Will re-evaluate tomorrow.`
+              );
+              continue;
+            }
+          } catch (stripeErr) {
+            console.error(
+              `[billing-cron] Stripe lookup failed for company ${sub.userCompanyId} ` +
+              `(customerId=${sub.stripeCustomerId}), skipping cancel:`,
+              stripeErr
+            );
+            continue;
+          }
+        }
+
+        await billingService.expireTrial(sub.userCompanyId);
+
+        await billingRepository.logEvent({
+          userCompanyId: sub.userCompanyId,
+          eventType: 'subscription.trial_expired',
+          previousStatus: sub.status as any,
+          previousPlanKey: sub.planKey as any,
+          newStatus: 'canceled',
+          newPlanKey: sub.planKey as any,
+          payload: { trialEndsAt: sub.trialEndsAt, trialEnd: sub.trialEnd },
+        });
+
+        count++;
+      } catch (err) {
+        console.error(`[billing-cron] Failed to expire trial for company ${sub.userCompanyId}:`, err);
+      }
+    }
+
+    console.log(`[billing-cron] Expired ${count} trial(s)`);
+  } catch (err) {
+
+$ rg -n "async expireTrial" server/services/billing.service.ts
+334:  async expireTrial(userCompanyId: number): Promise<Subscription | null> {
+
+$ sed -n '343,390p' server/services/billing.service.ts
+    await billingRepository.logEvent({
+      userCompanyId,
+      eventType: 'trial.expired',
+      previousStatus: existing.status as SubscriptionStatus,
+      previousPlanKey: existing.planKey as PlanKey,
+      newStatus: 'canceled',
+      newPlanKey: existing.planKey as PlanKey,
+      payload: { trialEnd: existing.trialEnd },
+    });
+
+    // Marketing segment sync, fire-and-forget — must never break billing flows
+    void marketingContactsService.reconcileSubscriptionAudiences(userCompanyId);
+    return subscription;
+  }
+
+  async expireFreePeriodTrial(userCompanyId: number): Promise<Subscription | null> {
+    const existing = await billingRepository.getByCompanyId(userCompanyId);
+    if (!existing) return null;
+
+    const now = new Date();
+    const subscription = await billingRepository.updateByCompanyId(userCompanyId, {
+      status: 'canceled',
+      canceledAt: now,
+    });
+
+    await billingRepository.logEvent({
+      userCompanyId,
+      eventType: 'referral.free_period_expired',
+      previousStatus: existing.status as SubscriptionStatus,
+      previousPlanKey: existing.planKey as PlanKey,
+      newStatus: 'canceled',
+      newPlanKey: existing.planKey as PlanKey,
+      payload: {
+        freeMonthsTotal: existing.freeMonthsTotal,
+        freeMonthsStartedAt: existing.freeMonthsStartedAt,
+        reason: 'no_payment_details',
+      },
+    });
+
+    // Marketing segment sync, fire-and-forget — must never break billing flows
+    void marketingContactsService.reconcileSubscriptionAudiences(userCompanyId);
+    return subscription;
+  }
+
+  async purchaseAddonSlots(
+    userCompanyId: number,
+    addonType: 'company_slot' | 'seat',
+    quantity: number,
+
+$ sed -n '334,355p' server/services/billing.service.ts
+  async expireTrial(userCompanyId: number): Promise<Subscription | null> {
+    const existing = await billingRepository.getByCompanyId(userCompanyId);
+    if (!existing) return null;
+
+    const subscription = await billingRepository.updateByCompanyId(userCompanyId, {
+      status: 'canceled',
+      canceledAt: new Date(),
+    });
+
+    await billingRepository.logEvent({
+      userCompanyId,
+      eventType: 'trial.expired',
+      previousStatus: existing.status as SubscriptionStatus,
+      previousPlanKey: existing.planKey as PlanKey,
+      newStatus: 'canceled',
+      newPlanKey: existing.planKey as PlanKey,
+      payload: { trialEnd: existing.trialEnd },
+    });
+
+    // Marketing segment sync, fire-and-forget — must never break billing flows
+    void marketingContactsService.reconcileSubscriptionAudiences(userCompanyId);
+    return subscription;
+```
+
+1. It sets the subscription row's `status` to `canceled` and `canceledAt` to the current time.
+
+2. It calls Stripe only to retrieve/list subscription state; expiry itself writes locally and does not cancel the Stripe subscription.
+
+3. A row Stripe already reports as `active` or `trialing` is excluded by `continue` when the Stripe lookup succeeds.
+
+### STEP 2 — WHAT THE STATUS CHANGE COSTS THE USER
+
+```text
+$ rg -n "async getEntitlements" server/services/billing.service.ts
+64:  async getEntitlements(
+
+$ sed -n '64,143p' server/services/billing.service.ts
+  async getEntitlements(
+    userCompanyId: number
+  ): Promise<{ subscription: Subscription; limits: TierLimits; features: TierFeatures } | null> {
+    const subscription = await billingRepository.getByCompanyId(userCompanyId);
+    if (!subscription) return null;
+
+    const betaPlanOverride = await billingRepository.getBetaPlanOverride(userCompanyId);
+    const effectivePlanKey = this.getEffectivePlanKey(subscription, betaPlanOverride);
+
+    const effectiveSubscription = effectivePlanKey !== subscription.planKey
+      ? { ...subscription, planKey: effectivePlanKey }
+      : subscription;
+
+    const limits = getEffectiveLimits(
+      effectivePlanKey,
+      effectiveSubscription.enterpriseOverrides as Record<string, unknown> | null
+    );
+    const features = TIER_FEATURES[effectivePlanKey];
+
+    return { subscription: effectiveSubscription, limits, features };
+  }
+
+  async createTrialSubscription(
+    userCompanyId: number,
+    trialDays: number,
+    trialEndsAt?: Date
+  ): Promise<Subscription> {
+    const now = new Date();
+    const trialEnd = trialEndsAt ?? new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000);
+
+    const subscription = await billingRepository.create({
+      userCompanyId,
+      planKey: 'PROFESSIONAL',
+      status: 'trialing',
+      trialStart: now,
+      trialEnd,
+      trialEndsAt: trialEnd,
+    });
+
+    await billingRepository.logEvent({
+      userCompanyId,
+      eventType: 'trial.started',
+      newStatus: 'trialing',
+      newPlanKey: 'PROFESSIONAL',
+      payload: { trialDays },
+    });
+
+    const { track } = await import('./funnel.service');
+    track(userCompanyId, null, 'trial.started', { planKey: 'PROFESSIONAL', trialDays });
+
+    return subscription;
+  }
+
+  async createFiveDNewMemberTrial(userCompanyId: number): Promise<Subscription> {
+    const now = new Date();
+    const trialEnd = new Date(now);
+    trialEnd.setMonth(trialEnd.getMonth() + 6);
+
+    const subscription = await billingRepository.create({
+      userCompanyId,
+      planKey: 'CORE',
+      status: 'trialing',
+      trialStart: now,
+      trialEnd,
+      trialEndsAt: trialEnd,
+      freeMonthsStartedAt: now,
+      freeMonthsTotal: 6,
+    });
+
+    await billingRepository.logEvent({
+      userCompanyId,
+      eventType: 'trial.started',
+      newStatus: 'trialing',
+      newPlanKey: 'CORE',
+      payload: { trialDays: null, freeMonthsTotal: 6, variant: '5d_new_member' },
+    });
+
+    const { track } = await import('./funnel.service');
+    track(userCompanyId, null, 'trial.started', { planKey: 'CORE', freeMonthsTotal: 6, variant: '5d_new_member' });
+```
+
+When status is `canceled`, `getEntitlements` still returns the subscription and the effective plan's limits and features because this method does not gate entitlements by status.
+
+### STEP 3 — THE TRIAL WARNING EMAIL COPY
+
+```text
+$ rg -n "sendTrialWarningEmail|sendTrialExtensionEmail" server --glob "*.ts" | head -10
+server/cron/billing.cron.ts:282:        await emailApiService.sendTrialExtensionEmail({
+server/cron/billing.cron.ts:346:      await emailApiService.sendTrialWarningEmail({
+server/services/email.service.ts:756:  async sendTrialExtensionEmail(params: {
+server/services/email.service.ts:803:  async sendTrialWarningEmail(params: {
+
+$ rg -n "7.day|seven day|7 day" server/services/email-api.service.ts server/services/email.service.ts 2>/dev/null | head -20
+server/services/email.service.ts:350:    blocks.push({ type: 'paragraph', text: 'This invitation expires in 7 days. If it expires, contact <a href="mailto:support@valoxi.ai" style="color:#E05115;text-decoration:none;">support@valoxi.ai</a> for a new one.' });
+server/services/email.service.ts:464:      { type: 'paragraph', text: `Your <strong style="color:#FFFFFF;">${planLabel}</strong> annual plan renews in 7 days.` },
+server/services/email.service.ts:479:      heading: 'Your plan renews in 7 days',
+server/services/email.service.ts:486:      subject: `Your Valoxi ${planLabel} plan renews in 7 days`,
+server/services/email.service.ts:639:          body: 'Your subscription will be cancelled in 7 days unless payment succeeds. Please update your payment method to keep your account active.',
+server/services/email.service.ts:647:      preheader: `Action needed: your Valoxi ${planLabel} subscription will be cancelled in 7 days.`,
+server/services/email.service.ts:649:      heading: 'Your subscription will be cancelled in 7 days',
+server/services/email.service.ts:656:      subject: `Action needed: your Valoxi ${planLabel} subscription will be cancelled in 7 days`,
+
+$ sed -n '756,850p' server/services/email.service.ts
+  async sendTrialExtensionEmail(params: {
+    to: string;
+    firstName: string;
+    newTrialEnd: Date;
+  }): Promise<SendInvitationResult> {
+    const { to, firstName, newTrialEnd } = params;
+    const safeFirstName = escapeHtml(firstName);
+
+    const formatDateTime = (d: Date): string => {
+      const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mm = String(d.getMinutes()).padStart(2, '0');
+      return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()} at ${hh}:${mm}`;
+    };
+
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `Hi ${safeFirstName},` },
+      { type: 'paragraph', text: 'We hope you have had a chance to explore Valoxi over the last 48 hours.' },
+      { type: 'paragraph', text: 'We would love you to have a little more time, so we have added an extra 24 hours to your trial - no action needed on your part.' },
+      {
+        type: 'info_box',
+        box: {
+          tone: 'info',
+          body: `Your trial now ends on <strong>${escapeHtml(formatDateTime(newTrialEnd))}</strong>.`,
+        },
+      },
+      { type: 'paragraph', text: 'After that, your card will be charged and your subscription will begin automatically.' },
+      { type: 'paragraph', text: 'If you have any questions or want to talk through what you have seen so far, just reply to this email.' },
+      { type: 'paragraph', text: 'Adam Auty<br/>Founder, Valoxi' },
+    ];
+
+    const html = renderBrandedEmail({
+      preheader: 'We have added an extra 24 hours to your Valoxi trial.',
+      eyebrow: 'Trial extended',
+      heading: 'You have got an extra 24 hours on us',
+      blocks,
+      footerLine: 'You are receiving this because you have an active Valoxi trial.',
+    });
+
+    const success = await (legacyEmailService as any).sendEmail({
+      to,
+      subject: 'You have got an extra 24 hours on us',
+      html,
+    });
+    return { success, message: success ? 'Trial extension email sent' : 'Failed to send trial extension email' };
+  }
+
+  async sendTrialWarningEmail(params: {
+    to: string;
+    firstName: string;
+    trialEndsAt: Date;
+  }): Promise<SendInvitationResult> {
+    const { to, firstName, trialEndsAt } = params;
+    const safeFirstName = escapeHtml(firstName);
+
+    const formatDateTime = (d: Date): string => {
+      const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mm = String(d.getMinutes()).padStart(2, '0');
+      return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()} at ${hh}:${mm}`;
+    };
+
+    const appUrl = process.env.APP_URL || 'https://test.valoxi.ai';
+
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `Hi ${safeFirstName},` },
+      { type: 'paragraph', text: `Your free trial ends on <strong>${escapeHtml(formatDateTime(trialEndsAt))}</strong>.` },
+      { type: 'paragraph', text: 'After that, your subscription will begin and your card will be charged automatically.' },
+      { type: 'paragraph', text: `If you would like to cancel before then, you can do so from your <a href="${appUrl}/settings">account settings</a>.` },
+      { type: 'paragraph', text: 'If you have any questions, just reply to this email.' },
+      { type: 'paragraph', text: 'Adam Auty<br/>Founder, Valoxi' },
+    ];
+
+    const html = renderBrandedEmail({
+      preheader: 'Your Valoxi free trial is ending soon.',
+      eyebrow: 'Trial ending',
+      heading: 'Your Valoxi trial ends soon',
+      blocks,
+      footerLine: 'You are receiving this because you have an active Valoxi trial.',
+    });
+
+    const success = await (legacyEmailService as any).sendEmail({
+      to,
+      subject: 'Your Valoxi trial ends soon',
+      html,
+    });
+    return { success, message: success ? 'Trial warning email sent' : 'Failed to send trial warning email' };
+  }
+
+  async sendFiveDPartnerInvoice(params: {
+    to: string;
+    billingMonth: string; // 'YYYY-MM'
+    members: Array<{ companyName: string | null; email: string | null; freeMonths: number; amountCents: number }>;
+    totalCents: number;
+  }): Promise<SendInvitationResult> {
+```
+
+Neither trial email hardcodes a 7-day framing; the extension says 24 hours, and the warning uses the supplied trial end date and “ending soon.”
+
+### STEP 4 — OUTPUT
+
+```text
+$ git status --porcelain
+ M docs/event-promo-release/ASSESS-F-promo-build-surface.md
+
+$ git diff --stat
+ .../ASSESS-F-promo-build-surface.md                | 408 ++++++++++++++++++++-
+ 1 file changed, 407 insertions(+), 1 deletion(-)
+```
