@@ -59,3 +59,61 @@ NOT RETURNED — Stripe Checkout Session retrieval returned `subscription_detail
 PASS — Unknown promo expected `promo_not_found`, received `promo_not_found`.
 
 PASS — 5D campaign with Professional expected `fived_core_only`, received `fived_core_only`.
+
+## Completed-checkout verification
+
+```text
+npx tsx -e "import('stripe').then(async S => { const stripe = new S.default(process.env.STRIPE_SECRET_KEY); const subs = await stripe.subscriptions.list({ limit: 1 }); const sub = subs.data[0]; if (!sub) { console.log('NO SUBSCRIPTION FOUND'); return; } const days = sub.trial_end && sub.trial_start ? (sub.trial_end - sub.trial_start) / 86400 : null; console.log('SUB:', sub.id, '| status:', sub.status, '| livemode:', sub.livemode); console.log('TRIAL START:', sub.trial_start ? new Date(sub.trial_start*1000).toISOString() : null); console.log('TRIAL END:', sub.trial_end ? new Date(sub.trial_end*1000).toISOString() : null); console.log('TRIAL LENGTH DAYS:', days); console.log('METADATA:', JSON.stringify(sub.metadata)); console.log('DISCOUNTS:', JSON.stringify(sub.discounts ?? sub.discount ?? null)); console.log('PRICE:', sub.items.data[0]?.price?.lookup_key, sub.items.data[0]?.price?.unit_amount); }).catch(e => { console.error('FAILED:', e); process.exit(1); })"
+SUB: sub_1UFYd82N2rRCsCfr6q642oyw | status: trialing | livemode: false
+TRIAL START: 2026-09-14T12:05:00.000Z
+TRIAL END: 2026-10-14T12:05:00.000Z
+TRIAL LENGTH DAYS: 30
+METADATA: {"freeMonthsTotal":"1","promoSlug":"bbe-live","trial_type":"promo_free_months"}
+DISCOUNTS: []
+PRICE: ma_professional_monthly_usd 16700
+
+psql "$DATABASE_URL" -c "SELECT u.id, u.email, u.user_company_id, u.assigned_promo_campaign_id, uc.company_name FROM users u JOIN user_companies uc ON uc.id = u.user_company_id ORDER BY u.id DESC LIMIT 3;"
+ id  |                email                 | user_company_id | assigned_promo_campaign_id | company_name  
+-----+--------------------------------------+-----------------+----------------------------+---------------
+ 116 | adam+7dtest@shiftopsconsulting.com   |             165 |                            | Pending Setup
+ 115 | adam+5d1mtest@shiftopsconsulting.com |             164 |                         15 | Pending Setup
+ 114 | adam+3months@valoxi.ai               |             104 |                         11 | 3 months
+(3 rows)
+
+psql "$DATABASE_URL" -c "SELECT user_company_id, plan_key, status, billing_interval, trial_ends_at, free_months_total, stripe_subscription_id FROM subscriptions ORDER BY id DESC LIMIT 3;"
+ user_company_id | plan_key |  status  | billing_interval |    trial_ends_at    | free_months_total |    stripe_subscription_id    
+-----------------+----------+----------+------------------+---------------------+-------------------+------------------------------
+             165 | CORE     | active   | month            | 2026-08-05 23:34:49 |                 0 | sub_1TyKWN2N2rRCsCfr8JnH6GSR
+             164 | CORE     | trialing | month            | 2026-08-28 23:32:34 |                 0 | sub_1TyKUC2N2rRCsCfrsHZlhY9l
+             104 | CORE     | trialing | month            | 2026-09-16 14:19:38 |                 0 | sub_1Tixq32N2rRCsCfrBuEf8YVX
+(3 rows)
+
+psql "$DATABASE_URL" -c "SELECT event_type, processing_status, error_message, created_at FROM webhook_events ORDER BY id DESC LIMIT 8;"
+ERROR:  column "processing_status" does not exist
+LINE 1: SELECT event_type, processing_status, error_message, created...
+                           ^
+```
+
+PASS — Stripe subscription status expected `trialing`, received `trialing`.
+
+PASS — Stripe trial length expected about 30 or 31 days and not 7, received 30 days.
+
+PASS — Stripe metadata `trial_type` expected `promo_free_months`, received `promo_free_months`.
+
+PASS — Stripe metadata `promoSlug` expected `bbe-live`, received `bbe-live`.
+
+PASS — Stripe discounts expected empty, received `[]`.
+
+PASS — Stripe lookup key expected `ma_professional_monthly_usd`, received `ma_professional_monthly_usd`.
+
+FAIL — Valoxi `plan_key` expected `PROFESSIONAL`; the completed checkout's subscription does not appear in the latest three Valoxi subscription rows.
+
+FAIL — Valoxi status expected `trialing`; the completed checkout's subscription does not appear in the latest three Valoxi subscription rows.
+
+FAIL — Valoxi `trial_ends_at` expected roughly one month out and not seven days; the completed checkout's subscription does not appear in the latest three Valoxi subscription rows.
+
+FAIL — `assigned_promo_campaign_id` expected `16`; the completed checkout's user does not appear in the latest three Valoxi user rows.
+
+FAIL — `free_months_total` expected `0`; the completed checkout's subscription does not appear in the latest three Valoxi subscription rows.
+
+NOT DETERMINED — The prescribed webhook-events query failed because `webhook_events.processing_status` does not exist, so rows with processing status `error` could not be checked.
