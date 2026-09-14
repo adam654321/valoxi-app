@@ -405,3 +405,94 @@ Production deal-model companies with no valuation-eligible year: 5.
 Deployment build: `vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist`.
 
 Deployment start: `NODE_ENV=production node dist/index.js`.
+
+## Production shadow flags and guard exposure
+
+```text
+psql "$PROD_DATABASE_URL" -c "SELECT key, value FROM system_config WHERE key IN ('evidence_shadow_write_enabled','canonical_shadow_write_enabled','open_access_enabled');"
+              key              | value 
+-------------------------------+-------
+ open_access_enabled           | true
+ evidence_shadow_write_enabled | true
+(2 rows)
+
+psql "$DATABASE_URL" -c "SELECT key, value FROM system_config WHERE key IN ('evidence_shadow_write_enabled','canonical_shadow_write_enabled','open_access_enabled');"
+              key               | value 
+--------------------------------+-------
+ open_access_enabled            | true
+ evidence_shadow_write_enabled  | true
+ canonical_shadow_write_enabled | true
+(3 rows)
+
+psql "$PROD_DATABASE_URL" -c "SELECT status, count(*) FROM current_offers GROUP BY status ORDER BY status;"
+  status  | count 
+----------+-------
+ accepted |     3
+ sent     |     8
+(2 rows)
+
+psql "$PROD_DATABASE_URL" -c "SELECT id, target_company_id, status, offer_price FROM current_offers ORDER BY id;"
+ id | target_company_id |  status  | offer_price 
+----+-------------------+----------+-------------
+  1 |                70 | sent     | £5,471,544
+  2 |                78 | accepted | £410,596
+  4 |                71 | accepted | £2,866,254
+  6 |               124 | sent     | £1,329,107
+  7 |                87 | sent     | £770,409
+  8 |                76 | accepted | £6,795,340
+ 10 |               163 | sent     | £1,002,414
+ 11 |               218 | sent     | £2,588,114
+ 12 |               220 | sent     | £3,386,196
+ 13 |               228 | sent     | £152,815
+ 15 |               196 | sent     | £379,978
+(11 rows)
+
+psql "$PROD_DATABASE_URL" -At -c "SELECT count(*) FROM deal_documents WHERE document_type = 'offer_letter' AND status = 'draft';"
+8
+
+psql "$PROD_DATABASE_URL" -c "SELECT count(*) FILTER (WHERE is_locked = true) AS locked, count(*) FILTER (WHERE is_locked = false OR is_locked IS NULL) AS unlocked FROM deal_models WHERE total_purchase_price IS NOT NULL AND CAST(total_purchase_price AS numeric) <= 0;"
+ locked | unlocked 
+--------+----------
+      1 |       27
+(1 row)
+
+psql "$PROD_DATABASE_URL" -c "SELECT DISTINCT tc.id, tc.company_name FROM deal_models dm JOIN target_companies tc ON tc.id = dm.target_company_id WHERE dm.total_purchase_price IS NOT NULL AND CAST(dm.total_purchase_price AS numeric) <= 0 ORDER BY tc.id;"
+ id  |                company_name                
+-----+--------------------------------------------
+  67 | DNA
+  71 | Acme Manufacturing Ltd
+  77 | Brand New Company
+  80 | Indirock Limited
+  87 | Dental Surgery 70171
+  88 | Kitchen Generator Limited
+  89 | Innova Design Group Limited
+  97 | Palatial leisure
+ 100 | EREKA and NECAB
+ 105 | Restoraction & DC Cotswolds
+ 133 | The Smile Gallery
+ 150 | Civil Engineering
+ 155 | LW Haddow
+ 162 | CDC Engineering And Fabrication Limited
+ 169 | Kent Construction & Restoration Limited
+ 197 | BESIXTH & Campus Group (MGA Media Limited)
+ 199 | Tipper Trunk Hire Business
+ 211 | Scotty Gates Limited
+ 213 | KJ Roofing Services Limited
+ 221 | Elizabeth's Rose Home Care
+ 224 | About Time Creative
+ 225 | K Consultancy
+ 238 | Kidco
+ 239 | Fabeliz Services
+ 251 | Capital Services Group
+(25 rows)
+```
+
+Production and development both have `open_access_enabled=true` and `evidence_shadow_write_enabled=true`.
+
+Development has `canonical_shadow_write_enabled=true`; production has no row for `canonical_shadow_write_enabled`, so the canonical shadow-write check does not receive `true` in production.
+
+Production has 8 draft offer letters that could no longer be sent under the guard described in the assessment request.
+
+Of the 28 production deal models with non-positive stored purchase prices, 1 is locked and 27 are unlocked. The locked model uses `computeFor` and retains its stored price; the 27 unlocked models are exposed to the first-read write behavior.
+
+The 28 affected deal models span 25 production companies.
