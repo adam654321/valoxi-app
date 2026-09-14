@@ -496,3 +496,26 @@ Production has 8 draft offer letters that could no longer be sent under the guar
 Of the 28 production deal models with non-positive stored purchase prices, 1 is locked and 27 are unlocked. The locked model uses `computeFor` and retains its stored price; the 27 unlocked models are exposed to the first-read write behavior.
 
 The 28 affected deal models span 25 production companies.
+
+## Draft offer-letter sendability
+
+```text
+psql "$PROD_DATABASE_URL" -c "SELECT dd.id, dd.target_company_id, tc.company_name, dd.created_at, dd.generated_file_url IS NOT NULL AS has_file, dd.document_data->'_raw'->>'offerPrice' AS raw_offer_price, dd.document_data->>'offerPrice' AS displayed_price FROM deal_documents dd LEFT JOIN target_companies tc ON tc.id = dd.target_company_id WHERE dd.document_type = 'offer_letter' AND dd.status = 'draft' ORDER BY dd.id;"
+ id | target_company_id |         company_name         |         created_at         | has_file |  raw_offer_price   | displayed_price 
+----+-------------------+------------------------------+----------------------------+----------+--------------------+-----------------
+ 39 |                70 | Aithon Solutions             | 2026-04-17 10:18:37.914476 | t        | 5471544.266666666  | £5,471,544
+ 49 |               124 | Association of Learning      | 2026-05-05 14:43:45.577323 | t        | 1329107            | £1,329,107
+ 51 |                87 | Dental Surgery 70171         | 2026-05-19 14:18:25.895655 | t        | 770409             | £770,409
+ 55 |               163 | Lovell Landscape             | 2026-06-15 12:46:39.726148 | t        | 1002413.6666666665 | £1,002,414
+ 59 |               220 | Canoports UK Limited         | 2026-07-06 18:12:58.713645 | t        | 3386195.8          | £3,386,196
+ 61 |               228 | Thor-CON                     | 2026-07-16 19:00:52.76296  | t        | 152815.2           | £152,815
+ 63 |               196 | Compassion Home Care Limited | 2026-07-16 20:38:32.150821 | t        | 379977.80000000005 | £379,978
+ 64 |               196 | Compassion Home Care Limited | 2026-07-17 14:23:53.085793 | t        | 379977.80000000005 | £379,978
+(8 rows)
+```
+
+Draft offer letters with `raw_offer_price` above zero: 8. These still send normally.
+
+Draft offer letters with null `raw_offer_price`: 0.
+
+Draft offer letters with `raw_offer_price` at or below zero: 0.
