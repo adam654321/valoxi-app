@@ -446,3 +446,216 @@ psql: error: connection to server at "ep-wandering-sunset-anbtkuyn.c-6.us-east-1
 ```
 
 ERROR CLASS: authentication failed.
+
+# READ-ONLY STORED-VS-COMPUTED OFFER VERIFICATION
+
+Every production query in this section ran through an inline TypeScript script invoked with:
+
+```text
+DATABASE_URL="$PROD_DATABASE_URL" npx tsx -e '<script>'
+```
+
+The managed production query connection and agent database integration were not used.
+
+## 1. WHAT DOES THE SHIPPED CODE ACTUALLY TEST?
+
+### a. Amber warning on the deal model screen
+
+`client/src/components/deal-modeller/ValuationSection.tsx:280-291`
+
+```text
+  const ev = localCalcs?.enterpriseValue ?? 0;
+  const offerPrice = localCalcs?.offerPrice ?? 0;
+  const avgEbitda = localCalcs?.averageAdjustedEbitda ?? 0;
+  const receivablesInterestAnnual = localCalcs?.receivablesInterestAnnual ?? 0;
+  const valuationEbitda = localCalcs?.valuationEbitda ?? avgEbitda;
+
+  // Commercial guards #296 and #324, surfaced to the user rather than enforced here.
+  // The figures shown are always the real computed ones: these flags only explain them.
+  // Sending an offer with an unsupportable price is gated server-side and requires an
+  // explicit confirmation, because that document goes to the seller.
+  const hasEligibleYear = Object.keys(reportedEbitdaByYear).length > 0;
+  const offerIsUnsupported = !Number.isFinite(offerPrice) || offerPrice <= 0;
+```
+
+The amber warning tests a RECOMPUTED value: `localCalcs.offerPrice`.
+
+### b. Send dialog with “No supportable offer” and “Send anyway”
+
+`client/src/components/target-company/DealModeller.tsx:543-549`
+
+```text
+  const hasFullDealModeller = useHasFeature("fullDealModeller");
+
+  // Commercial guard #324, surfaced at the send boundary. The figure itself is shown as
+  // computed wherever it appears: this only decides whether the send dialog asks for an
+  // explicit confirmation first, because the offer letter goes to the seller.
+  const offerIsUnsupported = !!calculations
+    && (!Number.isFinite(calculations.offerPrice) || calculations.offerPrice <= 0);
+```
+
+The send dialog tests a RECOMPUTED value: `calculations.offerPrice`, produced by the shared `calculateFullDealModel` path in the component.
+
+### c. Server-side check on the send route
+
+`server/services/deal-document.service.ts:107-120`
+
+```text
+    // The gate exists because this document goes to the SELLER. An offer letter arriving
+    // at a business owner reading "-£4,411" is not a negotiating position. Whether to send
+    // it is still the acquirer's decision: it just has to be a deliberate one, and it is
+    // recorded on the row so it survives a log rotation.
+    if (doc.documentType === 'offer_letter') {
+      const storedOfferPrice = (doc.documentData as any)?._raw?.offerPrice;
+      if (!isOfferPriceSupportable(storedOfferPrice)) {
+        if (!doc.unsupportedPriceAcknowledgedAt) {
+          console.warn(
+            `[DEAL_DOCS] Send blocked for document ${documentId}: stored offer price ${String(storedOfferPrice)} is not supportable and has not been acknowledged`,
+          );
+          throw new BadRequestError(
+            'No offer supportable. This offer letter has no verifiable price above zero. Confirm explicitly that you want to send it, or regenerate it from the deal model.',
+```
+
+The server-side send check tests a STORED value: the offer price frozen in `deal_documents.document_data._raw.offerPrice`. It does not recompute the model when sending.
+
+#541 RULE: surfaces (a) and (b) test live recomputed prices, while surface (c) tests the stored document-payload price. They test different values whenever the live model calculation has changed since the document payload was generated.
+
+## 2. RUN BOTH PREDICATES ON REAL PROD, SIDE BY SIDE
+
+Schema correction: the stored computed offer-price column is `deal_models.total_purchase_price`, found at `shared/schema/deal-models.ts:37`:
+
+```text
+  totalPurchasePrice: decimal("total_purchase_price"),
+```
+
+`deal_models.target_offer_price` is an input used when `offer_driver = 'target_price'`; it is not the general stored computed offer price. The earlier real-production verification section that treated `target_offer_price` as the stored computed price used the wrong column.
+
+Predicate A is `deal_models.total_purchase_price <= 0`.
+
+Predicate B calls the shipped `dealModelService.calculateOnly` method for each model. That method calls `fetchReportedEbitdaByYear`, `buildCalcInputs`, and the shared `calculateFullDealModel` path used by the screen; Predicate B is `CalculationResult.offerPrice <= 0`.
+
+Verbatim result:
+
+```text
+{
+  "measuredAt": "2026-09-15T16:15:04.751Z",
+  "totalModels": 124,
+  "predicateA": {
+    "models": 28,
+    "distinctCompanies": 25
+  },
+  "predicateB": {
+    "models": 25,
+    "distinctCompanies": 22
+  },
+  "disagreements": 11,
+  "disagreementRows": [
+    {
+      "id": 61,
+      "targetCompanyId": 89,
+      "stored": -771213.5,
+      "computed": 419332,
+      "predicateA": true,
+      "predicateB": false
+    },
+    {
+      "id": 54,
+      "targetCompanyId": 71,
+      "stored": -365082.1666666665,
+      "computed": 9139249.5,
+      "predicateA": true,
+      "predicateB": false
+    },
+    {
+      "id": 138,
+      "targetCompanyId": 89,
+      "stored": -1762,
+      "computed": 294702,
+      "predicateA": true,
+      "predicateB": false
+    },
+    {
+      "id": 74,
+      "targetCompanyId": 94,
+      "stored": 52901.5,
+      "computed": -360113.5,
+      "predicateA": false,
+      "predicateB": true
+    },
+    {
+      "id": 73,
+      "targetCompanyId": 128,
+      "stored": 6833,
+      "computed": -1709467,
+      "predicateA": false,
+      "predicateB": true
+    },
+    {
+      "id": 117,
+      "targetCompanyId": 103,
+      "stored": 695250,
+      "computed": -1508993,
+      "predicateA": false,
+      "predicateB": true
+    },
+    {
+      "id": 75,
+      "targetCompanyId": 133,
+      "stored": -62188,
+      "computed": 28981.333333333343,
+      "predicateA": true,
+      "predicateB": false
+    },
+    {
+      "id": 80,
+      "targetCompanyId": 88,
+      "stored": -83039.39200000004,
+      "computed": 532552.5219999999,
+      "predicateA": true,
+      "predicateB": false
+    },
+    {
+      "id": 99,
+      "targetCompanyId": 162,
+      "stored": -6986.880000000005,
+      "computed": 254268,
+      "predicateA": true,
+      "predicateB": false
+    },
+    {
+      "id": 58,
+      "targetCompanyId": 103,
+      "stored": 695250,
+      "computed": -1508993,
+      "predicateA": false,
+      "predicateB": true
+    },
+    {
+      "id": 87,
+      "targetCompanyId": 150,
+      "stored": -98197.26249999998,
+      "computed": 70857.75,
+      "predicateA": true,
+      "predicateB": false
+    }
+  ]
+}
+```
+
+At `2026-09-15T16:15:04.751Z`, production contained 124 models.
+
+- Predicate A, stored: 28 models across 25 distinct companies.
+- Predicate B, computed through the shipped calculation path: 25 models across 22 distinct companies.
+- A and B disagree on 11 models.
+
+## 3. RECONCILE TO #534
+
+Predicate A reproduces #534's recorded 28 models at or below zero across 25 companies exactly.
+
+Predicate B does not reproduce #534: it returns 25 models across 22 companies.
+
+This comparison does not assert which database #534 used.
+
+## 4. THE WRONG HOST, RECORDED NOT CHASED
+
+YES — `.replit` declares `javascript_database:1.0.0` in the agent integrations list, so the configuration says a managed database integration is available to this workspace. This statement confirms only what the config declares; no connection was made and credential validity or actual reachability was not tested.
