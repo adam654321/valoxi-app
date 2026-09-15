@@ -282,6 +282,13 @@ export default function ValuationSection({
   const avgEbitda = localCalcs?.averageAdjustedEbitda ?? 0;
   const receivablesInterestAnnual = localCalcs?.receivablesInterestAnnual ?? 0;
   const valuationEbitda = localCalcs?.valuationEbitda ?? avgEbitda;
+
+  // Commercial guards #296 and #324, surfaced to the user rather than enforced here.
+  // The figures shown are always the real computed ones: these flags only explain them.
+  // Sending an offer with an unsupportable price is gated server-side and requires an
+  // explicit confirmation, because that document goes to the seller.
+  const hasEligibleYear = Object.keys(reportedEbitdaByYear).length > 0;
+  const offerIsUnsupported = !Number.isFinite(offerPrice) || offerPrice <= 0;
   const effectiveMultiple: number | null = local.offerDriver === 'target_price'
     ? (localCalcs?.impliedMultiple ?? null)
     : toNum(local.ebitdaMultiple);
@@ -861,7 +868,24 @@ export default function ValuationSection({
 
             <div className="flex items-center justify-between px-4 py-3 bg-primary/5">
               <span className="text-base font-semibold">Offer Price</span>
-              <span className="font-bold text-xl">{formatCurrency(offerPrice)}</span>
+              <span className="flex flex-col items-end gap-1">
+                <span className={`font-bold text-xl ${offerIsUnsupported ? 'text-amber-600 dark:text-amber-500' : ''}`}>
+                  {formatCurrency(offerPrice)}
+                </span>
+                {offerIsUnsupported && (
+                  <span className="max-w-[22rem] text-right text-xs font-normal leading-snug text-amber-600 dark:text-amber-500">
+                    No supportable offer at these inputs. Debt, tax and working-capital
+                    adjustments exceed the enterprise value, so there is nothing to offer
+                    the seller. Sending this will ask you to confirm first.
+                  </span>
+                )}
+                {!hasEligibleYear && (
+                  <span className="max-w-[22rem] text-right text-xs font-normal leading-snug text-amber-600 dark:text-amber-500">
+                    No completed full year of non-IM financial data, so these figures are
+                    unverified.
+                  </span>
+                )}
+              </span>
             </div>
           </div>
         </div>
