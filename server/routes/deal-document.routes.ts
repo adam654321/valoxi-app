@@ -160,7 +160,7 @@ router.post('/send-offer', requirePermission('canCreateOffers'), asyncHandler(as
     return res.status(401).json({ message: 'Unauthorized' });
   }
 
-  const { targetCompanyId, dealModelId, portalTokenId } = req.body;
+  const { targetCompanyId, dealModelId, portalTokenId, acknowledgeUnsupportedPrice } = req.body;
 
   if (!targetCompanyId || !dealModelId) {
     return res.status(400).json({ message: 'targetCompanyId and dealModelId are required' });
@@ -185,6 +185,15 @@ router.post('/send-offer', requirePermission('canCreateOffers'), asyncHandler(as
     portalTokenId: resolvedPortalTokenId,
     createdBy: userId,
   });
+
+  // The caller has explicitly confirmed sending an offer whose computed price is at or
+  // below zero. Recorded on the document before the send, because sendDocument reads it
+  // from the row rather than taking it as an argument, so the acknowledgement survives
+  // as evidence of who chose to send it. Absent the flag, sendDocument refuses exactly
+  // as it does today.
+  if (acknowledgeUnsupportedPrice === true) {
+    await dealDocumentService.acknowledgeUnsupportedPrice(doc.id, userId);
+  }
 
   const result = await dealDocumentService.sendDocument(doc.id, userId);
 
