@@ -240,3 +240,209 @@ deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
 run = ["npm", "run", "start"]
 ```
+
+# READ-ONLY VERIFICATION AGAINST REAL PROD
+
+## 0. PROVE WHICH DATABASE YOU ARE ON
+
+Every production query in this section was run directly with `psql "$PROD_DATABASE_URL"`. The managed production query connection was not used.
+
+```text
+HOST_PREFIX: ep-old-recipe-an7e4a
+ current_database 
+------------------
+ neondb
+(1 row)
+
+ count 
+-------
+   700
+(1 row)
+```
+
+This is not DEV: the explicit connection host starts with `ep-old-recipe`, and `balance_sheets` contains 700 rows rather than 216.
+
+## 1. #533 VERIFICATION, THE DEPLOY GATE
+
+```text
+            column_name            |          data_type          | is_nullable | column_default 
+-----------------------------------+-----------------------------+-------------+----------------
+ unsupported_price_acknowledged_at | timestamp without time zone | YES         | 
+ unsupported_price_acknowledged_by | integer                     | YES         | 
+(2 rows)
+```
+
+```text
+                    constraint_name                    |                              definition                              
+-------------------------------------------------------+----------------------------------------------------------------------
+ deal_documents_unsupported_price_acknowledged_by_fkey | FOREIGN KEY (unsupported_price_acknowledged_by) REFERENCES users(id)
+(1 row)
+```
+
+```text
+ count 
+-------
+    40
+(1 row)
+```
+
+#533's claim holds on this database: both nullable columns exist, the FK is named `deal_documents_unsupported_price_acknowledged_by_fkey`, and `deal_documents` contains 40 rows.
+
+## 2. #534 RE-MEASURE ON THIS DATABASE
+
+Found in `shared/schema/deal-models.ts`:
+
+```text
+18-  averagingYears: integer("averaging_years").default(3),
+19-  ebitdaMultiple: decimal("ebitda_multiple").default('3.0'),
+20-  offerDriver: varchar("offer_driver", { length: 20 }).default('ebitda'),
+21:  targetOfferPrice: decimal("target_offer_price"),
+22-  multipleLow: decimal("multiple_low"),
+23-  multipleHigh: decimal("multiple_high"),
+24-  propertyValue: decimal("property_value").default('0'),
+--
+26-  otherAssets: decimal("other_assets").default('0'),
+27-  calculatedEbitda: decimal("calculated_ebitda"),
+28-  adjustedEbitda: decimal("adjusted_ebitda"),
+29:  enterpriseValue: decimal("enterprise_value"),
+30-  plusExcessCash: decimal("plus_excess_cash"),
+31-  minusPrimaryDebt: decimal("minus_primary_debt"),
+32-  minusOtherDebt: decimal("minus_other_debt"),
+```
+
+The table is `deal_models`; computed offer price is stored in `target_offer_price`, and enterprise value is stored in `enterprise_value`.
+
+```text
+ total_models | stored_price_at_or_below_zero | distinct_companies 
+--------------+-------------------------------+--------------------
+          124 |                             1 |                  1
+(1 row)
+```
+
+```text
+ sent_or_accepted_documents 
+----------------------------
+                          0
+(1 row)
+```
+
+These results differ materially from #534's earlier measurement of roughly 28 nonpositive models across 25 companies. On real production there is 1 such model across 1 company. The earlier measurement was on the wrong database. The total model count, 124, and sent-or-accepted count, 0, match the expected shape.
+
+## 3. PROD FLAG STATE
+
+```text
+              key              | value 
+-------------------------------+-------
+ evidence_shadow_write_enabled | true
+(1 row)
+```
+
+There is no `canonical_shadow_write_enabled` row. No flag was changed.
+
+## 4. EVENT CAMPAIGN ON REAL PROD
+
+Found in `shared/schema/billing.ts`. The real table name is `promo_code_campaigns`, with this full schema column list:
+
+```text
+export const promoCodeCampaigns = pgTable("promo_code_campaigns", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  slug: varchar("slug", { length: 50 }).notNull().unique(),
+  stripeCouponId: varchar("stripe_coupon_id", { length: 50 }).notNull(),
+  referralSource: varchar("referral_source", { length: 50 }).notNull(),
+  freeMonthsTotal: integer("free_months_total").notNull().default(0),
+  maxTotalClaims: integer("max_total_claims"),
+  isActive: boolean("is_active").notNull().default(true),
+  expiresAt: timestamp("expires_at"),
+  postFreePeriodCouponId: varchar("post_free_period_coupon_id", { length: 50 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdByUserId: integer("created_by_user_id").references(() => users.id),
+});
+```
+
+PROD:
+
+```text
+ count 
+-------
+     0
+(1 row)
+```
+
+PROD:
+
+```text
+ id |          name           |     slug     | referral_source 
+----+-------------------------+--------------+-----------------
+  9 | Standard 5D community   | 5d-community | 5d_community
+ 10 | Early Bird              | early-bird   | early_bird
+ 11 | 5D New Member           | 5d           | 5d_community
+ 12 | Welcome Discount        | welcome      | welcome
+ 13 | 5D New Member (1 month) | 5d1m         | 5d_community
+(5 rows)
+```
+
+DEV:
+
+```text
+ id |                     name                      | stripe_coupon_id  |   referral_source   | free_months_total |     expires_at      |         created_at         | created_by_user_id | post_free_period_coupon_id |   slug   | max_total_claims | is_active 
+----+-----------------------------------------------+-------------------+---------------------+-------------------+---------------------+----------------------------+--------------------+----------------------------+----------+------------------+-----------
+ 16 | The Business Buying Experience Live 2026 (5D) | UNUSED_TRIAL_ONLY | event_bbe_live_2026 |                 1 | 2026-10-03 23:00:00 | 2026-09-14 10:24:29.450438 |                    |                            | bbe-live |              400 | t
+(1 row)
+```
+
+Real production has zero rows with slug `bbe-live`.
+
+## 5. IDENTIFY THE WRONG CONNECTION
+
+The visible `.replit` database-related configuration is:
+
+```text
+[env]
+PORT = "5000"
+
+[agent]
+integrations = ["javascript_log_in_with_replit:1.0.0", "javascript_object_storage:1.0.0", "javascript_database:1.0.0", "javascript_gemini_ai_integrations:2.0.0"]
+```
+
+The managed production query connection is supplied by the Replit `javascript_database` integration. No managed production connection string, secret name, or host is present in `.replit` or the application config. The only host observable for that connection is the masked, credential-free host from its earlier error:
+
+```text
+HOST: ep-wandering-sunset-anbtkuyn.c-6.us-east-1.aws.neon.tech
+CREDENTIALS: [REDACTED]
+```
+
+No hardcoded connection string matching `ep-wandering-sunset` was found. Repository host-match count:
+
+```text
+6
+```
+
+Up to 20 matching lines:
+
+```text
+./docs/release-2026-09/assess.md:98:psql: error: connection to server at "ep-wandering-sunset-anbtkuyn.c-6.us-east-1.aws.neon.tech" (35.173.20.131), port 5432 failed: ERROR:  password authentication failed for user 'neondb_owner'
+./docs/release-2026-09/assess.md:103:psql: error: connection to server at "ep-wandering-sunset-anbtkuyn.c-6.us-east-1.aws.neon.tech" (3.227.221.118), port 5432 failed: ERROR:  password authentication failed for user 'neondb_owner'
+./docs/release-2026-09/assess.md:108:psql: error: connection to server at "ep-wandering-sunset-anbtkuyn.c-6.us-east-1.aws.neon.tech" (100.51.95.243), port 5432 failed: ERROR:  password authentication failed for user 'neondb_owner'
+./docs/release-2026-09/assess.md:164:psql: error: connection to server at "ep-wandering-sunset-anbtkuyn.c-6.us-east-1.aws.neon.tech" (35.173.20.131), port 5432 failed: ERROR:  password authentication failed for user 'neondb_owner'
+./docs/release-2026-09/assess.md:169:The failure host `ep-wandering-sunset-anbtkuyn.c-6.us-east-1.aws.neon.tech` is not the host currently encoded in `PROD_DATABASE_URL`, which is `ep-old-recipe-an7e4afw.c-6.us-east-1.aws.neon.tech`.
+./docs/event-promo-release/ASSESS-A-release-safety.md:348:Encountered an error executing SQL command: exitCode=2 exitReason=exit stderr=psql: error: connection to server at "ep-wandering-sunset-anbtkuyn.c-6.us-east-1.aws.neon.tech" (100.51.95.243), port 5432 failed: ERROR:  password authentication failed for user 'neondb_owner'
+```
+
+All six matches are documentation records of the earlier failed connection, not application code, configuration, or a hardcoded connection string. No connection to that host was attempted during this verification.
+
+## 6. THE OUTSTANDING TWO FROM LAST TIME
+
+```text
+$ git diff -- .replit
+```
+
+The command produced no output.
+
+Verbatim earlier error text, with no credential value present:
+
+```text
+psql: error: connection to server at "ep-wandering-sunset-anbtkuyn.c-6.us-east-1.aws.neon.tech" (35.173.20.131), port 5432 failed: ERROR:  password authentication failed for user 'neondb_owner'
+```
+
+ERROR CLASS: authentication failed.
