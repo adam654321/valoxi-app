@@ -486,7 +486,7 @@ export default function DealModeller({ companyId }: DealModellerProps) {
   });
 
   const sendOfferMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (opts?: { acknowledgeUnsupportedPrice?: boolean }) => {
       // Wait for any in-flight model saves (debounced fields) to complete before
       // generating the offer — ensures the server reads the latest model state.
       const deadline = Date.now() + 2500;
@@ -497,6 +497,9 @@ export default function DealModeller({ companyId }: DealModellerProps) {
       const res = await apiRequest('POST', '/api/v2/deal-documents/send-offer', {
         targetCompanyId: companyId,
         dealModelId: selectedModelId,
+        // Only ever true when the user has been shown the warning in the send dialog and
+        // chosen to proceed. The server records it against the document row.
+        acknowledgeUnsupportedPrice: opts?.acknowledgeUnsupportedPrice === true,
       });
       return res.json();
     },
@@ -538,6 +541,12 @@ export default function DealModeller({ companyId }: DealModellerProps) {
   });
 
   const hasFullDealModeller = useHasFeature("fullDealModeller");
+
+  // Commercial guard #324, surfaced at the send boundary. The figure itself is shown as
+  // computed wherever it appears: this only decides whether the send dialog asks for an
+  // explicit confirmation first, because the offer letter goes to the seller.
+  const offerIsUnsupported = !!calculations
+    && (!Number.isFinite(calculations.offerPrice) || calculations.offerPrice <= 0);
 
   if (modelsLoading) {
     return (
@@ -691,23 +700,39 @@ export default function DealModeller({ companyId }: DealModellerProps) {
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Send Offer Letter</AlertDialogTitle>
+                      <AlertDialogTitle>
+                        {offerIsUnsupported ? 'No supportable offer' : 'Send Offer Letter'}
+                      </AlertDialogTitle>
                       <AlertDialogDescription>
-                        Choose how to send this offer to the seller.
+                        {offerIsUnsupported ? (
+                          <span className="block space-y-2">
+                            <span className="block">
+                              This offer price is {calculations ? formatCurrency(calculations.offerPrice) : '—'}.
+                              Debt, tax and working-capital adjustments exceed the enterprise value, so
+                              there is nothing to offer the seller at these inputs.
+                            </span>
+                            <span className="block font-medium text-foreground">
+                              The seller will receive a letter showing this figure. Check the deal model
+                              first, or send it anyway if that is what you intend.
+                            </span>
+                          </span>
+                        ) : (
+                          'Choose how to send this offer to the seller.'
+                        )}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <div className="flex flex-col gap-3 w-full">
                         <div className="flex flex-col sm:flex-row gap-2">
                           <AlertDialogAction
-                            className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                            className={`flex-1 text-white ${offerIsUnsupported ? 'bg-amber-600 hover:bg-amber-700' : 'bg-green-600 hover:bg-green-700'}`}
                             disabled={sendOfferMutation.isPending}
-                            onClick={() => sendOfferMutation.mutate()}
+                            onClick={() => sendOfferMutation.mutate({ acknowledgeUnsupportedPrice: offerIsUnsupported })}
                           >
                             {sendOfferMutation.isPending
                               ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                               : <Send className="h-4 w-4 mr-2" />}
-                            Send via Portal
+                            {offerIsUnsupported ? 'Send anyway' : 'Send via Portal'}
                           </AlertDialogAction>
                           <AlertDialogAction
                             className="flex-1 bg-secondary text-secondary-foreground hover:bg-secondary/80 border border-border"
