@@ -659,3 +659,86 @@ This comparison does not assert which database #534 used.
 ## 4. THE WRONG HOST, RECORDED NOT CHASED
 
 YES — `.replit` declares `javascript_database:1.0.0` in the agent integrations list, so the configuration says a managed database integration is available to this workspace. This statement confirms only what the config declares; no connection was made and credential validity or actual reachability was not tested.
+
+# POST-DEPLOY V-CHECK
+
+## 1. THE DEPLOY ITSELF
+
+Deployment metadata:
+
+```text
+success: true
+isDeployed: true
+primaryUrl: https://app.valoxi.ai
+deploymentType: autoscale
+hasSuccessfulBuild: true
+visibility: public
+```
+
+Serving check:
+
+```text
+HTTP/2 200
+content-type: text/html; charset=UTF-8
+server: Google Frontend
+x-powered-by: Express
+```
+
+Startup log:
+
+```text
+[2026-09-16T10:59:23.295Z INFO] forwarding local port 5000 to external port 80 (mapped as 1104)
+[2026-09-16T10:59:23.295Z INFO] starting up user application
+[2026-09-16T10:59:23.295Z INFO] no runnable or static artifact routes available; falling back to the deployment run command in .replit
+[2026-09-16T10:59:25.113Z INFO] > NODE_ENV=production node dist/index.js
+[2026-09-16T10:59:25.113Z INFO] > rest-express@1.0.0 start
+[2026-09-16T10:59:29.884Z INFO] 10:59:29 AM [express] serving on port 5000
+```
+
+The deployment is serving.
+
+RUNNING COMMIT: NOT CONFIRMABLE. The deployment metadata does not expose a commit SHA, and the deployed app and startup log contain no commit marker. No commit was guessed from workspace HEAD.
+
+DEPLOYED NODE VERSION: NOT CONFIRMABLE. The deployed process logs `node dist/index.js` but does not print `process.version`, and the deployed app exposes no runtime/version endpoint. Therefore this check cannot confirm 22.x or exclude 20.x.
+
+## 2. NODE 22 SMOKE ON THE DEPLOYMENT
+
+The real PDF and Word routes are mounted behind authenticated middleware:
+
+```text
+app.use('/api/v2/deal-documents', isAuthenticated, validateCsrfToken, requireActiveSubscription, dealDocumentRoutes);
+```
+
+The unauthenticated public PDF route was not used because it calls `markViewed(documentId)`, which would write production data and violate this task's read-only constraint.
+
+The first generation smoke used an existing production document ID obtained read-only through explicit `PROD_DATABASE_URL`, then requested the authenticated real PDF route without a session.
+
+Verbatim failure with cookie credentials masked:
+
+```text
+DOCUMENT_ID: 5
+HTTP/2 401
+content-length: 26
+content-type: application/json; charset=utf-8
+server: Google Frontend
+set-cookie: __Host-sid=[REDACTED]
+set-cookie: GAESA=[REDACTED]
+x-clerk-auth-reason: session-token-and-uat-missing
+x-clerk-auth-status: signed-out
+x-powered-by: Express
+
+{"message":"Unauthorized"}
+```
+
+PDF SMOKE: FAILED BEFORE GENERATION — HTTP 401 Unauthorized. No `%PDF-` header or byte count was produced.
+
+STOP — per the instruction to stop if any generation smoke fails, the Word and spreadsheet smoke tests were not attempted, and sections 3–5 were not run.
+
+One startup-log observation is recorded despite the stop because it was encountered while checking the deployed runtime: `gemini-client` printed an API-key prefix twice. The value is redacted here:
+
+```text
+[2026-09-16T10:59:35.741Z INFO] [GEMINI_CLIENT] API call — key: [REDACTED] host: generativelanguage.googleapis.com service: document_classification model: gemini-3-flash-preview
+[2026-09-16T10:59:35.746Z INFO] [GEMINI_CLIENT] API call — key: [REDACTED] host: generativelanguage.googleapis.com service: document_classification model: gemini-3-flash-preview
+```
+
+#539 CONFIRMATION: `gemini-client` did print an API-key prefix in production logs.
