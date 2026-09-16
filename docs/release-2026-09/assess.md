@@ -742,3 +742,135 @@ One startup-log observation is recorded despite the stop because it was encounte
 ```
 
 #539 CONFIRMATION: `gemini-client` did print an API-key prefix in production logs.
+
+# POST-DEPLOY V-CHECK — RESUMED SECTIONS 3 TO 6
+
+No generation smoke test was retried. Every production database query below ran with explicit `PROD_DATABASE_URL`, never the managed production connection.
+
+## 3. THE GUARD IS LIVE AND OVERWROTE NOTHING
+
+```text
+          measured_at          | total_models | nonpositive_models | distinct_companies 
+-------------------------------+--------------+--------------------+--------------------
+ 2026-09-16 11:09:25.840511+00 |          125 |                 28 |                 25
+(1 row)
+```
+
+The stored predicate is unchanged at 28 models across 25 distinct companies. #531's expected non-overwrite state holds. Total model count increased from 124 to 125, which meets the expectation of 124 or higher.
+
+```text
+SELECT count(*) FROM deal_documents WHERE unsupported_price_acknowledged_at IS NOT NULL;
+
+ count 
+-------
+     0
+(1 row)
+```
+
+```text
+SELECT count(*) FROM deal_documents;
+
+ count 
+-------
+    40
+(1 row)
+```
+
+No unsupported-price acknowledgement has been written, and the deal-document count remains 40.
+
+## 4. SHADOW STATE UNCHANGED BY THE RELEASE
+
+```text
+SELECT key, value FROM system_config WHERE key LIKE '%shadow%' OR key LIKE '%canonical%' ORDER BY key;
+
+              key              | value 
+-------------------------------+-------
+ evidence_shadow_write_enabled | true
+(1 row)
+```
+
+The release did not change the expected state: `evidence_shadow_write_enabled` remains `true`, and there is still no canonical row.
+
+## 5. ERROR SWEEP SINCE THE DEPLOY
+
+Sweep start:
+
+```text
+2026-09-16T10:59:23.295Z
+```
+
+Total deployment-log entries matching `error` since deploy:
+
+```text
+14
+```
+
+The 14 entries reduce to these two distinct error shapes. Representative lines are printed verbatim:
+
+```text
+[2026-09-16T10:59:23.298Z ERROR] healthcheck failed error=healthcheck /: Get "http://127.0.0.1:1104/": dial tcp 127.0.0.1:1104: connect: connection refused
+[2026-09-16T10:59:23.301Z ERROR] healthcheck failed error=healthcheck / returned status 500
+```
+
+All 14 errors occurred during startup before this serving line:
+
+```text
+[2026-09-16T10:59:29.884Z INFO] 10:59:29 AM [express] serving on port 5000
+```
+
+No later error entry was returned by the sweep.
+
+Number of times `gemini-client` printed the API key or its prefix since deploy:
+
+```text
+2
+```
+
+Verbatim log-line shape, secret masked:
+
+```text
+[2026-09-16T10:59:35.741Z INFO] [GEMINI_CLIENT] API call — key: [REDACTED] host: generativelanguage.googleapis.com service: document_classification model: gemini-3-flash-preview
+[2026-09-16T10:59:35.746Z INFO] [GEMINI_CLIENT] API call — key: [REDACTED] host: generativelanguage.googleapis.com service: document_classification model: gemini-3-flash-preview
+```
+
+#539 is confirmed in production: the deployed `gemini-client` logged an API-key prefix twice.
+
+## 6. WHAT IS ACTUALLY RUNNING
+
+The running commit and deployed Node version remain unconfirmable because deployment metadata, deployment logs, and the application expose neither value.
+
+No explicit health or version route exists in the server code. Common-path probes all returned the Valoxi SPA HTML fallback rather than health or version data:
+
+```text
+=== /health ===
+HTTP 200
+CONTENT_TYPE text/html; charset=UTF-8
+<title>Valoxi</title>
+
+=== /api/health ===
+HTTP 200
+CONTENT_TYPE text/html; charset=UTF-8
+<title>Valoxi</title>
+
+=== /api/v2/health ===
+HTTP 200
+CONTENT_TYPE text/html; charset=UTF-8
+<title>Valoxi</title>
+
+=== /version ===
+HTTP 200
+CONTENT_TYPE text/html; charset=UTF-8
+<title>Valoxi</title>
+
+=== /api/version ===
+HTTP 200
+CONTENT_TYPE text/html; charset=UTF-8
+<title>Valoxi</title>
+
+=== /api/v2/version ===
+HTTP 200
+CONTENT_TYPE text/html; charset=UTF-8
+<title>Valoxi</title>
+```
+
+The app exposes no actual health or version endpoint.
