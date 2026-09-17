@@ -1623,3 +1623,383 @@ Direct answer: **no**, the shipped hard #296 guard in `DealModelService.createMo
 Current `buildOfferDataContext` calls `assessOfferSupportability` after calculation, but its failure branch only logs a warning and continues building the document. It is not a guard.
 
 To catch this case for both portal and offline offer generation, the hard eligibility check would have to be enforced in `buildOfferDataContext` immediately after `fetchReportedEbitdaByYear` and before `calculateFullDealModel`. If the requirement is also to avoid creating an orphan draft document row, the same validation must occur before `createDocument` in both `createOfferFromDealModel` and `createOfflineOfferFromDealModel`.
+
+# READ-ONLY HOTFIX ASSESSMENT — ONE VALUATION SOURCE
+
+Assessment performed on 17 September 2026. No production query was required for this code-path assessment. No code, data, deployment, or document was changed.
+
+## 1. THE ONE CHANGE, SCOPED
+
+### Current offer-document EBITDA source
+
+`server/services/deal-document.service.ts:821-833`, verbatim:
+
+```ts
+    const adjustments = await db.select().from(dealModelAdjustments)
+      .where(eq(dealModelAdjustments.dealModelId, dealModelId));
+
+    // Use the same full-year-only helper the screen uses — no more dual implementations.
+    const [reportedEbitdaByYear, contributionTiers] = await Promise.all([
+      fetchReportedEbitdaByYear(targetCompanyId),
+      db.select({ sourceTier: financialContributions.sourceTier })
+        .from(financialContributions)
+        .where(eq(financialContributions.targetCompanyId, targetCompanyId)),
+    ]);
+    const provisionalFinancials = isProvisionalFinancials(contributionTiers);
+
+    const { calculateFullDealModel, assessOfferSupportability } = await import('@shared/calculators/deal-model.calc');
+```
+
+The comment is incorrect for the rendered client screen. `fetchReportedEbitdaByYear()` is used by the server model service, but the visible client screen prefers expert JSON.
+
+### Current screen EBITDA source
+
+Newest-result query, `server/services/expert-analysis.service.ts:790-795`, verbatim:
+
+```ts
+  async getExpertResults(companyId: number): Promise<ExpertAnalysisResult[]> {
+    return db
+      .select()
+      .from(expertAnalysisResults)
+      .where(eq(expertAnalysisResults.targetCompanyId, companyId))
+      .orderBy(desc(expertAnalysisResults.createdAt));
+  }
+```
+
+Client query and newest-successful selection, `client/src/components/target-company/DealModeller.tsx:156-170`, verbatim:
+
+```ts
+  const { data: expertResults } = useQuery<any[]>({
+    queryKey: ['/api/v2/expert-analysis/results', companyId],
+    select: (response: any) => response?.data || response,
+    enabled: !!companyId,
+  });
+
+  const financialExpertMetrics = useMemo<Record<string, any> | null>(() => {
+    if (!expertResults) return null;
+    const financialExpert = expertResults.find((r: any) => r.expertType === 'financial' && r.status === 'success');
+    if (!financialExpert?.analysisData) return null;
+    const data = typeof financialExpert.analysisData === 'string'
+      ? JSON.parse(financialExpert.analysisData)
+      : financialExpert.analysisData;
+    return data?.yearly_metrics || null;
+  }, [expertResults]);
+```
+
+Because the API returns `created_at DESC`, `find(...)` selects the newest successful financial result, skipping newer failed or processing records.
+
+Screen conversion to calculator input, `client/src/components/target-company/DealModeller.tsx:272-283`, verbatim:
+
+```ts
+  const reportedEbitdaByYear = useMemo<Record<string, number>>(() => {
+    if (financialExpertMetrics) {
+      const expertPeriods = financialsFromExpert?.periods ?? [];
+      const result: Record<string, number> = {};
+      for (const [year, m] of Object.entries(financialExpertMetrics)) {
+        const period = expertPeriods.find((p: any) => String(p.fiscalYear) === year);
+        if (period && isPartYearPeriod(period)) continue;
+        const ebitda = (m as any).ebitda;
+        if (ebitda != null) result[year] = Number(ebitda);
+      }
+      return result;
+    }
+```
+
+### Exact scoped change
+
+The existing server function that reproduces the screen's result selection is:
+
+```text
+expertAnalysisService.getExpertResults(targetCompanyId)
+```
+
+It returns:
+
+```text
+Promise<ExpertAnalysisResult[]>
+```
+
+ordered by `createdAt DESC`. `buildOfferDataContext` would have to:
+
+1. Call `expertAnalysisService.getExpertResults(targetCompanyId)`.
+2. Select the first row where `expertType === 'financial' && status === 'success'`.
+3. Parse `analysisData` if it is a string.
+4. Read `analysisData.yearly_metrics`.
+5. Convert non-part-year entries with non-null `ebitda` into `Record<string, number>`, the shape required by `calculateFullDealModel`.
+6. Use the screen's raw-financial fallback when no usable expert metrics exist.
+
+There is no existing server function that returns that final screen `Record<string, number>` or the exact client-screen `CalculationResult`.
+
+Therefore, changing only the input block would align the immediate EBITDA source but would **not** fully satisfy the stated rule that the document must not compute a valuation of its own. `buildOfferDataContext` would still independently map model rows and call `calculateFullDealModel`.
+
+To satisfy “one source” fully, the exact screen-source selection and calculation need to live in one server function returning `CalculationResult`, and both the screen API and `buildOfferDataContext` must consume that result. `dealModelService.calculateOnly()` already returns `Promise<CalculationResult>`, but today it uses `fetchReportedEbitdaByYear()` and therefore does not reproduce the client expert-JSON path. It cannot be used unchanged.
+
+## 2. WHAT ELSE CONSUMES `buildOfferDataContext`
+
+Production caller count first:
+
+```text
+2
+```
+
+Call sites:
+
+```text
+server/services/deal-document.service.ts:761
+createOfferFromDealModel()
+Produces an offer letter for the portal/send flow, then passes the context to generateDocumentFile().
+```
+
+```text
+server/services/deal-document.service.ts:785-790
+createOfflineOfferFromDealModel()
+Produces an offline/downloaded offer letter, then passes the context to generateDocumentFile().
+```
+
+There are no HoT, portal-render, PDF-render, or template-render callers of `buildOfferDataContext`.
+
+- Portal and authenticated HTML/PDF views render the already persisted `deal_documents.document_data`.
+- HoT creation reads the accepted offer's persisted data.
+- No non-offer document calls `buildOfferDataContext`.
+
+### HoT figure source
+
+`server/services/deal-document.service.ts:1127-1128`, verbatim:
+
+```ts
+    const acceptedOfferData = acceptedOffer.documentData as any;
+    const raw = acceptedOfferData?._raw || {};
+```
+
+`server/services/deal-document.service.ts:1148-1171`, verbatim:
+
+```ts
+    const documentData: Record<string, any> = {
+      // Parties
+      buyerCompanyName:          acceptedOfferData.buyerCompanyName,
+      sellerCompanyName:         acceptedOfferData.sellerCompanyName,
+      sellerContactName:         acceptedOfferData.sellerContactName,
+      sellerAddress:             acceptedOfferData.sellerAddress,
+      buyerSignatoryName:        acceptedOfferData.buyerSignatoryName,
+      buyerSignatoryTitle:       acceptedOfferData.buyerSignatoryTitle,
+      // Transaction type
+      transactionType:           acceptedOfferData.transactionType || 'share_sale',
+      transactionTypeLabel:      acceptedOfferData.transactionTypeLabel || 'Share Sale',
+      transactionDescription:    acceptedOfferData.transactionDescription || '100% of the share capital',
+      // Price — all pre-formatted strings, no £ prefix in template
+      offerPrice:                acceptedOfferData.offerPrice,
+      dayOnePayment:             acceptedOfferData.dayOnePayment,
+      deferredTotal:             acceptedOfferData.deferredTotal,
+      deferredInstalment:        acceptedOfferData.deferredInstalment || '',
+      deferredTermMonths:        raw.deferredTermMonths ?? 0,
+      earnoutMaximum:            raw.earnoutMaximum > 0 ? fmt(raw.earnoutMaximum) : '',
+      earnoutMetric:             raw.earnoutMetric || '',
+      earnoutTermMonths:         raw.earnoutTermMonths ?? 0,
+      // Pre-assembled text blocks
+      breakdownText:             acceptedOfferData.breakdownText || '',
+      paymentText:               acceptedOfferData.paymentText || '',
+```
+
+Direct answer: the HoT uses the accepted offer's stamped figures. It does not rebuild EBITDA, EV, or offer price and does not call `calculateFullDealModel`.
+
+## 3. THE STAMP
+
+`buildOfferDataContext` returns formatted seller-facing values and an `_raw` object. The calculated/bridge stamp currently includes:
+
+```text
+offerPrice
+enterpriseValue
+excessCash
+propertyValue
+primaryDebt
+otherDebt
+corpTaxDue
+workingCapitalAdj
+dayOnePayment
+deferredAmount
+deferredTerms
+earnoutMaximum
+earnoutMetric
+earnoutTermMonths
+deferredInstalment
+deferredTermMonths
+transactionType
+transactionTypeLabel
+averageEbitda
+ebitdaMultiple
+```
+
+It also persists formatted `offerPrice`, `enterpriseValue`, `excessCash`, `dayOnePayment`, `breakdownText`, `paymentText`, deferred values, and transaction labels.
+
+The persistence write is in `server/services/deal-document.service.ts:73-89`, verbatim:
+
+```ts
+    const mergedData = { ...context, ...dataOverrides };
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `${doc.documentType}_v${doc.version}_${doc.targetCompanyId}_${timestamp}.docx`;
+
+    const outputPath = await dealDocumentTemplateService.generateAndSave(
+      templatePath,
+      mergedData,
+      filename
+    );
+
+    await db.update(dealDocuments)
+      .set({
+        generatedFileUrl: outputPath,
+        documentData: mergedData,
+      })
+      .where(eq(dealDocuments.id, documentId));
+```
+
+The stamp is stored in `deal_documents.document_data`, with the numeric subset under `document_data._raw`.
+
+Snapshot/version answer:
+
+- `deal_documents.deal_model_id`: **yes**, linked model ID.
+- `deal_documents.version`: **yes**, document version only.
+- Model version at generation: **no**.
+- Valuation snapshot ID or model snapshot ID (#325): **no**.
+
+The model table has its own `version`, `expert_data_snapshot`, and `financial_data_snapshot`, but the offer stamp does not identify which model version or snapshot produced it.
+
+## 4. THE IM WARNING, WHERE IT WOULD GO
+
+The field available on the deal-model screen is:
+
+```text
+period.sourceTier
+```
+
+Database column:
+
+```text
+financial_periods.source_tier
+```
+
+The screen fetches it through:
+
+```text
+GET /api/v2/financial-data/company/:companyId/financials
+```
+
+Client query, `client/src/components/target-company/DealModeller.tsx:150-154`, verbatim:
+
+```ts
+  const { data: financialsRaw } = useQuery<FinancialsData>({
+    queryKey: ['/api/v2/financial-data/company', companyId, 'financials'],
+    select: (response: any) => response?.data || response,
+    enabled: !!companyId,
+  });
+```
+
+Server route, `server/routes/financial-data.routes.ts:138-155`, verbatim:
+
+```ts
+  const periods = await financialDataRepository.getFinancialPeriodsByCompany(targetCompanyId);
+  const incomeStatements = await financialDataRepository.getIncomeStatementsByCompany(targetCompanyId);
+  const balanceSheets = await financialDataRepository.getBalanceSheetsByCompany(targetCompanyId);
+  const staffData = await financialDataRepository.getStaffDataByCompany(targetCompanyId);
+  const loans = await financialDataRepository.getLoanFacilitiesByCompany(targetCompanyId);
+  const agedDebtors = await financialDataRepository.getAgedDebtorsByCompany(targetCompanyId);
+
+  const adjustments = await financialDataRepository.getAdjustmentsByCompany(targetCompanyId);
+
+  const periodsWithMeta = periods.map(p => ({
+    ...p,
+    readOnly: p.periodType === 'statutory' || p.periodType === 'historic',
+    isHistoric: p.periodType === 'statutory' || p.periodType === 'historic',
+  }));
+
+  sendSuccess(res, {
+    periods: periodsWithMeta,
+    incomeStatements,
+```
+
+Repository query, `server/repositories/financial-data.repository.ts:155-167`, verbatim:
+
+```ts
+  async getFinancialPeriodsByCompany(targetCompanyId: number): Promise<(FinancialPeriod & { documentCategory: string | null; documentName: string | null })[]> {
+    const results = await db
+      .select({
+        period: financialPeriods,
+        documentCategory: documents.documentCategory,
+        documentName: documents.documentName,
+      })
+      .from(financialPeriods)
+      .leftJoin(documents, eq(financialPeriods.sourceDocumentId, documents.id))
+      .where(eq(financialPeriods.targetCompanyId, targetCompanyId))
+      .orderBy(desc(financialPeriods.periodEnd));
+
+    return results.map(r => ({ ...r.period, documentCategory: r.documentCategory ?? null, documentName: r.documentName ?? null }));
+  }
+```
+
+Selecting `period: financialPeriods` carries all period columns, including `sourceTier`.
+
+The expert-JSON branch itself does not carry the tag. It uses the separate `financialsRaw.periods` response for period matching and metadata.
+
+Existing warning surface: the deal modeller already uses the shared `AlertDialog` components from `@/components/ui/alert-dialog` for the amber unsupported-offer send warning. The warning is controlled by `offerIsUnsupported` in `client/src/components/target-company/DealModeller.tsx:545-549`. There is no separately named #532 banner component; the reusable primitive is `AlertDialog`, and the existing implementation supplies the amber styling and seller-impact copy.
+
+## 5. TEST SURFACE
+
+Direct or explicitly builder-targeted test-file count:
+
+```text
+2
+```
+
+```text
+server/services/__tests__/offer-guard-call-sites.test.ts
+```
+
+- Exercises public offer-document service behavior and send-boundary guards.
+- It does not directly assert `buildOfferDataContext` EBITDA, EV, or stamped price.
+
+```text
+shared/calculators/__tests__/deal-model.calc.test.ts
+```
+
+- Test `T5: offer-driver wire-up — modelInput shape from buildOfferDataContext honours target_price` explicitly targets the builder's model-input contract.
+- It tests the pure calculator, not the private builder or generated document stamp.
+- Its own comment states that service-level builder testing is not present.
+
+Related but not direct generation coverage:
+
+```text
+server/services/__tests__/deal-model-ebitda.test.ts
+server/services/__tests__/forward-path-gate.test.ts
+server/services/__tests__/im-detector.test.ts
+server/services/__tests__/reconciled-financials.test.ts
+```
+
+These cover EBITDA eligibility, IM tagging, and reconciliation, but do not generate an offer and compare its stamp with the deal-model screen calculation.
+
+The single missing test:
+
+> Generate an offline offer for a model whose newest successful financial expert JSON contains EBITDA while its populated full-year income rows are IM-tagged, then assert the persisted offer `_raw.offerPrice` and EBITDA basis exactly equal the deal-model screen calculation for the same model.
+
+That end-to-end equality assertion would have failed for Thor-CON.
+
+## 6. BASELINE
+
+```text
+$ npm run check
+
+> rest-express@1.0.0 check
+> tsc
+
+EXIT_CODE=0
+EXACT TYPESCRIPT ERROR COUNT: 0
+```
+
+```text
+$ git status --porcelain | wc -l
+0
+```
+
+```text
+$ git rev-parse --abbrev-ref HEAD
+main
+```
