@@ -42,6 +42,7 @@ interface ValuationSectionProps {
   calculations: CalculationResult | null;
   isLocked: boolean;
   reportedEbitdaByYear: Record<string, number>;
+  isProvisionalFinancials: boolean;
   onDataChange: () => void;
   explainContext?: ExplainContext;
 }
@@ -125,6 +126,7 @@ export default function ValuationSection({
   calculations: parentCalcs,
   isLocked,
   reportedEbitdaByYear,
+  isProvisionalFinancials,
   onDataChange,
   explainContext,
 }: ValuationSectionProps) {
@@ -883,6 +885,11 @@ export default function ValuationSection({
                   <span className="max-w-[22rem] text-right text-xs font-normal leading-snug text-amber-600 dark:text-amber-500">
                     No completed full year of non-IM financial data, so these figures are
                     unverified.
+                  </span>
+                )}
+                {isProvisionalFinancials && (
+                  <span className="max-w-[22rem] text-right text-xs font-normal leading-snug text-amber-600 dark:text-amber-500">
+                    These figures are based on an Information Memorandum.
                   </span>
                 )}
               </span>

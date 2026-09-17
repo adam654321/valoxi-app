@@ -6,7 +6,7 @@ import { dealModels, dealModelAdjustments, dealModelFundingLines, dealModelSelle
 import { financialPeriods, incomeStatements, financialContributions } from '@shared/schema/financials';
 import { isProvisionalFinancials } from '../../shared/utils/provisional-financials';
 import { eq, and, desc, not, inArray, sql } from 'drizzle-orm';
-import { fetchReportedEbitdaByYear } from './deal-model.service';
+import { getScreenEbitdaByYear } from './screen-ebitda.service';
 import { isOfferPriceSupportable } from '@shared/calculators/deal-model.calc';
 import { dealDocumentTemplateService, DocumentDataContext } from './deal-document-template.service';
 import { extendPortalTokenForCompany } from './portal-token.service';
@@ -731,6 +731,13 @@ export class DealDocumentService {
       );
     }
 
+    const offerData = await this.buildOfferDataContext(
+      params.dealModelId,
+      params.targetCompanyId,
+      params.userCompanyId,
+      params.createdBy
+    );
+
     const existingOffer = await this.getLatestActiveDocument(params.targetCompanyId, 'offer_letter');
 
     let doc;
@@ -758,8 +765,6 @@ export class DealDocumentService {
       });
     }
 
-    const offerData = await this.buildOfferDataContext(params.dealModelId, params.targetCompanyId, params.userCompanyId, params.createdBy);
-
     await this.generateDocumentFile(doc.id, offerData);
 
     const { track } = await import('./funnel.service');
@@ -774,6 +779,13 @@ export class DealDocumentService {
     dealModelId: number;
     createdBy: number;
   }) {
+    const offerData = await this.buildOfferDataContext(
+      params.dealModelId,
+      params.targetCompanyId,
+      params.userCompanyId,
+      params.createdBy
+    );
+
     const doc = await this.createDocument({
       targetCompanyId: params.targetCompanyId,
       userCompanyId: params.userCompanyId,
@@ -781,13 +793,6 @@ export class DealDocumentService {
       createdBy: params.createdBy,
       dealModelId: params.dealModelId,
     });
-
-    const offerData = await this.buildOfferDataContext(
-      params.dealModelId,
-      params.targetCompanyId,
-      params.userCompanyId,
-      params.createdBy
-    );
 
     await this.generateDocumentFile(doc.id, offerData);
 
@@ -821,13 +826,18 @@ export class DealDocumentService {
     const adjustments = await db.select().from(dealModelAdjustments)
       .where(eq(dealModelAdjustments.dealModelId, dealModelId));
 
-    // Use the same full-year-only helper the screen uses — no more dual implementations.
+    // The offer must use the same expert-derived EBITDA map the user saw on screen.
     const [reportedEbitdaByYear, contributionTiers] = await Promise.all([
-      fetchReportedEbitdaByYear(targetCompanyId),
+      getScreenEbitdaByYear(targetCompanyId),
       db.select({ sourceTier: financialContributions.sourceTier })
         .from(financialContributions)
         .where(eq(financialContributions.targetCompanyId, targetCompanyId)),
     ]);
+    if (Object.keys(reportedEbitdaByYear).length === 0) {
+      throw new BadRequestError(
+        'Cannot generate the offer letter because the deal model has no financial years with EBITDA.'
+      );
+    }
     const provisionalFinancials = isProvisionalFinancials(contributionTiers);
 
     const { calculateFullDealModel, assessOfferSupportability } = await import('@shared/calculators/deal-model.calc');
@@ -1046,6 +1056,7 @@ export class DealDocumentService {
         transactionType,
         transactionTypeLabel,
         averageEbitda: calculations.averageAdjustedEbitda || 0,
+        valuationEbitda: calculations.valuationEbitda || 0,
         ebitdaMultiple: Number(model.ebitdaMultiple) || 0,
       },
     };

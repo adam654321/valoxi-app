@@ -12,6 +12,7 @@ import { useServerConfig } from '@/hooks/useServerConfig';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { handleSendResult } from '@/lib/send-result-toast';
 import { isPartYearPeriod } from '@/lib/period-utils';
+import { isProvisionalFinancials } from '@shared/utils/provisional-financials';
 import {
   calculateFullDealModel,
   toNum,
@@ -304,6 +305,15 @@ export default function DealModeller({ companyId }: DealModellerProps) {
     }
     return result;
   }, [financialsRaw, financialExpertMetrics, financialsFromExpert]);
+
+  const provisionalFinancials = useMemo(() => {
+    const sourceTiers = (financialsRaw?.periods ?? [])
+      .map((period: any) => period.sourceTier)
+      .filter((sourceTier: unknown): sourceTier is string => typeof sourceTier === 'string')
+      .map(sourceTier => ({ sourceTier }));
+    return sourceTiers.some(({ sourceTier }) => sourceTier === 'information_memorandum')
+      && isProvisionalFinancials(sourceTiers);
+  }, [financialsRaw]);
 
   const calculations = useMemo<CalculationResult | null>(() => {
     if (!modelDetails) return null;
@@ -948,6 +958,7 @@ export default function DealModeller({ companyId }: DealModellerProps) {
                     calculations={calculations}
                     isLocked={isLocked}
                     reportedEbitdaByYear={reportedEbitdaByYear}
+                    isProvisionalFinancials={provisionalFinancials}
                     onDataChange={() => {
                       queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-models', selectedModelId] });
                     }}
