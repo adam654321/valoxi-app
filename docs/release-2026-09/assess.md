@@ -1371,3 +1371,255 @@ Published your App
 Its document builder already called `fetchReportedEbitdaByYear`, called `calculateFullDealModel`, swallowed calculator exceptions, and applied `|| 0` fallbacks.
 
 Direct answer: it cannot be established that a letter generated on 5 August would have carried the correct EBITDA. The defect-enabling split already existed by that date: document generation used reconciled income rows, while client display could use expert-result JSON. Correctness depended on the company's underlying row eligibility and the deployed commit at the exact generation time. The code cannot support a stronger claim.
+
+# READ-ONLY EXPOSURE ASSESSMENT — EXPERT JSON VERSUS DOCUMENT ELIGIBILITY
+
+Assessment performed on 17 September 2026. Production reads used explicit `DATABASE_URL="$PROD_DATABASE_URL"` only. The shared TypeScript `calculateFullDealModel` implementation was used for the screen-price comparison. No data, documents, or code were changed.
+
+## 1. HOW MANY COMPANIES ARE IN THOR-CON'S POSITION
+
+Counts first:
+
+```text
+measured_at                    | companies_with_models | zero_eligible_companies | zero_eligible_with_populated_excluded_rows
+2026-09-17 11:48:38.722694+00 | 97                    | 6                       | 4
+```
+
+The eligibility predicate was copied from the document path's `getReconciledFinancials` query:
+
+```sql
+i.is_full_year = true
+AND (fp.source_tier IS NULL OR fp.source_tier <> 'information_memorandum')
+AND fp.period_end <= CURRENT_DATE
+AND fp.fiscal_year <= EXTRACT(YEAR FROM CURRENT_DATE)
+```
+
+Company IDs with a deal model and zero valuation-eligible income years:
+
+```text
+97
+103
+106
+128
+225
+228
+```
+
+Of those six companies, four have populated full-year income rows that are excluded:
+
+```text
+company_id | excluded_tag            | populated_full_year_rows
+97         | information_memorandum  | 4
+128        | information_memorandum  | 6
+225        | information_memorandum  | 4
+228        | information_memorandum  | 4
+```
+
+Tag distribution:
+
+```text
+excluded_tag            | populated_full_year_rows | companies
+information_memorandum  | 18                       | 4
+```
+
+Thor-CON, company 228, is one of four companies with populated full-year income data excluded solely under the `information_memorandum` tag rule.
+
+## 2. STORED VERSUS EXPERT-JSON PRICE, ACROSS ALL MODELS
+
+Timestamp and counts:
+
+```text
+measured_at: 2026-09-17T11:48:42.066Z
+total deal models: 127
+agree: 51
+disagree: 76
+stored price NULL: 0
+models using latest successful financial-expert JSON: 127
+models using raw-data fallback: 0
+```
+
+Agreement was tested to half-penny tolerance: `abs(screen_price - stored_price) < 0.005`.
+
+The screen reproduction followed the shipped path:
+
+1. Newest successful financial expert result per company, matching `getExpertResults()` ordering by `created_at DESC` and the client's first matching financial result.
+2. `analysis_data.yearly_metrics[year].ebitda`, excluding part-year periods using the client helper.
+3. Each model's actual adjustments, active funding lines, seller payments, contingent consideration, bridge inputs, fees, offer driver, and target price.
+4. The shared `calculateFullDealModel`.
+
+Top 30 disagreements by absolute difference:
+
+```text
+model | company | stored price          | screen price          | screen - stored
+54    | 71      | -365082.1666666665    | 11827045.333333332    | 12192127.499999998
+130   | 218     | 21662159.333333336    | 10309448.833333334    | -11352710.500000002
+134   | 218     | 21662159.333333336    | 10309448.833333334    | -11352710.500000002
+55    | 71      | 762720.5              | 12042879.833333332    | 11280159.333333332
+42    | 70      | 5471544.266666666     | 1874819.5999999999    | -3596724.666666666
+97    | 76      | 6795340.199999999     | 9891485.2             | 3096145
+131   | 218     | 11677366.583333332    | 10052695              | -1624671.583333332
+49    | 77      | -185146.09999999963   | 1149996.4000000004    | 1335142.5
+50    | 77      | -185146.09999999963   | 1149996.4000000004    | 1335142.5
+61    | 89      | -771213.5             | 419332                | 1190545.5
+58    | 103     | 695250                | 1795967               | 1100717
+117   | 103     | 695250                | 1795967               | 1100717
+75    | 133     | -62188                | 765916                | 828104
+140   | 220     | 10316251.566666666    | 11110014.9            | 793763.333333334
+139   | 197     | -166308.3             | 510568                | 676876.3
+51    | 78      | 410595.5999999996     | 1050690.6             | 640095.0000000005
+38    | 67      | -1032787.456          | -403752.80000000005   | 629034.656
+88    | 151     | 89435.66666666667     | 632759                | 543323.3333333334
+105   | 190     | 458926.66666666674    | 975571.6666666667     | 516645
+151   | 230     | 473409.9153750001     | 977619.1203749999     | 504209.20499999984
+84    | 137     | 151518.15000000002    | 563513.6125           | 411995.4625
+80    | 88      | -83039.39200000004    | 293998.3319999999     | 377037.72399999993
+104   | 172     | 518483.93333333335    | 860899.3333333333     | 342415.3999999999
+120   | 172     | 523239.7666666666     | 860899.3333333333     | 337659.56666666665
+138   | 89      | -1762                 | 294702                | 296464
+164   | 242     | 856767.3333333334     | 1151410.1666666667    | 294642.8333333334
+56    | 100     | -300905.7             | -30549                | 270356.7
+128   | 216     | 140552.8333333333     | 409132                | 268579.1666666667
+99    | 162     | -6986.880000000005    | 254268                | 261254.88
+107   | 190     | 836258                | 1080245               | 243987
+```
+
+This is materially larger than the prior same-source comparison: 76 of 127 models disagree when stored prices are compared with the current expert-JSON screen path.
+
+## 3. THE ACCEPTED LETTER
+
+The “one accepted offer letter” in the post-deploy exposure window is document 66:
+
+```text
+document id: 66
+company id: 271
+linked model id: 180
+document stored offer price: 2157527.8499999996
+linked model total_purchase_price: 2157527.8499999996
+current expert-JSON screen price: 2157527.8499999996
+screen - stored difference: 0
+document-eligible income years: 5
+eligible fiscal years: 2020, 2021, 2022, 2023, 2024
+eligibility measured_at: 2026-09-17 11:48:54.058299+00
+```
+
+The number sent to the seller was built for a company that has valuation-eligible income years under the document predicate. Its document price, linked-model price, and current expert-JSON screen price all agree.
+
+This answer is scoped to the one accepted offer letter in the previously established post-deploy window. Production contains older accepted offer letters outside that window.
+
+## 4. WHERE #296 SHOULD HAVE FIRED
+
+### #296 guard as shipped in v82
+
+The hard #296 guard was shipped in `DealModelService.createModel`. Verbatim:
+
+```ts
+  async createModel(
+    targetCompanyId: number,
+    createdBy: number,
+    userCompanyId: number,
+    modelName?: string
+  ): Promise<DealModelWithDetails & { calculations: CalculationResult }> {
+    await verifyOwnership(targetCompanyId, userCompanyId);
+
+    // Commercial guard #296. No deal model without at least one valuation-eligible year.
+    // Checked before createDealModelFromExperts, which otherwise inserts a model row,
+    // seeds adjustments and creates funding lines for a company that cannot be valued.
+    const eligibilityCheck = await fetchReportedEbitdaByYear(targetCompanyId);
+    if (!hasValuationEligibleYear(eligibilityCheck)) {
+      console.warn(
+        `[DEAL_MODEL] Creation blocked for company ${targetCompanyId}: no valuation-eligible year`,
+      );
+      throw new BadRequestError(
+        'No valuation-eligible year. At least one completed full year of non-IM financial data is required before a deal model can be created.',
+      );
+    }
+
+    const model = await dealModelMappingService.createDealModelFromExperts(
+      targetCompanyId,
+      createdBy,
+      userCompanyId,
+      modelName
+    );
+```
+
+The predicate it calls is verbatim:
+
+```ts
+export function hasValuationEligibleYear(
+  reportedEbitdaByYear: Record<string, number> | null | undefined,
+): boolean {
+  if (!reportedEbitdaByYear) return false;
+  return Object.keys(reportedEbitdaByYear).length > 0;
+}
+```
+
+### Document-generation call path
+
+Verbatim, capped below 60 lines:
+
+```ts
+  async createOfflineOfferFromDealModel(params: {
+    targetCompanyId: number;
+    userCompanyId: number;
+    dealModelId: number;
+    createdBy: number;
+  }) {
+    const doc = await this.createDocument({
+      targetCompanyId: params.targetCompanyId,
+      userCompanyId: params.userCompanyId,
+      documentType: 'offer_letter',
+      createdBy: params.createdBy,
+      dealModelId: params.dealModelId,
+    });
+
+    const offerData = await this.buildOfferDataContext(
+      params.dealModelId,
+      params.targetCompanyId,
+      params.userCompanyId,
+      params.createdBy
+    );
+
+    await this.generateDocumentFile(doc.id, offerData);
+
+    return doc;
+  }
+
+  private async buildOfferDataContext(
+    dealModelId: number,
+    targetCompanyId: number,
+    userCompanyId: number,
+    createdBy: number
+  ): Promise<Record<string, any>> {
+    const baseContext = await dealDocumentTemplateService.buildDataContext(
+      targetCompanyId, userCompanyId, createdBy, dealModelId
+    );
+
+    const [reportedEbitdaByYear, contributionTiers] = await Promise.all([
+      fetchReportedEbitdaByYear(targetCompanyId),
+      db.select({ sourceTier: financialContributions.sourceTier })
+        .from(financialContributions)
+        .where(eq(financialContributions.targetCompanyId, targetCompanyId)),
+    ]);
+
+    const { calculateFullDealModel, assessOfferSupportability } = await import('@shared/calculators/deal-model.calc');
+
+    let calculations: any = {};
+    try {
+      calculations = calculateFullDealModel(
+        reportedEbitdaByYear,
+        adjustmentInputs,
+        fundingLineInputs,
+        modelInput,
+        sellerPaymentInputs,
+        contingentConsiderationInputs
+      );
+    } catch (err) {
+      console.error('[DEAL_DOCS] Calculator error:', err);
+    }
+```
+
+Direct answer: **no**, the shipped hard #296 guard in `DealModelService.createModel` is not on the document-generation path. Document generation does not call `createModel`.
+
+Current `buildOfferDataContext` calls `assessOfferSupportability` after calculation, but its failure branch only logs a warning and continues building the document. It is not a guard.
+
+To catch this case for both portal and offline offer generation, the hard eligibility check would have to be enforced in `buildOfferDataContext` immediately after `fetchReportedEbitdaByYear` and before `calculateFullDealModel`. If the requirement is also to avoid creating an orphan draft document row, the same validation must occur before `createDocument` in both `createOfferFromDealModel` and `createOfflineOfferFromDealModel`.
