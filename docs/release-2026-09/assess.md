@@ -874,3 +874,500 @@ CONTENT_TYPE text/html; charset=UTF-8
 ```
 
 The app exposes no actual health or version endpoint.
+
+# READ-ONLY P1 ASSESSMENT — THOR-CON DOCUMENT 68
+
+Assessment performed on 17 September 2026. Production reads used explicit `DATABASE_URL="$PROD_DATABASE_URL"` only. No document was regenerated or sent, and no data or code was changed.
+
+## Finding
+
+The screen and offer-letter paths call the same `calculateFullDealModel` arithmetic, but they do **not** supply the same reported EBITDA input.
+
+- The screen prefers `analysis_data.yearly_metrics` from a successful financial expert result.
+- The offer-letter builder calls `fetchReportedEbitdaByYear()`, which reads reconciled income rows and excludes `information_memorandum` periods.
+- Thor-CON's populated full-year income rows are all `information_memorandum`. Its statutory contribution records do not have corresponding populated statutory income-statement rows.
+- The document calculator therefore received an empty `reportedEbitdaByYear`, produced average adjusted EBITDA `0`, then deducted £3,000 annual invoice-finance interest to produce valuation EBITDA `-£3,000`.
+
+This is an input-path defect, not an arithmetic defect. The two paths share the final calculator but reach it through different source-selection code.
+
+## 1. THE TWO PATHS, SIDE BY SIDE
+
+### Deal model screen
+
+Verbatim, `client/src/components/target-company/DealModeller.tsx`:
+
+```ts
+  const reportedEbitdaByYear = useMemo<Record<string, number>>(() => {
+    if (financialExpertMetrics) {
+      const expertPeriods = financialsFromExpert?.periods ?? [];
+      const result: Record<string, number> = {};
+      for (const [year, m] of Object.entries(financialExpertMetrics)) {
+        const period = expertPeriods.find((p: any) => String(p.fiscalYear) === year);
+        if (period && isPartYearPeriod(period)) continue;
+        const ebitda = (m as any).ebitda;
+        if (ebitda != null) result[year] = Number(ebitda);
+      }
+      return result;
+    }
+    if (!financialsRaw?.periods || !financialsRaw?.incomeStatements) return {};
+    const result: Record<string, number> = {};
+    const candidatePeriods = financialsRaw.periods
+      .filter((period: any) => period.periodType === 'statutory' && period.fiscalYear && !isPartYearPeriod(period))
+      .sort((a: any, b: any) => {
+        const aInc = financialsRaw.incomeStatements.find((i: any) => i.financialPeriodId === a.id);
+        const bInc = financialsRaw.incomeStatements.find((i: any) => i.financialPeriodId === b.id);
+        const aOp = aInc?.operatingProfit != null ? 1 : 0;
+        const bOp = bInc?.operatingProfit != null ? 1 : 0;
+        if (bOp !== aOp) return bOp - aOp;
+        return new Date(b.periodEnd).getTime() - new Date(a.periodEnd).getTime();
+      });
+    for (const period of candidatePeriods) {
+      const year = String(period.fiscalYear);
+      if (year in result) continue;
+      const income = financialsRaw.incomeStatements.find((i: any) => i.financialPeriodId === period.id);
+      if (!income) continue;
+      const op = toNum(income.operatingProfit);
+      const da = toNum(income.depreciationAmortisation);
+      result[year] = op + da;
+    }
+    return result;
+  }, [financialsRaw, financialExpertMetrics, financialsFromExpert]);
+
+  const calculations = useMemo<CalculationResult | null>(() => {
+    if (!modelDetails) return null;
+
+    const adjustments: AdjustmentInput[] = (modelDetails.adjustments || []).map(a => ({
+      adjustmentType: a.adjustmentType as 'add_back' | 'deduction',
+      amount: a.amount,
+      amountsByYear: a.amountsByYear as Record<string, number> | null,
+      status: a.status || 'suggested',
+      userOverrideAmount: null,
+    }));
+
+    const fundingLines: FundingLineInput[] = (modelDetails.fundingLines || [])
+      .filter(f => f.fundingType !== 'seller_financing' && f.fundingType !== 'earnout')
+      .map(f => ({
+      fundingType: f.fundingType,
+      assetBaseValue: f.assetBaseValue,
+      ltvPercent: f.ltvPercent,
+      amountUsed: f.amountUsed,
+      interestRate: f.interestRate,
+      termMonths: f.termMonths,
+      arrangementFeePercent: null,
+      isDebt: f.isDebt ?? false,
+      isActive: f.isActive ?? false,
+    }));
+
+    return calculateFullDealModel(reportedEbitdaByYear, adjustments, fundingLines, modelInput, modelDetails.sellerPayments || [], modelDetails.contingentConsideration || []);
+  }, [modelDetails, reportedEbitdaByYear]);
+```
+
+The rendered valuation EBITDA is selected verbatim in `client/src/components/deal-modeller/ValuationSection.tsx`:
+
+```ts
+  const ev = localCalcs?.enterpriseValue ?? 0;
+  const offerPrice = localCalcs?.offerPrice ?? 0;
+  const avgEbitda = localCalcs?.averageAdjustedEbitda ?? 0;
+  const receivablesInterestAnnual = localCalcs?.receivablesInterestAnnual ?? 0;
+  const valuationEbitda = localCalcs?.valuationEbitda ?? avgEbitda;
+```
+
+### Offer-letter document
+
+Verbatim, `server/services/deal-document.service.ts`:
+
+```ts
+    // Use the same full-year-only helper the screen uses — no more dual implementations.
+    const [reportedEbitdaByYear, contributionTiers] = await Promise.all([
+      fetchReportedEbitdaByYear(targetCompanyId),
+      db.select({ sourceTier: financialContributions.sourceTier })
+        .from(financialContributions)
+        .where(eq(financialContributions.targetCompanyId, targetCompanyId)),
+    ]);
+    const provisionalFinancials = isProvisionalFinancials(contributionTiers);
+
+    const { calculateFullDealModel, assessOfferSupportability } = await import('@shared/calculators/deal-model.calc');
+
+    const modelInput = {
+      averagingYears: model.averagingYears || 3,
+      ebitdaMultiple: model.ebitdaMultiple || '3.0',
+      plusExcessCash: model.plusExcessCash || '0',
+      minusPrimaryDebt: model.minusPrimaryDebt || '0',
+      minusOtherDebt: model.minusOtherDebt || '0',
+      minusCorpTaxDue: model.minusCorpTaxDue || '0',
+      minusWorkingCapitalAdj: model.minusWorkingCapitalAdj || '0',
+      plusPropertyValue: model.propertyValue || '0',
+      feeLegalDdAmount: model.feeLegalDdAmount ?? '0',
+      feeAccountingDdAmount: model.feeAccountingDdAmount ?? '0',
+      feeLoanArrangementAmount: model.feeLoanArrangementAmount ?? '0',
+      feeDealMakerAmount: model.feeDealMakerAmount ?? '0',
+      customFees: (model.customFees as Array<{ label: string; amount: string | number }>) ?? [],
+      offerDriver: model.offerDriver ?? 'ebitda',
+      targetOfferPrice: model.targetOfferPrice ?? null,
+    };
+
+    let calculations: any = {};
+    try {
+      calculations = calculateFullDealModel(
+        reportedEbitdaByYear,
+        adjustmentInputs,
+        fundingLineInputs,
+        modelInput,
+        sellerPaymentInputs,
+        contingentConsiderationInputs
+      );
+    } catch (err) {
+      console.error('[DEAL_DOCS] Calculator error:', err);
+    }
+```
+
+The document path does call `calculateFullDealModel`. It does not call `dealModelService.calculateOnly`. Despite the comment saying it uses the same helper as the screen, the client screen does not use `fetchReportedEbitdaByYear`; it first uses expert-result JSON.
+
+## 2. WHERE THE VALUE IS LOST
+
+### Screen input hop
+
+Verbatim:
+
+```ts
+  const financialExpertMetrics = useMemo<Record<string, any> | null>(() => {
+    if (!expertResults) return null;
+    const financialExpert = expertResults.find((r: any) => r.expertType === 'financial' && r.status === 'success');
+    if (!financialExpert?.analysisData) return null;
+    const data = typeof financialExpert.analysisData === 'string'
+      ? JSON.parse(financialExpert.analysisData)
+      : financialExpert.analysisData;
+    return data?.yearly_metrics || null;
+  }, [expertResults]);
+```
+
+Then:
+
+```ts
+        const ebitda = (m as any).ebitda;
+        if (ebitda != null) result[year] = Number(ebitda);
+```
+
+Then:
+
+```ts
+    return calculateFullDealModel(reportedEbitdaByYear, adjustments, fundingLines, modelInput, modelDetails.sellerPayments || [], modelDetails.contingentConsideration || []);
+```
+
+Then the shared calculator:
+
+```ts
+  const { adjustedEbitdaByYear, averageAdjustedEbitda } = calculateAdjustedEbitda(
+    reportedEbitdaByYear,
+    adjustments,
+    model.averagingYears
+  );
+
+  const receivablesInterestAnnual = fundingLines
+    .filter((l) => l.isActive && l.fundingType === 'receivables_finance')
+    .reduce((sum, l) => sum + toNum(l.amountUsed) * toNum(l.interestRate) / 100, 0);
+  const valuationEbitda = averageAdjustedEbitda - receivablesInterestAnnual;
+```
+
+### Document input hop
+
+Verbatim:
+
+```ts
+export async function fetchReportedEbitdaByYear(targetCompanyId: number): Promise<Record<string, number>> {
+  const reconciled = await getReconciledFinancials(targetCompanyId);
+  const result: Record<string, number> = {};
+  for (const [year, row] of Object.entries(reconciled.incomeByYear)) {
+    result[year] = row.ebitda;
+  }
+  return result;
+}
+```
+
+The reconciliation query is verbatim:
+
+```ts
+    .where(
+      and(
+        eq(incomeStatements.targetCompanyId, companyId),
+        eq(incomeStatements.isFullYear, true),
+        or(
+          isNull(financialPeriods.sourceTier),
+          ne(financialPeriods.sourceTier, 'information_memorandum'),
+        ),
+        lte(financialPeriods.periodEnd, today),
+        lte(financialPeriods.fiscalYear, currentYear),
+      ),
+    )
+```
+
+Thor-CON production evidence:
+
+```text
+fiscal_year | period_type | period_end | period_is_full_year | source_tier             | income_is_full_year | operating_profit | depreciation_amortisation | raw_ebitda
+2021        | management  | 2021-03-31 | t                   | information_memorandum  | t                   | -2200            | 25307                     | 23107
+2022        | management  | 2022-03-31 | t                   | information_memorandum  | t                   | 126779           | 10960                     | 137739
+2023        | management  | 2023-03-31 | t                   | information_memorandum  | t                   | 172769           | 10824                     | 183593
+2024        | management  | 2024-03-31 | t                   | information_memorandum  | t                   | 77287            | 51911                     | 129198
+2025        | statutory   | 2025-03-31 | t                   | statutory               | NULL                | NULL              | NULL                      | 0
+2026        | management  | 2026-07-16 | f                   | management              | f                   | 183004.63         | NULL                      | 183004.63
+```
+
+Every populated full-year row is excluded because its period source tier is `information_memorandum`. The statutory 2025 period has no income statement. The 2026 income row is not full-year. The document's `reportedEbitdaByYear` is therefore empty.
+
+The successful expert result does contain EBITDA:
+
+```text
+expert_result_id | fiscal_year | ebitda
+2738             | 2021        | 23107
+2738             | 2022        | 137741
+2738             | 2023        | 183593
+2738             | 2024        | 129198
+2738             | 2025        | 278404
+```
+
+The shared calculator turns empty years into zero verbatim:
+
+```ts
+  const sortedYearsDesc = Object.keys(adjustedEbitdaByYear).sort().reverse();
+  const clampedN = Math.max(1, Math.min(averagingYears, sortedYearsDesc.length));
+  const recentYears = sortedYearsDesc.slice(0, clampedN);
+
+  const sum = recentYears.reduce((acc, y) => acc + adjustedEbitdaByYear[y], 0);
+  const averageAdjustedEbitda = recentYears.length > 0 ? sum / recentYears.length : 0;
+```
+
+The document then applies these fallbacks verbatim:
+
+```ts
+    const offerPrice = calculations.offerPrice || 0;
+    const enterpriseValue = calculations.enterpriseValue || 0;
+```
+
+```ts
+    const ifCostForValuation = calculations.receivablesInterestAnnual || 0;
+    const valuationEbitdaForDoc = calculations.valuationEbitda || calculations.averageAdjustedEbitda || 0;
+```
+
+```ts
+        averageEbitda: calculations.averageAdjustedEbitda || 0,
+        ebitdaMultiple: Number(model.ebitdaMultiple) || 0,
+```
+
+The £104,172 is lost before rendering, when the document path substitutes the empty reconciled-income result for the expert EBITDA source used on screen.
+
+### Swallowed calculator failure
+
+The #516 try/catch is verbatim:
+
+```ts
+    let calculations: any = {};
+    try {
+      calculations = calculateFullDealModel(
+        reportedEbitdaByYear,
+        adjustmentInputs,
+        fundingLineInputs,
+        modelInput,
+        sellerPaymentInputs,
+        contingentConsiderationInputs
+      );
+    } catch (err) {
+      console.error('[DEAL_DOCS] Calculator error:', err);
+    }
+```
+
+If the calculator throws, the document receives `{}` and the `|| 0` fallbacks turn missing EBITDA, enterprise value, and offer price into zero-derived figures. The exception is logged server-side but is not surfaced to the user. The supportability code after the catch warns but does not refuse document generation.
+
+For document 68, the evidence indicates an empty input rather than a thrown exception: its output is internally consistent with average EBITDA `0`, invoice-finance interest `£3,000`, and valuation EBITDA `-£3,000`.
+
+## 3. THE STORED RECORD FOR DOCUMENT 68
+
+Requested production fields, verbatim:
+
+```text
+id                          | 68
+target_company_id           | 228
+deal_model_id               | 147
+document_type               | offer_letter
+status                      | draft
+created_at                  | 2026-09-17 11:31:19.676026
+sent_at                     |
+generated_file_url          | generated-documents/doc-1789644680650-387717326.docx
+requested_financial_payload | {
+                            |     "_raw": {
+                            |         "otherDebt": 0,
+                            |         "corpTaxDue": 0,
+                            |         "excessCash": 150000,
+                            |         "offerPrice": 21062,
+                            |         "primaryDebt": 15000,
+                            |         "averageEbitda": 0,
+                            |         "dayOnePayment": -45931,
+                            |         "deferredTerms": "Payable over 36 months post-completion",
+                            |         "earnoutMetric": "",
+                            |         "propertyValue": 0,
+                            |         "deferredAmount": 36993,
+                            |         "earnoutMaximum": 30000,
+                            |         "ebitdaMultiple": 2.3,
+                            |         "enterpriseValue": -6899.999999999999,
+                            |         "transactionType": "share_sale",
+                            |         "earnoutTermMonths": 24,
+                            |         "workingCapitalAdj": 107038,
+                            |         "deferredInstalment": "£1,028 per month over 36 months",
+                            |         "deferredTermMonths": 36,
+                            |         "transactionTypeLabel": "Share Sale"
+                            |     },
+                            |     "otherDebt": 0,
+                            |     "corpTaxDue": 0,
+                            |     "excessCash": "£150,000",
+                            |     "offerPrice": "£21,062",
+                            |     "primaryDebt": 15000,
+                            |     "breakdownText": "Valuation EBITDA: -£3,000\nEnterprise Value (Valuation EBITDA × 2.30 multiple): -£6,900\nPlus Excess Cash: £150,000\nLess Primary Debt: (£15,000)\nLess Working Capital Adjustment: (£107,038)\n\nTotal Offer Price: £21,062",
+                            |     "dayOnePayment": "-£45,931",
+                            |     "deferredTotal": "£36,993",
+                            |     "averagingYears": 3,
+                            |     "ebitdaMultiple": 2.3,
+                            |     "enterpriseValue": "-£6,900",
+                            |     "workingCapitalAdj": 107038
+                            | }
+```
+
+The stored payload does **not** contain `104172`. The loss happened at build time, not render time.
+
+The expected stored-model comparison in the brief is contradicted by current production:
+
+```text
+model_id | calculated_ebitda | adjusted_ebitda | enterprise_value   | total_purchase_price
+147      | 0                 | 0               | -6899.999999999999 | 21062
+150      | 0                 | 0               | -6899.999999999999 | 21062
+181      | 0                 | 0               | -6899.999999999999 | 21062
+```
+
+Document 68's linked model 147 does not currently store £260,658; it stores £21,062, matching the document. All three Thor-CON model versions currently store the same wrong zero-EBITDA result. Their `updated_at` values are between `2026-09-17 11:31:07.979` and `11:31:13.764`, immediately before document 68 was created at `11:31:19.676026`.
+
+The £260,658 screen figure was a live client recomputation from expert metrics, not the model's current stored `total_purchase_price`.
+
+## 4. BLAST RADIUS
+
+Disagreement count first:
+
+```text
+0 sent/accepted generated documents with comparable stored offer prices disagree with their linked model's current total_purchase_price.
+```
+
+Timestamped counts:
+
+```text
+measured_at                    | all_docs_since_aug5 | generated_since_aug5 | offer_letters_generated_since_aug5
+2026-09-17 11:41:40.399185+00 | 4                   | 4                    | 2
+```
+
+```text
+measured_at                    | all_docs_since_deploy | generated_since_deploy | offer_letters_generated_since_deploy
+2026-09-17 11:41:40.880051+00 | 4                     | 4                      | 2
+```
+
+Deploy threshold used:
+
+```text
+2026-09-16 10:59:23.295
+```
+
+All four generated documents since 5 August were also generated after the 16 September deploy.
+
+Three are currently `sent` or `accepted`; one is an offer letter:
+
+```text
+id | document_type  | status   | company | created_at                 | sent_at                    | deal_model_id | document_offer_price | model_total_purchase_price | comparison
+65 | nda            | accepted | TestCo1 | 2026-09-16 12:37:17.845711 | 2026-09-16 12:37:19.071 | NULL          | NULL                 | NULL                       | no price
+66 | offer_letter   | accepted | TestCo1 | 2026-09-16 12:37:50.267193 | 2026-09-16 12:37:51.676 | 180           | 2157527.8499999996   | 2157527.8499999996         | MATCH
+67 | heads_of_terms | accepted | TestCo1 | 2026-09-16 12:45:51.886859 | 2026-09-16 12:45:53.362 | 180           | 2157527.8499999996   | 2157527.8499999996         | MATCH
+```
+
+Commercial answer: the known wrong Thor-CON offer letter, document 68, is `draft`, has no `sent_at`, and has not reached a seller through the platform. The only sent/accepted offer letter in the requested period is document 66, whose stored offer price matches its linked model. This comparison checks price agreement only; it does not independently prove document 66's EBITDA input was correct.
+
+## 5. IS THIS NEW?
+
+Relevant commits after `a7a3726`:
+
+```text
+905ccb7 2026-09-15T11:51:49Z Update deal modeller component logic
+6ec3e82 2026-09-15T11:13:31Z Update deal document route handlers
+c9a7079 2026-09-15T10:26:00Z Add input fields to valuation section
+7660fde 2026-09-14T20:36:54Z Add offer guard test cases and update deal document service logic
+6226023 2026-09-14T20:30:52Z Refactor deal document service and update related test coverage
+5fdd5f2 2026-09-14T14:08:49Z Update offer guard call sites and deal model service logic
+4f6299b 2026-09-11T16:01:13Z Fix all reported dependency vulnerabilities
+3816d6f 2026-09-10T01:34:43Z Implement deal model service updates
+4d165c6 2026-09-10T00:21:57Z Implement document processing logic in routes and service
+5d08a53 2026-09-09T09:36:19Z Implement deal model logic and add offer guard tests
+```
+
+The relevant diff from `a7a3726..HEAD` is 250 insertions and 4 deletions across five files. The first 150 lines requested by the assessment are principally the new unsupported-price warning and send guard; the material verbatim document-builder diff is:
+
+```diff
+diff --git a/server/services/deal-document.service.ts b/server/services/deal-document.service.ts
+index 631a554..b81057a 100644
+--- a/server/services/deal-document.service.ts
++++ b/server/services/deal-document.service.ts
+@@ -7,6 +7,7 @@ import { financialPeriods, incomeStatements, financialContributions } from '@sha
+ import { isProvisionalFinancials } from '../../shared/utils/provisional-financials';
+ import { eq, and, desc, not, inArray, sql } from 'drizzle-orm';
+ import { fetchReportedEbitdaByYear } from './deal-model.service';
++import { isOfferPriceSupportable } from '@shared/calculators/deal-model.calc';
+ import { dealDocumentTemplateService, DocumentDataContext } from './deal-document-template.service';
+ import { extendPortalTokenForCompany } from './portal-token.service';
+ import { buildNdaHtml } from '../utils/document-html-builders'
+@@ -801,7 +830,7 @@ export class DealDocumentService {
+     ]);
+     const provisionalFinancials = isProvisionalFinancials(contributionTiers);
+ 
+-    const { calculateFullDealModel } = await import('@shared/calculators/deal-model.calc');
++    const { calculateFullDealModel, assessOfferSupportability } = await import('@shared/calculators/deal-model.calc');
+ 
+     const modelInput = {
+       averagingYears: model.averagingYears || 3,
+@@ -868,6 +897,25 @@ export class DealDocumentService {
+       console.error('[DEAL_DOCS] Calculator error:', err);
+     }
+ 
++    // Commercial guards #296 and #324, at the compute boundary.
++    // Deliberately OUTSIDE the try/catch above: that catch swallows calculator errors and
++    // leaves calculations empty, so a guard placed inside it would fail OPEN. An absent
++    // offerPrice, which is exactly the swallowed-error case, is not supportable and is
++    // blocked here as well.
++    const supportability = assessOfferSupportability(
++      reportedEbitdaByYear,
++      calculations.offerPrice,
++    );
++    if (!supportability.supportable) {
++      // Warn, do not refuse. Building the document is the acquirer's decision and the
++      // figures shown are the real computed ones. The gate is at the send boundary,
++      // where the document would leave for the seller, and it is derived there from the
++      // stored _raw.offerPrice rather than from a flag written here.
++      console.warn(
++        `[DEAL_DOCS] Unsupported offer for company ${targetCompanyId}, deal model ${dealModelId}: ${supportability.reason}. Document built as computed.`,
++      );
++    }
++
+     const fmt = (val: any) => {
+       const num = Number(val) || 0;
+       return new Intl.NumberFormat('en-GB', {
+```
+
+The `fetchReportedEbitdaByYear(targetCompanyId)` document path predates `a7a3726`. Git history identifies its introduction:
+
+```text
+314c438 2026-07-17T02:52:41Z Improve EBITDA calculation accuracy and consistency across the platform
+```
+
+`a7a3726` itself is:
+
+```text
+a7a3726ee41de06da144126ceae0cbf66e4c2bb3
+2026-08-05T09:34:38Z
+Published your App
+```
+
+Its document builder already called `fetchReportedEbitdaByYear`, called `calculateFullDealModel`, swallowed calculator exceptions, and applied `|| 0` fallbacks.
+
+Direct answer: it cannot be established that a letter generated on 5 August would have carried the correct EBITDA. The defect-enabling split already existed by that date: document generation used reconciled income rows, while client display could use expert-result JSON. Correctness depended on the company's underlying row eligibility and the deployed commit at the exact generation time. The code cannot support a stronger claim.
