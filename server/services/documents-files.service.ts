@@ -1,6 +1,6 @@
 import { documentsRepository } from '../repositories/documents.repository';
 import { financialDataRepository } from '../repositories/financial-data.repository';
-import { documentAnalysisRepository } from '../repositories/document-analysis.repository';
+import { evidenceRepository } from '../repositories/evidence.repository';
 import { fileStorageService } from './file-storage.service';
 import { NotFoundError, ForbiddenError, BadRequestError } from '../utils/errors';
 import type { Document, InsertDocument } from '@shared/schema';
@@ -112,36 +112,22 @@ export class DocumentsFilesService {
   async deleteDocument(documentId: number, userCompanyId: number): Promise<void> {
     const document = await documentsRepository.getDocument(documentId, userCompanyId);
     if (document) {
-      try {
-        // Non-projection financial data (staff, debtors, assets, loans) — delete directly
-        await financialDataRepository.deleteNonProjectionByDocumentId(documentId);
-        // Drop contributions then rebuild the projection via reselect
-        await db.delete(financialContributions).where(eq(financialContributions.sourceDocumentId, documentId));
-        await reselect(document.targetCompanyId);
-        // Detach any remaining source_document_id pointers (periods whose only source was this doc).
-        // Must run AFTER reselect so winners are already re-pointed before we null the orphans.
-        await financialDataRepository.detachDocumentReferences(documentId);
-      } catch (error) {
-        console.error(`[DELETE_DOCUMENT] Error cleaning financial data for document ${documentId}:`, error);
-      }
-      
-      try {
-        await documentAnalysisRepository.deleteByDocumentId(documentId);
-      } catch (error) {
-        console.error(`[DELETE_DOCUMENT] Error deleting analysis results for document ${documentId}:`, error);
-      }
-      
-      const success = await documentsRepository.deleteDocument(documentId, userCompanyId);
-      if (!success) throw new Error('Failed to delete document');
-      if (document.externalSubmissionId) {
-        try {
-          const externalSubmission = await documentsRepository.getExternalSubmission(document.externalSubmissionId, userCompanyId);
-          if (externalSubmission) {
-            await fileStorageService.delete(externalSubmission.filePath);
-          }
-          await documentsRepository.deleteExternalSubmission(document.externalSubmissionId);
-        } catch { }
-      }
+      const externalSubmission = document.externalSubmissionId
+        ? await documentsRepository.getExternalSubmission(document.externalSubmissionId, userCompanyId)
+        : undefined;
+      await db.transaction(async (tx) => {
+        await evidenceRepository.deleteEvidenceByDocumentId(documentId, tx);
+        await financialDataRepository.deleteNonProjectionByDocumentId(documentId, tx);
+        await tx.delete(financialContributions).where(eq(financialContributions.sourceDocumentId, documentId));
+        await financialDataRepository.deleteDocumentDerivedRows(documentId, tx);
+        await reselect(document.targetCompanyId, tx);
+        const success = await documentsRepository.deleteDocument(documentId, userCompanyId, tx);
+        if (!success) throw new Error('Failed to delete document');
+        if (document.externalSubmissionId) {
+          await documentsRepository.deleteExternalSubmission(document.externalSubmissionId, tx);
+        }
+      });
+      if (externalSubmission) await fileStorageService.delete(externalSubmission.filePath);
       await fileStorageService.delete(document.filePath);
       return;
     }

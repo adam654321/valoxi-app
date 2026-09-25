@@ -1,5 +1,6 @@
 import { eq, and, desc, sql, inArray } from 'drizzle-orm';
-import { db } from '../db';
+import { db, type DatabaseExecutor } from '../db';
+import { reselect } from '../services/projection-reselect.service';
 import {
   documents,
   documentCategories,
@@ -143,18 +144,22 @@ export class DocumentsRepository {
     return updatedDocument || undefined;
   }
 
-  async deleteDocument(documentId: number, userCompanyId: number): Promise<boolean> {
-    await db.delete(documentAnalysisResults).where(eq(documentAnalysisResults.documentId, documentId));
-    await db.delete(fileUploadEvents).where(eq(fileUploadEvents.documentId, documentId));
-    await db.delete(documentAccessLog).where(eq(documentAccessLog.documentId, documentId));
+  async deleteDocument(documentId: number, userCompanyId: number, executor: DatabaseExecutor = db): Promise<boolean> {
+    await executor.update(ddRequirementStatus).set({ documentId: null })
+      .where(eq(ddRequirementStatus.documentId, documentId));
+    await executor.update(ddRequirementDocuments).set({ documentId: null })
+      .where(eq(ddRequirementDocuments.documentId, documentId));
+    await executor.delete(documentAnalysisResults).where(eq(documentAnalysisResults.documentId, documentId));
+    await executor.delete(fileUploadEvents).where(eq(fileUploadEvents.documentId, documentId));
+    await executor.delete(documentAccessLog).where(eq(documentAccessLog.documentId, documentId));
 
-    const [deletedDocument] = await db
+    const [deletedDocument] = await executor
       .delete(documents)
       .where(and(
         eq(documents.id, documentId),
         inArray(
           documents.targetCompanyId,
-          db.select({ id: targetCompanies.id })
+          executor.select({ id: targetCompanies.id })
             .from(targetCompanies)
             .where(eq(targetCompanies.userCompanyId, userCompanyId))
         )
@@ -244,8 +249,12 @@ export class DocumentsRepository {
     return submission?.external_document_submissions;
   }
 
-  async deleteExternalSubmission(submissionId: number): Promise<boolean> {
-    const [deleted] = await db
+  async deleteExternalSubmission(submissionId: number, executor: DatabaseExecutor = db): Promise<boolean> {
+    await executor.update(ddRequirementStatus).set({ externalSubmissionId: null })
+      .where(eq(ddRequirementStatus.externalSubmissionId, submissionId));
+    await executor.update(ddRequirementDocuments).set({ externalSubmissionId: null })
+      .where(eq(ddRequirementDocuments.externalSubmissionId, submissionId));
+    const [deleted] = await executor
       .delete(externalDocumentSubmissions)
       .where(eq(externalDocumentSubmissions.id, submissionId))
       .returning();
@@ -300,44 +309,49 @@ export class DocumentsRepository {
 
       console.log(`[REPOSITORY] Found ${allDocuments.length} documents and ${allExternalSubmissions.length} external submissions to delete`);
 
+      await db.transaction(async (tx) => {
       if (allDocumentIds.length > 0) {
-        const analysisResultsDeleted = await db.delete(documentAnalysisResults)
+        const analysisResultsDeleted = await tx.delete(documentAnalysisResults)
           .where(inArray(documentAnalysisResults.documentId, allDocumentIds));
         deletedAnalysisResults = analysisResultsDeleted.rowCount || 0;
 
-        const accessLogsDeleted = await db.delete(documentAccessLog)
+        const accessLogsDeleted = await tx.delete(documentAccessLog)
           .where(inArray(documentAccessLog.documentId, allDocumentIds));
         deletedDocumentAccessLogs = accessLogsDeleted.rowCount || 0;
 
-        const uploadEventsDeleted = await db.delete(fileUploadEvents)
+        const uploadEventsDeleted = await tx.delete(fileUploadEvents)
           .where(inArray(fileUploadEvents.documentId, allDocumentIds));
         deletedUploadEvents = uploadEventsDeleted.rowCount || 0;
 
-        // NULL out nullable FK references in financials and due-diligence tables
-        // before deleting documents to avoid FK constraint violations.
-        await db.update(financialPeriods).set({ sourceDocumentId: null }).where(inArray(financialPeriods.sourceDocumentId, allDocumentIds));
-        await db.update(incomeStatements).set({ sourceDocumentId: null }).where(inArray(incomeStatements.sourceDocumentId, allDocumentIds));
-        await db.update(balanceSheets).set({ sourceDocumentId: null }).where(inArray(balanceSheets.sourceDocumentId, allDocumentIds));
-        await db.update(staffData).set({ sourceDocumentId: null }).where(inArray(staffData.sourceDocumentId, allDocumentIds));
-        await db.update(agedDebtors).set({ sourceDocumentId: null }).where(inArray(agedDebtors.sourceDocumentId, allDocumentIds));
-        await db.update(fixedAssetsRegister).set({ sourceDocumentId: null }).where(inArray(fixedAssetsRegister.sourceDocumentId, allDocumentIds));
-        await db.update(loanFacilities).set({ sourceDocumentId: null }).where(inArray(loanFacilities.sourceDocumentId, allDocumentIds));
-        await db.update(ddRequirementStatus).set({ documentId: null }).where(inArray(ddRequirementStatus.documentId, allDocumentIds));
-        await db.update(ddRequirementDocuments).set({ documentId: null }).where(inArray(ddRequirementDocuments.documentId, allDocumentIds));
+        // These tables have NO ACTION document FKs, so remove their rows before deleting documents.
+        await tx.delete(staffData).where(inArray(staffData.sourceDocumentId, allDocumentIds));
+        await tx.delete(agedDebtors).where(inArray(agedDebtors.sourceDocumentId, allDocumentIds));
+        await tx.delete(fixedAssetsRegister).where(inArray(fixedAssetsRegister.sourceDocumentId, allDocumentIds));
+        await tx.delete(loanFacilities).where(inArray(loanFacilities.sourceDocumentId, allDocumentIds));
+        await tx.update(ddRequirementStatus).set({ documentId: null }).where(inArray(ddRequirementStatus.documentId, allDocumentIds));
+        await tx.update(ddRequirementDocuments).set({ documentId: null }).where(inArray(ddRequirementDocuments.documentId, allDocumentIds));
 
-        await db.delete(financialContributions).where(inArray(financialContributions.sourceDocumentId, allDocumentIds));
+        await tx.delete(financialContributions).where(inArray(financialContributions.sourceDocumentId, allDocumentIds));
 
-        const documentsDeleted = await db.delete(documents)
+        const documentsDeleted = await tx.delete(documents)
           .where(inArray(documents.id, allDocumentIds));
         deletedDocuments = documentsDeleted.rowCount || 0;
+        for (const companyId of new Set(allDocuments.map(doc => doc.targetCompanyId))) {
+          await reselect(companyId, tx);
+        }
       }
 
       if (allExternalSubmissions.length > 0) {
         const externalSubmissionIds = allExternalSubmissions.map(sub => sub.id);
-        const externalSubmissionsDeleted = await db.delete(externalDocumentSubmissions)
+        await tx.update(ddRequirementStatus).set({ externalSubmissionId: null })
+          .where(inArray(ddRequirementStatus.externalSubmissionId, externalSubmissionIds));
+        await tx.update(ddRequirementDocuments).set({ externalSubmissionId: null })
+          .where(inArray(ddRequirementDocuments.externalSubmissionId, externalSubmissionIds));
+        const externalSubmissionsDeleted = await tx.delete(externalDocumentSubmissions)
           .where(sql`${externalDocumentSubmissions.id} IN (${sql.join(externalSubmissionIds.map(id => sql`${id}`), sql`, `)})`);
         deletedExternalSubmissions = externalSubmissionsDeleted.rowCount || 0;
       }
+      });
 
       const fs = await import('fs/promises');
       for (const filePath of allFilePaths) {

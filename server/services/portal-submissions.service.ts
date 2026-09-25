@@ -1,4 +1,7 @@
 import { portalSubmissionsRepository } from '../repositories/portal-submissions.repository';
+import { financialDataRepository } from '../repositories/financial-data.repository';
+import { evidenceRepository } from '../repositories/evidence.repository';
+import { reselect } from './projection-reselect.service';
 import { dueDiligenceService } from './due-diligence.service';
 import { fileStorageService } from './file-storage.service';
 import { NotFoundError, ForbiddenError, BadRequestError } from '../utils/errors';
@@ -8,6 +11,7 @@ import type { PortalAccessToken, ExternalDocumentSubmission } from '@shared/sche
 import { db } from '../db';
 import { ddRequirements, ddCategories } from '@shared/schema/due-diligence';
 import { documents } from '@shared/schema/documents';
+import { financialContributions } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 
 const PORTAL_CATEGORY_MAP: Record<string, string> = {
@@ -161,23 +165,15 @@ export class PortalSubmissionsService {
     const token = await this.validateToken(accessToken);
     const document = await portalSubmissionsRepository.getDocument(documentId);
     if (!document || document.targetCompanyId !== token.targetCompanyId) throw new NotFoundError('Document not found');
-    try {
-      const { financialDataRepository } = await import('../repositories/financial-data.repository');
-      const { db } = await import('../db');
-      const { financialContributions } = await import('@shared/schema');
-      const { eq } = await import('drizzle-orm');
-      const { reselect } = await import('./projection-reselect.service');
-      // Non-projection financial data (staff, debtors, assets, loans) — delete directly
-      await financialDataRepository.deleteNonProjectionByDocumentId(documentId);
-      // Drop contributions then rebuild the projection via reselect
-      await db.delete(financialContributions).where(eq(financialContributions.sourceDocumentId, documentId));
-      await reselect(document.targetCompanyId);
-      await financialDataRepository.detachDocumentReferences(documentId);
-    } catch (error) {
-      console.error(`[PORTAL_DELETE] Error cleaning financial data for document ${documentId}:`, error);
-    }
-    const success = await portalSubmissionsRepository.deleteDocument(documentId);
-    if (!success) throw new Error('Failed to delete document');
+    await db.transaction(async (tx) => {
+      await evidenceRepository.deleteEvidenceByDocumentId(documentId, tx);
+      await financialDataRepository.deleteNonProjectionByDocumentId(documentId, tx);
+      await tx.delete(financialContributions).where(eq(financialContributions.sourceDocumentId, documentId));
+      await financialDataRepository.deleteDocumentDerivedRows(documentId, tx);
+      await reselect(document.targetCompanyId, tx);
+      const success = await portalSubmissionsRepository.deleteDocument(documentId, tx);
+      if (!success) throw new Error('Failed to delete document');
+    });
     await fileStorageService.delete(document.filePath);
   }
 }

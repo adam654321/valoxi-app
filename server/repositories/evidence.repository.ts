@@ -1,9 +1,10 @@
-import { eq, and, sql } from 'drizzle-orm';
-import { db } from '../db';
+import { eq, and, or, inArray, sql } from 'drizzle-orm';
+import { db, type DatabaseExecutor } from '../db';
 import {
   documentEvidence,
   documentEvidencePeriod,
   documentEvidenceFigure,
+  documentAnalysisResults,
 } from '@shared/schema';
 import { mapPayloadToEvidence } from '@shared/utils/evidence-mapper';
 import { systemConfigService } from '../services/system-config.service';
@@ -27,6 +28,26 @@ type WriteFromPayloadResult =
   | { written: true; evidenceId: number; periodCount: number; figureCount: number };
 
 export class EvidenceRepository {
+  async deleteEvidenceByDocumentId(documentId: number, executor: DatabaseExecutor = db): Promise<void> {
+    const analysisIds = executor.select({ id: documentAnalysisResults.id })
+      .from(documentAnalysisResults).where(eq(documentAnalysisResults.documentId, documentId));
+    const evidenceIds = executor.select({ id: documentEvidence.id })
+      .from(documentEvidence).where(or(
+        eq(documentEvidence.documentId, documentId),
+        inArray(documentEvidence.documentAnalysisResultId, analysisIds),
+      ));
+    const periodIds = executor.select({ id: documentEvidencePeriod.id })
+      .from(documentEvidencePeriod).where(inArray(documentEvidencePeriod.documentEvidenceId, evidenceIds));
+    await executor.delete(documentEvidenceFigure)
+      .where(inArray(documentEvidenceFigure.documentEvidencePeriodId, periodIds));
+    await executor.delete(documentEvidencePeriod)
+      .where(inArray(documentEvidencePeriod.documentEvidenceId, evidenceIds));
+    await executor.delete(documentEvidence).where(or(
+      eq(documentEvidence.documentId, documentId),
+      inArray(documentEvidence.documentAnalysisResultId, analysisIds),
+    ));
+  }
+
   async writeFromPayload(input: WriteFromPayloadInput): Promise<WriteFromPayloadResult> {
     // Step 1: check kill switch — no DB reads or writes if flag is off
     const flagValue = await systemConfigService.getConfig(FLAG_KEY);

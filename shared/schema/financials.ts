@@ -17,7 +17,7 @@ export const financialPeriods = pgTable("financial_periods", {
   monthsCovered: integer("months_covered"),
   isFullYear: boolean("is_full_year").notNull().default(true),
   sourceTier: varchar("source_tier", { length: 30 }),
-  sourceDocumentId: integer("source_document_id").references(() => documents.id, { onDelete: 'set null' }),
+  sourceDocumentId: integer("source_document_id").references(() => documents.id, { onDelete: 'cascade' }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -47,7 +47,7 @@ export const incomeStatements = pgTable("income_statements", {
   overheadsBreakdown: json("overheads_breakdown"),
   exceptionalItems: json("exceptional_items"),
   isFullYear: boolean("is_full_year").notNull().default(true),
-  sourceDocumentId: integer("source_document_id").references(() => documents.id, { onDelete: 'set null' }),
+  sourceDocumentId: integer("source_document_id").references(() => documents.id, { onDelete: 'cascade' }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -95,7 +95,7 @@ export const balanceSheets = pgTable("balance_sheets", {
   debtorsList: json("debtors_list"),
   creditorsList: json("creditors_list"),
   fixedAssetsDetail: json("fixed_assets_detail"),
-  sourceDocumentId: integer("source_document_id").references(() => documents.id, { onDelete: 'set null' }),
+  sourceDocumentId: integer("source_document_id").references(() => documents.id, { onDelete: 'cascade' }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

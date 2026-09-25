@@ -1,10 +1,7 @@
 /**
- * Integration test — Slice 15: document deletion FK detach.
+ * Integration test — document deletion cascades and projection fallback.
  *
- * Regression guard: after dropping a document's contributions + reselect,
- * any financial_period / income_statement / balance_sheet row that was the
- * ONLY source of a period must have its source_document_id NULLed before
- * the documents row is deleted, otherwise the FK constraint fires.
+ * Regression guard: deleted documents leave no sourced financial or evidence rows.
  *
  * Scenario:
  *   Doc A (2023 filing): FY2022 comparative + FY2023 primary
@@ -39,7 +36,7 @@ import { documentsFilesService } from '../documents-files.service';
 
 const USER_COMPANY_ID = 71;
 
-describe('deleteDocument — FK detach (Slice 15)', () => {
+describe('deleteDocument — derived-row deletion', () => {
   let testCompanyId: number;
   let docAId: number;
   let docBId: number;
@@ -218,7 +215,7 @@ describe('deleteDocument — FK detach (Slice 15)', () => {
   });
 });
 
-describe('evidence-layer FK detach (Slice 1a.1)', () => {
+describe('evidence-layer delete cascade', () => {
   let testCompanyId: number;
   let docId: number;
   let evidenceId: number;
@@ -320,7 +317,7 @@ describe('evidence-layer FK detach (Slice 1a.1)', () => {
     } catch { /* best-effort */ }
   });
 
-  it('deleting the DAR succeeds and evidence row survives with document_analysis_result_id null', async () => {
+  it('deleting the DAR cascades through evidence, periods and figures', async () => {
     // Confirm the FK is populated before deletion
     const [evBefore] = await db.select({ darId: documentEvidence.documentAnalysisResultId })
       .from(documentEvidence)
@@ -333,25 +330,32 @@ describe('evidence-layer FK detach (Slice 1a.1)', () => {
         .where(eq(documentAnalysisResults.id, evBefore.darId!)),
     ).resolves.not.toThrow();
 
-    // Evidence row must survive with the FK nulled
+    // Evidence and its children are removed, not detached.
     const [evAfter] = await db.select({ darId: documentEvidence.documentAnalysisResultId })
       .from(documentEvidence)
       .where(eq(documentEvidence.id, evidenceId));
-    expect(evAfter).toBeDefined();
-    expect(evAfter.darId).toBeNull();
+    expect(evAfter).toBeUndefined();
+    expect(await db.select().from(documentEvidencePeriod)
+      .where(eq(documentEvidencePeriod.documentEvidenceId, evidenceId))).toHaveLength(0);
   });
 
-  it('deleteDocument succeeds without FK error; evidence row survives with document_id null', async () => {
+  it('deleteDocument succeeds without FK error; evidence row is removed', async () => {
+    const [replacement] = await db.insert(documentEvidence).values({
+      targetCompanyId: testCompanyId,
+      documentId: docId,
+      documentType: 'profit_and_loss',
+      extractionVersion: 2,
+    }).returning();
+    evidenceId = replacement.id;
     // Core regression guard — must NOT throw document_evidence_document_id_fkey
     await expect(
       documentsFilesService.deleteDocument(docId, USER_COMPANY_ID),
     ).resolves.not.toThrow();
 
-    // Evidence row must survive with document_id nulled by ON DELETE SET NULL
+    // Evidence does not survive as an untraceable row.
     const [evAfter] = await db.select({ docId: documentEvidence.documentId })
       .from(documentEvidence)
       .where(eq(documentEvidence.id, evidenceId));
-    expect(evAfter).toBeDefined();
-    expect(evAfter.docId).toBeNull();
+    expect(evAfter).toBeUndefined();
   });
 });

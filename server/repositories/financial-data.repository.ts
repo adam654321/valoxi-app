@@ -1,5 +1,5 @@
 import { eq, and, desc, sql, inArray } from 'drizzle-orm';
-import { db } from '../db';
+import { db, type DatabaseExecutor } from '../db';
 import {
   financialPeriods,
   incomeStatements,
@@ -570,31 +570,22 @@ export class FinancialDataRepository {
    * financial_periods — those are managed by reselect() after contributions
    * are dropped.
    */
-  async deleteNonProjectionByDocumentId(documentId: number): Promise<void> {
-    await db.delete(staffData).where(eq(staffData.sourceDocumentId, documentId));
-    await db.delete(agedDebtors).where(eq(agedDebtors.sourceDocumentId, documentId));
-    await db.delete(fixedAssetsRegister).where(eq(fixedAssetsRegister.sourceDocumentId, documentId));
-    await db.delete(loanFacilities).where(eq(loanFacilities.sourceDocumentId, documentId));
+  async deleteNonProjectionByDocumentId(documentId: number, executor: DatabaseExecutor = db): Promise<void> {
+    await executor.delete(staffData).where(eq(staffData.sourceDocumentId, documentId));
+    await executor.delete(agedDebtors).where(eq(agedDebtors.sourceDocumentId, documentId));
+    await executor.delete(fixedAssetsRegister).where(eq(fixedAssetsRegister.sourceDocumentId, documentId));
+    await executor.delete(loanFacilities).where(eq(loanFacilities.sourceDocumentId, documentId));
     console.log(`[FINANCIAL_DATA] Deleted non-projection financial data for document ${documentId}`);
   }
 
-  /**
-   * NULL out source_document_id on the three projection tables for any rows that
-   * still reference a document being deleted.  Called after reselect() so that
-   * periods / statements whose only source was the deleted doc are detached safely
-   * before the documents row itself is removed.
-   */
-  async detachDocumentReferences(documentId: number): Promise<void> {
-    await db.update(financialPeriods)
-      .set({ sourceDocumentId: null, updatedAt: new Date() })
-      .where(eq(financialPeriods.sourceDocumentId, documentId));
-    await db.update(incomeStatements)
-      .set({ sourceDocumentId: null, updatedAt: new Date() })
-      .where(eq(incomeStatements.sourceDocumentId, documentId));
-    await db.update(balanceSheets)
-      .set({ sourceDocumentId: null, updatedAt: new Date() })
-      .where(eq(balanceSheets.sourceDocumentId, documentId));
-    console.log(`[FINANCIAL_DATA] Detached source_document_id references for document ${documentId}`);
+  async deleteDocumentDerivedRows(documentId: number, executor: DatabaseExecutor = db): Promise<void> {
+    await executor.delete(incomeStatements).where(eq(incomeStatements.sourceDocumentId, documentId));
+    await executor.delete(balanceSheets).where(eq(balanceSheets.sourceDocumentId, documentId));
+    await executor.delete(financialPeriods).where(and(
+      eq(financialPeriods.sourceDocumentId, documentId),
+      sql`NOT EXISTS (SELECT 1 FROM income_statements i WHERE i.financial_period_id = ${financialPeriods.id})`,
+      sql`NOT EXISTS (SELECT 1 FROM balance_sheets b WHERE b.financial_period_id = ${financialPeriods.id})`,
+    ));
   }
 
   async deleteContributionsByDocumentIds(documentIds: number[]): Promise<number> {

@@ -18,3 +18,5 @@ export const pool = new Pool({
   connectionTimeoutMillis: 10_000,
 });
 export const db = drizzle({ client: pool, schema });
+/** Query builders shared by the pool handle and a transaction handle. */
+export type DatabaseExecutor = Pick<typeof db, 'select' | 'insert' | 'update' | 'delete'>;

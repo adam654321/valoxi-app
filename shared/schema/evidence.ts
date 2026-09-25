@@ -22,10 +22,10 @@ export const documentEvidence = pgTable('document_evidence', {
     .references(() => targetCompanies.id)
     .notNull(),
   documentId: integer('document_id')
-    .references(() => documents.id, { onDelete: 'set null' }),
+    .references(() => documents.id, { onDelete: 'cascade' }),
   documentAnalysisResultId: integer('document_analysis_result_id').references(
     () => documentAnalysisResults.id,
-    { onDelete: 'set null' }
+    { onDelete: 'cascade' }
   ),
   documentType: varchar('document_type', { length: 100 }).notNull(),
   extractionVersion: integer('extraction_version').notNull().default(1),
@@ -52,7 +52,7 @@ export const documentEvidence = pgTable('document_evidence', {
 export const documentEvidencePeriod = pgTable('document_evidence_period', {
   id: serial('id').primaryKey(),
   documentEvidenceId: integer('document_evidence_id')
-    .references(() => documentEvidence.id)
+    .references(() => documentEvidence.id, { onDelete: 'cascade' })
     .notNull(),
   fiscalYearStated: integer('fiscal_year_stated'),
   periodStart: date('period_start'),
@@ -71,7 +71,7 @@ export const documentEvidencePeriod = pgTable('document_evidence_period', {
 export const documentEvidenceFigure = pgTable('document_evidence_figure', {
   id: serial('id').primaryKey(),
   documentEvidencePeriodId: integer('document_evidence_period_id')
-    .references(() => documentEvidencePeriod.id)
+    .references(() => documentEvidencePeriod.id, { onDelete: 'cascade' })
     .notNull(),
   statementType: varchar('statement_type', { length: 10 }).notNull(),
   fieldKey: varchar('field_key', { length: 100 }).notNull(),

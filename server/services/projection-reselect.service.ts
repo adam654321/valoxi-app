@@ -1,5 +1,5 @@
 import { eq, and, asc, inArray, notInArray } from 'drizzle-orm';
-import { db } from '../db';
+import { db as defaultDb, type DatabaseExecutor } from '../db';
 import {
   financialContributions,
   financialPeriods,
@@ -41,6 +41,7 @@ async function findOrReusePeriod(
   periodEnd: string,
   monthsCovered: number | null,
   sourceDocumentId: number | null,
+  db: DatabaseExecutor = defaultDb,
 ): Promise<FinancialPeriod> {
   const existing = await db
     .select()
@@ -127,6 +128,7 @@ async function upsertIncomeFromFigures(
   figures: Record<string, any>,
   winnerSourceDocumentId: number | null,
   isFullYear: boolean,
+  db: DatabaseExecutor = defaultDb,
 ): Promise<void> {
   const data = {
     revenue: figures.revenue ?? null,
@@ -173,6 +175,7 @@ async function upsertBalanceFromFigures(
   targetCompanyId: number,
   figures: Record<string, any>,
   winnerSourceDocumentId: number | null,
+  db: DatabaseExecutor = defaultDb,
 ): Promise<void> {
   const data = {
     intangibleAssets: figures.intangibleAssets ?? null,
@@ -241,6 +244,7 @@ async function upsertBalanceFromFigures(
 async function repointAdjustments(
   targetCompanyId: number,
   yearToWinnerPeriodId: Map<number, number>,
+  db: DatabaseExecutor = defaultDb,
 ): Promise<void> {
   for (const [fiscalYear, survivorId] of yearToWinnerPeriodId) {
     const allInYear = await db
@@ -273,6 +277,7 @@ async function repointAdjustments(
 async function repointStaffData(
   targetCompanyId: number,
   latestWinnerPeriodId: number,
+  db: DatabaseExecutor = defaultDb,
 ): Promise<void> {
   await db
     .update(staffData)
@@ -292,6 +297,7 @@ async function repointStaffData(
 async function clearOrphanedFigures(
   targetCompanyId: number,
   winnerFiscalYears: Set<number>,
+  db: DatabaseExecutor = defaultDb,
 ): Promise<void> {
   const allFull = await db
     .select({ id: financialPeriods.id, fiscalYear: financialPeriods.fiscalYear })
@@ -326,6 +332,7 @@ async function clearOrphanedFigures(
 async function pruneGhostPeriods(
   targetCompanyId: number,
   winnerPeriodIds: Set<number>,
+  db: DatabaseExecutor = defaultDb,
 ): Promise<void> {
   const winnerArr = [...winnerPeriodIds];
 
@@ -399,7 +406,7 @@ async function pruneGhostPeriods(
  *   - After completion: exactly ONE income row and ONE balance row per
  *     (fiscalYear, isFullYear) slot, always on the survivor container.
  */
-export async function reselect(targetCompanyId: number): Promise<void> {
+export async function reselect(targetCompanyId: number, db: DatabaseExecutor = defaultDb): Promise<void> {
   console.log(`[RESELECT] company=${targetCompanyId}`);
 
   // 1. Load contributions — read-only, never mutated
@@ -478,6 +485,7 @@ export async function reselect(targetCompanyId: number): Promise<void> {
       periodEnd,
       winner.monthsCovered ?? null,
       winner.sourceDocumentId ?? null,
+      db,
     );
 
     winnerPeriodIds.add(period.id);
@@ -499,9 +507,9 @@ export async function reselect(targetCompanyId: number): Promise<void> {
       // a YTD P&L whose contribution was computed to is_full_year=false is
       // excluded from valuation even when it lives in an is_full_year=true
       // period container (stamped true by the balance sheet winner).
-      await upsertIncomeFromFigures(period.id, targetCompanyId, figures, winnerSourceDocId, winner.isFullYear);
+      await upsertIncomeFromFigures(period.id, targetCompanyId, figures, winnerSourceDocId, winner.isFullYear, db);
     } else {
-      await upsertBalanceFromFigures(period.id, targetCompanyId, figures, winnerSourceDocId);
+      await upsertBalanceFromFigures(period.id, targetCompanyId, figures, winnerSourceDocId, db);
     }
 
     // 5. Reconcile: remove income/balance rows from OTHER periods that lost
@@ -547,19 +555,19 @@ export async function reselect(targetCompanyId: number): Promise<void> {
 
   // 5. Re-point ebitda_adjustments from non-survivor periods to the survivor,
   //    per fiscal year.  Adjustments must never lose their year binding.
-  await repointAdjustments(targetCompanyId, yearToWinnerPeriodId);
+  await repointAdjustments(targetCompanyId, yearToWinnerPeriodId, db);
 
   // 6. Re-point staff_data to the latest winning full-year period.
   if (latestWinnerPeriodId !== null) {
-    await repointStaffData(targetCompanyId, latestWinnerPeriodId);
+    await repointStaffData(targetCompanyId, latestWinnerPeriodId, db);
   }
 
   // 7. Clear stale income/balance from full-year periods whose fiscal year has
   //    no winning contribution this run (all sources deleted, no fallback).
-  await clearOrphanedFigures(targetCompanyId, new Set(yearToWinnerPeriodId.keys()));
+  await clearOrphanedFigures(targetCompanyId, new Set(yearToWinnerPeriodId.keys()), db);
 
   // 8. Prune fully empty shell periods.
-  await pruneGhostPeriods(targetCompanyId, winnerPeriodIds);
+  await pruneGhostPeriods(targetCompanyId, winnerPeriodIds, db);
 
   console.log(`[RESELECT] Done. company=${targetCompanyId}`);
 }

@@ -1,10 +1,11 @@
 import { eq, and, desc, sql } from 'drizzle-orm';
-import { db } from '../db';
+import { db, type DatabaseExecutor } from '../db';
 import { subscriptions } from '@shared/schema/billing';
 import { userCompanies } from '@shared/schema/core';
 import {
   portalAccessTokens, externalDocumentSubmissions, portalActivityLog, documents,
-  documentAnalysisResults, targetCompanies, targetContacts, fileUploadEvents,
+  documentAnalysisResults, documentAccessLog, ddRequirementStatus, ddRequirementDocuments,
+  targetCompanies, targetContacts, fileUploadEvents,
   type PortalAccessToken, type ExternalDocumentSubmission, type InsertExternalDocumentSubmission,
   type InsertPortalActivityLog, type Document, type InsertDocument, type InsertFileUploadEvent, type FileUploadEvent,
 } from '@shared/schema';
@@ -105,10 +106,15 @@ export class PortalSubmissionsRepository {
     return await db.select().from(documents).where(eq(documents.targetCompanyId, targetCompanyId)).orderBy(desc(documents.uploadDate));
   }
 
-  async deleteDocument(documentId: number): Promise<boolean> {
-    await db.delete(documentAnalysisResults).where(eq(documentAnalysisResults.documentId, documentId));
-    await db.delete(fileUploadEvents).where(eq(fileUploadEvents.documentId, documentId));
-    const [deleted] = await db.delete(documents).where(eq(documents.id, documentId)).returning();
+  async deleteDocument(documentId: number, executor: DatabaseExecutor = db): Promise<boolean> {
+    await executor.update(ddRequirementStatus).set({ documentId: null })
+      .where(eq(ddRequirementStatus.documentId, documentId));
+    await executor.update(ddRequirementDocuments).set({ documentId: null })
+      .where(eq(ddRequirementDocuments.documentId, documentId));
+    await executor.delete(documentAnalysisResults).where(eq(documentAnalysisResults.documentId, documentId));
+    await executor.delete(fileUploadEvents).where(eq(fileUploadEvents.documentId, documentId));
+    await executor.delete(documentAccessLog).where(eq(documentAccessLog.documentId, documentId));
+    const [deleted] = await executor.delete(documents).where(eq(documents.id, documentId)).returning();
     return !!deleted;
   }
 

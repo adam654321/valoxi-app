@@ -188,14 +188,12 @@ export class TargetCompaniesService {
         )
       `);
 
-      // 4. Null out source_document_id on financial tables before deleting documents
-      await tx.execute(sql`UPDATE financial_periods SET source_document_id = NULL WHERE target_company_id = ${id}`);
-      await tx.execute(sql`UPDATE income_statements SET source_document_id = NULL WHERE target_company_id = ${id}`);
-      await tx.execute(sql`UPDATE balance_sheets SET source_document_id = NULL WHERE target_company_id = ${id}`);
-      await tx.execute(sql`UPDATE staff_data SET source_document_id = NULL WHERE target_company_id = ${id}`);
-      await tx.execute(sql`UPDATE aged_debtors SET source_document_id = NULL WHERE target_company_id = ${id}`);
-      await tx.execute(sql`UPDATE fixed_assets_register SET source_document_id = NULL WHERE target_company_id = ${id}`);
-      await tx.execute(sql`UPDATE loan_facilities SET source_document_id = NULL WHERE target_company_id = ${id}`);
+      // 4. Remove NO ACTION document references before deleting documents.
+      await tx.delete(staffData).where(eq(staffData.targetCompanyId, id));
+      await tx.delete(agedDebtors).where(eq(agedDebtors.targetCompanyId, id));
+      await tx.delete(fixedAssetsRegister).where(eq(fixedAssetsRegister.targetCompanyId, id));
+      await tx.delete(loanFacilities).where(eq(loanFacilities.targetCompanyId, id));
+      await tx.delete(ebitdaAdjustments).where(eq(ebitdaAdjustments.targetCompanyId, id));
 
       // 5. Deal document responses and deal documents (deal_documents references portal_access_tokens)
       await tx.execute(sql`
