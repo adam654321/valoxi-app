@@ -102,3 +102,17 @@ mtime_ms = 1788876143868
 storage_uri = "gcs://replit-rams-assets-kirk/rams/assets/repl:85fb53ef-8f2a-4b29-b64b-c651f49dfeb5/5208092b-22ba-48bf-bdbd-c0b0fe67615e/6f27359f-7164-4a34-bdaf-abeab113810f"
 storage_version_token = "1788876164177440"
 content_type = "text/plain"
+
+[[outputs]]
+id = "C7pwD06_loA231sy8qORd"
+uri = "file://reports/document-deletion-vcheck-2026-10-16.txt"
+type = "text"
+title = "Document deletion V-check — DEV"
+description = "Fresh verification output: TypeScript, 559 tests, seven live DEV CASCADE constraints, all remaining NULL-reference matches, git status, and the full original implementation diffs."
+logical_id = "25d13b1a-8d2c-4434-8d21-7a3f4a551ec6"
+content_hash = "sha256:2bdf11438b4b7761a1e478b558d6eb803cbe7bb3667776fae95f84fbc98aa811"
+size = 38917
+mtime_ms = 1792146749903
+storage_uri = "gcs://replit-rams-assets-kirk/rams/assets/repl:85fb53ef-8f2a-4b29-b64b-c651f49dfeb5/25d13b1a-8d2c-4434-8d21-7a3f4a551ec6/786c266b-4f02-4998-9d71-d6135085ff75"
+storage_version_token = "1792146750756825"
+content_type = "text/plain"

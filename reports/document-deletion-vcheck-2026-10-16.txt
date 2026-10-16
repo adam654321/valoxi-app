@@ -1,0 +1,605 @@
+DOCUMENT DELETION V-CHECK — FRESH DEV VERIFICATION
+Date: 2026-10-16. Test run began at 10:30:51 UTC.
+Scope: development only. No ALTERs, migrations, production queries/writes, deployment, or live email sends.
+Application source was not changed. Automated tests created and cleaned temporary DEV fixtures.
+This is a fresh verification of the existing implementation, not a reconstructed historical apply-session transcript.
+Original implementation: 64a4fd8 (Refactor document and evidence repository logic).
+RESULT: TypeScript, all 559 tests, required call-site counts, and all seven live DEV cascade constraints PASS. Remaining NULL assignments are disclosed below, not silently treated as absent.
+
+1. TYPESCRIPT — npm run check
+
+> rest-express@1.0.0 check
+> tsc
+
+
+Exit code: 0. TypeScript errors: 0.
+
+2. FULL TEST SUMMARY AND REQUESTED NAMED TESTS — npx vitest run --reporter=verbose
+ ✓ server/services/__tests__/document-delete-cascade.test.ts > document deletion removes derived figures > a document’s income, balance, period and evidence figures are gone, not detached 473ms
+ ✓ server/services/__tests__/document-delete-cascade.test.ts > document deletion removes derived figures > a different document’s year and values survive 448ms
+ ✓ server/services/__tests__/document-delete-cascade.test.ts > document deletion removes derived figures > reselect rebuilds the same year from the losing document 253ms
+ ✓ server/services/__tests__/document-delete-cascade.test.ts > document deletion removes derived figures > no financial or evidence source is converted to NULL by a delete 370ms
+ ✓ server/services/__tests__/document-delete-cascade.test.ts > document deletion removes derived figures > a mid-sequence failure rolls back evidence and financial deletion 211ms
+ ✓ server/services/__tests__/document-delete-fk.test.ts > deleteDocument — derived-row deletion > initial state: FY2022 + FY2023 sourced from doc A; FY2024 from doc B 6ms
+ ✓ server/services/__tests__/document-delete-fk.test.ts > deleteDocument — derived-row deletion > deleteDocument(docA) succeeds without FK error; FY2023 falls back to doc B; FY2022 pruned 128ms
+ ✓ server/services/__tests__/document-delete-fk.test.ts > deleteDocument — derived-row deletion > FY2022 income and period are gone after deleting its only source 5ms
+ ✓ server/services/__tests__/document-delete-fk.test.ts > deleteDocument — derived-row deletion > doc A row is removed from the documents table 3ms
+ ✓ server/services/__tests__/document-delete-fk.test.ts > evidence-layer delete cascade > deleting the DAR cascades through evidence, periods and figures 48ms
+ ✓ server/services/__tests__/document-delete-fk.test.ts > evidence-layer delete cascade > deleteDocument succeeds without FK error; evidence row is removed 105ms
+ Test Files  34 passed (34)
+      Tests  559 passed (559)
+   Start at  10:30:51
+   Duration  7.10s (transform 4.10s, setup 0ms, import 22.53s, tests 18.71s, environment 5ms)
+
+Exit code: 0. Five document-delete-cascade tests passed; six document-delete-fk tests passed.
+
+3. EXECUTABLE CALL-SITE CHECKS
+detachDocumentReferences matches in server/ and shared/: EXPECTED 0; ACTUAL 0.
+await financialDataRepository.deleteDocumentDerivedRows(...) in production service code: EXPECTED 2; ACTUAL 2.
+server/services/documents-files.service.ts:122:        await financialDataRepository.deleteDocumentDerivedRows(documentId, tx);
+server/services/portal-submissions.service.ts:172:      await financialDataRepository.deleteDocumentDerivedRows(documentId, tx);
+
+await evidenceRepository.deleteEvidenceByDocumentId(...) in production service code: EXPECTED 2; ACTUAL 2.
+server/services/documents-files.service.ts:119:        await evidenceRepository.deleteEvidenceByDocumentId(documentId, tx);
+server/services/portal-submissions.service.ts:169:      await evidenceRepository.deleteEvidenceByDocumentId(documentId, tx);
+
+Counts exclude method declarations, comments, documentation, and test spies.
+
+4. REMAINING SOURCE-REFERENCE NULL MATCHES
+Scan: git grep -n -E sourceDocumentId:[[:space:]]*null|source_document_id[[:space:]]*=[[:space:]]*NULL over tracked TS/TSX/JS/JSX/MJS/CJS/SQL files.
+Raw matching source lines: 14. Actual code assignments: 13; one additional match is only a printed message.
+Breakdown: six maintenance SQL assignments in server/scripts/wipe-tier2-db.ts; six fixture assignments; one explicit clearIncomeStatementData reset; one console log message.
+The maintenance script still nulls references for aged_debtors, balance_sheets, financial_periods, fixed_assets_register, income_statements, and staff_data. It was NOT executed.
+The clearIncomeStatementData method resets financial figures together with their source reference; it is called by the explicit financial-data reset route, not by document deletion.
+No source-null assignments remain in either document-delete service or the two requested bulk-delete paths.
+Every matching file and line:
+scripts/validate-e2e.ts:105:  console.log('FY2026 data in prod (source_document_id = NULL on all periods):');
+server/repositories/financial-data.repository.ts:241:      sourceDocumentId: null,
+server/scripts/__tests__/financial-contributions.test.ts:104:      sourceDocumentId: null,
+server/scripts/__tests__/financial-contributions.test.ts:137:      sourceDocumentId: null,
+server/scripts/wipe-tier2-db.ts:116:               SET source_document_id = NULL
+server/scripts/wipe-tier2-db.ts:141:               SET source_document_id = NULL
+server/scripts/wipe-tier2-db.ts:166:               SET source_document_id = NULL
+server/scripts/wipe-tier2-db.ts:191:               SET source_document_id = NULL
+server/scripts/wipe-tier2-db.ts:216:               SET source_document_id = NULL
+server/scripts/wipe-tier2-db.ts:241:               SET source_document_id = NULL
+server/services/__tests__/forward-path-gate.test.ts:668:      sourceDocumentId: null,
+server/services/__tests__/ghost-period-prune.test.ts:121:      sourceDocumentId: null,
+server/services/__tests__/stable-year-container.test.ts:345:        fiscalYear: GHOST_YEAR, isFullYear: true, sourceDocumentId: null,
+shared/calculators/__tests__/projection-selector.test.ts:13:    sourceDocumentId: null,
+
+
+
+5. LIVE DEV CONSTRAINTS — ORIGINAL BROAD QUERY
+Query used (same predicates as the attachment, ordered for readable output):
+SELECT conname, conrelid::regclass, confdeltype FROM pg_constraint WHERE conname LIKE '%document%' OR conrelid::regclass::text IN ('financial_periods','income_statements','balance_sheets','document_evidence','document_evidence_period','document_evidence_figure') ORDER BY conrelid::regclass::text, conname
+conname,conrelid,confdeltype
+aged_debtors_source_document_id_fkey,aged_debtors,a
+balance_sheets_financial_period_id_fkey,balance_sheets,a
+balance_sheets_pkey,balance_sheets, 
+balance_sheets_source_document_id_fkey,balance_sheets,c
+balance_sheets_target_company_id_fkey,balance_sheets,a
+company_document_requirements_pkey,company_document_requirements, 
+company_document_requirements_reviewed_by_fkey,company_document_requirements,a
+company_document_requirements_submitted_by_contact_id_fkey,company_document_requirements,a
+company_document_requirements_submitted_document_id_fkey,company_document_requirements,a
+company_document_requirements_target_company_id_fkey,company_document_requirements,a
+current_offers_deal_document_id_fkey,current_offers,n
+dd_requirement_documents_added_by_fk,dd_requirement_documents,a
+dd_requirement_documents_document_id_fk,dd_requirement_documents,a
+dd_requirement_documents_external_submission_id_fk,dd_requirement_documents,a
+dd_requirement_documents_pkey,dd_requirement_documents, 
+dd_requirement_documents_requirement_status_id_fk,dd_requirement_documents,a
+dd_requirement_documents_target_company_id_fk,dd_requirement_documents,a
+dd_requirement_status_document_id_fkey,dd_requirement_status,a
+deal_document_responses_deal_document_id_fkey,deal_document_responses,a
+deal_document_responses_pkey,deal_document_responses, 
+deal_document_templates_pkey,deal_document_templates, 
+deal_document_templates_user_company_id_fkey,deal_document_templates,a
+deal_documents_created_by_fkey,deal_documents,a
+deal_documents_deal_model_id_fkey,deal_documents,a
+deal_documents_delivery_method_check,deal_documents, 
+deal_documents_pkey,deal_documents, 
+deal_documents_portal_token_id_fkey,deal_documents,a
+deal_documents_target_company_id_fkey,deal_documents,a
+deal_documents_template_id_fkey,deal_documents,a
+deal_documents_unsupported_price_acknowledged_by_fkey,deal_documents,a
+deal_documents_user_company_id_fkey,deal_documents,a
+document_access_log_accessed_by_fkey,document_access_log,a
+document_access_log_document_id_fkey,document_access_log,a
+document_access_log_pkey,document_access_log, 
+document_analysis_results_document_id_fkey,document_analysis_results,a
+document_analysis_results_file_upload_event_id_fkey,document_analysis_results,a
+document_analysis_results_pkey,document_analysis_results, 
+document_categories_category_name_unique,document_categories, 
+document_categories_pkey,document_categories, 
+document_evidence_analysis_result_id_fkey,document_evidence,c
+document_evidence_doc_type_version_unique,document_evidence, 
+document_evidence_document_id_fkey,document_evidence,c
+document_evidence_pkey,document_evidence, 
+document_evidence_target_company_id_fkey,document_evidence,a
+document_evidence_figure_period_id_fkey,document_evidence_figure,c
+document_evidence_figure_pkey,document_evidence_figure, 
+document_evidence_period_evidence_id_fkey,document_evidence_period,c
+document_evidence_period_pkey,document_evidence_period, 
+document_stage_progression_pkey,document_stage_progression, 
+document_stage_progression_stage_1_completed_by_fkey,document_stage_progression,a
+document_stage_progression_stage_2_completed_by_fkey,document_stage_progression,a
+document_stage_progression_target_company_id_fkey,document_stage_progression,a
+document_stage_progression_target_company_id_unique,document_stage_progression, 
+documents_external_submission_id_fkey,documents,a
+documents_pkey,documents, 
+documents_public_token_unique,documents, 
+documents_target_company_id_fkey,documents,a
+documents_uploaded_by_fkey,documents,a
+external_document_submissions_pkey,external_document_submissions, 
+external_document_submissions_portal_token_id_fkey,external_document_submissions,a
+external_document_submissions_reviewed_by_fkey,external_document_submissions,a
+external_document_submissions_target_company_id_fkey,external_document_submissions,a
+external_document_submissions_target_contact_id_fkey,external_document_submissions,a
+file_upload_events_document_id_fkey,file_upload_events,a
+financial_contributions_source_document_id_fkey,financial_contributions,a
+financial_periods_pkey,financial_periods, 
+financial_periods_source_document_id_fkey,financial_periods,c
+financial_periods_target_company_id_fkey,financial_periods,a
+fixed_assets_register_source_document_id_fkey,fixed_assets_register,a
+income_statements_financial_period_id_fkey,income_statements,a
+income_statements_pkey,income_statements, 
+income_statements_source_document_id_fkey,income_statements,c
+income_statements_target_company_id_fkey,income_statements,a
+loan_facilities_source_document_id_fkey,loan_facilities,a
+portal_document_requirements_pkey,portal_document_requirements, 
+portal_document_requirements_portal_token_id_fkey,portal_document_requirements,a
+staff_data_source_document_id_fkey,staff_data,a
+
+Exit code: 0
+
+
+6. LIVE DEV CONSTRAINTS — SEVEN REQUIRED FK RULES
+confdeltype c = CASCADE; a = NO ACTION; n = SET NULL.
+SELECT c.conname, c.conrelid::regclass AS table_name, a.attname AS column_name, c.confrelid::regclass AS referenced_table, c.confdeltype FROM pg_constraint c JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = ANY(c.conkey) WHERE c.contype = 'f' AND ((c.conrelid = 'document_evidence'::regclass AND a.attname IN ('document_id','document_analysis_result_id')) OR (c.conrelid = 'document_evidence_period'::regclass AND a.attname = 'document_evidence_id') OR (c.conrelid = 'document_evidence_figure'::regclass AND a.attname = 'document_evidence_period_id') OR (c.conrelid IN ('financial_periods'::regclass,'income_statements'::regclass,'balance_sheets'::regclass) AND a.attname = 'source_document_id')) ORDER BY c.conrelid::regclass::text, a.attname
+conname,table_name,column_name,referenced_table,confdeltype
+balance_sheets_source_document_id_fkey,balance_sheets,source_document_id,documents,c
+document_evidence_analysis_result_id_fkey,document_evidence,document_analysis_result_id,document_analysis_results,c
+document_evidence_document_id_fkey,document_evidence,document_id,documents,c
+document_evidence_figure_period_id_fkey,document_evidence_figure,document_evidence_period_id,document_evidence_period,c
+document_evidence_period_evidence_id_fkey,document_evidence_period,document_evidence_id,document_evidence,c
+financial_periods_source_document_id_fkey,financial_periods,source_document_id,documents,c
+income_statements_source_document_id_fkey,income_statements,source_document_id,documents,c
+
+EXPECTED: seven rows, all confdeltype c. ACTUAL: seven rows, all c.
+Note: the first supplementary seven-FK query used an invalid alias expression in ORDER BY; the read-only query was corrected to order by c.conrelid::regclass::text and rerun successfully. No database change was made.
+
+7. GIT DIFF STAT AND STATUS
+commit 64a4fd857adf3e83d322e7ddef1992cb1016c424
+Author: Replit Agent <agent@replit.com>
+
+    Refactor document and evidence repository logic
+
+ server/db.ts                                       |   4 +-
+ server/repositories/documents.repository.ts        |  70 +++++---
+ server/repositories/evidence.repository.ts         |  25 ++-
+ server/repositories/financial-data.repository.ts   |  37 ++--
+ .../repositories/portal-submissions.repository.ts  |  18 +-
+ .../__tests__/document-delete-cascade.test.ts      | 189 +++++++++++++++++++++
+ .../services/__tests__/document-delete-fk.test.ts  |  34 ++--
+ server/services/documents-files.service.ts         |  48 ++----
+ server/services/portal-submissions.service.ts      |  30 ++--
+ server/services/projection-reselect.service.ts     |  24 ++-
+ server/services/target-companies.service.ts        |  14 +-
+ shared/schema/evidence.ts                          |   8 +-
+ shared/schema/financials.ts                        |   6 +-
+ 13 files changed, 361 insertions(+), 146 deletions(-)
+
+CURRENT git diff --stat
+
+CURRENT git status --short (before report creation)
+
+CURRENT HEAD
+f690c9102d5f593ce60560b32a1e0d8c6224287e
+
+The current working tree was clean before creating this report; git diff --stat was empty.
+The original implementation changed 13 files, with 361 insertions and 146 deletions.
+
+8. FULL ORIGINAL DIFF — BOTH DELETE SERVICES AND BOTH REPOSITORY HELPERS
+Command: git show 64a4fd8 -- server/services/documents-files.service.ts server/services/portal-submissions.service.ts server/repositories/financial-data.repository.ts server/repositories/evidence.repository.ts
+commit 64a4fd857adf3e83d322e7ddef1992cb1016c424
+Author: Replit Agent <agent@replit.com>
+Date:   Fri Sep 25 12:09:52 2026 +0000
+
+    Refactor document and evidence repository logic
+    
+    Replit-Commit-Author: Agent
+
+diff --git a/server/repositories/evidence.repository.ts b/server/repositories/evidence.repository.ts
+index e0bb7b8..b434592 100644
+--- a/server/repositories/evidence.repository.ts
++++ b/server/repositories/evidence.repository.ts
+@@ -1,9 +1,10 @@
+-import { eq, and, sql } from 'drizzle-orm';
+-import { db } from '../db';
++import { eq, and, or, inArray, sql } from 'drizzle-orm';
++import { db, type DatabaseExecutor } from '../db';
+ import {
+   documentEvidence,
+   documentEvidencePeriod,
+   documentEvidenceFigure,
++  documentAnalysisResults,
+ } from '@shared/schema';
+ import { mapPayloadToEvidence } from '@shared/utils/evidence-mapper';
+ import { systemConfigService } from '../services/system-config.service';
+@@ -27,6 +28,26 @@ type WriteFromPayloadResult =
+   | { written: true; evidenceId: number; periodCount: number; figureCount: number };
+ 
+ export class EvidenceRepository {
++  async deleteEvidenceByDocumentId(documentId: number, executor: DatabaseExecutor = db): Promise<void> {
++    const analysisIds = executor.select({ id: documentAnalysisResults.id })
++      .from(documentAnalysisResults).where(eq(documentAnalysisResults.documentId, documentId));
++    const evidenceIds = executor.select({ id: documentEvidence.id })
++      .from(documentEvidence).where(or(
++        eq(documentEvidence.documentId, documentId),
++        inArray(documentEvidence.documentAnalysisResultId, analysisIds),
++      ));
++    const periodIds = executor.select({ id: documentEvidencePeriod.id })
++      .from(documentEvidencePeriod).where(inArray(documentEvidencePeriod.documentEvidenceId, evidenceIds));
++    await executor.delete(documentEvidenceFigure)
++      .where(inArray(documentEvidenceFigure.documentEvidencePeriodId, periodIds));
++    await executor.delete(documentEvidencePeriod)
++      .where(inArray(documentEvidencePeriod.documentEvidenceId, evidenceIds));
++    await executor.delete(documentEvidence).where(or(
++      eq(documentEvidence.documentId, documentId),
++      inArray(documentEvidence.documentAnalysisResultId, analysisIds),
++    ));
++  }
++
+   async writeFromPayload(input: WriteFromPayloadInput): Promise<WriteFromPayloadResult> {
+     // Step 1: check kill switch — no DB reads or writes if flag is off
+     const flagValue = await systemConfigService.getConfig(FLAG_KEY);
+diff --git a/server/repositories/financial-data.repository.ts b/server/repositories/financial-data.repository.ts
+index 3ad8c7a..925a5e1 100644
+--- a/server/repositories/financial-data.repository.ts
++++ b/server/repositories/financial-data.repository.ts
+@@ -1,5 +1,5 @@
+ import { eq, and, desc, sql, inArray } from 'drizzle-orm';
+-import { db } from '../db';
++import { db, type DatabaseExecutor } from '../db';
+ import {
+   financialPeriods,
+   incomeStatements,
+@@ -570,31 +570,22 @@ export class FinancialDataRepository {
+    * financial_periods — those are managed by reselect() after contributions
+    * are dropped.
+    */
+-  async deleteNonProjectionByDocumentId(documentId: number): Promise<void> {
+-    await db.delete(staffData).where(eq(staffData.sourceDocumentId, documentId));
+-    await db.delete(agedDebtors).where(eq(agedDebtors.sourceDocumentId, documentId));
+-    await db.delete(fixedAssetsRegister).where(eq(fixedAssetsRegister.sourceDocumentId, documentId));
+-    await db.delete(loanFacilities).where(eq(loanFacilities.sourceDocumentId, documentId));
++  async deleteNonProjectionByDocumentId(documentId: number, executor: DatabaseExecutor = db): Promise<void> {
++    await executor.delete(staffData).where(eq(staffData.sourceDocumentId, documentId));
++    await executor.delete(agedDebtors).where(eq(agedDebtors.sourceDocumentId, documentId));
++    await executor.delete(fixedAssetsRegister).where(eq(fixedAssetsRegister.sourceDocumentId, documentId));
++    await executor.delete(loanFacilities).where(eq(loanFacilities.sourceDocumentId, documentId));
+     console.log(`[FINANCIAL_DATA] Deleted non-projection financial data for document ${documentId}`);
+   }
+ 
+-  /**
+-   * NULL out source_document_id on the three projection tables for any rows that
+-   * still reference a document being deleted.  Called after reselect() so that
+-   * periods / statements whose only source was the deleted doc are detached safely
+-   * before the documents row itself is removed.
+-   */
+-  async detachDocumentReferences(documentId: number): Promise<void> {
+-    await db.update(financialPeriods)
+-      .set({ sourceDocumentId: null, updatedAt: new Date() })
+-      .where(eq(financialPeriods.sourceDocumentId, documentId));
+-    await db.update(incomeStatements)
+-      .set({ sourceDocumentId: null, updatedAt: new Date() })
+-      .where(eq(incomeStatements.sourceDocumentId, documentId));
+-    await db.update(balanceSheets)
+-      .set({ sourceDocumentId: null, updatedAt: new Date() })
+-      .where(eq(balanceSheets.sourceDocumentId, documentId));
+-    console.log(`[FINANCIAL_DATA] Detached source_document_id references for document ${documentId}`);
++  async deleteDocumentDerivedRows(documentId: number, executor: DatabaseExecutor = db): Promise<void> {
++    await executor.delete(incomeStatements).where(eq(incomeStatements.sourceDocumentId, documentId));
++    await executor.delete(balanceSheets).where(eq(balanceSheets.sourceDocumentId, documentId));
++    await executor.delete(financialPeriods).where(and(
++      eq(financialPeriods.sourceDocumentId, documentId),
++      sql`NOT EXISTS (SELECT 1 FROM income_statements i WHERE i.financial_period_id = ${financialPeriods.id})`,
++      sql`NOT EXISTS (SELECT 1 FROM balance_sheets b WHERE b.financial_period_id = ${financialPeriods.id})`,
++    ));
+   }
+ 
+   async deleteContributionsByDocumentIds(documentIds: number[]): Promise<number> {
+diff --git a/server/services/documents-files.service.ts b/server/services/documents-files.service.ts
+index b6c91ed..3ceb90a 100644
+--- a/server/services/documents-files.service.ts
++++ b/server/services/documents-files.service.ts
+@@ -1,6 +1,6 @@
+ import { documentsRepository } from '../repositories/documents.repository';
+ import { financialDataRepository } from '../repositories/financial-data.repository';
+-import { documentAnalysisRepository } from '../repositories/document-analysis.repository';
++import { evidenceRepository } from '../repositories/evidence.repository';
+ import { fileStorageService } from './file-storage.service';
+ import { NotFoundError, ForbiddenError, BadRequestError } from '../utils/errors';
+ import type { Document, InsertDocument } from '@shared/schema';
+@@ -112,36 +112,22 @@ export class DocumentsFilesService {
+   async deleteDocument(documentId: number, userCompanyId: number): Promise<void> {
+     const document = await documentsRepository.getDocument(documentId, userCompanyId);
+     if (document) {
+-      try {
+-        // Non-projection financial data (staff, debtors, assets, loans) — delete directly
+-        await financialDataRepository.deleteNonProjectionByDocumentId(documentId);
+-        // Drop contributions then rebuild the projection via reselect
+-        await db.delete(financialContributions).where(eq(financialContributions.sourceDocumentId, documentId));
+-        await reselect(document.targetCompanyId);
+-        // Detach any remaining source_document_id pointers (periods whose only source was this doc).
+-        // Must run AFTER reselect so winners are already re-pointed before we null the orphans.
+-        await financialDataRepository.detachDocumentReferences(documentId);
+-      } catch (error) {
+-        console.error(`[DELETE_DOCUMENT] Error cleaning financial data for document ${documentId}:`, error);
+-      }
+-      
+-      try {
+-        await documentAnalysisRepository.deleteByDocumentId(documentId);
+-      } catch (error) {
+-        console.error(`[DELETE_DOCUMENT] Error deleting analysis results for document ${documentId}:`, error);
+-      }
+-      
+-      const success = await documentsRepository.deleteDocument(documentId, userCompanyId);
+-      if (!success) throw new Error('Failed to delete document');
+-      if (document.externalSubmissionId) {
+-        try {
+-          const externalSubmission = await documentsRepository.getExternalSubmission(document.externalSubmissionId, userCompanyId);
+-          if (externalSubmission) {
+-            await fileStorageService.delete(externalSubmission.filePath);
+-          }
+-          await documentsRepository.deleteExternalSubmission(document.externalSubmissionId);
+-        } catch { }
+-      }
++      const externalSubmission = document.externalSubmissionId
++        ? await documentsRepository.getExternalSubmission(document.externalSubmissionId, userCompanyId)
++        : undefined;
++      await db.transaction(async (tx) => {
++        await evidenceRepository.deleteEvidenceByDocumentId(documentId, tx);
++        await financialDataRepository.deleteNonProjectionByDocumentId(documentId, tx);
++        await tx.delete(financialContributions).where(eq(financialContributions.sourceDocumentId, documentId));
++        await financialDataRepository.deleteDocumentDerivedRows(documentId, tx);
++        await reselect(document.targetCompanyId, tx);
++        const success = await documentsRepository.deleteDocument(documentId, userCompanyId, tx);
++        if (!success) throw new Error('Failed to delete document');
++        if (document.externalSubmissionId) {
++          await documentsRepository.deleteExternalSubmission(document.externalSubmissionId, tx);
++        }
++      });
++      if (externalSubmission) await fileStorageService.delete(externalSubmission.filePath);
+       await fileStorageService.delete(document.filePath);
+       return;
+     }
+diff --git a/server/services/portal-submissions.service.ts b/server/services/portal-submissions.service.ts
+index ca801e5..40ada02 100644
+--- a/server/services/portal-submissions.service.ts
++++ b/server/services/portal-submissions.service.ts
+@@ -1,4 +1,7 @@
+ import { portalSubmissionsRepository } from '../repositories/portal-submissions.repository';
++import { financialDataRepository } from '../repositories/financial-data.repository';
++import { evidenceRepository } from '../repositories/evidence.repository';
++import { reselect } from './projection-reselect.service';
+ import { dueDiligenceService } from './due-diligence.service';
+ import { fileStorageService } from './file-storage.service';
+ import { NotFoundError, ForbiddenError, BadRequestError } from '../utils/errors';
+@@ -8,6 +11,7 @@ import type { PortalAccessToken, ExternalDocumentSubmission } from '@shared/sche
+ import { db } from '../db';
+ import { ddRequirements, ddCategories } from '@shared/schema/due-diligence';
+ import { documents } from '@shared/schema/documents';
++import { financialContributions } from '@shared/schema';
+ import { eq } from 'drizzle-orm';
+ 
+ const PORTAL_CATEGORY_MAP: Record<string, string> = {
+@@ -161,23 +165,15 @@ export class PortalSubmissionsService {
+     const token = await this.validateToken(accessToken);
+     const document = await portalSubmissionsRepository.getDocument(documentId);
+     if (!document || document.targetCompanyId !== token.targetCompanyId) throw new NotFoundError('Document not found');
+-    try {
+-      const { financialDataRepository } = await import('../repositories/financial-data.repository');
+-      const { db } = await import('../db');
+-      const { financialContributions } = await import('@shared/schema');
+-      const { eq } = await import('drizzle-orm');
+-      const { reselect } = await import('./projection-reselect.service');
+-      // Non-projection financial data (staff, debtors, assets, loans) — delete directly
+-      await financialDataRepository.deleteNonProjectionByDocumentId(documentId);
+-      // Drop contributions then rebuild the projection via reselect
+-      await db.delete(financialContributions).where(eq(financialContributions.sourceDocumentId, documentId));
+-      await reselect(document.targetCompanyId);
+-      await financialDataRepository.detachDocumentReferences(documentId);
+-    } catch (error) {
+-      console.error(`[PORTAL_DELETE] Error cleaning financial data for document ${documentId}:`, error);
+-    }
+-    const success = await portalSubmissionsRepository.deleteDocument(documentId);
+-    if (!success) throw new Error('Failed to delete document');
++    await db.transaction(async (tx) => {
++      await evidenceRepository.deleteEvidenceByDocumentId(documentId, tx);
++      await financialDataRepository.deleteNonProjectionByDocumentId(documentId, tx);
++      await tx.delete(financialContributions).where(eq(financialContributions.sourceDocumentId, documentId));
++      await financialDataRepository.deleteDocumentDerivedRows(documentId, tx);
++      await reselect(document.targetCompanyId, tx);
++      const success = await portalSubmissionsRepository.deleteDocument(documentId, tx);
++      if (!success) throw new Error('Failed to delete document');
++    });
+     await fileStorageService.delete(document.filePath);
+   }
+ }
+
+
+
+9. ORIGINAL BULK-PATH BEFORE/AFTER DIFF
+Command: git show 64a4fd8 -- server/repositories/documents.repository.ts server/services/target-companies.service.ts
+commit 64a4fd857adf3e83d322e7ddef1992cb1016c424
+Author: Replit Agent <agent@replit.com>
+Date:   Fri Sep 25 12:09:52 2026 +0000
+
+    Refactor document and evidence repository logic
+    
+    Replit-Commit-Author: Agent
+
+diff --git a/server/repositories/documents.repository.ts b/server/repositories/documents.repository.ts
+index 529ca26..25f1353 100644
+--- a/server/repositories/documents.repository.ts
++++ b/server/repositories/documents.repository.ts
+@@ -1,5 +1,6 @@
+ import { eq, and, desc, sql, inArray } from 'drizzle-orm';
+-import { db } from '../db';
++import { db, type DatabaseExecutor } from '../db';
++import { reselect } from '../services/projection-reselect.service';
+ import {
+   documents,
+   documentCategories,
+@@ -143,18 +144,22 @@ export class DocumentsRepository {
+     return updatedDocument || undefined;
+   }
+ 
+-  async deleteDocument(documentId: number, userCompanyId: number): Promise<boolean> {
+-    await db.delete(documentAnalysisResults).where(eq(documentAnalysisResults.documentId, documentId));
+-    await db.delete(fileUploadEvents).where(eq(fileUploadEvents.documentId, documentId));
+-    await db.delete(documentAccessLog).where(eq(documentAccessLog.documentId, documentId));
++  async deleteDocument(documentId: number, userCompanyId: number, executor: DatabaseExecutor = db): Promise<boolean> {
++    await executor.update(ddRequirementStatus).set({ documentId: null })
++      .where(eq(ddRequirementStatus.documentId, documentId));
++    await executor.update(ddRequirementDocuments).set({ documentId: null })
++      .where(eq(ddRequirementDocuments.documentId, documentId));
++    await executor.delete(documentAnalysisResults).where(eq(documentAnalysisResults.documentId, documentId));
++    await executor.delete(fileUploadEvents).where(eq(fileUploadEvents.documentId, documentId));
++    await executor.delete(documentAccessLog).where(eq(documentAccessLog.documentId, documentId));
+ 
+-    const [deletedDocument] = await db
++    const [deletedDocument] = await executor
+       .delete(documents)
+       .where(and(
+         eq(documents.id, documentId),
+         inArray(
+           documents.targetCompanyId,
+-          db.select({ id: targetCompanies.id })
++          executor.select({ id: targetCompanies.id })
+             .from(targetCompanies)
+             .where(eq(targetCompanies.userCompanyId, userCompanyId))
+         )
+@@ -244,8 +249,12 @@ export class DocumentsRepository {
+     return submission?.external_document_submissions;
+   }
+ 
+-  async deleteExternalSubmission(submissionId: number): Promise<boolean> {
+-    const [deleted] = await db
++  async deleteExternalSubmission(submissionId: number, executor: DatabaseExecutor = db): Promise<boolean> {
++    await executor.update(ddRequirementStatus).set({ externalSubmissionId: null })
++      .where(eq(ddRequirementStatus.externalSubmissionId, submissionId));
++    await executor.update(ddRequirementDocuments).set({ externalSubmissionId: null })
++      .where(eq(ddRequirementDocuments.externalSubmissionId, submissionId));
++    const [deleted] = await executor
+       .delete(externalDocumentSubmissions)
+       .where(eq(externalDocumentSubmissions.id, submissionId))
+       .returning();
+@@ -300,44 +309,49 @@ export class DocumentsRepository {
+ 
+       console.log(`[REPOSITORY] Found ${allDocuments.length} documents and ${allExternalSubmissions.length} external submissions to delete`);
+ 
++      await db.transaction(async (tx) => {
+       if (allDocumentIds.length > 0) {
+-        const analysisResultsDeleted = await db.delete(documentAnalysisResults)
++        const analysisResultsDeleted = await tx.delete(documentAnalysisResults)
+           .where(inArray(documentAnalysisResults.documentId, allDocumentIds));
+         deletedAnalysisResults = analysisResultsDeleted.rowCount || 0;
+ 
+-        const accessLogsDeleted = await db.delete(documentAccessLog)
++        const accessLogsDeleted = await tx.delete(documentAccessLog)
+           .where(inArray(documentAccessLog.documentId, allDocumentIds));
+         deletedDocumentAccessLogs = accessLogsDeleted.rowCount || 0;
+ 
+-        const uploadEventsDeleted = await db.delete(fileUploadEvents)
++        const uploadEventsDeleted = await tx.delete(fileUploadEvents)
+           .where(inArray(fileUploadEvents.documentId, allDocumentIds));
+         deletedUploadEvents = uploadEventsDeleted.rowCount || 0;
+ 
+-        // NULL out nullable FK references in financials and due-diligence tables
+-        // before deleting documents to avoid FK constraint violations.
+-        await db.update(financialPeriods).set({ sourceDocumentId: null }).where(inArray(financialPeriods.sourceDocumentId, allDocumentIds));
+-        await db.update(incomeStatements).set({ sourceDocumentId: null }).where(inArray(incomeStatements.sourceDocumentId, allDocumentIds));
+-        await db.update(balanceSheets).set({ sourceDocumentId: null }).where(inArray(balanceSheets.sourceDocumentId, allDocumentIds));
+-        await db.update(staffData).set({ sourceDocumentId: null }).where(inArray(staffData.sourceDocumentId, allDocumentIds));
+-        await db.update(agedDebtors).set({ sourceDocumentId: null }).where(inArray(agedDebtors.sourceDocumentId, allDocumentIds));
+-        await db.update(fixedAssetsRegister).set({ sourceDocumentId: null }).where(inArray(fixedAssetsRegister.sourceDocumentId, allDocumentIds));
+-        await db.update(loanFacilities).set({ sourceDocumentId: null }).where(inArray(loanFacilities.sourceDocumentId, allDocumentIds));
+-        await db.update(ddRequirementStatus).set({ documentId: null }).where(inArray(ddRequirementStatus.documentId, allDocumentIds));
+-        await db.update(ddRequirementDocuments).set({ documentId: null }).where(inArray(ddRequirementDocuments.documentId, allDocumentIds));
+-
+-        await db.delete(financialContributions).where(inArray(financialContributions.sourceDocumentId, allDocumentIds));
+-
+-        const documentsDeleted = await db.delete(documents)
++        // These tables have NO ACTION document FKs, so remove their rows before deleting documents.
++        await tx.delete(staffData).where(inArray(staffData.sourceDocumentId, allDocumentIds));
++        await tx.delete(agedDebtors).where(inArray(agedDebtors.sourceDocumentId, allDocumentIds));
++        await tx.delete(fixedAssetsRegister).where(inArray(fixedAssetsRegister.sourceDocumentId, allDocumentIds));
++        await tx.delete(loanFacilities).where(inArray(loanFacilities.sourceDocumentId, allDocumentIds));
++        await tx.update(ddRequirementStatus).set({ documentId: null }).where(inArray(ddRequirementStatus.documentId, allDocumentIds));
++        await tx.update(ddRequirementDocuments).set({ documentId: null }).where(inArray(ddRequirementDocuments.documentId, allDocumentIds));
++
++        await tx.delete(financialContributions).where(inArray(financialContributions.sourceDocumentId, allDocumentIds));
++
++        const documentsDeleted = await tx.delete(documents)
+           .where(inArray(documents.id, allDocumentIds));
+         deletedDocuments = documentsDeleted.rowCount || 0;
++        for (const companyId of new Set(allDocuments.map(doc => doc.targetCompanyId))) {
++          await reselect(companyId, tx);
++        }
+       }
+ 
+       if (allExternalSubmissions.length > 0) {
+         const externalSubmissionIds = allExternalSubmissions.map(sub => sub.id);
+-        const externalSubmissionsDeleted = await db.delete(externalDocumentSubmissions)
++        await tx.update(ddRequirementStatus).set({ externalSubmissionId: null })
++          .where(inArray(ddRequirementStatus.externalSubmissionId, externalSubmissionIds));
++        await tx.update(ddRequirementDocuments).set({ externalSubmissionId: null })
++          .where(inArray(ddRequirementDocuments.externalSubmissionId, externalSubmissionIds));
++        const externalSubmissionsDeleted = await tx.delete(externalDocumentSubmissions)
+           .where(sql`${externalDocumentSubmissions.id} IN (${sql.join(externalSubmissionIds.map(id => sql`${id}`), sql`, `)})`);
+         deletedExternalSubmissions = externalSubmissionsDeleted.rowCount || 0;
+       }
++      });
+ 
+       const fs = await import('fs/promises');
+       for (const filePath of allFilePaths) {
+diff --git a/server/services/target-companies.service.ts b/server/services/target-companies.service.ts
+index 41cbfbc..428048b 100644
+--- a/server/services/target-companies.service.ts
++++ b/server/services/target-companies.service.ts
+@@ -188,14 +188,12 @@ export class TargetCompaniesService {
+         )
+       `);
+ 
+-      // 4. Null out source_document_id on financial tables before deleting documents
+-      await tx.execute(sql`UPDATE financial_periods SET source_document_id = NULL WHERE target_company_id = ${id}`);
+-      await tx.execute(sql`UPDATE income_statements SET source_document_id = NULL WHERE target_company_id = ${id}`);
+-      await tx.execute(sql`UPDATE balance_sheets SET source_document_id = NULL WHERE target_company_id = ${id}`);
+-      await tx.execute(sql`UPDATE staff_data SET source_document_id = NULL WHERE target_company_id = ${id}`);
+-      await tx.execute(sql`UPDATE aged_debtors SET source_document_id = NULL WHERE target_company_id = ${id}`);
+-      await tx.execute(sql`UPDATE fixed_assets_register SET source_document_id = NULL WHERE target_company_id = ${id}`);
+-      await tx.execute(sql`UPDATE loan_facilities SET source_document_id = NULL WHERE target_company_id = ${id}`);
++      // 4. Remove NO ACTION document references before deleting documents.
++      await tx.delete(staffData).where(eq(staffData.targetCompanyId, id));
++      await tx.delete(agedDebtors).where(eq(agedDebtors.targetCompanyId, id));
++      await tx.delete(fixedAssetsRegister).where(eq(fixedAssetsRegister.targetCompanyId, id));
++      await tx.delete(loanFacilities).where(eq(loanFacilities.targetCompanyId, id));
++      await tx.delete(ebitdaAdjustments).where(eq(ebitdaAdjustments.targetCompanyId, id));
+ 
+       // 5. Deal document responses and deal documents (deal_documents references portal_access_tokens)
+       await tx.execute(sql`
+
+
+
+10. LIMITS OF THIS VERIFICATION
+Original pre-change row counts, rollback-ALTER printouts, and original before/after constraint output were not available as a preserved apply transcript and have not been fabricated.
+No apply/pre-step was rerun: its requirement that the old detach helper still exists is intentionally obsolete after implementation.
+No claim is made about production constraint state or production deployment.
+
+11. GIT STATUS AFTER REPORT CREATION
+?? reports/
+Only the generated report was added; application code was unchanged.
