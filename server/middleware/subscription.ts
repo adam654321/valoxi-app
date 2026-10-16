@@ -25,7 +25,7 @@ async function loadAndCheckSubscription(
   }
 
   const subscription = await billingService.getSubscription(userCompanyId);
-  if (!subscription || !ACTIVE_STATUSES.has(subscription.status)) {
+  if (!subscription || subscription.suspendedAt || !ACTIVE_STATUSES.has(subscription.status)) {
     res.status(402).json({
       error: 'subscription_required',
       message: 'An active subscription is required to access this feature.',

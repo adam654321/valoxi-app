@@ -22,6 +22,8 @@ export const subscriptions = pgTable("subscriptions", {
   trialStart: timestamp("trial_start"),
   trialEnd: timestamp("trial_end"),
   cancelAtPeriodEnd: boolean("cancel_at_period_end").notNull().default(false),
+  // Independent of Stripe status so webhook updates cannot restore suspended access.
+  suspendedAt: timestamp("suspended_at", { withTimezone: true }),
   addOnCompanySlots: integer("add_on_company_slots").notNull().default(0),
   additionalSeats: integer("additional_seats").notNull().default(0),
   isCommunityMember: boolean("is_community_member").notNull().default(false),

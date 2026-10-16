@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 import type { UserRole } from '@shared/schema';
 import { rolesService } from '../services/roles.service';
 import { tryClerkAuth } from './clerk-auth';
+import { requireUnsuspendedAccount } from './subscription-suspension';
 
 const PERMISSIONS_TTL_MS = 5 * 60 * 1000;
 
@@ -172,7 +173,7 @@ export async function isAuthenticated(req: Request, res: Response, next: NextFun
       req.session.userCompanyId = clerkResult.userCompanyId ?? undefined;
     }
     req.clerkAuthenticated = true;
-    return next();
+    return requireUnsuspendedAccount(req, res, next);
   }
 
   return res.status(401).json({ message: "Unauthorized" });

@@ -30,7 +30,8 @@ export function useSubscription() {
     queryKey: ["/api/v2/billing/subscription"],
     queryFn: getQueryFn({ on401: "returnNull" }),
     enabled: isAuthenticated,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000,
+    refetchInterval: 30 * 1000,
   });
 
   return {

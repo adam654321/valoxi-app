@@ -51,6 +51,29 @@ function ExpiredWall() {
   );
 }
 
+function SuspendedWall() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-muted px-4">
+      <div className="max-w-md w-full bg-background rounded-xl border shadow-sm p-8 text-center space-y-6">
+        <div className="flex justify-center">
+          <div className="h-14 w-14 rounded-full bg-amber-500/10 flex items-center justify-center">
+            <AlertTriangle className="h-7 w-7 text-amber-600" />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <h1 className="text-xl font-semibold text-foreground">Account suspended</h1>
+          <p className="text-sm text-muted-foreground">
+            Access to Valoxi is temporarily paused for your company. Your company data is preserved. Please contact your administrator for assistance.
+          </p>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Need help? Email <a href="mailto:support@valoxi.ai" className="underline">support@valoxi.ai</a>
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function Layout({ children }: LayoutProps) {
   const { user } = useAuth();
   const { subscription, isLoading } = useSubscriptionContext();
@@ -68,6 +91,7 @@ export default function Layout({ children }: LayoutProps) {
   };
 
   const status = subscription?.status ?? null;
+  const isSuspended = !isLoading && !!subscription?.suspendedAt;
   const trialDays = status === 'trialing'
     ? getTrialDaysRemaining(subscription?.trialEndsAt ?? (subscription as any)?.trialEnd)
     : null;
@@ -75,6 +99,10 @@ export default function Layout({ children }: LayoutProps) {
   const showTrialBanner = !isLoading && status === 'trialing' && trialDays !== null;
   const isExpired = !isLoading && (!subscription || status === 'canceled');
   const onBillingPage = location === '/billing';
+  if (isSuspended) {
+    return <SuspendedWall />;
+  }
+
   const trialUrgent = trialDays !== null && trialDays <= 3;
   const trialWarning = trialDays !== null && trialDays <= 7 && trialDays > 3;
 

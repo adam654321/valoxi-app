@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Loader2, Users, CreditCard, AlertTriangle, Clock, Eye, Shield, Send } from "lucide-react";
+import { Loader2, Users, CreditCard, AlertTriangle, Clock, Eye, Shield, Send, Pause, Play } from "lucide-react";
 import type { Subscription, PlanKey, SubscriptionStatus } from "@shared/schema/billing";
 
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
@@ -49,6 +49,13 @@ export default function AdminSubscriptions() {
   const [compTarget, setCompTarget] = useState<{ userCompanyId: number; companyName: string } | null>(null);
   const [compPlan, setCompPlan] = useState<PlanKey>("PROFESSIONAL");
   const [compNotes, setCompNotes] = useState("");
+  const [accessDialogOpen, setAccessDialogOpen] = useState(false);
+  const [accessTarget, setAccessTarget] = useState<{
+    userCompanyId: number;
+    companyName: string;
+    action: "suspend" | "resume";
+  } | null>(null);
+  const [accessReason, setAccessReason] = useState("");
 
   const buildUrl = () => {
     const params = new URLSearchParams();
@@ -60,7 +67,12 @@ export default function AdminSubscriptions() {
 
   const subsUrl = buildUrl();
 
-  const { data: subsData, isLoading: subsLoading } = useQuery<{ success: boolean; data: SubscriptionRow[] }>({
+  const {
+    data: subsData,
+    isLoading: subsLoading,
+    isError: subsError,
+    refetch: refetchSubscriptions,
+  } = useQuery<{ success: boolean; data: SubscriptionRow[] }>({
     queryKey: ["/api/v2/admin/subscriptions", statusFilter, planFilter],
     queryFn: async () => {
       const res = await fetch(subsUrl, { credentials: "include" });
@@ -89,6 +101,38 @@ export default function AdminSubscriptions() {
       toast({
         title: "Failed to grant comp access",
         description: error.message || "Something went wrong.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const accessMutation = useMutation({
+    mutationFn: async (params: { userCompanyId: number; action: "suspend" | "resume"; reason?: string }) => {
+      const res = await apiRequest(
+        "POST",
+        `/api/v2/admin/subscriptions/${params.userCompanyId}/${params.action}`,
+        { reason: params.reason || undefined },
+      );
+      const result = await res.json();
+      if (result?.success === false) throw new Error(result?.message || "Unable to update subscription access.");
+      return result;
+    },
+    onSuccess: (_data, params) => {
+      toast({
+        title: params.action === "suspend" ? "Subscription suspended" : "Subscription resumed",
+        description: "Subscription access has been updated.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/admin/subscriptions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/admin/subscriptions/summary"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/billing/subscription"] });
+      setAccessDialogOpen(false);
+      setAccessTarget(null);
+      setAccessReason("");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Could not update subscription",
+        description: error.message || "Something went wrong. Please try again.",
         variant: "destructive",
       });
     },
@@ -226,6 +270,7 @@ export default function AdminSubscriptions() {
                   <SelectItem value="canceled">Canceled</SelectItem>
                   <SelectItem value="admin_comped">Admin Comped</SelectItem>
                   <SelectItem value="incomplete">Incomplete</SelectItem>
+                  <SelectItem value="suspended">Suspended</SelectItem>
                 </SelectContent>
               </Select>
               <Select
@@ -250,6 +295,11 @@ export default function AdminSubscriptions() {
           {subsLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : subsError ? (
+            <div className="flex flex-col items-center gap-3 py-10 text-center">
+              <p className="text-sm text-muted-foreground">Subscriptions could not be loaded.</p>
+              <Button variant="outline" size="sm" onClick={() => refetchSubscriptions()}>Retry</Button>
             </div>
           ) : (
             <>
@@ -276,7 +326,12 @@ export default function AdminSubscriptions() {
                   ) : (
                     pagedRows.map((row) => {
                       const sub = row.subscription;
-                      const badge = STATUS_BADGE[sub.status] ?? STATUS_BADGE.incomplete;
+                      const isSuspended = !!sub.suspendedAt;
+                      const badge = isSuspended
+                        ? { label: "Suspended", className: "bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-300" }
+                        : STATUS_BADGE[sub.status] ?? STATUS_BADGE.incomplete;
+                      const canSuspend = !isSuspended && ["active", "trialing", "admin_comped"].includes(sub.status);
+                      const canResume = isSuspended && ["active", "trialing", "admin_comped"].includes(sub.status);
                       return (
                         <TableRow key={sub.id}>
                           <TableCell className="font-medium">{row.companyName}</TableCell>
@@ -322,6 +377,29 @@ export default function AdminSubscriptions() {
                                   onClick={() => resendMagicLinkMutation.mutate(row.ownerUserId!)}
                                 >
                                   <Send className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                              {(canSuspend || canResume) && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  title={canSuspend ? `Suspend ${row.companyName}` : `Resume ${row.companyName}`}
+                                  aria-label={canSuspend ? `Suspend ${row.companyName}` : `Resume ${row.companyName}`}
+                                  disabled={accessMutation.isPending}
+                                  onClick={() => {
+                                    setAccessTarget({
+                                      userCompanyId: sub.userCompanyId,
+                                      companyName: row.companyName,
+                                      action: canSuspend ? "suspend" : "resume",
+                                    });
+                                    setAccessReason("");
+                                    setAccessDialogOpen(true);
+                                  }}
+                                >
+                                  {canSuspend
+                                    ? <Pause className="h-3.5 w-3.5" />
+                                    : <Play className="h-3.5 w-3.5" />}
+                                  <span>{canSuspend ? "Suspend" : "Resume"}</span>
                                 </Button>
                               )}
                             </div>
@@ -410,6 +488,87 @@ export default function AdminSubscriptions() {
             >
               {compMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
               Grant Access
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={accessDialogOpen}
+        onOpenChange={(open) => {
+          if (!accessMutation.isPending) setAccessDialogOpen(open);
+          if (!open && !accessMutation.isPending) {
+            setAccessTarget(null);
+            setAccessReason("");
+          }
+        }}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{accessTarget?.action === "suspend" ? "Suspend subscription access" : "Resume subscription access"}</DialogTitle>
+          </DialogHeader>
+          {accessTarget?.action === "suspend" ? (
+            <div className="space-y-4 py-2">
+              <p className="text-sm text-foreground">
+                You are about to suspend <span className="font-semibold">{accessTarget.companyName}</span>.
+              </p>
+              <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
+                <p>Suspend pauses Stripe payment collection and blocks all company members while preserving their data.</p>
+                <p className="mt-2">Invoices generated during the pause are voided. Existing invoices are not canceled or refunded. The billing schedule, trial end date and any scheduled cancellation remain unchanged.</p>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="suspension-reason" className="text-sm">Reason (optional)</Label>
+                <Input
+                  id="suspension-reason"
+                  value={accessReason}
+                  onChange={(event) => setAccessReason(event.target.value)}
+                  placeholder="Add an internal note"
+                  disabled={accessMutation.isPending}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4 py-2">
+              <p className="text-sm text-foreground">
+                You are about to resume <span className="font-semibold">{accessTarget?.companyName}</span>.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Future billing and company access will restart. Invoices voided during the suspension will not be charged retroactively.
+              </p>
+              <div className="space-y-1.5">
+                <Label htmlFor="resume-reason" className="text-sm">Reason (optional)</Label>
+                <Input
+                  id="resume-reason"
+                  value={accessReason}
+                  onChange={(event) => setAccessReason(event.target.value)}
+                  placeholder="Add an internal note"
+                  disabled={accessMutation.isPending}
+                />
+              </div>
+            </div>
+          )}
+          {accessMutation.isError && (
+            <p role="alert" className="text-sm text-destructive">
+              {accessMutation.error instanceof Error ? accessMutation.error.message : "The subscription could not be updated. Please try again."}
+            </p>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAccessDialogOpen(false)} disabled={accessMutation.isPending}>
+              Cancel
+            </Button>
+            <Button
+              variant={accessTarget?.action === "suspend" ? "destructive" : "default"}
+              disabled={!accessTarget || accessMutation.isPending}
+              onClick={() => {
+                if (!accessTarget) return;
+                accessMutation.mutate({
+                  userCompanyId: accessTarget.userCompanyId,
+                  action: accessTarget.action,
+                  reason: accessReason.trim() || undefined,
+                });
+              }}
+            >
+              {accessMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+              {accessTarget?.action === "suspend" ? "Confirm suspension" : "Confirm resume"}
             </Button>
           </DialogFooter>
         </DialogContent>

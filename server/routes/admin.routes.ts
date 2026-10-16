@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
-import { eq, and, sql, count, desc, gte, isNotNull } from 'drizzle-orm';
+import { eq, and, sql, count, desc, gte, isNotNull, isNull } from 'drizzle-orm';
 import Stripe from 'stripe';
 import { db } from '../db';
 import { config } from '../config';
@@ -10,6 +10,7 @@ import { funnelEvents, betaFeedback } from '@shared/schema/dashboard';
 import type { PlanKey, SubscriptionStatus } from '@shared/schema/billing';
 import { adminService } from '../services/admin.service';
 import { billingService } from '../services/billing.service';
+import { setSubscriptionSuspension } from '../services/subscription-suspension.service';
 import { systemConfigService } from '../services/system-config.service';
 import { sendSuccess } from '../utils/response';
 import { asyncHandler } from '../utils/async-handler';
@@ -244,10 +245,25 @@ router.post('/users/:id/reset-password', asyncHandler(async (req: Request, res: 
   sendSuccess(res, { success: true, message: `Sign-in link sent to ${user.email}` });
 }));
 
+const suspensionRequest = z.object({ reason: z.string().trim().max(1000).optional() }).strict();
+for (const action of ['suspend', 'resume'] as const) {
+  router.post(`/subscriptions/:userCompanyId/${action}`, asyncHandler(async (req: Request, res: Response) => {
+    const userCompanyId = z.coerce.number().int().positive().parse(req.params.userCompanyId);
+    const { reason } = suspensionRequest.parse(req.body ?? {});
+    const subscription = await setSubscriptionSuspension(
+      userCompanyId, action === 'suspend', req.session.userId!, reason,
+    );
+    sendSuccess(res, subscription);
+  }));
+}
+
 router.get('/subscriptions', asyncHandler(async (req: Request, res: Response) => {
   const conditions = [];
-  if (req.query.status) {
+  if (req.query.status === 'suspended') {
+    conditions.push(isNotNull(subscriptions.suspendedAt));
+  } else if (req.query.status) {
     conditions.push(eq(subscriptions.status, req.query.status as SubscriptionStatus));
+    conditions.push(isNull(subscriptions.suspendedAt));
   }
   if (req.query.planKey) {
     conditions.push(eq(subscriptions.planKey, req.query.planKey as PlanKey));
@@ -272,13 +288,14 @@ router.get('/subscriptions/summary', asyncHandler(async (req: Request, res: Resp
     .select({ total: count() })
     .from(subscriptions);
 
+  const effectiveStatus = sql<string>`CASE WHEN ${subscriptions.suspendedAt} IS NOT NULL THEN 'suspended' ELSE ${subscriptions.status}::text END`;
   const statusRows = await db
     .select({
-      status: subscriptions.status,
+      status: effectiveStatus,
       count: count(),
     })
     .from(subscriptions)
-    .groupBy(subscriptions.status);
+    .groupBy(effectiveStatus);
 
   const planRows = await db
     .select({
@@ -297,6 +314,7 @@ router.get('/subscriptions/summary', asyncHandler(async (req: Request, res: Resp
     .where(
       and(
         eq(subscriptions.status, 'trialing'),
+        isNull(subscriptions.suspendedAt),
         sql`${subscriptions.trialEnd} <= ${sevenDaysFromNow}`
       )
     );
@@ -304,7 +322,7 @@ router.get('/subscriptions/summary', asyncHandler(async (req: Request, res: Resp
   const [pastDueRow] = await db
     .select({ count: count() })
     .from(subscriptions)
-    .where(eq(subscriptions.status, 'past_due'));
+    .where(and(eq(subscriptions.status, 'past_due'), isNull(subscriptions.suspendedAt)));
 
   const byStatus: Record<string, number> = {};
   for (const r of statusRows) {

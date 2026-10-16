@@ -424,7 +424,7 @@ class BillingService {
   ): Promise<boolean> {
     const subscription = await billingRepository.getByCompanyId(userCompanyId);
     if (!subscription) return false;
-    if (subscription.status === 'canceled') return false;
+    if (subscription.suspendedAt || subscription.status === 'canceled') return false;
 
     const max = getMaxActiveTargets(
       subscription.planKey as PlanKey,
@@ -442,7 +442,7 @@ class BillingService {
   ): Promise<boolean> {
     const subscription = await billingRepository.getByCompanyId(userCompanyId);
     if (!subscription) return false;
-    if (subscription.status === 'canceled') return false;
+    if (subscription.suspendedAt || subscription.status === 'canceled') return false;
 
     const max = getMaxSeats(
       subscription.planKey as PlanKey,
