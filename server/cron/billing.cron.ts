@@ -11,6 +11,7 @@ import { emailService } from '../email';
 import { emailApiService } from '../services/email.service';
 import { systemConfigService } from '../services/system-config.service';
 import { userCompanies, users } from '@shared/schema/core';
+import { runSuspensionCheckInJob } from '../services/suspension-check-in.service';
 
 export async function runDunningDay7ReminderJob(): Promise<void> {
   const now = Date.now();
@@ -386,6 +387,15 @@ export async function runTrialWarningJob(): Promise<void> {
 }
 
 export function initializeBillingCron(): void {
+  cron.schedule('0 9 * * *', async () => {
+    try {
+      await runSuspensionCheckInJob();
+    } catch (error) {
+      console.error('[billing-cron] Suspension check-ins failed', error);
+    }
+  }, { timezone: 'Europe/London' });
+  console.log('[billing-cron] Suspension check-ins scheduled daily at 09:00 London (3 and 5 months)');
+
   cron.schedule('0 4 * * *', async () => {
     console.log('[billing-cron] Starting daily dunning checks (day 7 reminders + day 14 auto-cancel)...');
     await runDunningDay7ReminderJob();
