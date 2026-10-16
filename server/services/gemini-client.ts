@@ -62,7 +62,7 @@ const DEFAULT_RETRY: Required<Pick<GeminiClientConfig, "maxRetries" | "baseDelay
  * Native https cannot be patched at the JS layer, preventing Replit's
  * AI Integrations interceptor from routing calls through its proxy.
  * All calls go directly to https://generativelanguage.googleapis.com
- * using GOOGLE_GEMINI_API_KEY as a query parameter.
+ * using GOOGLE_GEMINI_API_KEY in the x-goog-api-key header.
  */
 export class GeminiClient {
   private apiKey: string;
@@ -89,7 +89,7 @@ export class GeminiClient {
     const injectedBaseUrl = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
     if (injectedBaseUrl) {
       console.warn(
-        '[GEMINI_CLIENT] WARNING: AI_INTEGRATIONS_GEMINI_BASE_URL is set (' + injectedBaseUrl + '). ' +
+        '[GEMINI_CLIENT] WARNING: AI_INTEGRATIONS_GEMINI_BASE_URL is set. ' +
         'Ignoring — all calls use raw fetch directly to https://generativelanguage.googleapis.com'
       );
     }
@@ -139,7 +139,7 @@ export class GeminiClient {
     );
 
     const generateFn = async () => {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${this.apiKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
       const requestBody: any = {
         ...(options.systemInstruction ? { system_instruction: { parts: [{ text: options.systemInstruction }] } } : {}),
@@ -169,6 +169,7 @@ export class GeminiClient {
           headers: {
             'Content-Type': 'application/json',
             'Content-Length': Buffer.byteLength(body),
+            'x-goog-api-key': this.apiKey,
           },
         };
 
