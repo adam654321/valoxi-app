@@ -17,6 +17,12 @@ export const pool = new Pool({
   idleTimeoutMillis: 30_000,
   connectionTimeoutMillis: 10_000,
 });
+// Idle clients can lose their WebSocket connection. Without an error listener,
+// the pool's EventEmitter throws and terminates the entire server process.
+// Query errors still reject normally and are handled by the requesting route.
+pool.on('error', () => {
+  console.error('[DB_POOL] Idle database connection lost; the pool will replace the disconnected client.');
+});
 export const db = drizzle({ client: pool, schema });
 /** Query builders shared by the pool handle and a transaction handle. */
 export type DatabaseExecutor = Pick<typeof db, 'select' | 'insert' | 'update' | 'delete'>;
