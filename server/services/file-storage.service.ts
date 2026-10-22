@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, HeadObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import path from 'path';
 
@@ -81,6 +81,20 @@ export const fileStorageService = {
       chunks.push(chunk);
     }
     return Buffer.concat(chunks);
+  },
+
+  async list(prefix: string): Promise<string[]> {
+    const client = getClient();
+    const keys: string[] = [];
+    let token: string | undefined;
+    do {
+      const response = await client.send(new ListObjectsV2Command({ Bucket: BUCKET, Prefix: prefix, ContinuationToken: token }));
+      for (const obj of response.Contents ?? []) {
+        if (obj.Key) keys.push(obj.Key);
+      }
+      token = response.IsTruncated ? response.NextContinuationToken : undefined;
+    } while (token);
+    return keys;
   },
 
   async delete(key: string): Promise<void> {

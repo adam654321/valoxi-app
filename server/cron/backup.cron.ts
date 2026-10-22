@@ -2,13 +2,28 @@ import cron from 'node-cron';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs/promises';
+import os from 'os';
 import path from 'path';
+import { fileStorageService } from '../services/file-storage.service';
 
 const execAsync = promisify(exec);
+
+const BACKUP_PREFIX = 'backups/';
+const KEEP_BACKUPS = 7;
+
+// Newest KEEP_BACKUPS stay; everything older is returned for deletion.
+export function selectBackupsToPrune(keys: string[], keep: number = KEEP_BACKUPS): string[] {
+  return keys
+    .filter(k => /^backups\/backup-\d{4}-\d{2}-\d{2}\.sql\.gz$/.test(k))
+    .sort()
+    .reverse()
+    .slice(keep);
+}
 
 export function initializeBackupCron(): void {
   cron.schedule('0 2 * * *', async () => {
     console.log('[backup-cron] Starting daily database backup...');
+    let outputPath: string | null = null;
     try {
       const databaseUrl = process.env.DATABASE_URL;
       if (!databaseUrl) {
@@ -16,34 +31,30 @@ export function initializeBackupCron(): void {
         return;
       }
 
+      // pg_dump must use the direct Neon endpoint, not the pooler.
+      const directUrl = databaseUrl.replace('-pooler', '');
       const date = new Date().toISOString().slice(0, 10);
       const filename = `backup-${date}.sql.gz`;
-      const outputPath = path.join('/tmp', filename);
+      outputPath = path.join(os.tmpdir(), filename);
 
       await execAsync(
-        `pg_dump "${databaseUrl}" | gzip > "${outputPath}"`,
+        `pg_dump "${directUrl}" | gzip > "${outputPath}"`,
         { timeout: 300_000 }
       );
 
-      const stats = await fs.stat(outputPath);
-      const sizeKb = Math.round(stats.size / 1024);
-      console.log(`[backup-cron] Backup complete: ${filename} (${sizeKb}kb)`);
+      const body = await fs.readFile(outputPath);
+      await fileStorageService.upload(`${BACKUP_PREFIX}${filename}`, body);
+      console.log(`[backup-cron] Backup complete: ${filename} (${Math.round(body.length / 1024)}kb)`);
 
-      const files = await fs.readdir('/tmp');
-      const backupFiles = files
-        .filter(f => /^backup-\d{4}-\d{2}-\d{2}\.sql\.gz$/.test(f))
-        .sort()
-        .reverse();
-
-      if (backupFiles.length > 7) {
-        const toDelete = backupFiles.slice(7);
-        for (const old of toDelete) {
-          await fs.unlink(path.join('/tmp', old));
-          console.log(`[backup-cron] Deleted old backup: ${old}`);
-        }
+      const toDelete = selectBackupsToPrune(await fileStorageService.list(BACKUP_PREFIX));
+      for (const old of toDelete) {
+        await fileStorageService.delete(old);
+        console.log(`[backup-cron] Deleted old backup: ${old}`);
       }
     } catch (err) {
       console.error('[backup-cron] Backup job failed:', err);
+    } finally {
+      if (outputPath) await fs.unlink(outputPath).catch(() => {});
     }
   }, {
     timezone: 'Europe/London',
