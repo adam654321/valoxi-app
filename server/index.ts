@@ -18,6 +18,11 @@ app.use('/api/v2/webhooks/resend-marketing', express.raw({ type: 'application/js
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: false }));
 
+// Liveness for DO health checks. No auth, no DB, registered before the request logger.
+app.get('/api/health', (_req, res) => {
+  res.json({ ok: true, commit: process.env.GIT_SHA ?? 'unknown', node: process.version, uptime: Math.round(process.uptime()) });
+});
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
