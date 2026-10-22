@@ -56,6 +56,8 @@ const DEFAULT_RETRY: Required<Pick<GeminiClientConfig, "maxRetries" | "baseDelay
   timeoutMs: 90000,
 };
 
+let warnedInjectedBaseUrl = false;
+
 /**
  * Unified Gemini API client. Uses Node.js native https module directly to the Gemini REST API,
  * bypassing both the @google/genai SDK and the global fetch entirely.
@@ -87,7 +89,8 @@ export class GeminiClient {
       );
     }
     const injectedBaseUrl = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
-    if (injectedBaseUrl) {
+    if (injectedBaseUrl && !warnedInjectedBaseUrl) {
+      warnedInjectedBaseUrl = true;
       console.warn(
         '[GEMINI_CLIENT] WARNING: AI_INTEGRATIONS_GEMINI_BASE_URL is set. ' +
         'Ignoring — all calls use raw fetch directly to https://generativelanguage.googleapis.com'
