@@ -5,28 +5,28 @@ day 7 after cutover.
 
 ## 1. Code removals (phase 2)
 
-- [ ] `vite.config.ts`: `@replit/vite-plugin-runtime-error-modal` import and plugin
-- [ ] `vite.config.ts`: `@replit/vite-plugin-cartographer` conditional block
-- [ ] `package.json`: `@replit/vite-plugin-runtime-error-modal`
-- [ ] `package.json`: `@replit/vite-plugin-cartographer`
-- [ ] `package.json`: `@replit/object-storage` (zero imports)
-- [ ] `server/config.ts:39-42`: `config.replit.*` block, ONLY after the consumer grep is zero
-- [ ] `server/middleware/csrf.ts:65,70`: warning text no longer names `REPLIT_DOMAINS`
-- [ ] `.replit`
-- [ ] `replit.md` (salvage anything useful into `docs/` first)
-- [ ] `.config/` (untracked)
-- [ ] `nohup.out`, `tier2-run.log`
+- [x] `vite.config.ts`: `@replit/vite-plugin-runtime-error-modal` import and plugin (2026-10-22, 1d2191c)
+- [x] `vite.config.ts`: `@replit/vite-plugin-cartographer` conditional block (2026-10-22, 1d2191c)
+- [x] `package.json`: `@replit/vite-plugin-runtime-error-modal` (2026-10-22, 1d2191c)
+- [x] `package.json`: `@replit/vite-plugin-cartographer` (2026-10-22, 1d2191c)
+- [x] `package.json`: `@replit/object-storage` (zero imports) (2026-10-22, fffe88c)
+- [x] `server/config.ts:39-42`: `config.replit.*` block, ONLY after the consumer grep is zero (2026-10-22, ee3cacd; consumer grep was zero)
+- [x] `server/middleware/csrf.ts:65,70`: warning text no longer names `REPLIT_DOMAINS` (2026-10-22, 6edd88f)
+- [x] `.replit` (2026-10-22, 58fd987; env values it held recorded in assessment.md section 11)
+- [x] `replit.md` (salvage anything useful into `docs/` first) (2026-10-22, 87d872b salvage to docs/architecture-notes.md, 58fd987 delete)
+- [x] `.config/` (untracked) (2026-10-22, 58fd987; contained only a Clerk CLI telemetry flag and Chromium crash stubs)
+- [x] `nohup.out`, `tier2-run.log` (2026-10-22, 58fd987; tier2-run.log was already absent)
 
 ## 2. Code additions (phase 2)
 
 - [x] `.env.example` with every variable in `assessment.md` §3 (2026-10-22, `c1ea1a3`; 47 vars, no values; scripts-only vars other than `PROD_DATABASE_URL` deliberately omitted)
 - [x] `.gitignore` includes `.env`, `.env.*` (2026-10-22, already present at `de39a9f` lines 17-19, `!.env.example` excepted; no change needed)
-- [ ] `GET /api/health` (commit, node, uptime; no auth, no DB)
-- [ ] Production startup assertion: `APP_URL` must be set
-- [ ] `server/cron/backup.cron.ts` writes to R2 `backups/`, not `/tmp`
-- [ ] `gemini-client.ts` integration warning logs once per process
-- [ ] `Dockerfile`
-- [ ] `.dockerignore`
+- [x] `GET /api/health` (commit, node, uptime; no auth, no DB) (2026-10-22, 4fa070c; proven in Docker, commit 521e82f shown)
+- [x] Production startup assertion: `APP_URL` must be set (2026-10-22, NOT ADDED: csrf.ts already throws at import in production without APP_URL (proven); only its text changed, 6edd88f)
+- [x] `server/cron/backup.cron.ts` writes to R2 `backups/`, not `/tmp` (2026-10-22, 521e82f; prune logic proven, R2 round trip still to prove on staging (plan 5.5))
+- [x] `gemini-client.ts` integration warning logs once per process (2026-10-22, 9dccf12; 4 warnings before, 1 after)
+- [x] `Dockerfile` (2026-10-22, cdc878a; no npm prune, pgdg client 18, Clerk build-arg assertion)
+- [x] `.dockerignore` (2026-10-22, cdc878a)
 - [ ] `scripts/migration/table-counts.sql` (exact counts, all tables, all sequences)
 - [ ] `docs/do-migration/rehearsal-<date>.txt` (both sides, timestamped)
 

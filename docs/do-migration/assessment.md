@@ -325,3 +325,72 @@ the secrets panes, so the section 3 checklist would miss them. Recorded here bef
 | `[objectStorage] defaultBucketID` | a `replit-objstore-...` id | No (`@replit/object-storage` had zero imports) | Drop |
 
 Also check the Replit panes for the same names: a pane value would override `.replit`.
+
+## 12. PHASE 2 RESULTS (de-Replit the code)
+
+**Run:** 2026-10-22, 17:25 to 18:30 UTC. One commit per item. Nothing pushed. Prod not
+contacted. Gate evidence at 18:30 UTC: `npm run check` exit 0, `npm run build` exit 0,
+`npx vitest run` 34 files / 559 passed (Neon `throwaway`), and the plan's gate grep
+`grep -rcE "REPL_|REPLIT_|@replit" server shared client vite.config.ts package.json`
+matches only the two tolerated fallbacks: `server/config.ts` (4 lines, `getBaseUrl`) and
+`server/middleware/csrf.ts` (1 line, the `REPLIT_DOMAINS` read).
+
+| Item | Commit | Proof |
+|---|---|---|
+| 2.1 Vite plugins | `1d2191c` | `grep -c "@replit" vite.config.ts` = 0; both packages gone from package.json and lock; build clean |
+| 2.2 object-storage | `fffe88c` | zero imports before; 0 hits in package.json and lock |
+| 2.3 `config.replit` | `ee3cacd` | consumer grep outside config.ts was empty; `tsc` clean |
+| 2.4 csrf text | `6edd88f` | see deviation 1 |
+| 2.5 `/api/health` | `4fa070c` | in Docker: `{"ok":true,"commit":"521e82f","node":"v22.23.4","uptime":15}`, HTTP 200 |
+| 2.6 backup cron | `521e82f` | prune selection proven on 10 keys + 3 non-matching; R2 round trip NOT yet proven |
+| 2.7 gemini warning | `9dccf12` | same sequence: 4 warnings before, 1 after |
+| 2.8 Dockerfile | `cdc878a` | see deviations 2 to 4 |
+| 2.9 Docker proof | no commit | build clean; app boots; real PDF 15,062 bytes `%PDF-1.4`; all crons register |
+| 2.10 delete files | `87d872b`, `58fd987` | none of `.replit`, `replit.md`, `nohup.out`, `.config` remain |
+
+### Deviations from the plan, each with evidence
+
+1. **No new `index.ts` APP_URL assertion.** Production already refuses to boot without
+   `APP_URL`: `csrf.ts` throws at import. Run with `NODE_ENV=production` and an empty
+   `APP_URL`: `Error: [Security] APP_URL is unset in production. Refusing to boot...`. The
+   plan's assertion would run after that and never fire, so only the message text changed.
+2. **No `npm prune --omit=dev` in the Dockerfile.** `server/vite.ts:4` imports `vite`
+   (a devDependency) at top level and the bundle uses `--packages=external`. Verbatim from
+   the pruned image: `Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'vite' imported
+   from /app/dist/index.js`. Cost: image is 2.39 GB. A later refactor to import `vite`
+   dynamically in `setupVite` would allow pruning.
+3. **`postgresql-client-18` from PGDG, not bookworm's `postgresql-client`.** Bookworm ships
+   15. Verbatim against the Neon 18.6 branch: `pg_dump: error: aborting because of server
+   version mismatch ... server version: 18.6 ...; pg_dump version: 15.19`. With the pgdg
+   client the same dump completed (93 tables). This also governs the console dumps at 4.3
+   and 6.6 if run from a container: the client must be >= the server (18).
+4. **`npm ci --include=dev`** because the image sets `NODE_ENV=production`, which would
+   otherwise skip the build tools.
+5. **Build-time Clerk assertion (Finding D closed).** Without the arg the build fails:
+   `VITE_CLERK_PUBLISHABLE_KEY build arg is required`. DO must set it as a BUILD_TIME
+   variable. `GIT_SHA` is passed the same way; DO does not supply one, so on DO
+   `/api/health` will show `unknown` until a build arg is configured (decide at 5.4).
+
+### Other findings
+
+- **`.replit` env values (assessment section 11).** `NYLAS_CONNECT_GMAIL_VISIBLE=true` and
+  `NYLAS_CONNECT_OUTLOOK_VISIBLE=false` lived only in `.replit`. Unset, the Gmail connect
+  option would silently vanish. Added to the removals.md secrets checklist.
+- **Backup cron strips `-pooler`** from the host before `pg_dump`, because dumping through
+  the pooler is unsupported. Prod `DATABASE_URL` on DO should therefore be a Neon pooled
+  URL whose direct form is the same host minus `-pooler`.
+- **Production boot needs more than `APP_URL`:** `SESSION_SECRET` (throws if unset) and a
+  non-dummy `GOOGLE_GEMINI_API_KEY` (the Gemini client is a module-level singleton that
+  throws at import). Both are in the DO env list already.
+- **Windows:** `server.listen({ reusePort: true })` fails with `ENOTSUP` on Windows, so
+  `npm run dev` and `node dist/index.js` cannot serve locally. It works on Linux. Not
+  changed, since it is not a migration issue. Local serving goes through Docker. This is
+  also why 1.8 was skipped; port 8080 on this machine is held by an unrelated service, so
+  the container was published on 18080.
+- **`scripts/post-merge.sh`** is a Replit post-merge hook (runs `npm install`). Left in
+  place; harmless off Replit. Candidate for removal in cleanup.
+- `tests/.auth/user.json` is gitignored, untracked, cookies expired Jan and Feb 2026. Not
+  a leak.
+- 2.11 (`uploads/` 19 MB, `attached_assets/` 5 MB checked in) left as the plan says. Both
+  are excluded from the Docker context; `attached_assets` is still aliased as `@assets` in
+  `vite.config.ts` with zero imports under `client/src`.
