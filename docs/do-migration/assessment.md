@@ -1,0 +1,259 @@
+# ASSESSMENT: Replit to DigitalOcean migration
+
+**Assessed:** 22 October 2026 against the `de39a9f` export, which is the live publish
+commit of 16 October plus nothing (the export's working tree matches HEAD apart from an
+untracked `.config/` and `tier2-run.log`).
+**Method:** read-only grep and file inspection of the export. No database queried for this
+document except where a figure is cited from an earlier dated capture.
+
+## 0. DECISIONS (filled in at phase 0)
+
+| Decision | Answer | Date |
+|---|---|---|
+| Region | NOT YET (kickoff message left the template unfilled) | 2026-10-22 |
+| Neon project | NOT YET | 2026-10-22 |
+| GitHub repo | NOT YET | 2026-10-22 |
+| DO project | NOT YET | 2026-10-22 |
+| DNS host | NOT YET | 2026-10-22 |
+| Secrets exported to | NOT YET | 2026-10-22 |
+| Cutover window | NOT YET | 2026-10-22 |
+
+Needed from Adam, by phase: a throwaway Neon branch URL to finish Gate 1 (1.3, 1.6, 1.8);
+GitHub repo before phase 3; Neon project and region before phase 4; DO project before
+phase 5; secrets export, DNS host and cutover window before phase 6.
+
+## 1. WHAT IS COUPLED TO REPLIT, AND HOW TIGHTLY
+
+| Item | Where | Tightness | Action |
+|---|---|---|---|
+| Hosting, build, TLS, DNS target | `.replit` `[deployment]`: `npm run build`, `npm run start`, autoscale | The job itself | Dockerfile + DO App Platform |
+| Database | `javascript_database` integration; `PROD_DATABASE_URL` is `ep-old-recipe` on Neon us-east-1, owned by Replit's Neon org, no console access | Hard. Must move | pg_dump / pg_restore into Adam's own Neon project |
+| `REPLIT_DOMAINS` / `REPLIT_DEV_DOMAIN` | `server/config.ts:5-9`, `server/middleware/csrf.ts:52-70` | Soft. `APP_URL` takes precedence | Set `APP_URL`; add a production startup assertion |
+| `REPL_SLUG`, `REPL_OWNER`, `REPL_ID` | `server/config.ts:39-42` into `config.replit.*` | Unknown until consumers are grepped | Phase 2.3 |
+| `@replit/vite-plugin-runtime-error-modal`, `@replit/vite-plugin-cartographer` | `vite.config.ts:4,13` | Dev only | Remove |
+| `@replit/object-storage` | `package.json:51`, zero imports | None | Uninstall |
+| `AI_INTEGRATIONS_GEMINI_BASE_URL` | `gemini-client.ts:89-93`, warning only; all calls bypass Replit's proxy by design | None | Log once instead of per construction |
+| Backups | `server/cron/backup.cron.ts` writes `/tmp/backup-*.sql.gz`, 7-day prune | Ephemeral on any platform | Write to R2 `backups/`; Neon PITR is the real net |
+| Legacy local files | wipe scripts exclude `file_path LIKE 'uploads/%'`, so rows may point at Replit local disk | Already lost on every autoscale redeploy | Count on prod before cutover (§6). Cleanup, not migration |
+| Node version | `.replit` modules `nodejs-22` | | `node:22-bookworm-slim` |
+| Port | `server/index.ts:71` reads `PORT`, default 5000 | | DO sets `PORT`; Dockerfile exposes 8080 |
+| Static serving | `server/vite.ts:70` serves `dist/public` relative to `dist/index.js` | Fine | Build in the image |
+| Puppeteer | `server/utils/pdf-generator.ts:4-5` honours `PUPPETEER_EXECUTABLE_PATH` | Fine | Install Chromium in the image, set the env |
+| Sessions | `connect-pg-simple`, `secure: isProd`, `sameSite: 'lax'`, `trust proxy 1` | Fine behind DO's proxy | None |
+| Crons | `node-cron`, in process: backup 02:00, billing 04:00/08:00/09:00/09:05/09:15/hourly, chase-up 09:00 | Autoscale scales to zero, so these fire only if an instance is awake | One always-on instance on DO. Expect them to run reliably for the first time |
+
+## 2. WHAT DOES NOT MOVE
+
+- **R2 bucket** `valoxi-documents` via the S3 SDK (`server/services/file-storage.service.ts`).
+  Same credentials, same bucket, same key scheme.
+- **Clerk.** `@clerk/express` middleware on `/api/v2`, `@clerk/react` with
+  `VITE_CLERK_PUBLISHABLE_KEY`. Production instance bound to `valoxi.ai`. Webhook at
+  `/api/webhooks/clerk`. All keyed to the domain, which does not change.
+- **Stripe.** Webhook verified at `server/routes/billing.routes.ts:67` with
+  `STRIPE_WEBHOOK_SECRET`. Endpoint URL unchanged. Stripe retries failed deliveries for
+  days, so the cutover window loses nothing.
+- **Resend, Nylas, Gemini, SMTP.** Secrets only.
+- **Users' logins.** Clerk tokens are independent of our server. Server sessions are in
+  the database and migrate with it.
+
+## 3. ENVIRONMENT VARIABLES (46 read by code, plus SDK-implicit ones)
+
+From `grep -rhoE "process\.env\.[A-Z0-9_]+"` over `server`, `shared`, `scripts`, and
+`import.meta.env` over `client`:
+
+**Runtime, required on DO**
+`APP_URL` `CLERK_ENABLED` `CLERK_WEBHOOK_SIGNING_SECRET` `DATABASE_URL`
+`GOOGLE_GEMINI_API_KEY` `ISSUE_REPORT_RECIPIENT` `MARKETING_SITE_URL` `NODE_ENV`
+`NYLAS_API_KEY` `NYLAS_API_URI` `NYLAS_CLIENT_ID` `NYLAS_CONNECT_GMAIL_VISIBLE`
+`NYLAS_CONNECT_OUTLOOK_VISIBLE` `NYLAS_REDIRECT_URI` `NYLAS_STATE_SECRET` `PORT`
+`PUPPETEER_EXECUTABLE_PATH` `R2_ACCESS_KEY_ID` `R2_ACCOUNT_ID` `R2_BUCKET_NAME`
+`R2_SECRET_ACCESS_KEY` `RESEND_API_KEY` `RESEND_API_KEY_MARKETING`
+`RESEND_MARKETING_FROM_ADDRESS` `RESEND_SEGMENT_ACTIVE_SUBSCRIBERS` `RESEND_SEGMENT_ALL_USERS`
+`RESEND_SEGMENT_CANCELLED_SUBSCRIBERS` `RESEND_SEGMENT_PAST_DUE` `RESEND_SEGMENT_TEST_INTERNAL`
+`RESEND_SEGMENT_TRIALING` `RESEND_WEBHOOK_SECRET` `SESSION_SECRET` `SMTP_ALERT_EMAIL`
+`SMTP_FROM_EMAIL` `SMTP_HOST` `SMTP_PASS` `SMTP_PORT` `SMTP_SECURE` `SMTP_USER`
+`STRIPE_SECRET_KEY` `STRIPE_WEBHOOK_SECRET` `FIVE_D_BILLING_START` `TEST_INTERNAL_USER_COMPANY_ID`
+
+**SDK-implicit, required on DO** (not grep-visible, read inside the libraries)
+`CLERK_SECRET_KEY` `CLERK_PUBLISHABLE_KEY` and, at build time, `VITE_CLERK_PUBLISHABLE_KEY`
+(Vite inlines it into the client bundle, so it must be present during `npm run build` in
+the Docker image, as a build arg or env).
+
+**Scripts only, not needed on DO**
+`COMPANY_ID` `CONFIRM_WRITE` `DRY_RUN` `EXECUTE` `EXPECT_DB_HOST` `EXPECT_DB_NAME` `FROM_ID`
+`MODE` `TO_ID` `USER_ID` `PROD_DATABASE_URL` (local inspection only)
+
+**Replit only, dropped**
+`REPLIT_DOMAINS` `REPLIT_DEV_DOMAIN` `REPL_ID` `REPL_OWNER` `REPL_SLUG`
+`AI_INTEGRATIONS_GEMINI_BASE_URL`
+
+Check the Replit app pane AND the deployment pane: Replit allows them to differ and the
+deployment pane is what prod actually runs with. `APP_URL` is known to be set on the
+deployment because email links carry `app.valoxi.ai`.
+
+## 4. WHY DO APP PLATFORM, WHY NEON, WHY LONDON
+
+**App Platform over a Droplet.** Build from GitHub on push, managed TLS, rollbacks, logs,
+health checks. It is the nearest thing to what Replit autoscale did, minus scale-to-zero.
+A Droplet means owning Docker, nginx, certbot and OS patching for one small app. Not worth
+it. Revisit only if App Platform's pricing or limits bite.
+
+**One instance.** The crons are in-process. Two instances means two 09:00 billing runs.
+If horizontal scaling is ever needed, the crons move to a DO scheduled job or a leader
+lock first.
+
+**Neon in Adam's account over DO Managed Postgres.** The code uses
+`@neondatabase/serverless` over WebSocket (`server/db.ts`). DO Postgres would mean
+swapping the driver, and losing branching, which is how dev and prod are separated today.
+Neon PITR replaces the `/tmp` backup cron with something that actually survives a redeploy.
+
+**London.** The users are UK. Every query today crosses to us-east-1. DO lon1 and the
+nearest Neon EU region, decided once. If Adam prefers to keep us-east-1 to minimise
+variables on cutover night, that is defensible; the plan is region-agnostic and only
+insists that DO and Neon match.
+
+## 5. THE SEVEN CONSTRAINTS, PROD STATE AT 16 OCTOBER (for #574 after cutover)
+
+Read-only capture, `ep-old-recipe`, 16 October 2026 12:14 UK. The dump carries these as
+they are, so they will be identical on the new database until #574 runs there.
+
+| Constraint | Table | Column | Now | Target |
+|---|---|---|---|---|
+| `balance_sheets_source_document_id_fkey` | balance_sheets | source_document_id | SET NULL | CASCADE |
+| `document_evidence_analysis_result_id_fkey` | document_evidence | document_analysis_result_id | SET NULL | CASCADE |
+| `document_evidence_document_id_fkey` | document_evidence | document_id | SET NULL | CASCADE |
+| `document_evidence_figure_period_id_fkey` | document_evidence_figure | document_evidence_period_id | NO ACTION | CASCADE |
+| `document_evidence_period_evidence_id_fkey` | document_evidence_period | document_evidence_id | NO ACTION | CASCADE |
+| `financial_periods_source_document_id_fkey` | financial_periods | source_document_id | SET NULL | CASCADE |
+| `income_statements_source_document_id_fkey` | income_statements | source_document_id | SET NULL | CASCADE |
+
+`document_access_log_document_id_fkey` is NO ACTION; the application deletes those rows
+first (#567), so it does not block.
+
+## 6. OPEN QUESTIONS TO ANSWER DURING THE WORK
+
+1. Consumers of `config.replit.*` (phase 2.3). Grep before deleting.
+2. Prod rows with `file_path LIKE 'uploads/%'` across `documents`, `deal_documents`,
+   `external_submissions`. One read-only count. If nonzero, those files are already gone
+   and the rows need a decision, separately from the migration.
+3. Do any tests require a live database? Phase 1.6 answers it.
+4. Does the Clerk production instance need `app.valoxi.ai` re-verified after the DNS
+   change? It should not, since the domain and its DNS verification records are unchanged,
+   but check Clerk's dashboard shows the domain healthy after cutover.
+5. Stripe webhook endpoint: same URL, same secret. Confirm in the Stripe dashboard that the
+   first post-cutover event delivers 200.
+6. Nylas redirect URI is `app.valoxi.ai`-based and unchanged; confirm one reconnect works
+   after cutover.
+7. `uploads/` and `attached_assets/` are 24 MB of committed test material. Out of scope
+   now; candidates for removal from the repo later.
+
+## 7. SIZE AND RISK
+
+**Effort:** four to five working days, most of it testing. Code changes are a couple of
+hours. The restores and the count reconciliation are a day. Staging smoke is a day.
+Cutover is an evening.
+
+**Downtime:** target ten minutes, 03:00 UK. Freeze, dump, restore, reconcile, flip.
+
+**Data loss risk:** the database is copied, not moved; the old one is untouched after the
+freeze and remains the rollback for seven days. The only loss scenario is a rollback after
+writes have landed on the new side, and that window is under Adam's control.
+
+**What could go wrong, and the answer**
+- Count mismatch at 6.8: do not flip. Investigate or roll back. Nothing is lost.
+- Puppeteer fails in the container: caught at 2.9 or 5.5, before cutover.
+- Clerk refuses the new origin: caught at 5.5 with the dev instance; prod instance is
+  domain-bound and the domain does not change.
+- DO health check flaps on cold start: raise the initial delay; `/api/health` makes no DB
+  call so it cannot be the database.
+- Crons that never actually ran on autoscale start running on DO and expose a latent bug:
+  phase 7.5 watches for exactly this.
+
+## 8. CONVENTION CHANGES AFTER THE MOVE
+
+- Implementer is Claude Code on the local checkout. Replit relay prompts end.
+- Deploy is a merge to `main`. The HEAD commit and `/api/health` prove what is running;
+  the bundle-hash convention (#367) is retired.
+- Every prod query is still `DATABASE_URL="$PROD_DATABASE_URL"`.
+- `db:push` stays blocked (#188). Migrations are explicit SQL with named constraints (#189).
+- Action log: migration items start at #578 and are packed as v84.2 onward. v85 remains
+  reserved for the one-calculation rework unless Adam reassigns it.
+
+## 9. PHASE 1 RESULTS (local baseline)
+
+**Run:** 2026-10-22, 16:09 to 16:15 UTC (17:09 to 17:15 UK). Windows 11, Node v22.14.0,
+npm 11.3.0. HEAD at start `de39a9f`, tagged locally as `replit-final` (not pushed).
+No `.env` present. No database reachable. Prod was not contacted.
+
+| Step | Result | Time (UTC) |
+|---|---|---|
+| 1.1 Node 22 | `v22.14.0` | 16:09 |
+| 1.2 `npm ci` | First attempt FAILED, see finding A. After fix: exit 0, 1202 packages added, 21 audit findings (11 moderate, 9 high, 1 critical), 4 deprecation warnings | 16:11 |
+| 1.4 `.env.example` | 47 variables, zero values, matches section 3 exactly. `.env`, `.env.*` ignored; `.env.example` tracked | 16:12 |
+| 1.5 `npm run check` | exit 0, zero TypeScript errors | 16:13:09 |
+| 1.6 `npx vitest run` | **NOT AT BASELINE.** No DB: 17 files fail, 403 tests pass. Dummy URL: 18 files clean, 438 pass, 22 fail, 80 skipped, 540 counted. See finding B | 16:13:31 |
+| 1.7 `npm run build` | exit 0, `dist/index.js` 1.5 MB, `dist/public/` 3.4 MB | 16:14:43 |
+| 1.8 `npm run dev` | NOT RUN (needs the throwaway DB from 1.3) | |
+
+### Finding A: `package-lock.json` is welded to Replit's package mirror
+
+345 of 1202 `resolved` URLs pointed at `package-firewall.replit.internal` (332) and
+`package-firewall.replit.local` (13). Neither resolves outside Replit, so `npm ci` fails
+on any other machine with `ENOTFOUND` and npm 11 then dies with "Exit handler never
+called", which hides the cause. The Phase 2.8 Docker build would have failed the same way.
+Not in the plan.
+
+Fix, commit `c839760`: rewrite those URLs to `https://registry.npmjs.org/` (the path is
+identical apart from the `/npm/` prefix). Only `resolved` lines changed (345 insertions,
+345 deletions, 0 other lines). `integrity` hashes untouched, so npm rejects any tarball
+that is not byte-identical to what Replit locked. Assertion: all 1202 entries now resolve
+to `registry.npmjs.org`; `npm ci` exit 0.
+
+### Finding B: 16 of 34 test files need a live database
+
+`server/db.ts:9` throws at import if `DATABASE_URL` is unset, so with no variable 17 files
+never load (156 tests not run). With a dummy unreachable URL (`127.0.0.1:1`) one of them
+(`im-detector`) loads and mostly passes, leaving 16 that need a real database:
+
+| File | With dummy URL | Notes |
+|---|---|---|
+| `subscription-suspension.test.ts` | 12 fail | no skip guard, hits DB in `afterEach` |
+| `suspension-check-in.test.ts` | 10 fail | no skip guard, deletes `team_notifications` rows |
+| `forward-path-gate.test.ts` | 3 pass, 21 skip | host guard |
+| `reconciled-financials.test.ts` | 3 pass, 13 skip | host guard |
+| `vcheck-triple.test.ts` | 9 skip | host guard |
+| `deal-model-ebitda.test.ts` | 12 pass, 3 skip | |
+| `im-detector.test.ts` | 12 pass, 2 skip | |
+| `stable-year-container.test.ts` | 6 skip | |
+| `financial-contributions.test.ts` (server/scripts) | 6 skip | |
+| `document-delete-fk.test.ts` | 6 skip | |
+| `document-delete-cascade.test.ts` | 5 skip | |
+| `projection-reselect.test.ts` | 5 skip | |
+| `ghost-period-prune.test.ts` | 4 skip | |
+| `company-delete-evidence.test.ts` | 0 collected | |
+| `offer-guard-call-sites.test.ts` | 0 collected | host guard |
+| `offer-screen-parity.test.ts` | 0 collected | host guard |
+
+The 19-test gap between 540 counted and 559 baseline is the three files that collect zero
+tests without a DB. These tests INSERT and DELETE rows, so they must only ever run against
+the throwaway Neon branch (plan 1.3), never prod.
+
+### Finding C: the test host guards will not recognise the new prod
+
+Five files (`forward-path-gate`, `offer-guard-call-sites`, `offer-screen-parity`,
+`reconciled-financials`, `vcheck-triple`) refuse to run if the DB host contains
+`ep-old-recipe` or `.prod.`. That protects only the OLD prod. After cutover the new Neon
+host has a different endpoint ID, so those guards pass silently against new prod. The
+other 11 DB-dependent files have no guard at all. Proposed for phase 7: one shared
+allowlist guard (run only if host matches the `dev` branch endpoint). Not actioned now.
+
+### Finding D: build succeeds with no Clerk publishable key
+
+`npm run build` exits 0 with `VITE_CLERK_PUBLISHABLE_KEY` unset. A Docker build without
+the build arg would produce a client with no Clerk key and no build error. Phase 2.8 needs
+the key passed as a build arg, and ideally a build-time assertion.
+
+### Gate 1 status
+
+1.5 clean. 1.7 clean. 1.6 NOT clean: blocked on a throwaway Neon branch (Phase 0 not yet
+answered). 1.3 and 1.8 blocked on the same thing.
