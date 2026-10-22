@@ -1,19 +1,18 @@
 # RESUME: do-migration
 
-**Updated:** 2026-10-22 17:20 UK
+**Updated:** 2026-10-22 19:20 UK
 **Thread:** Valoxi, Replit to DigitalOcean. Nothing else.
 
 ## State
-- Phase 0: all seven answers NOT YET (assessment.md section 0).
-- Phase 1: at Gate 1, NOT passed. check clean, build clean, tests blocked on a DB.
-- Local commits on `main` above `de39a9f`: `c839760` lockfile hosts, `c1ea1a3` `.env.example`.
-- Local tag `replit-final` = `de39a9f`. Not pushed (no remote yet, plan 3.5).
-- Nothing pushed. Prod not contacted.
+- Phase 0: Neon project created (billowing-block-98253807, eu-west-2). Region London in effect. GitHub, DO, DNS, secrets, cutover window still NOT YET.
+- Phase 1: Gate 1 PASSED 2026-10-22 18:13 UTC. check 0 errors, build clean, vitest 34 files / 559 passed on Neon branch throwaway.
+- Local commits above de39a9f: c839760 lockfile hosts, c1ea1a3 .env.example, plus docs. Nothing pushed. Prod not contacted.
+- Local tag replit-final = de39a9f, not pushed.
+- Local .env holds DATABASE_URL for the throwaway branch only (gitignored).
 
 ## Next action (needs Adam)
-1. Create a throwaway Neon branch (any Neon project Adam owns) and give the URL for local
-   `.env` only. Then: 1.6 vitest against it, expect 34 files / 559 tests; 1.8 `npm run dev`.
-2. Adam says go for Phase 2, or fills Phase 0.
+1. Say go for Phase 2 (de-Replit the code), or fill the rest of Phase 0 first.
+2. Optional: decide whether to run 1.8 npm run dev with crons neutralised.
 
 ## Deferred / deploy-dependent
 - Finding C (test host guards only know `ep-old-recipe`): fix in phase 7.

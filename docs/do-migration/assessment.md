@@ -257,3 +257,53 @@ the key passed as a build arg, and ideally a build-time assertion.
 
 1.5 clean. 1.7 clean. 1.6 NOT clean: blocked on a throwaway Neon branch (Phase 0 not yet
 answered). 1.3 and 1.8 blocked on the same thing.
+
+## 10. GATE 1 CLOSED (tests at baseline)
+
+**Run:** 2026-10-22, 18:13 UTC (19:13 UK), against Neon branch `throwaway`
+(endpoint `ep-square-pine-zaoqy54e`, eu-west-2, project `billowing-block-98253807`).
+**Result:** 34 files, **559 passed**, 0 failed, 0 skipped. Exit 0. Matches baseline.
+
+How the throwaway was prepared (all writes to the throwaway branch only, each authorised
+by Adam in his own message, no prod contact):
+
+1. Schema: `npx drizzle-kit export --sql` from `shared/schema.ts`, applied in one
+   transaction after guards (host must be the throwaway endpoint, `public` must be empty).
+   Result: 93 tables, 185 FK constraints, 5 enums.
+2. Fixtures: `user_companies` id 71 ("Throwaway test co") and one `users` row on it
+   (id 11). Seven test files look up `userCompanyId = 71` and throw "seed the DB first".
+3. Index: `current_offers_target_company_unique` on `(target_company_id)`. Prod has it
+   (drift register item 5, no schema declaration); the code upserts with
+   `ON CONFLICT (target_company_id)`. Column inferred from the name and the code, since the
+   register does not print the DDL.
+
+Command that reproduces the baseline (do NOT `source .env` in bash: Neon URLs contain an
+unquoted `&` that backgrounds the assignment and leaves `DATABASE_URL` unset):
+
+```
+GOOGLE_GEMINI_API_KEY=placeholder-not-a-real-key node --env-file=.env node_modules/vitest/vitest.mjs run
+```
+
+The placeholder passes the `gemini-client.ts` guard (rejects empty or `_DUMMY_API_KEY_`,
+the Replit integration value). No test calls Gemini. The real key is never used in tests
+and never goes in `.env` for this purpose.
+
+### Finding E: the repo cannot rebuild prod from scratch
+
+Prod objects with no declaration in `shared/schema.ts` (drift register, 2026-07-31): the
+`session` table, views `activity_summary`, `deal_progression`, `pipeline_summary`,
+`stage_1_progress`, 13 unmanaged indexes (including the `current_offers` unique index that
+cost three tests here), and FKs named `_fkey` instead of Drizzle's `_fk`. A database built
+from the schema is a test fixture, never prod-identical. This confirms dump and restore
+(phase 4) as the only safe route for the real database. Corollary for #574: the constraint
+names in section 5 are the prod `_fkey` names, so the ALTERs must use those, not Drizzle's.
+
+### Gate 1 status: PASSED for 1.5, 1.6, 1.7
+
+1.3 done (throwaway branch). 1.8 (`npm run dev`) not run: the server starts the in-process
+crons (billing, chase-up) and would need Clerk keys to show anything past sign-in. Awaiting
+Adam's call on whether to run it with the crons neutralised.
+
+Open items carried forward: Finding C (host guards) for phase 7, Finding D (Clerk build
+key) for 2.8. Phase 0 answers still outstanding except: Neon project created
+(`billowing-block-98253807`, org `org-holy-base-64540790`), region eu-west-2 London.
