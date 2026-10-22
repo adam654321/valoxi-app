@@ -35,13 +35,6 @@ export const config = {
     secure: process.env.SMTP_SECURE === 'true',
   },
 
-  replit: {
-    devDomain: process.env.REPLIT_DEV_DOMAIN || '',
-    replSlug: process.env.REPL_SLUG || '',
-    replOwner: process.env.REPL_OWNER || '',
-    replId: process.env.REPL_ID || '',
-  },
-
   database: {
     url: process.env.DATABASE_URL || '',
   },
