@@ -1,0 +1,12 @@
+node_modules
+dist
+.git
+uploads
+attached_assets
+audit
+playwright-report
+test-results
+*.log
+.env*
+.config
+_to_delete
