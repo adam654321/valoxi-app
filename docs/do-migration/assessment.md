@@ -307,3 +307,21 @@ Adam's call on whether to run it with the crons neutralised.
 Open items carried forward: Finding C (host guards) for phase 7, Finding D (Clerk build
 key) for 2.8. Phase 0 answers still outstanding except: Neon project created
 (`billowing-block-98253807`, org `org-holy-base-64540790`), region eu-west-2 London.
+
+## 11. VALUES THAT LIVE ONLY IN `.replit` (found at plan 2.10)
+
+`.replit` `[userenv.shared]` sets environment variables for the Repl, and they are not in
+the secrets panes, so the section 3 checklist would miss them. Recorded here before
+`.replit` is deleted (it stays in git history at `de39a9f`, tag `replit-final`).
+
+| Variable | Value in `.replit` | Read by code? | Action on DO |
+|---|---|---|---|
+| `NYLAS_CONNECT_GMAIL_VISIBLE` | `true` | Yes, `server/routes/public.routes.ts:19` (`=== 'true'`) | **Set to `true`.** If unset the Gmail connect option silently disappears |
+| `NYLAS_CONNECT_OUTLOOK_VISIBLE` | `false` | Yes, `public.routes.ts:20` | Set to `false` (unset behaves the same) |
+| `PORT` | `5000` | Yes | DO sets it; Dockerfile uses 8080 |
+| `BETA_MODE` | `true` | No (zero references) | Drop |
+| `VITE_BETA_MODE` | `true` | No (zero references in client) | Drop |
+| `BETA_FEEDBACK_BUCKET_ID` | a `replit-objstore-...` id | No | Drop |
+| `[objectStorage] defaultBucketID` | a `replit-objstore-...` id | No (`@replit/object-storage` had zero imports) | Drop |
+
+Also check the Replit panes for the same names: a pane value would override `.replit`.

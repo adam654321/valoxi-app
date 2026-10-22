@@ -91,6 +91,7 @@ Tick when the value is in the password manager. Never paste values into this fil
 - [ ] STRIPE_WEBHOOK_SECRET
 - [ ] FIVE_D_BILLING_START
 - [ ] TEST_INTERNAL_USER_COMPANY_ID
+- [ ] NYLAS_CONNECT_GMAIL_VISIBLE must be `true` and NYLAS_CONNECT_OUTLOOK_VISIBLE `false` on DO (values came from `.replit`, see assessment.md section 11)
 - [ ] Any variable present in Replit that is NOT in this list: record its name here and
       decide whether it is live: `________`
 
