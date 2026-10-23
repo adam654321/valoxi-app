@@ -439,3 +439,12 @@ Findings:
 - Tooling added: `structure-checks.sql`; `compare-counts.mjs` now also compares STRUCT lines.
 
 GATE 4: passed 2026-10-23, pending Adam seeing the record file.
+
+### 14.1 Plan 4.7: Neon `dev` branch (2026-10-23)
+
+- A branch with an expiry cannot have children, so `dev` could not be made from `rehearsal`. `dev` was created from `production` (empty, no expiry) and the same dump was restored into it: `ep-frosty-mode-zapfrf2v`, eu-west-2, PostgreSQL 18.6. `pg_restore --exit-on-error`, exit 0. `production` untouched.
+- `dev` vs source: COUNT 94, SEQ 92, SPOT 4, STRUCT 10, 0 mismatches.
+- Vitest against `dev` (DATABASE_URL overridden for the run, `.env` not edited, placeholder Gemini key): **34 files, 559 tests passed**, 24s. Baseline held.
+- After the tests: every table count and every spot check identical to the post-restore state; only 23 sequence counters advanced. The tests (which use `userCompanyId = 71` as owner) create their own rows and delete them by id, and removed all of them.
+- `dev` holds a copy of real customer data (88 users). Keep it off shared machines; wipe by re-running the restore.
+- Not done: pointing the local `.env` `DATABASE_URL` at `dev` (still the `throwaway` branch). Adam to decide.
