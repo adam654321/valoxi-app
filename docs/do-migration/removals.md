@@ -33,7 +33,7 @@ day 7 after cutover.
 ## 3. Accounts and infrastructure
 
 - [ ] Neon project created in Adam's account, region decided
-- [ ] Neon `production` and `rehearsal` branches exist (2026-10-23); `dev` (from rehearsal) still to create
+- [x] Neon `production`, `rehearsal` and `dev` branches exist (2026-10-23; dev made from production + restore, since rehearsal has an expiry)
 - [x] GitHub repo created, `main` protected, `replit-final` tag pushed (2026-10-23, adam654321/valoxi-app; ruleset protect-main reported Active by Adam)
 - [x] Secret scan of git history: no real secret (2026-10-23; 8 prefix-only false positives, wider scan 0, see assessment.md section 13)
 - [ ] DO app created: Dockerfile, 1 instance, health check `/api/health`
