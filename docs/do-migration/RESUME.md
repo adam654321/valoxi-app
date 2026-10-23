@@ -12,6 +12,8 @@
 - The Phase 3 docs commit is local until Adam pushes it.
 - Prod not contacted. Local .env holds DATABASE_URL for the throwaway branch only (gitignored).
 
+## Phase 5 prepared 2026-10-23: .do/app.yaml and docs/do-migration/phase5-staging.md (branch phase-5-do-spec). Needs Adam: DO project, Clerk dev instance, Stripe test keys, R2 bucket choice.
+
 ## Next action (needs Adam)
 1. Set branch protection on `main` in GitHub (plan 3.4).
 2. Say go for Phase 4 (rehearsal restore). Adam runs the prod pg_dump (client must be PostgreSQL 18 or newer). I do not touch prod.

@@ -1,0 +1,47 @@
+# DigitalOcean App Platform spec, STAGING. Contains no secrets: only names and non-secret values.
+# Secrets and anything that needs Adam's values are entered in the DO console (Encrypt ticked),
+# listed in docs/do-migration/phase5-staging.md. Slugs marked "verify" are checked in the console.
+name: valoxi-staging
+region: lon
+services:
+  - name: web
+    dockerfile_path: Dockerfile
+    github:
+      repo: adam654321/valoxi-app
+      branch: main
+      deploy_on_push: false
+    # One instance only: the crons (billing, chase-up, backup) are in-process and would double-fire.
+    instance_count: 1
+    instance_size_slug: apps-s-1vcpu-2gb # verify; Puppeteer needs 1 GB minimum
+    http_port: 8080
+    health_check:
+      http_path: /api/health
+      initial_delay_seconds: 30
+      period_seconds: 30
+      timeout_seconds: 5
+      failure_threshold: 3
+    envs:
+      - key: PORT
+        value: "8080"
+        scope: RUN_TIME
+      - key: NODE_ENV
+        value: production
+        scope: RUN_TIME
+      # Dockerfile builds see bindable variables at runtime only. /api/health reads this at runtime.
+      - key: GIT_SHA
+        value: ${_self.COMMIT_HASH}
+        scope: RUN_TIME
+      # Staging: the DO default URL. At cutover (plan 6.9) this becomes https://app.valoxi.ai.
+      - key: APP_URL
+        value: ${APP_URL}
+        scope: RUN_TIME
+      - key: CLERK_ENABLED
+        value: "true"
+        scope: RUN_TIME
+      # From .replit (assessment.md section 11). Gmail option disappears if these are missing.
+      - key: NYLAS_CONNECT_GMAIL_VISIBLE
+        value: "true"
+        scope: RUN_TIME
+      - key: NYLAS_CONNECT_OUTLOOK_VISIBLE
+        value: "false"
+        scope: RUN_TIME
