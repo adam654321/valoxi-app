@@ -36,7 +36,7 @@ day 7 after cutover.
 - [x] Neon `production`, `rehearsal` and `dev` branches exist (2026-10-23; dev made from production + restore, since rehearsal has an expiry)
 - [x] GitHub repo created, `main` protected, `replit-final` tag pushed (2026-10-23, adam654321/valoxi-app; ruleset protect-main reported Active by Adam)
 - [x] Secret scan of git history: no real secret (2026-10-23; 8 prefix-only false positives, wider scan 0, see assessment.md section 13)
-- [ ] DO app created: Dockerfile, 1 instance, health check `/api/health`
+- [ ] DO app created: Dockerfile, 1 instance, health check `/api/health` (spec written 2026-10-23: .do/app.yaml, runbook phase5-staging.md; Adam creates the app)
 - [ ] DO staging env vars set (dev DB, Clerk dev instance, Stripe test)
 - [ ] Clerk dev instance: DO staging URL allowed
 - [ ] Stripe test-mode webhook endpoint for staging
