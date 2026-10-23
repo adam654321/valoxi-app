@@ -58,3 +58,6 @@ server/scripts/*-baseline-*.json
 
 # Phase 4 rehearsal dump and count outputs (contain production data)
 rehearsal/
+
+# Migration tooling SQL is source, not data
+!scripts/migration/*.sql

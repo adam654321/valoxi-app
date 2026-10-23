@@ -28,12 +28,12 @@ day 7 after cutover.
 - [x] `Dockerfile` (2026-10-22, cdc878a; no npm prune, pgdg client 18, Clerk build-arg assertion)
 - [x] `.dockerignore` (2026-10-22, cdc878a)
 - [x] `scripts/migration/table-counts.sql` (exact counts, all tables, all sequences) (2026-10-23; proven on throwaway: 94 COUNT, 92 SEQ; plus spot-checks.sql and compare-counts.mjs, mismatch path proven)
-- [ ] `docs/do-migration/rehearsal-<date>.txt` (both sides, timestamped)
+- [x] `docs/do-migration/rehearsal-2026-10-23.txt` (both sides, timestamped) (2026-10-23)
 
 ## 3. Accounts and infrastructure
 
 - [ ] Neon project created in Adam's account, region decided
-- [ ] Neon `main` and `dev` branches
+- [ ] Neon `production` and `rehearsal` branches exist (2026-10-23); `dev` (from rehearsal) still to create
 - [x] GitHub repo created, `main` protected, `replit-final` tag pushed (2026-10-23, adam654321/valoxi-app; ruleset protect-main reported Active by Adam)
 - [x] Secret scan of git history: no real secret (2026-10-23; 8 prefix-only false positives, wider scan 0, see assessment.md section 13)
 - [ ] DO app created: Dockerfile, 1 instance, health check `/api/health`
@@ -97,7 +97,7 @@ Tick when the value is in the password manager. Never paste values into this fil
 
 ## 5. Cutover and after
 
-- [ ] Rehearsal restore: all 92 tables and all sequences match (date: ____)
+- [x] Rehearsal restore: all 94 tables (plan said 92) and all 92 sequences match (2026-10-23, 0 mismatches)
 - [ ] Staging smoke list in `plan.md` 5.5: every item ticked by Adam
 - [ ] 6.5 Replit deployment stopped (timestamp: ____)
 - [ ] 6.6 Final dump taken and copied to a second location
