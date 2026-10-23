@@ -34,8 +34,8 @@ day 7 after cutover.
 
 - [ ] Neon project created in Adam's account, region decided
 - [ ] Neon `main` and `dev` branches
-- [ ] GitHub repo created, `main` protected, `replit-final` tag pushed
-- [ ] Secret scan of git history: zero hits
+- [ ] GitHub repo created (2026-10-23, adam654321/valoxi-app), `replit-final` tag pushed (2026-10-23); `main` protection still to do (Adam)
+- [x] Secret scan of git history: no real secret (2026-10-23; 8 prefix-only false positives, wider scan 0, see assessment.md section 13)
 - [ ] DO app created: Dockerfile, 1 instance, health check `/api/health`
 - [ ] DO staging env vars set (dev DB, Clerk dev instance, Stripe test)
 - [ ] Clerk dev instance: DO staging URL allowed

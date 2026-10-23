@@ -394,3 +394,25 @@ matches only the two tolerated fallbacks: `server/config.ts` (4 lines, `getBaseU
 - 2.11 (`uploads/` 19 MB, `attached_assets/` 5 MB checked in) left as the plan says. Both
   are excluded from the Docker context; `attached_assets` is still aliased as `@assets` in
   `vite.config.ts` with zero imports under `client/src`.
+
+## 13. PHASE 3 RESULTS (GitHub)
+
+Date: 2026-10-23. Repo: https://github.com/adam654321/valoxi-app (private, empty at creation).
+
+| Step | Result |
+|---|---|
+| `.env` tracked | No. `git check-ignore -v .env` gives `.gitignore:17:.env`. Only `.env.example` is tracked. |
+| `.env` ever committed | 0 commits (`git log --all -- .env`), across 5,655 commits |
+| Plan 3.2 secret scan (AIza, sk_live_, whsec_, re_ keys) | 8 hits, all FALSE POSITIVES: bare prefixes in prose (the scan command quoted in `plan.md`; "starts with whsec_" in pasted assets; one `whsec_1` one-character prefix check). No key material. Adam informed and said go. |
+| Postgres URLs with embedded credentials | 0 |
+| Wider scan (sk_test_, rk_live_, pk_live_/pk_test_, Nylas nyk_, private key blocks, AWS AKIA, GitHub ghp_, Neon npg_, Slack xox) | 0 hits |
+| Replit remotes | `gitsafe-backup` and 7 `subrepl-*` removed. Only `origin` remains. |
+| First push attempt | 403: machine credentials were GitHub user AdamValoxi; repo owner is adam654321. Fixed by Adam inviting AdamValoxi as collaborator. |
+| Push `main` | Run by Adam. Remote `main` = local `main` = `295d493` (`git ls-remote`). |
+| Push tag `replit-final` | Run by Adam. `git ls-remote --tags origin` = `de39a9f`, equals local tag. |
+
+Notes:
+- The plan's scan can never read zero once `plan.md` is committed, because the file quotes the pattern. Treat the criterion as "no real secret".
+- `attached_assets/` (Replit pasted prompts) is in history. Scanned clean. It is excluded from the Docker image by `.dockerignore`.
+- Repo owner is a personal account. DO links to the owner, so a later transfer to an organisation means relinking.
+- Branch protection on `main` (plan 3.4) is Adam's to set in GitHub: NOT YET.
