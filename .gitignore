@@ -55,3 +55,6 @@ vite.config.ts.*
 
 server/scripts/analysis-*.json
 server/scripts/*-baseline-*.json
+
+# Phase 4 rehearsal dump and count outputs (contain production data)
+rehearsal/

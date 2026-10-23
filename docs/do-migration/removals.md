@@ -27,14 +27,14 @@ day 7 after cutover.
 - [x] `gemini-client.ts` integration warning logs once per process (2026-10-22, 9dccf12; 4 warnings before, 1 after)
 - [x] `Dockerfile` (2026-10-22, cdc878a; no npm prune, pgdg client 18, Clerk build-arg assertion)
 - [x] `.dockerignore` (2026-10-22, cdc878a)
-- [ ] `scripts/migration/table-counts.sql` (exact counts, all tables, all sequences)
+- [x] `scripts/migration/table-counts.sql` (exact counts, all tables, all sequences) (2026-10-23; proven on throwaway: 94 COUNT, 92 SEQ; plus spot-checks.sql and compare-counts.mjs, mismatch path proven)
 - [ ] `docs/do-migration/rehearsal-<date>.txt` (both sides, timestamped)
 
 ## 3. Accounts and infrastructure
 
 - [ ] Neon project created in Adam's account, region decided
 - [ ] Neon `main` and `dev` branches
-- [ ] GitHub repo created (2026-10-23, adam654321/valoxi-app), `replit-final` tag pushed (2026-10-23); `main` protection still to do (Adam)
+- [x] GitHub repo created, `main` protected, `replit-final` tag pushed (2026-10-23, adam654321/valoxi-app; ruleset protect-main reported Active by Adam)
 - [x] Secret scan of git history: no real secret (2026-10-23; 8 prefix-only false positives, wider scan 0, see assessment.md section 13)
 - [ ] DO app created: Dockerfile, 1 instance, health check `/api/health`
 - [ ] DO staging env vars set (dev DB, Clerk dev instance, Stripe test)
