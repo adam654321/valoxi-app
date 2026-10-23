@@ -7,6 +7,7 @@
 - Phase 0: Neon project created (billowing-block-98253807, eu-west-2). GitHub repo done. DO project, DNS host, secrets export, cutover window still NOT YET.
 - Phase 1 and 2: Gates PASSED (see assessment.md sections 10 and 12).
 - Phase 3: DONE 2026-10-23 (assessment.md section 13). Repo https://github.com/adam654321/valoxi-app. `main` and tag `replit-final` (de39a9f) pushed by Adam. Replit remotes removed; only `origin` remains. History scan: no real secret.
+- Phase 4: restore rehearsal DONE 2026-10-23, Gate 4 criteria met (assessment.md section 14, rehearsal-2026-10-23.txt). 94 tables, not 92. Branch rehearsal = ep-lingering-mode-zalkfz3h. Remaining: 4.7 create dev from rehearsal, point local .env, re-run vitest (check company 71 first).
 - Git credentials on this machine are GitHub user AdamValoxi (collaborator on the repo). Pushes are run by Adam with the `!` prefix; the auto-mode classifier blocks `git push`.
 - The Phase 3 docs commit is local until Adam pushes it.
 - Prod not contacted. Local .env holds DATABASE_URL for the throwaway branch only (gitignored).

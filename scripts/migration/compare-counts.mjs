@@ -14,7 +14,7 @@ const load = (p) => {
   const map = new Map();
   for (const raw of readFileSync(p, 'utf8').split(NL)) {
     const line = raw.trim();
-    if (!/^(COUNT|SEQ|SPOT)[|]/.test(line)) continue;
+    if (!/^(COUNT|SEQ|SPOT|STRUCT)[|]/.test(line)) continue;
     const parts = line.split('|');
     const kind = parts[0];
     const name = parts[1];
@@ -36,5 +36,5 @@ for (const k of keys) {
   }
 }
 const n = (kind) => keys.filter((k) => k.startsWith(kind + '|')).length;
-console.log('compared COUNT=' + n('COUNT') + ' SEQ=' + n('SEQ') + ' SPOT=' + n('SPOT') + ' mismatches=' + bad);
+console.log('compared COUNT=' + n('COUNT') + ' SEQ=' + n('SEQ') + ' SPOT=' + n('SPOT') + ' STRUCT=' + n('STRUCT') + ' mismatches=' + bad);
 process.exit(bad === 0 ? 0 : 1);

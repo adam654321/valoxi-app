@@ -416,3 +416,26 @@ Notes:
 - `attached_assets/` (Replit pasted prompts) is in history. Scanned clean. It is excluded from the Docker image by `.dockerignore`.
 - Repo owner is a personal account. DO links to the owner, so a later transfer to an organisation means relinking.
 - Branch protection on `main` (plan 3.4) is Adam's to set in GitHub: NOT YET.
+
+## 14. PHASE 4 RESULTS (rehearsal restore)
+
+Date: 2026-10-23. Full record: `docs/do-migration/rehearsal-2026-10-23.txt`.
+
+| Item | Result |
+|---|---|
+| Source | Old Replit-owned Neon `ep-old-recipe-an7e4afw`, PostgreSQL 16.15. Read only, run by Adam. |
+| Target | New Neon branch `rehearsal`, `ep-lingering-mode-zalkfz3h`, PostgreSQL 18.6. `production` and `throwaway` untouched. |
+| Dump | 10,021,863 bytes, `pg_dump` 18.6 `-Fc --no-owner --no-privileges`. Archive valid. |
+| Table count | **94**, not the plan's 92. Same table set as a `schema.ts` build. |
+| Drift during dump | None. Counts before and after the dump identical (COUNT 94, SEQ 92, SPOT 4, 0 mismatches), including `session`. |
+| Restore | `pg_restore --clean --if-exists --exit-on-error`, exit 0, no output. |
+| Counts after restore | COUNT 94, SEQ 92, SPOT 4: 0 mismatches. |
+| Structure | 94 tables, 4 views, 182 FKs, 94 PKs, 32 uniques, 3 checks, 153 indexes, 5 enums. FK-name and index-name md5 identical on both sides (STRUCT 10, 0 mismatches). |
+
+Findings:
+- FK constraints on prod are 182. A `schema.ts` build gives 185. Prod is authoritative (drift register); #574's ALTERs must use prod's `_fkey` names, which are now proven to restore unchanged.
+- Plan 4.7 says branch `dev` "from main". `production` is empty, so create `dev` from `rehearsal`.
+- Tests assume `userCompanyId = 71`. Prod has 88 users and 87 user_companies, so company 71 exists with real data. Check before running vitest on a branch holding real data.
+- Tooling added: `structure-checks.sql`; `compare-counts.mjs` now also compares STRUCT lines.
+
+GATE 4: passed 2026-10-23, pending Adam seeing the record file.
