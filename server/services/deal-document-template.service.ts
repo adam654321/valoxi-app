@@ -83,11 +83,21 @@ export class DealDocumentTemplateService {
     await fs.mkdir(GENERATED_DIR, { recursive: true });
   }
 
+  // Stored paths are absolute from the Replit host; fall back to the bundled copy by filename.
+  private async resolveTemplatePath(templatePath: string): Promise<string> {
+    try {
+      await fs.access(templatePath);
+      return templatePath;
+    } catch {
+      return path.join(TEMPLATES_DIR, path.basename(templatePath));
+    }
+  }
+
   async generateDocument(
     templatePath: string,
     data: DocumentDataContext
   ): Promise<Buffer> {
-    const templateBuffer = await fs.readFile(templatePath);
+    const templateBuffer = await fs.readFile(await this.resolveTemplatePath(templatePath));
 
     const buffer = await createReport({
       template: templateBuffer,
