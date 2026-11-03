@@ -13,13 +13,16 @@
 #   Restore         pg_restore into the rehearsal TARGET only (guarded)
 #   RestoredCounts  counts on the TARGET                                    -> rehearsal2\restored.txt
 #   CompareRestored source-after vs restored (must match, apart from the drift above)
+#   SourceStructure indexes, constraints, views, enums on the SOURCE      -> rehearsal2\source-structure.txt
+#   RestoredStructure same checks on the TARGET                            -> rehearsal2\restored-structure.txt
+#   CompareStructure  source vs restored structure (must match exactly)
 #
 # Source is read from .env.prod (SRC_URL). Target is read from .env.rehearsal (DST_URL).
 # Add -DryRun to print what a step would do without doing it.
 
 param(
   [Parameter(Mandatory = $true)]
-  [ValidateSet('Check', 'CountsBefore', 'Dump', 'CountsAfter', 'CompareDrift', 'Restore', 'RestoredCounts', 'CompareRestored')]
+  [ValidateSet('Check', 'CountsBefore', 'Dump', 'CountsAfter', 'CompareDrift', 'Restore', 'RestoredCounts', 'CompareRestored', 'SourceStructure', 'RestoredStructure', 'CompareStructure')]
   [string]$Step,
   [string]$SrcEnv = '.env.prod',
   [string]$DstEnv = '.env.rehearsal',
@@ -68,6 +71,9 @@ $dumpFile = Join-Path $OutDir 'valoxi-rehearsal.dump'
 $before = Join-Path $OutDir 'source-before.txt'
 $after = Join-Path $OutDir 'source-after.txt'
 $restored = Join-Path $OutDir 'restored.txt'
+$srcStruct = Join-Path $OutDir 'source-structure.txt'
+$dstStruct = Join-Path $OutDir 'restored-structure.txt'
+$structSql = Join-Path $repo 'scripts\migration\structure-checks.sql'
 $countsSql = Join-Path $repo 'scripts\migration\table-counts.sql'
 $spotSql = Join-Path $repo 'scripts\migration\spot-checks.sql'
 
@@ -149,6 +155,21 @@ switch ($Step) {
   }
   'CompareRestored' {
     node scripts/migration/compare-counts.mjs $after $restored
+  }
+  'SourceStructure' {
+    $s = Get-Src
+    & $psql $s -X -A -t -F '|' -f $structSql -o $srcStruct
+    Assert-Ok 'psql structure (source)'
+    Write-Host "STRUCT lines: $((Select-String -Path $srcStruct -Pattern '^STRUCT\|').Count) (expect 10)  file: $srcStruct"
+  }
+  'RestoredStructure' {
+    $d = Get-Dst
+    & $psql $d -X -A -t -F '|' -f $structSql -o $dstStruct
+    Assert-Ok 'psql structure (target)'
+    Write-Host "STRUCT lines: $((Select-String -Path $dstStruct -Pattern '^STRUCT\|').Count) (expect 10)  file: $dstStruct"
+  }
+  'CompareStructure' {
+    node scripts/migration/compare-counts.mjs $srcStruct $dstStruct
   }
 }
 
