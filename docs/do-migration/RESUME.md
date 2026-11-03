@@ -53,5 +53,5 @@
 3. Set NYLAS_CONNECT_GMAIL_VISIBLE=true on DO later (assessment.md section 11).
 
 ## Deferred / deploy-dependent
-- Finding C: FIXED on branch finding-c-test-db-guard (2026-11-03), pending PR merge. One allowlist guard in vitest setupFiles (server/test-utils/db-host-guard.ts), default allowed endpoint = Neon dev `ep-ancient-breeze-zaso9i43`; extra via TEST_DB_ALLOWED_ENDPOINTS. Old/`.prod.` hosts always blocked. Five inline guards removed. Not yet run against dev DB (needs Adam's go).
+- Finding C: FIXED, merged PR #7 (2026-11-03). One allowlist guard in vitest setupFiles (server/test-utils/db-host-guard.ts), default allowed endpoint = Neon dev `ep-ancient-breeze-zaso9i43`; extra via TEST_DB_ALLOWED_ENDPOINTS. Old/`.prod.` hosts always blocked. Five inline guards removed. Run against Neon dev 2026-11-03: 35/35 files, 565/565 tests (559 baseline + 6 new). Needs GOOGLE_GEMINI_API_KEY=placeholder-not-a-real-key to collect 3 files (assessment.md line 284).
 - Uncommitted, not mine: scripts/send-marketing-consent-emails.ts modified, _to_delete/ untracked. Left alone.
