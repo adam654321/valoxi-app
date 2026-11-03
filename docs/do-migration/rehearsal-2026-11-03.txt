@@ -21,9 +21,9 @@ Comparisons (scripts/migration/compare-counts.mjs; 94 COUNT, 92 SEQ, 4 SPOT, 0 S
   One live login session expired during the run. Expected on a live database; at cutover the app is stopped, so it must be 0 there.
   All other 93 tables, all 92 sequences and all 4 spot checks match.
 
-Not covered by this runner
-  STRUCT=0: structure-checks.sql (indexes, constraints, views) is not part of rehearsal-run.ps1. Phase 4 ran it separately
-  (rehearsal/source-structure.txt vs restored-structure.txt). Run it too before the real cutover.
+Structure check (rehearsal-run.ps1 -Step SourceStructure / RestoredStructure / CompareStructure)
+  10 STRUCT checks on source and rehearsal-2: tables, views, FK/PK/unique/check constraints, indexes, enums, FK-name and index-name hashes.
+  Result: STRUCT=10 mismatches=0 (source PG 16.15 vs restored PG 18.6). Run 21:18 on 2026-11-03.
 
 Clerk and Stripe checks on rehearsal-2 (read only, keys set by Adam in his own PowerShell session, cleared afterwards)
   check-clerk-ids.mjs --all   : key mode live (prod instance). 89 users, 54 with a Clerk id. ok 54, not found 0, mismatched 0.
@@ -37,6 +37,6 @@ Clerk and Stripe checks on rehearsal-2 (read only, keys set by Adam in his own P
                                 Webhook handler exists (billing.routes.ts customer.subscription.deleted); why it did not apply is not yet known.
 
 Still to do
-  structure-checks.sql comparison (indexes, constraints, views) before the real cutover.
+  Re-run all three structure steps and the counts again on the real cutover night.
   Delete the restricted Stripe key(s).
   After cutover: reconcile subs 39, 44, 68, 104 (real customers) and tidy test sub 35; find out why the cancel webhook did not apply.
