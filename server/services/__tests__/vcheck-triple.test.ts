@@ -18,7 +18,7 @@
  *   G. year-4 delete: delete FY2025 statutory → IM fallback; adj4 stays on same period id
  *   H. staff_data is on the latest winning full-year period; exactly one row
  *
- * HOST GUARD: aborts if DATABASE_URL points at ep-old-recipe (prod).
+ * HOST GUARD: enforced globally by vitest setupFiles (allowlist, see server/test-utils/db-host-guard.ts).
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
@@ -41,12 +41,9 @@ import { reselect } from '../projection-reselect.service';
 import { fetchReportedEbitdaByYear } from '../deal-model.service';
 import { isProvisionalFinancials } from '../../../shared/utils/provisional-financials';
 
-// ─── HOST GUARD ────────────────────────────────────────────────────────────────
+// DB host guard: enforced for every test file by vitest setupFiles (server/test-utils/db-host-guard.ts).
 const dbUrl = process.env.DATABASE_URL ?? '';
 const dbHost = dbUrl.match(/@([^/]+)\//)?.[1] ?? 'unknown';
-if (dbHost.includes('ep-old-recipe')) {
-  throw new Error(`V-CHECK ABORT: DATABASE_URL points at PROD host (${dbHost}). Run only on dev (helium).`);
-}
 
 // ─── CONSTANTS ─────────────────────────────────────────────────────────────────
 const USER_COMPANY_ID = 71;

@@ -22,11 +22,6 @@ import {
   getScreenEbitdaByYear,
 } from '../screen-ebitda.service';
 
-const dbUrl = process.env.DATABASE_URL ?? '';
-const dbHost = dbUrl.match(/@([^/]+)\//)?.[1] ?? 'unknown';
-if (dbHost.includes('ep-old-recipe') || dbHost.includes('.prod.')) {
-  throw new Error(`OFFER PARITY ABORT: DATABASE_URL points at prod host (${dbHost}).`);
-}
 
 const stamp = Date.now();
 let userCompanyId: number;
