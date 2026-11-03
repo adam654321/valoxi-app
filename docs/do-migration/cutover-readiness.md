@@ -21,7 +21,7 @@ Status key: DONE (evidence in repo or docs), ADAM (only Adam can answer or do), 
 
 ## 2. Things the plan says that are now wrong or incomplete
 
-Fix these in `plan.md` before cutover day so nobody follows stale text at 03:00.
+FIXED in `plan.md` on 2026-11-03 (branch plan-md-fixes); kept here as the record of what changed.
 
 1. **Table count.** 6.8 says "all 92 tables". Real count is 94 tables plus 4 views (98 relations), per assessment 14 and the dev restore.
 2. **Restore target.** 6.7 says Neon main "still holds the rehearsal data". It does not: the production branch is empty by design, the rehearsal and old dev branches expired. `--clean --if-exists` is still harmless, but the reconciliation baseline is "empty then final dump", not "rehearsal then final dump".
@@ -30,7 +30,7 @@ Fix these in `plan.md` before cutover day so nobody follows stale text at 03:00.
 5. **Crons start unconditionally** (`server/index.ts:99-101`: billing, chase-up, backup). On the day prod keys go on DO, the crons are live against real customers. Replit's deployment must already be stopped (6.5) so two instances never run the crons at once. Do not set live Resend, marketing, Nylas or Stripe keys on DO before the freeze.
 6. **Staging safeguards must be reversed deliberately.** Staging deliberately has no Resend key, no marketing key, no Nylas, and `ISSUE_REPORT_RECIPIENT` set to Adam. The prod set in 6.3 must list each of these explicitly. Also `NYLAS_CONNECT_GMAIL_VISIBLE=true` (assessment 11).
 7. **Dump client version.** The final dump (6.6) is run from the Replit shell; the restore client must be PostgreSQL 18 or newer, as in the Phase 4 rehearsal.
-8. **#574 constraints.** Phase 7.4 restores seven constraints that the dump drops. Keep that script ready before 03:00, not after.
+8. **#574 constraints.** Phase 7.4 applies seven ALTERs (the dump carries those constraints as they were, as SET NULL and NO ACTION). Have the ALTERs and rollback scripted and reviewed before 03:00, not after.
 
 ## 3. Adam's pre-cutover checklist (in order)
 

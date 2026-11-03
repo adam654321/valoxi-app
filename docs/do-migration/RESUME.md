@@ -48,7 +48,7 @@
 - DO build-time vars confirmed 2026-11-03: VITE_CLERK_PUBLISHABLE_KEY present; GIT_SHA moved from RUN_TIME to BUILD_TIME by Adam.
 
 ## Cutover readiness drafted 2026-11-03
-- docs/do-migration/cutover-readiness.md: Gate 0 true status, 8 stale/incomplete plan items, ordered pre-cutover checklist. Open for Adam: 0.5 DNS host + current CNAME, 0.6 secrets export, 0.7 cutover date, DO region note, Neon PITR plan check.
+- docs/do-migration/cutover-readiness.md: Gate 0 true status, 8 stale/incomplete plan items, ordered pre-cutover checklist. plan.md stale items FIXED on branch plan-md-fixes (2026-11-03, pending PR). Open for Adam: 0.5 DNS host + current CNAME, 0.6 secrets export, 0.7 cutover date, DO region note, Neon PITR plan check.
 
 ## Next action (needs Adam)
 1. DONE: branch protection on `main` (plan 3.4), ruleset `protect-main` active: no deletion, no force push, PR required. Verified via API 2026-11-03.
