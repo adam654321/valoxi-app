@@ -59,6 +59,10 @@
 - scripts/migration/check-clerk-ids.mjs, check-stripe-subs.mjs, rehearsal-lib.mjs (+ test): read-only, refuse old prod, support --dry-run. Dry-run on dev OK (users 88, 53 with clerk id; subs 52, 34 with stripe id). Runbook: cutover-readiness.md section 5.
 - Window decided: weeknight evening, not Wednesday, ~19:00-20:00, 90-minute go/no-go. Date TBD (>= 14 days after Schedule 2 notice).
 
+## Rehearsal restore in progress 2026-11-03
+- Neon branch `rehearsal-2` = ep-calm-smoke-za9wqm88 (eu-west-2, PG 18.6, empty, no expiry), URL in gitignored .env.rehearsal. Viv (users.id 2) re-linked on dev: email viv@shiftopsconsulting.com, clerk_user_id NULL (rollback json in session scratchpad); Gmail draft to Viv saved, staging URL https://squid-app-5dwfn.ondigitalocean.app/.
+- Docker route hung (0 bytes after 30 min). Replaced by scripts/migration/rehearsal-run.ps1 (PowerShell, local PG18 client). Tested against dev stand-in: 94 COUNT lines, dump 9.96 MB in 8 s, guards refuse dev/old-prod/pooled/wrong host. NEXT: Adam runs steps Check, CountsBefore, Dump, CountsAfter, CompareDrift, Restore, RestoredCounts, CompareRestored and pastes timings and compare output.
+
 ## Next action (needs Adam)
 1. DONE: branch protection on `main` (plan 3.4), ruleset `protect-main` active: no deletion, no force push, PR required. Verified via API 2026-11-03.
 2. Say go for Phase 4 (rehearsal restore). Adam runs the prod pg_dump (client must be PostgreSQL 18 or newer). I do not touch prod.
