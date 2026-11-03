@@ -25,5 +25,13 @@ Not covered by this runner
   STRUCT=0: structure-checks.sql (indexes, constraints, views) is not part of rehearsal-run.ps1. Phase 4 ran it separately
   (rehearsal/source-structure.txt vs restored-structure.txt). Run it too before the real cutover.
 
-Still to do on rehearsal-2
-  check-clerk-ids.mjs against the prod Clerk instance, check-stripe-subs.mjs against live Stripe (read-only; see cutover-readiness.md section 5).
+Clerk and Stripe checks on rehearsal-2 (read only, keys set by Adam in his own PowerShell session, cleared afterwards)
+  check-clerk-ids.mjs --all   : key mode live (prod instance). 89 users, 54 with a Clerk id. ok 54, not found 0, mismatched 0.
+                                A first attempt aborted because a test key was set; the script guard refused, as designed.
+  check-stripe-subs.mjs --all : 35 subscriptions with a Stripe id (15 active, 2 trialing, 3 past_due, 30 canceled, 3 comped overall).
+                                First run used the wrong key and returned resource_missing for all 35 (not a data problem).
+                                Re-run with the correct key reported no problems (result as reported by Adam).
+
+Still to do
+  structure-checks.sql comparison (indexes, constraints, views) before the real cutover.
+  Delete the restricted Stripe key(s) created for this check.
