@@ -25,5 +25,18 @@ Not covered by this runner
   STRUCT=0: structure-checks.sql (indexes, constraints, views) is not part of rehearsal-run.ps1. Phase 4 ran it separately
   (rehearsal/source-structure.txt vs restored-structure.txt). Run it too before the real cutover.
 
-Still to do on rehearsal-2
-  check-clerk-ids.mjs against the prod Clerk instance, check-stripe-subs.mjs against live Stripe (read-only; see cutover-readiness.md section 5).
+Clerk and Stripe checks on rehearsal-2 (read only, keys set by Adam in his own PowerShell session, cleared afterwards)
+  check-clerk-ids.mjs --all   : key mode live (prod instance). 89 users, 54 with a Clerk id. ok 54, not found 0, mismatched 0.
+                                A first attempt aborted because a test key was set; the script guard refused, as designed.
+  check-stripe-subs.mjs --all : 35 subscriptions with a Stripe id. Key mode live, correct account.
+                                Run 1 wrong account: 404 for all 35. Run 2 key lacked permission: 403 for all 35.
+                                Run 3 (Subscriptions: Read): ok 30, problems 5. All 5 are status drift, db active/past_due but Stripe canceled:
+                                subs 35, 39, 44, 68, 104. canceled_at is NULL and the period end has passed on all five.
+                                Sub 35 is a fake test company (Adam). Subs 39, 44, 68, 104 are real customers.
+                                Drift is in the old prod data itself, so it is identical in the copy. Not a migration fault.
+                                Webhook handler exists (billing.routes.ts customer.subscription.deleted); why it did not apply is not yet known.
+
+Still to do
+  structure-checks.sql comparison (indexes, constraints, views) before the real cutover.
+  Delete the restricted Stripe key(s).
+  After cutover: reconcile subs 39, 44, 68, 104 (real customers) and tidy test sub 35; find out why the cancel webhook did not apply.
