@@ -50,6 +50,11 @@
 ## Cutover readiness drafted 2026-11-03
 - docs/do-migration/cutover-readiness.md: Gate 0 true status, 8 stale/incomplete plan items, ordered pre-cutover checklist. plan.md stale items FIXED on branch plan-md-fixes (2026-11-03, pending PR). Open for Adam: 0.5 DNS host + current CNAME, 0.6 secrets export, 0.7 cutover date, DO region note, Neon PITR plan check.
 
+## Gate 0 answers 2026-11-03
+- DO region LON1, DNS host Cloudflare (recorded in assessment.md section 0). Current app.valoxi.ai = A 34.111.179.208 + TXT replit-verify (no CNAME).
+- DPA 5.2 needs 14 days' notice before the sub-processor change: publish updated Schedule 2 first, cutover no earlier than +14 days. Draft: docs/do-migration/legal-processor-update-DRAFT.md (needs lawyer review).
+- Still open: secrets export (0.6), cutover date (0.7), delete NEXT_PUBLIC_VALOXI_API_BASE from valoxi-site .env.local (Replit dev host).
+
 ## Rehearsal scripts 2026-11-03 (branch rehearsal-scripts)
 - scripts/migration/check-clerk-ids.mjs, check-stripe-subs.mjs, rehearsal-lib.mjs (+ test): read-only, refuse old prod, support --dry-run. Dry-run on dev OK (users 88, 53 with clerk id; subs 52, 34 with stripe id). Runbook: cutover-readiness.md section 5.
 - Window decided: weeknight evening, not Wednesday, ~19:00-20:00, 90-minute go/no-go. Date TBD (>= 14 days after Schedule 2 notice).

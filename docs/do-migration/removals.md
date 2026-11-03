@@ -41,7 +41,7 @@ day 7 after cutover.
 - [ ] Clerk dev instance: DO staging URL allowed
 - [ ] Stripe test-mode webhook endpoint for staging
 - [ ] DO custom domain `app.valoxi.ai` added (cert pending until DNS)
-- [ ] DNS TTL lowered to 60s at T minus 24h; previous CNAME target recorded here: `________`
+- [ ] DNS TTL lowered to 60s at T minus 24h; previous record recorded here (looked up 2026-11-03, confirm in Cloudflare): A `34.111.179.208` plus TXT `replit-verify=...`; there is no CNAME today
 
 ## 4. Secrets copied from Replit (app pane AND deployment pane)
 
