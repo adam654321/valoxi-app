@@ -180,7 +180,8 @@ explicitly deferred to 5.4.
     SELECT relname, n_live_tup FROM pg_stat_user_tables ORDER BY relname;
     ```
     is an estimate. Use exact counts: generate `SELECT 'table', count(*) FROM table UNION ALL ...`
-    for all 92 tables from `information_schema.tables`. Run on both sides within the same
+    for all 94 tables from `information_schema.tables` (plus the 4 views, 98 relations in all;
+    earlier drafts said 92, which was wrong, see `assessment.md` 14). Run on both sides within the same
     minute. Every row must match. Also compare `SELECT last_value FROM <each sequence>` for
     every sequence. Save both outputs in `docs/do-migration/rehearsal-<date>.txt`.
 4.6 Spot checks beyond counts: `SELECT max(id), max(created_at) FROM documents`,
@@ -188,7 +189,7 @@ explicitly deferred to 5.4.
 4.7 Create a Neon branch `dev` from main. This is the local development database from now
     on. Point local `.env` at it. Re-run `npx vitest run` against it.
 
-**Gate 4:** rehearsal counts match on all 92 tables and all sequences. Recorded with
+**Gate 4:** rehearsal counts match on all 94 tables (and 4 views) and all sequences. Recorded with
 timestamps. Adam has seen the file.
 
 ---
@@ -207,9 +208,9 @@ timestamps. Adam has seen the file.
       work on the staging URL.
     - Stripe: **test mode** keys and a test-mode webhook endpoint pointing at the staging URL.
     - `GOOGLE_GEMINI_API_KEY`: the real key (rotated per #559 if that has happened).
-    - R2: the real bucket. Uploads from staging land in the real bucket under the normal
-      key scheme; this is acceptable because staging is pointed at the dev database and
-      keys are per document id. If Adam prefers isolation, create `valoxi-documents-dev`.
+    - R2: DECIDED 2026-11-03: staging uses `valoxi-documents-dev` with an API token scoped to
+      that bucket only (Object Read and Write). The backup cron prunes `backups/` in whatever
+      bucket it points at, so staging must never use the prod bucket `valoxi-documents`.
 5.4 Deploy. Confirm `/api/health` shows the right commit SHA. Confirm the build log shows
     Chromium installed.
 5.5 **Smoke list, all must pass on staging:**
@@ -221,8 +222,9 @@ timestamps. Adam has seen the file.
     - Stripe test checkout completes and the webhook is received (billing.routes.ts:67)
     - Clerk webhook `/api/webhooks/clerk` receives a user.created event
     - Portal submission flow (token link) works
-    - One cron fires: temporarily schedule the backup cron for two minutes ahead, confirm a
-      file lands in R2 under `backups/`, revert the schedule
+    - One cron fires: DONE 2026-11-03. `scripts/verify-backup-r2.ts` proved pg_dump, upload,
+      download and delete on the dev bucket, and the real 02:00 run wrote
+      `backups/backup-2026-11-03.sql.gz`. No schedule edit was needed.
 5.6 Load the app for ten minutes of normal use. Check DO logs for anything at ERROR that
     was not there on Replit.
 
@@ -239,23 +241,42 @@ timestamps. Adam has seen the file.
     at it; it will show pending until then. That is expected.
 6.3 Prepare the production env var set in DO but do not apply it yet: prod Clerk keys,
     live Stripe keys and the existing live webhook secret, `APP_URL=https://app.valoxi.ai`,
-    `DATABASE_URL` = new Neon main pooled URL.
+    `DATABASE_URL` = new Neon main pooled URL. Staging runs with safeguards that prod must
+    reverse on purpose, so list each one explicitly in the prod set:
+    - R2: `R2_BUCKET_NAME=valoxi-documents` plus the prod `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`,
+      `R2_SECRET_ACCESS_KEY` (staging uses `valoxi-documents-dev` and a dev-scoped token)
+    - Email and integrations: live `RESEND_API_KEY`, the marketing key, webhook secret,
+      segments, Nylas keys, and `ISSUE_REPORT_RECIPIENT` back to its real value (all unset or
+      Adam-only on staging)
+    - `NYLAS_CONNECT_GMAIL_VISIBLE=true` (`assessment.md` 11)
+    - Build-time: `VITE_CLERK_PUBLISHABLE_KEY` (prod key) and `GIT_SHA`, both BUILD_TIME
 6.4 Tell users, if any are active, that there is a ten-minute window at 03:00.
 
 **T zero, 03:00 UK. Adam present. Each step reported before the next.**
-6.5 **Freeze.** Stop the Replit deployment (Deployments pane, Stop). Confirm
+6.5 **Freeze.** Stop the Replit deployment (Deployments pane, Stop). The crons (billing,
+    chase-up, backup) start unconditionally in-process, so this stop is also what prevents two
+    instances mailing real customers. Do not apply live email or Stripe keys to DO until this
+    step is done. Confirm
     `https://app.valoxi.ai` returns an error. This is the write freeze. Timestamp it.
-6.6 **Final dump** from the Replit workspace shell (the workspace still runs; only the
+6.6 **Final dump** (client must be PostgreSQL 18 or newer; Neon is 18, and an older
+    `pg_dump` refuses a newer server. The restore client has the same requirement) from the Replit workspace shell (the workspace still runs; only the
     deployment is stopped):
     `pg_dump "$PROD_DATABASE_URL" -Fc --no-owner --no-privileges -f /tmp/valoxi-final.dump`
     Download it. Keep a second copy somewhere safe immediately.
-6.7 **Restore** into Neon main. Main still holds the rehearsal data, so:
+6.7 **Restore** into Neon main. Main (the production branch) is EMPTY by design: the
+    rehearsal and old dev branches expired, and nothing was ever restored into main. The
+    reconciliation baseline is therefore empty-then-final-dump. `--clean --if-exists` is still
+    harmless on an empty database, so keep it:
     `pg_restore -d "<NEW_DIRECT_URL>" --no-owner --no-privileges --clean --if-exists /tmp/valoxi-final.dump`
     `--clean` drops and recreates each object before loading it.
-6.8 **Count reconciliation**, same script as 4.5, both sides. All 92 tables and all
+6.8 **Count reconciliation**, same script as 4.5, both sides. All 94 tables (4 views exist and
+    are rebuilt by the restore, 98 relations) and all
     sequences must match. If one does not, STOP. Do not flip DNS. Investigate or roll back
     (6.12).
-6.9 Apply the production env var set to the DO app (6.3). Redeploy. Confirm `/api/health`
+6.9 Apply the production env var set to the DO app (6.3). Redeploy. The Clerk publishable key
+    and `GIT_SHA` are BUILD_TIME variables, so this is a full image rebuild, not a restart;
+    budget the build time (several minutes) inside the 03:00 window, or build ahead on a
+    second DO app. Confirm `/api/health`
     and that the log shows the app connecting to the new Neon host.
 6.10 **Flip DNS.** `app.valoxi.ai` CNAME to the DO app hostname. Wait for DO's certificate to
     go active (usually under five minutes with a 60s TTL).
@@ -280,7 +301,8 @@ timestamps. Adam has seen the file.
 7.3 Local `.env`: `DATABASE_URL` = dev branch. `PROD_DATABASE_URL` = new prod, inspection
     only by convention, exactly as before. Every prod query is still
     `DATABASE_URL="$PROD_DATABASE_URL"`.
-7.4 **#574.** The seven constraints restored as SET NULL and NO ACTION, because the dump
+7.4 **#574.** (Have the seven ALTERs and the rollback scripted and reviewed BEFORE T-0, not
+    written afterwards.) The seven constraints restored as SET NULL and NO ACTION, because the dump
     carries them as they were. Apply the seven ALTERs by exact constraint name on the new
     prod, rollback to hand, with Adam's authorisation. Constraint names and current states
     are in `assessment.md` §5.
