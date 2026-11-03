@@ -61,7 +61,7 @@
 
 ## Rehearsal restore in progress 2026-11-03
 - Neon branch `rehearsal-2` = ep-calm-smoke-za9wqm88 (eu-west-2, PG 18.6, empty, no expiry), URL in gitignored .env.rehearsal. Viv (users.id 2) re-linked on dev: email viv@shiftopsconsulting.com, clerk_user_id NULL (rollback json in session scratchpad); Gmail draft to Viv saved, staging URL https://squid-app-5dwfn.ondigitalocean.app/.
-- Docker route hung (0 bytes after 30 min). Replaced by scripts/migration/rehearsal-run.ps1 (PowerShell, local PG18 client). Tested against dev stand-in: 94 COUNT lines, dump 9.96 MB in 8 s, guards refuse dev/old-prod/pooled/wrong host. NEXT: Adam runs steps Check, CountsBefore, Dump, CountsAfter, CompareDrift, Restore, RestoredCounts, CompareRestored and pastes timings and compare output.
+- Docker route hung (0 bytes after 30 min). Replaced by scripts/migration/rehearsal-run.ps1 (PowerShell, local PG18 client). Tested against dev stand-in: 94 COUNT lines, dump 9.96 MB in 8 s, guards refuse dev/old-prod/pooled/wrong host. DONE 2026-11-03 (rehearsal-2026-11-03.txt): dump 38 s (10,147,614 B), restore 22 s exit 0, 94 tables and 92 sequences match, only live `session` row drifts (909 vs 908). NEXT: Clerk-ID check and Stripe subscription check on rehearsal-2 (Adam runs with prod keys), plus structure-checks.sql.
 
 ## Next action (needs Adam)
 1. DONE: branch protection on `main` (plan 3.4), ruleset `protect-main` active: no deletion, no force push, PR required. Verified via API 2026-11-03.

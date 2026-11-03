@@ -1,0 +1,29 @@
+REHEARSAL 2, 2026-11-03 (Valoxi, Replit to DigitalOcean). Run by Adam in Windows PowerShell with scripts/migration/rehearsal-run.ps1.
+
+Source : old Replit-owned Neon, endpoint ep-old-recipe-an7e4afw (us-east-1), PostgreSQL 16.15, read only.
+Target : Neon branch rehearsal-2, endpoint ep-calm-smoke-za9wqm88 (eu-west-2), PostgreSQL 18.6, created empty from production, no expiry.
+Client : local PostgreSQL 18.3 tools (no Docker; the Docker route hung with 0 bytes of output after 30 minutes).
+
+Timings (Adam's machine, London)
+  Check            2 s   source reachable (16.15), target empty (0 tables)
+  CountsBefore     3 s   94 COUNT lines
+  Dump            38 s   10,147,614 bytes (Phase 4 was 10,021,863)   <- real length of plan 6.6
+  CountsAfter      3 s   94 COUNT lines
+  Restore         22 s   exit code 0, --clean --if-exists --exit-on-error   <- real length of plan 6.7
+  RestoredCounts   0 s   94 COUNT lines
+  Data move total about one minute. The window is dominated by verification and the Clerk-key rebuild, not by data.
+
+Comparisons (scripts/migration/compare-counts.mjs; 94 COUNT, 92 SEQ, 4 SPOT, 0 STRUCT)
+  CompareDrift     (source before vs after the dump): 1 mismatch
+  CompareRestored  (source after vs restored)       : 1 mismatch
+  The only mismatch both times is COUNT|session: 909 before the dump, 908 after it, 909 in the restored copy.
+  The dump was taken between the two source counts, so the restored copy matches the dump snapshot (909).
+  One live login session expired during the run. Expected on a live database; at cutover the app is stopped, so it must be 0 there.
+  All other 93 tables, all 92 sequences and all 4 spot checks match.
+
+Not covered by this runner
+  STRUCT=0: structure-checks.sql (indexes, constraints, views) is not part of rehearsal-run.ps1. Phase 4 ran it separately
+  (rehearsal/source-structure.txt vs restored-structure.txt). Run it too before the real cutover.
+
+Still to do on rehearsal-2
+  check-clerk-ids.mjs against the prod Clerk instance, check-stripe-subs.mjs against live Stripe (read-only; see cutover-readiness.md section 5).
