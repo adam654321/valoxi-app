@@ -28,10 +28,11 @@ Not covered by this runner
 Clerk and Stripe checks on rehearsal-2 (read only, keys set by Adam in his own PowerShell session, cleared afterwards)
   check-clerk-ids.mjs --all   : key mode live (prod instance). 89 users, 54 with a Clerk id. ok 54, not found 0, mismatched 0.
                                 A first attempt aborted because a test key was set; the script guard refused, as designed.
-  check-stripe-subs.mjs --all : 35 subscriptions with a Stripe id (15 active, 2 trialing, 3 past_due, 30 canceled, 3 comped overall).
-                                First run used the wrong key and returned resource_missing for all 35 (not a data problem).
-                                Re-run with the correct key reported no problems (result as reported by Adam).
+  check-stripe-subs.mjs --all : 35 subscriptions with a Stripe id. NOT YET PASSED.
+                                Run 1 wrong Stripe account/mode: resource_missing 404 for all 35.
+                                Run 2 right account, key lacks permission: more_permissions_required 403 for all 35.
+                                Fix: restricted key needs Subscriptions: Read (and Customers: Read). Re-run pending.
 
 Still to do
   structure-checks.sql comparison (indexes, constraints, views) before the real cutover.
-  Delete the restricted Stripe key(s) created for this check.
+  Re-run check-stripe-subs.mjs --all with the permissions fixed; then delete the restricted Stripe key(s).
