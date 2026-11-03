@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { assertTestDbHost, endpointId, parseDbHost } from './db-host-guard';
 
 const url = (host: string) => `postgresql://u:p@${host}/db?sslmode=require`;
@@ -11,8 +11,14 @@ describe('db-host-guard', () => {
   });
 
   it('allows an unset DATABASE_URL (DB tests skip themselves)', () => {
-    expect(() => assertTestDbHost(undefined, ALLOWED)).not.toThrow();
-    expect(() => assertTestDbHost('', ALLOWED)).not.toThrow();
+    // undefined would fall back to the real process.env default, so stub it empty.
+    vi.stubEnv('DATABASE_URL', '');
+    try {
+      expect(() => assertTestDbHost(undefined, ALLOWED)).not.toThrow();
+      expect(() => assertTestDbHost('', ALLOWED)).not.toThrow();
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it('allows an allowlisted endpoint, direct or pooled', () => {
