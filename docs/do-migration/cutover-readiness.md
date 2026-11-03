@@ -11,11 +11,11 @@ Status key: DONE (evidence in repo or docs), ADAM (only Adam can answer or do), 
 
 | # | Decision | Status | Evidence / what is missing |
 |---|---|---|---|
-| 0.1 | Region | DONE | Neon eu-west-2 (London). DO staging app exists. ADAM: confirm DO region is lon1 (not recorded anywhere I can read) |
+| 0.1 | Region | DONE | London: Neon eu-west-2, DO LON1 (Adam confirmed 2026-11-03) |
 | 0.2 | Neon account and project | DONE | Project `billowing-block-98253807`, org `org-holy-base-64540790`, eu-west-2. Production branch empty by design; `dev` branch `ep-ancient-breeze-zaso9i43`, no expiry |
 | 0.3 | GitHub repo | DONE | https://github.com/adam654321/valoxi-app (private), `main` protected (ruleset `protect-main`), tag `replit-final` at de39a9f |
 | 0.4 | DO account and project | DONE | Staging app running, commit shown by `/api/health`. ADAM: note the DO team/account name in assessment.md section 0 (not visible from the Claude machine's doctl contexts) |
-| 0.5 | DNS host for `app.valoxi.ai` | ADAM | Plan assumes Cloudflare. Not confirmed. Need: where it is managed, that Adam can edit it, and the CURRENT CNAME target (needed for rollback 6.12) |
+| 0.5 | DNS host for `app.valoxi.ai` | PARTLY | Cloudflare (Adam, 2026-11-03). Today: A `34.111.179.208` plus TXT `replit-verify`, no CNAME. Cutover record: CNAME to the DO hostname shown when the custom domain is added in DO, DNS-only (grey cloud). The A record must be deleted first (a name cannot hold both). Rollback: restore the A record and keep the TXT. ADAM: confirm proxied or DNS-only in the dashboard |
 | 0.6 | Secrets export | ADAM | Every Replit secret, BOTH panes (app and deployment, they can differ), into a password manager entry. Checklist: `removals.md` section 4. Nothing else holds these |
 | 0.7 | Cutover window | ADAM | Plan default: a weeknight 03:00 UK with the next morning free. Pick the date. TTL lowering (6.1) must happen 24h before |
 
@@ -36,11 +36,12 @@ FIXED in `plan.md` on 2026-11-03 (branch plan-md-fixes); kept here as the record
 
 | When | Step | Owner |
 |---|---|---|
-| Any time | Record 0.1, 0.4, 0.5, 0.7 answers at the top of `assessment.md` section 0 | ADAM |
+| Any time | Record 0.4 and 0.7 answers at the top of `assessment.md` section 0 (0.1 and 0.5 now recorded) | ADAM |
 | Any time | Secrets export (0.6), both Replit panes, tick `removals.md` section 4 | ADAM |
 | Any time | Confirm who can edit DNS for `app.valoxi.ai` and note the current CNAME | ADAM |
 | Any time | Fix plan.md items in section 2 above | CODE (Claude, on a branch) |
 | Any time | Rehearse the 6.5 to 6.11 sequence end to end on staging against a fresh dump, time it, write the real downtime | ADAM + CODE |
+| T-14 days or earlier | Publish the updated DPA Schedule 2 and privacy policy (DigitalOcean and Neon added, Replit still listed). DPA 5.2 promises at least 14 days' notice of a sub-processor change. Earliest cutover = publish date + 14 days. Draft: `legal-processor-update-DRAFT.md`. Needs lawyer review | ADAM + counsel |
 | T-24h | 6.1 lower TTL to 60s, 6.2 add custom domain in DO, 6.3 prep prod env set (not applied), 6.4 notify users | ADAM |
 | T-0 | 6.5 to 6.11 as written in plan.md, Adam present, each step reported | ADAM + CODE (I do not touch prod; Adam runs prod dumps and DNS) |
 | T+0 | Rollback 6.12 available for seven days | ADAM |

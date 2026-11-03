@@ -50,6 +50,11 @@
 ## Cutover readiness drafted 2026-11-03
 - docs/do-migration/cutover-readiness.md: Gate 0 true status, 8 stale/incomplete plan items, ordered pre-cutover checklist. plan.md stale items FIXED on branch plan-md-fixes (2026-11-03, pending PR). Open for Adam: 0.5 DNS host + current CNAME, 0.6 secrets export, 0.7 cutover date, DO region note, Neon PITR plan check.
 
+## Gate 0 answers 2026-11-03
+- DO region LON1, DNS host Cloudflare (recorded in assessment.md section 0). Current app.valoxi.ai = A 34.111.179.208 + TXT replit-verify (no CNAME).
+- DPA 5.2 needs 14 days' notice before the sub-processor change: publish updated Schedule 2 first, cutover no earlier than +14 days. Draft: docs/do-migration/legal-processor-update-DRAFT.md (needs lawyer review).
+- Still open: secrets export (0.6), cutover date (0.7), delete NEXT_PUBLIC_VALOXI_API_BASE from valoxi-site .env.local (Replit dev host).
+
 ## Next action (needs Adam)
 1. DONE: branch protection on `main` (plan 3.4), ruleset `protect-main` active: no deletion, no force push, PR required. Verified via API 2026-11-03.
 2. Say go for Phase 4 (rehearsal restore). Adam runs the prod pg_dump (client must be PostgreSQL 18 or newer). I do not touch prod.

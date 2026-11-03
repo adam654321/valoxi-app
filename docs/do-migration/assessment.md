@@ -10,11 +10,11 @@ document except where a figure is cited from an earlier dated capture.
 
 | Decision | Answer | Date |
 |---|---|---|
-| Region | NOT YET (kickoff message left the template unfilled) | 2026-10-22 |
-| Neon project | NOT YET | 2026-10-22 |
-| GitHub repo | NOT YET | 2026-10-22 |
-| DO project | NOT YET | 2026-10-22 |
-| DNS host | NOT YET | 2026-10-22 |
+| Region | London. Neon eu-west-2, DO App Platform LON1 (Adam confirmed 2026-11-03) | 2026-11-03 |
+| Neon project | `billowing-block-98253807`, org `org-holy-base-64540790`, eu-west-2. Production branch empty by design; `dev` = `ep-ancient-breeze-zaso9i43` | 2026-11-03 |
+| GitHub repo | https://github.com/adam654321/valoxi-app (private), `main` protected by ruleset `protect-main` | 2026-11-03 |
+| DO project | Staging app running in LON1 (DO team/project name not recorded) | 2026-11-03 |
+| DNS host | Cloudflare (Adam confirmed 2026-11-03). Current state looked up read-only 2026-11-03: `app.valoxi.ai` is an A record to `34.111.179.208` plus a TXT `replit-verify=...`, NOT a CNAME. Adam to confirm in the Cloudflare dashboard (and whether it is proxied) | 2026-11-03 |
 | Secrets exported to | NOT YET | 2026-10-22 |
 | Cutover window | NOT YET | 2026-10-22 |
 
