@@ -50,6 +50,9 @@
 ## Cutover readiness drafted 2026-11-03
 - docs/do-migration/cutover-readiness.md: Gate 0 true status, 8 stale/incomplete plan items, ordered pre-cutover checklist. plan.md stale items FIXED on branch plan-md-fixes (2026-11-03, pending PR). Open for Adam: 0.5 DNS host + current CNAME, 0.6 secrets export, 0.7 cutover date, DO region note, Neon PITR plan check.
 
+## Marketing site links audited 2026-11-03
+- docs/do-migration/marketing-site-links.md. Site needs no change for cutover (follows DNS, slugs in DB survived restore). Live integration baseline 9/9 PASS (scripts/migration/check-marketing-integration.mjs). Open: /event slug bbe-live expired 2026-10-03; local valoxi-site out/ and .env.local bake a Replit dev host (live site is fine); privacy/DPA name Replit as processor and need updating at cutover.
+
 ## Next action (needs Adam)
 1. DONE: branch protection on `main` (plan 3.4), ruleset `protect-main` active: no deletion, no force push, PR required. Verified via API 2026-11-03.
 2. Say go for Phase 4 (rehearsal restore). Adam runs the prod pg_dump (client must be PostgreSQL 18 or newer). I do not touch prod.
