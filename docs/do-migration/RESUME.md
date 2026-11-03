@@ -50,6 +50,10 @@
 ## Cutover readiness drafted 2026-11-03
 - docs/do-migration/cutover-readiness.md: Gate 0 true status, 8 stale/incomplete plan items, ordered pre-cutover checklist. plan.md stale items FIXED on branch plan-md-fixes (2026-11-03, pending PR). Open for Adam: 0.5 DNS host + current CNAME, 0.6 secrets export, 0.7 cutover date, DO region note, Neon PITR plan check.
 
+## Rehearsal scripts 2026-11-03 (branch rehearsal-scripts)
+- scripts/migration/check-clerk-ids.mjs, check-stripe-subs.mjs, rehearsal-lib.mjs (+ test): read-only, refuse old prod, support --dry-run. Dry-run on dev OK (users 88, 53 with clerk id; subs 52, 34 with stripe id). Runbook: cutover-readiness.md section 5.
+- Window decided: weeknight evening, not Wednesday, ~19:00-20:00, 90-minute go/no-go. Date TBD (>= 14 days after Schedule 2 notice).
+
 ## Next action (needs Adam)
 1. DONE: branch protection on `main` (plan 3.4), ruleset `protect-main` active: no deletion, no force push, PR required. Verified via API 2026-11-03.
 2. Say go for Phase 4 (rehearsal restore). Adam runs the prod pg_dump (client must be PostgreSQL 18 or newer). I do not touch prod.

@@ -17,7 +17,7 @@ Status key: DONE (evidence in repo or docs), ADAM (only Adam can answer or do), 
 | 0.4 | DO account and project | DONE | Staging app running, commit shown by `/api/health`. ADAM: note the DO team/account name in assessment.md section 0 (not visible from the Claude machine's doctl contexts) |
 | 0.5 | DNS host for `app.valoxi.ai` | ADAM | Plan assumes Cloudflare. Not confirmed. Need: where it is managed, that Adam can edit it, and the CURRENT CNAME target (needed for rollback 6.12) |
 | 0.6 | Secrets export | ADAM | Every Replit secret, BOTH panes (app and deployment, they can differ), into a password manager entry. Checklist: `removals.md` section 4. Nothing else holds these |
-| 0.7 | Cutover window | ADAM | Plan default: a weeknight 03:00 UK with the next morning free. Pick the date. TTL lowering (6.1) must happen 24h before |
+| 0.7 | Cutover window | ADAM | DECIDED shape (2026-11-03): a weeknight EVENING, any day except Wednesday, start about 19:00 to 20:00 UK (not 03:00). Hard go/no-go: if no all-clear within 90 minutes of the freeze, roll back (6.12). Avoids all Replit cron times. Date still to pick: at least 14 days after the DPA Schedule 2 notice is published |
 
 ## 2. Things the plan says that are now wrong or incomplete
 
@@ -50,3 +50,14 @@ FIXED in `plan.md` on 2026-11-03 (branch plan-md-fixes); kept here as the record
 
 - Neon PITR plan: plan 0.2 assumes Launch or Scale for point-in-time recovery. Confirm the project is on a plan that has it before cutover.
 - DO alerting (7.6) and Replit AI integration cancellation (7.7) are post-cutover.
+
+## 5. Rehearsal checks (days before cutover, no user impact)
+
+Run against the RESTORED new Neon database, never the old Replit prod. All three are read-only and refuse `ep-old-recipe`. Adam runs them with prod keys; Claude does not touch prod.
+
+1. **Rehearsal restore.** Adam takes a fresh prod dump (PostgreSQL 18 client) and restores it into Neon main. Nothing points at main yet, so this is harmless. Time the restore: that is the real length of 6.7.
+2. **Counts and spot checks.** `scripts/migration/table-counts.sql` and `spot-checks.sql` on both sides, then `node scripts/migration/compare-counts.mjs source.txt restored.txt`. Must exit 0 (94 tables, 4 views, all sequences).
+3. **Clerk IDs.** `DATABASE_URL=<new Neon url> CLERK_SECRET_KEY=<sk_live_...> node scripts/migration/check-clerk-ids.mjs --all`. Confirms every `clerk_user_id` exists in the prod Clerk instance and primary emails match. On dev, 53 of 88 users have a Clerk ID; the rest cannot be checked.
+4. **Stripe subscriptions.** `DATABASE_URL=<new Neon url> STRIPE_SECRET_KEY=<rk_live_... read-only restricted key> node scripts/migration/check-stripe-subs.mjs --all`. Compares status, customer id and cancel-at-period-end for each subscription that has a Stripe id. Use a restricted key with read access to Subscriptions only.
+5. Add `--dry-run` to 3 and 4 first to see what will be checked without any API calls.
+6. Re-run 1 to 4 against the FINAL restore at the window (6.8) as the go/no-go evidence.
