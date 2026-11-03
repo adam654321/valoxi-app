@@ -28,11 +28,15 @@ Not covered by this runner
 Clerk and Stripe checks on rehearsal-2 (read only, keys set by Adam in his own PowerShell session, cleared afterwards)
   check-clerk-ids.mjs --all   : key mode live (prod instance). 89 users, 54 with a Clerk id. ok 54, not found 0, mismatched 0.
                                 A first attempt aborted because a test key was set; the script guard refused, as designed.
-  check-stripe-subs.mjs --all : 35 subscriptions with a Stripe id. NOT YET PASSED.
-                                Run 1 wrong Stripe account/mode: resource_missing 404 for all 35.
-                                Run 2 right account, key lacks permission: more_permissions_required 403 for all 35.
-                                Fix: restricted key needs Subscriptions: Read (and Customers: Read). Re-run pending.
+  check-stripe-subs.mjs --all : 35 subscriptions with a Stripe id. Key mode live, correct account.
+                                Run 1 wrong account: 404 for all 35. Run 2 key lacked permission: 403 for all 35.
+                                Run 3 (Subscriptions: Read): ok 30, problems 5. All 5 are status drift, db active/past_due but Stripe canceled:
+                                subs 35, 39, 44, 68, 104. canceled_at is NULL and the period end has passed on all five.
+                                Sub 35 is a fake test company (Adam). Subs 39, 44, 68, 104 are real customers.
+                                Drift is in the old prod data itself, so it is identical in the copy. Not a migration fault.
+                                Webhook handler exists (billing.routes.ts customer.subscription.deleted); why it did not apply is not yet known.
 
 Still to do
   structure-checks.sql comparison (indexes, constraints, views) before the real cutover.
-  Re-run check-stripe-subs.mjs --all with the permissions fixed; then delete the restricted Stripe key(s).
+  Delete the restricted Stripe key(s).
+  After cutover: reconcile subs 39, 44, 68, 104 (real customers) and tidy test sub 35; find out why the cancel webhook did not apply.
