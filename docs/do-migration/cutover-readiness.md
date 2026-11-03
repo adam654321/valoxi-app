@@ -54,11 +54,11 @@ FIXED in `plan.md` on 2026-11-03 (branch plan-md-fixes); kept here as the record
 
 ## 5. Rehearsal checks (days before cutover, no user impact)
 
-Run against the RESTORED new Neon database, never the old Replit prod. All three are read-only and refuse `ep-old-recipe`. Adam runs them with prod keys; Claude does not touch prod.
+Run against the RESTORED new Neon database (the `rehearsal-2` branch now, `production` after the final restore), never the old Replit prod. All three are read-only and refuse `ep-old-recipe`. Adam runs them with prod keys; Claude does not touch prod.
 
-1. **Rehearsal restore.** Adam takes a fresh prod dump (PostgreSQL 18 client) and restores it into Neon main. Nothing points at main yet, so this is harmless. Time the restore: that is the real length of 6.7.
+1. **Rehearsal restore.** Adam takes a fresh prod dump (PostgreSQL 18 client) and restores it into a NEW Neon branch (`rehearsal-2`, created from `production`, no expiry), NOT into `production`, which stays empty until cutover. Follow `phase4-runbook.md` with the folder `rehearsal2/` so the Phase 4 evidence in `rehearsal/` is not overwritten. Time the dump and the restore: that is the real length of 6.6 and 6.7.
 2. **Counts and spot checks.** `scripts/migration/table-counts.sql` and `spot-checks.sql` on both sides, then `node scripts/migration/compare-counts.mjs source.txt restored.txt`. Must exit 0 (94 tables, 4 views, all sequences).
-3. **Clerk IDs.** `DATABASE_URL=<new Neon url> CLERK_SECRET_KEY=<sk_live_...> node scripts/migration/check-clerk-ids.mjs --all`. Confirms every `clerk_user_id` exists in the prod Clerk instance and primary emails match. On dev, 53 of 88 users have a Clerk ID; the rest cannot be checked.
-4. **Stripe subscriptions.** `DATABASE_URL=<new Neon url> STRIPE_SECRET_KEY=<rk_live_... read-only restricted key> node scripts/migration/check-stripe-subs.mjs --all`. Compares status, customer id and cancel-at-period-end for each subscription that has a Stripe id. Use a restricted key with read access to Subscriptions only.
+3. **Clerk IDs.** `DATABASE_URL=<rehearsal-2 DIRECT url> CLERK_SECRET_KEY=<sk_live_...> node scripts/migration/check-clerk-ids.mjs --all`. Confirms every `clerk_user_id` exists in the prod Clerk instance and primary emails match. On dev, 53 of 88 users have a Clerk ID; the rest cannot be checked.
+4. **Stripe subscriptions.** `DATABASE_URL=<rehearsal-2 DIRECT url> STRIPE_SECRET_KEY=<rk_live_... read-only restricted key> node scripts/migration/check-stripe-subs.mjs --all`. Compares status, customer id and cancel-at-period-end for each subscription that has a Stripe id. Use a restricted key with read access to Subscriptions only.
 5. Add `--dry-run` to 3 and 4 first to see what will be checked without any API calls.
 6. Re-run 1 to 4 against the FINAL restore at the window (6.8) as the go/no-go evidence.
