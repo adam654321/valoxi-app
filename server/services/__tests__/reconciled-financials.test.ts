@@ -33,12 +33,7 @@ import {
 import { getReconciledFinancials, isBalanceSheetEmpty } from '../reconciled-financials.service';
 import { fetchReportedEbitdaByYear } from '../deal-model.service';
 
-// ─── HOST GUARD ─────────────────────────────────────────────────────────────
-const dbUrl = process.env.DATABASE_URL ?? '';
-const dbHost = dbUrl.match(/@([^/]+)\//)?.[1] ?? 'unknown';
-if (dbHost.includes('ep-old-recipe') || dbHost.includes('.prod.')) {
-  throw new Error(`RF ABORT: DATABASE_URL points at prod host (${dbHost}). Tests must run on dev.`);
-}
+// DB host guard: enforced for every test file by vitest setupFiles (server/test-utils/db-host-guard.ts).
 
 const USER_COMPANY_ID = 71;
 const FISCAL_YEAR = 2025;

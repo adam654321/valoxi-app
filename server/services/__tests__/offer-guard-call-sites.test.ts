@@ -21,12 +21,7 @@ import { dealDocuments, currentOffers } from '@shared/schema/deal-documents';
 import { dealModelService, fetchReportedEbitdaByYear } from '../deal-model.service';
 import { dealDocumentService } from '../deal-document.service';
 
-// ─── HOST GUARD ──────────────────────────────────────────────────────────────
-const dbUrl = process.env.DATABASE_URL ?? '';
-const dbHost = dbUrl.match(/@([^/]+)\//)?.[1] ?? 'unknown';
-if (dbHost.includes('ep-old-recipe') || dbHost.includes('.prod.')) {
-  throw new Error(`OFFER GUARD ABORT: DATABASE_URL points at prod host (${dbHost}). Tests must run on dev.`);
-}
+// DB host guard: enforced for every test file by vitest setupFiles (server/test-utils/db-host-guard.ts).
 
 const STAMP = Date.now();
 
