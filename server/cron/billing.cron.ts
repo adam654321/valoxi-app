@@ -12,6 +12,8 @@ import { emailApiService } from '../services/email.service';
 import { systemConfigService } from '../services/system-config.service';
 import { userCompanies, users } from '@shared/schema/core';
 import { runSuspensionCheckInJob } from '../services/suspension-check-in.service';
+import { cancelOrReconcileForDunning } from '../services/billing-guards';
+import { findSubscriptionDrift, formatReconcileAlert } from '../services/stripe-reconciliation.service';
 
 export async function runDunningDay7ReminderJob(): Promise<void> {
   const now = Date.now();
@@ -105,26 +107,55 @@ export async function runDunningCancellationJob(): Promise<void> {
         !latest.stripeSubscriptionId
       ) continue;
 
-      // Write audit BEFORE Stripe cancel so customer.subscription.deleted
-      // handler can detect it via hasRecentEvent.
-      await billingRepository.logEvent({
-        userCompanyId: sub.userCompanyId,
-        eventType: 'dunning.auto_cancel_requested',
-        previousStatus: latest.status,
-        previousPlanKey: latest.planKey,
-        newStatus: 'canceled',
-        newPlanKey: latest.planKey,
-        payload: {
-          stripeSubscriptionId: latest.stripeSubscriptionId,
-          pastDueSince: latest.pastDueSince,
-          graceDays: 14,
+      const stripeSubscriptionId = latest.stripeSubscriptionId;
+      const outcome = await cancelOrReconcileForDunning(
+        {
+          retrieveStatus: async (id) => (await stripe.subscriptions.retrieve(id)).status,
+          cancel: async (id) => { await stripe.subscriptions.cancel(id); },
+          markLocalCanceled: async (companyId) => {
+            await billingService.updateSubscriptionStatus(companyId, { status: 'canceled' });
+          },
+          // Audit row is written BEFORE the Stripe cancel so the
+          // customer.subscription.deleted handler can detect it via hasRecentEvent.
+          logCancelRequested: async (companyId) => {
+            await billingRepository.logEvent({
+              userCompanyId: companyId,
+              eventType: 'dunning.auto_cancel_requested',
+              previousStatus: latest.status,
+              previousPlanKey: latest.planKey,
+              newStatus: 'canceled',
+              newPlanKey: latest.planKey,
+              payload: {
+                stripeSubscriptionId,
+                pastDueSince: latest.pastDueSince,
+                graceDays: 14,
+              },
+            });
+          },
+          logReconciled: async (companyId, stripeStatus) => {
+            await billingRepository.logEvent({
+              userCompanyId: companyId,
+              eventType: 'dunning.reconciled_already_canceled',
+              previousStatus: latest.status,
+              previousPlanKey: latest.planKey,
+              newStatus: 'canceled',
+              newPlanKey: latest.planKey,
+              payload: { stripeSubscriptionId, stripeStatus },
+            });
+          },
         },
-      });
+        { userCompanyId: sub.userCompanyId, stripeSubscriptionId }
+      );
 
-      await stripe.subscriptions.cancel(latest.stripeSubscriptionId);
-      console.log(`[billing-cron] Stripe sub ${latest.stripeSubscriptionId} cancelled (dunning) for company ${sub.userCompanyId}`);
-      // Local status flip and email both happen on the resulting
-      // customer.subscription.deleted webhook.
+      if (outcome === 'reconciled_already_canceled') {
+        // Stripe had already cancelled it; the local row is now corrected. No customer email:
+        // the cancellation happened earlier and this is only a bookkeeping fix.
+        console.warn(`[billing-cron] Stripe sub ${stripeSubscriptionId} was already cancelled; local status reconciled for company ${sub.userCompanyId}`);
+      } else {
+        console.log(`[billing-cron] Stripe sub ${stripeSubscriptionId} cancelled (dunning) for company ${sub.userCompanyId}`);
+        // Local status flip and email both happen on the resulting
+        // customer.subscription.deleted webhook.
+      }
     } catch (err) {
       console.error(`[billing-cron] Day-14 dunning cancel failed for company ${sub.userCompanyId}:`, err);
     }
@@ -632,6 +663,15 @@ export function initializeBillingCron(): void {
   }, { timezone: 'Europe/London' });
   console.log('[billing-cron] Stripe webhook failure alert scheduled for 08:00 London');
 
+  cron.schedule('30 8 * * *', async () => {
+    try {
+      await runStripeReconciliationAlertJob();
+    } catch (err) {
+      console.error('[billing-cron] Stripe reconciliation check failed:', err);
+    }
+  }, { timezone: 'Europe/London' });
+  console.log('[billing-cron] Stripe subscription reconciliation (report only) scheduled for 08:30 London');
+
   cron.schedule('0 4 * * *', async () => {
     try {
       const sendDayRaw = await systemConfigService.getConfig('five_d_invoice_send_day');
@@ -651,6 +691,55 @@ export function initializeBillingCron(): void {
     try { await runTrialWarningJob(); } catch (err) { console.error('[billing-cron] Trial warning job failed:', err); }
   }, { timezone: 'Europe/London' });
   console.log('[billing-cron] Trial extension + warning job scheduled hourly');
+}
+
+/**
+ * Daily, report-only: compares every non-cancelled, non-comped subscription that has a Stripe id
+ * with Stripe itself and emails SMTP_ALERT_EMAIL when they disagree. Never edits a row.
+ */
+export async function runStripeReconciliationAlertJob(): Promise<void> {
+  const recipient = config.smtp.alertEmail;
+  if (!recipient) {
+    console.warn('[billing-cron] SMTP_ALERT_EMAIL not configured — skipping Stripe reconciliation alert');
+    return;
+  }
+  if (!config.stripe.secretKey) {
+    console.warn('[billing-cron] STRIPE_SECRET_KEY not configured — skipping Stripe reconciliation');
+    return;
+  }
+
+  const stripe = new Stripe(config.stripe.secretKey);
+  const result = await findSubscriptionDrift({
+    loadCandidates: async () => {
+      const rows = await db
+        .select({
+          id: subscriptions.id,
+          userCompanyId: subscriptions.userCompanyId,
+          stripeSubscriptionId: subscriptions.stripeSubscriptionId,
+          status: subscriptions.status,
+        })
+        .from(subscriptions)
+        .where(and(isNotNull(subscriptions.stripeSubscriptionId), sql`${subscriptions.status} NOT IN ('canceled', 'admin_comped')`));
+      return rows.map((r) => ({
+        subscriptionId: r.id,
+        userCompanyId: r.userCompanyId,
+        stripeSubscriptionId: r.stripeSubscriptionId as string,
+        status: r.status,
+      }));
+    },
+    retrieveStripeStatus: async (id) => (await stripe.subscriptions.retrieve(id)).status,
+  });
+
+  console.log(`[billing-cron] Stripe reconciliation: checked ${result.checked}, ${result.problems.length} problem(s)`);
+  const alert = formatReconcileAlert(result);
+  if (!alert) return;
+
+  try {
+    const sent = await emailApiService.sendCustomEmail(recipient, alert.subject, alert.body);
+    if (!sent.success) console.error(`[billing-cron] Failed to send reconciliation alert: ${sent.message}`);
+  } catch (err) {
+    console.error('[billing-cron] Exception sending reconciliation alert:', err);
+  }
 }
 
 export async function runStripeWebhookFailureAlertJob(): Promise<void> {

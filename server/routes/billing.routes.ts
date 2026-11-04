@@ -5,6 +5,7 @@ import { eq, sql } from 'drizzle-orm';
 import { config } from '../config';
 import { billingService } from '../services/billing.service';
 import { billingRepository } from '../repositories/billing.repository';
+import { shouldIgnoreInvoiceEvent } from '../services/billing-guards';
 import { promoCodeService, computeFreeMonthsElapsed, getFreePeriodState } from '../services/promo-code.service';
 import { db } from '../db';
 import { webhookEvents, users, userCompanies, userCompanyMemberships } from '@shared/schema/core';
@@ -51,6 +52,23 @@ async function logWebhookEvent(
   } catch (err) {
     console.error('[Billing] Failed to log webhook event:', err);
   }
+}
+
+async function ignoreInvoiceEventForCanceledSub(
+  event: Stripe.Event,
+  sub: { userCompanyId: number; planKey: string; status: string }
+) {
+  console.warn(`[billing-webhook] ${event.type} ${event.id} ignored: subscription for company ${sub.userCompanyId} is already canceled`);
+  await billingRepository.logEvent({
+    userCompanyId: sub.userCompanyId,
+    stripeEventId: event.id,
+    eventType: 'invoice.ignored_after_cancel',
+    previousStatus: sub.status as any,
+    previousPlanKey: sub.planKey as any,
+    newStatus: sub.status as any,
+    newPlanKey: sub.planKey as any,
+    payload: { originalEventType: event.type },
+  });
 }
 
 billingWebhookRoutes.post('/webhook/stripe', async (req: Request, res: Response) => {
@@ -403,7 +421,11 @@ billingWebhookRoutes.post('/webhook/stripe', async (req: Request, res: Response)
         if (subscriptionId) {
           const matchingSub = await billingRepository.getByStripeSubscriptionId(subscriptionId);
 
-          if (matchingSub) {
+          if (matchingSub && shouldIgnoreInvoiceEvent(matchingSub.status)) {
+            // A cancelled Stripe subscription is terminal. A late payment on one of its invoices
+            // must not flip the app back to active (it would stop being billed but keep access).
+            await ignoreInvoiceEventForCanceledSub(event, matchingSub);
+          } else if (matchingSub) {
             const previousStatusForRenewal = matchingSub.status;
 
             await billingService.updateSubscriptionStatus(
@@ -467,7 +489,11 @@ billingWebhookRoutes.post('/webhook/stripe', async (req: Request, res: Response)
         if (subscriptionId) {
           const matchingSub = await billingRepository.getByStripeSubscriptionId(subscriptionId);
 
-          if (matchingSub && matchingSub.status !== 'admin_comped') {
+          if (matchingSub && shouldIgnoreInvoiceEvent(matchingSub.status)) {
+            // Already cancelled: a failed payment arriving after (or alongside) the cancel must not
+            // push the row back to past_due, which would also restart dunning on a dead subscription.
+            await ignoreInvoiceEventForCanceledSub(event, matchingSub);
+          } else if (matchingSub && matchingSub.status !== 'admin_comped') {
             await billingService.updateSubscriptionStatus(
               matchingSub.userCompanyId,
               { status: 'past_due' },
