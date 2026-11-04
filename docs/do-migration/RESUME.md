@@ -71,3 +71,12 @@
 ## Deferred / deploy-dependent
 - Finding C: FIXED, merged PR #7 (2026-11-03). One allowlist guard in vitest setupFiles (server/test-utils/db-host-guard.ts), default allowed endpoint = Neon dev `ep-ancient-breeze-zaso9i43`; extra via TEST_DB_ALLOWED_ENDPOINTS. Old/`.prod.` hosts always blocked. Five inline guards removed. Run against Neon dev 2026-11-03: 35/35 files, 565/565 tests (559 baseline + 6 new). Needs GOOGLE_GEMINI_API_KEY=placeholder-not-a-real-key to collect 3 files (assessment.md line 284).
 - Uncommitted, not mine: scripts/send-marketing-consent-emails.ts modified, _to_delete/ untracked. Left alone.
+
+## Billing cancel guards (branch billing-cancel-guards)
+Found by the rehearsal-2 Stripe check: 5 subs (39, 44, 68, 104 real; 35 test) had DB active/past_due but Stripe canceled.
+Cause: invoice.paid / invoice.payment_failed ignored a cancelled sub and flipped it back to active/past_due; the dunning job then
+retried the Stripe cancel every night forever. Fixes: (1) invoice events skip cancelled subs (billing.routes.ts), (2) dunning job
+reconciles an already-cancelled sub instead of looping (billing-guards.ts), (3) daily 08:30 London report-only reconciliation email
+to SMTP_ALERT_EMAIL (stripe-reconciliation.service.ts). Tests: 3 new files, full suite 604/604.
+DEPLOY NOTE: on the first 04:00 run after deploy, subs 39, 68, 104 (past_due >14 days, Stripe canceled) are set to canceled without an
+email; sub 44 (active) is only reported by the 08:30 job. Decide about those customers BEFORE deploying.
