@@ -89,3 +89,5 @@ Legal notice PUBLISHED 2026-11-05 (counsel approved; no exact transfer wording g
 the two lines). Live: valoxi.ai/dpa v1.1 and /privacy show DigitalOcean + Neon effective 24 November 2026, Replit until then. Site auto-deploys
 from main (Cloudflare Pages project valoxi-site, GitHub AdamValoxi/valoxi-site; push needs gh account AdamValoxi). Earliest cutover Fri 2026-11-20;
 proposed Tue 2026-11-24 19:00 UK. After cutover + Phase 8 (day 7+): remove Replit rows, bump Last updated.
+
+CUTOVER TIMELINE written 2026-11-05: docs/do-migration/cutover-timeline.md (Tue 24 Nov 2026, freeze 19:00 UK, hard stop 20:30, rehearsal 3 on Mon 16 Nov, go/no-go Mon 23 Nov 12:00).
