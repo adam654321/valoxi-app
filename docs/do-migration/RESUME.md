@@ -80,3 +80,7 @@ reconciles an already-cancelled sub instead of looping (billing-guards.ts), (3) 
 to SMTP_ALERT_EMAIL (stripe-reconciliation.service.ts). Tests: 3 new files, full suite 604/604.
 DEPLOY NOTE: on the first 04:00 run after deploy, subs 39, 68, 104 (past_due >14 days, Stripe canceled) are set to canceled without an
 email; sub 44 (active) is only reported by the 08:30 job. Decide about those customers BEFORE deploying.
+
+Billing guards DEPLOYED to staging 2026-11-05 (health commit 8245a10). 08:30 reconciliation job registered and ran; it skipped because
+SMTP_ALERT_EMAIL was not set. Adam is setting it on staging (expect one noisy email: staging has live sub ids but Stripe test keys, so
+every lookup gives resource_missing). Then remove it from staging or leave it. SET IT ON PROD (plan 6.3). Check old Replit prod has it too.

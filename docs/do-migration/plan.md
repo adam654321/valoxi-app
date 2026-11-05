@@ -249,6 +249,7 @@ timestamps. Adam has seen the file.
       segments, Nylas keys, and `ISSUE_REPORT_RECIPIENT` back to its real value (all unset or
       Adam-only on staging)
     - `NYLAS_CONNECT_GMAIL_VISIBLE=true` (`assessment.md` 11)
+    - `SMTP_ALERT_EMAIL` (run time): receives the 08:00 Stripe webhook failure alert and the 08:30 Stripe reconciliation report. Without it both jobs skip silently.
     - Build-time: `VITE_CLERK_PUBLISHABLE_KEY` (prod key) and `GIT_SHA`, both BUILD_TIME
 6.4 Tell users, if any are active, that there is a ten-minute window at 03:00.
 
