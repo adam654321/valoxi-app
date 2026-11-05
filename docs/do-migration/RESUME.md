@@ -91,3 +91,5 @@ from main (Cloudflare Pages project valoxi-site, GitHub AdamValoxi/valoxi-site; 
 proposed Tue 2026-11-24 19:00 UK. After cutover + Phase 8 (day 7+): remove Replit rows, bump Last updated.
 
 CUTOVER TIMELINE written 2026-11-05: docs/do-migration/cutover-timeline.md (Tue 24 Nov 2026, freeze 19:00 UK, hard stop 20:30, rehearsal 3 on Mon 16 Nov, go/no-go Mon 23 Nov 12:00).
+
+DECISION 2026-11-05 (Adam): subs 39, 68, 104 are left to auto-cancel on the first fixed dunning run; no emails. All four customers dormant since July. Dentiva (44) open: check Stripe, then hand-fix or contact after cutover.
