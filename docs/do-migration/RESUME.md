@@ -93,3 +93,14 @@ proposed Tue 2026-11-24 19:00 UK. After cutover + Phase 8 (day 7+): remove Repli
 CUTOVER TIMELINE written 2026-11-05: docs/do-migration/cutover-timeline.md (Tue 24 Nov 2026, freeze 19:00 UK, hard stop 20:30, rehearsal 3 on Mon 16 Nov, go/no-go Mon 23 Nov 12:00).
 
 DECISION 2026-11-05 (Adam): subs 39, 68, 104 are left to auto-cancel on the first fixed dunning run; no emails. All four customers dormant since July. Dentiva (44) open: check Stripe, then hand-fix or contact after cutover.
+
+## RESTART HERE (written 2026-11-05, before a reboot)
+State: all earlier branches merged to main (billing guards, legal notice live, cutover timeline, customer decision). Staging runs billing guards (commit 8245a10).
+Branch `rehearsal-3-runbook` (commit b974011 plus this note) is COMMITTED LOCALLY, NOT PUSHED, no PR yet.
+1. Adam: `git push -u origin rehearsal-3-runbook` (use `!` in the prompt). Then Claude: `gh pr create` with full description; Adam merges.
+2. Rehearsal 3 is planned for Mon 16 Nov. Steps are in docs/do-migration/rehearsal-3-runbook.md (Parts 0-4). Needs new Neon branch `rehearsal-3`, `.env.rehearsal3`, `.env.cutover`, and the endpoint names in `-ExpectedDstHost`.
+3. After it runs: Adam pastes ELAPSED lines, Part 2 table count (must be 0), DO rebuild and live times. Claude records them in rehearsal-2026-11-16.txt and cutover-timeline.md section 4.
+Adam's open items (see cutover-timeline.md sections 2 and 6): staging reconciliation email check (Fri 6 Nov ~08:30); by Fri 13 Nov secrets export, Cloudflare proxied status, Neon PITR, Dentiva (44) in Stripe, SMTP_ALERT_EMAIL on old Replit prod, DO team name; Sat 14 Nov Viv Clerk dev sign-up; #574 ALTERs review.
+Cutover: Tue 24 Nov 2026, freeze 19:00 UK, hard stop 20:30. Go/no-go Mon 23 Nov 12:00.
+Not mine, leave alone: modified scripts/send-marketing-consent-emails.ts, untracked _to_delete/.
+Rules: never print secrets or connection strings; Claude never touches old or new prod; commands in separate code blocks; Adam pushes, Claude opens PRs, Adam merges. site repo pushes need gh account AdamValoxi.
