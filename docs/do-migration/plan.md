@@ -234,6 +234,8 @@ timestamps. Adam has seen the file.
 
 ## PHASE 6: CUTOVER
 
+**Dated timeline: `cutover-timeline.md` (Tuesday 24 November 2026, freeze 19:00 UK). Where it differs from the steps below (evening window not 03:00, local PowerShell runner for the dump and restore, hard stop 20:30), the timeline wins.**
+
 **T minus 24 hours**
 6.1 Lower `app.valoxi.ai` TTL to 60 seconds in DNS. Note the current target (the Replit
     CNAME) in `assessment.md` so it can be restored.
