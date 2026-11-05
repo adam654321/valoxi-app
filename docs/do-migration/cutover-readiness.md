@@ -17,7 +17,7 @@ Status key: DONE (evidence in repo or docs), ADAM (only Adam can answer or do), 
 | 0.4 | DO account and project | DONE | Staging app running, commit shown by `/api/health`. ADAM: note the DO team/account name in assessment.md section 0 (not visible from the Claude machine's doctl contexts) |
 | 0.5 | DNS host for `app.valoxi.ai` | PARTLY | Cloudflare (Adam, 2026-11-03). Today: A `34.111.179.208` plus TXT `replit-verify`, no CNAME. Cutover record: CNAME to the DO hostname shown when the custom domain is added in DO, DNS-only (grey cloud). The A record must be deleted first (a name cannot hold both). Rollback: restore the A record and keep the TXT. ADAM: confirm proxied or DNS-only in the dashboard |
 | 0.6 | Secrets export | ADAM | Every Replit secret, BOTH panes (app and deployment, they can differ), into a password manager entry. Checklist: `removals.md` section 4. Nothing else holds these |
-| 0.7 | Cutover window | ADAM | DECIDED shape (2026-11-03): a weeknight EVENING, any day except Wednesday, start about 19:00 to 20:00 UK (not 03:00). Hard go/no-go: if no all-clear within 90 minutes of the freeze, roll back (6.12). Avoids all Replit cron times. Date still to pick: at least 14 days after the DPA Schedule 2 notice is published |
+| 0.7 | Cutover window | ADAM | DECIDED shape (2026-11-03): a weeknight EVENING, any day except Wednesday, start about 19:00 to 20:00 UK (not 03:00). Hard go/no-go: if no all-clear within 90 minutes of the freeze, roll back (6.12). Avoids all Replit cron times. Notice PUBLISHED 2026-11-05 (live on valoxi.ai/dpa and /privacy; site PR AdamValoxi/valoxi-site#1). 14 clear days end 2026-11-19, so the earliest cutover is Friday 2026-11-20. Proposed date: Tuesday 2026-11-24, start 19:00 UK (the notice text says 24 November 2026; if the date moves, update the site). Date still to be confirmed by Adam |
 
 ## 2. Things the plan says that are now wrong or incomplete
 
@@ -41,7 +41,7 @@ FIXED in `plan.md` on 2026-11-03 (branch plan-md-fixes); kept here as the record
 | Any time | Confirm who can edit DNS for `app.valoxi.ai` and note the current CNAME | ADAM |
 | Any time | Fix plan.md items in section 2 above | CODE (Claude, on a branch) |
 | Any time | Rehearse the 6.5 to 6.11 sequence end to end on staging against a fresh dump, time it, write the real downtime | ADAM + CODE |
-| T-14 days or earlier | Publish the updated DPA Schedule 2 and privacy policy (DigitalOcean and Neon added, Replit still listed). DPA 5.2 promises at least 14 days' notice of a sub-processor change. Earliest cutover = publish date + 14 days. Draft: `legal-processor-update-DRAFT.md`. Needs lawyer review | ADAM + counsel |
+| DONE 2026-11-05 (T-19 for a 24 Nov cutover) | Publish the updated DPA Schedule 2 and privacy policy (DigitalOcean and Neon added, Replit still listed). DPA 5.2 promises at least 14 days' notice of a sub-processor change. Earliest cutover = publish date + 14 days. Draft: `legal-processor-update-DRAFT.md`. Needs lawyer review | ADAM + counsel |
 | T-24h | 6.1 lower TTL to 60s, 6.2 add custom domain in DO, 6.3 prep prod env set (not applied), 6.4 notify users | ADAM |
 | T-0 | 6.5 to 6.11 as written in plan.md, Adam present, each step reported | ADAM + CODE (I do not touch prod; Adam runs prod dumps and DNS) |
 | T+0 | Rollback 6.12 available for seven days | ADAM |

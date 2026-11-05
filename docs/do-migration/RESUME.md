@@ -84,3 +84,8 @@ email; sub 44 (active) is only reported by the 08:30 job. Decide about those cus
 Billing guards DEPLOYED to staging 2026-11-05 (health commit 8245a10). 08:30 reconciliation job registered and ran; it skipped because
 SMTP_ALERT_EMAIL was not set. Adam is setting it on staging (expect one noisy email: staging has live sub ids but Stripe test keys, so
 every lookup gives resource_missing). Then remove it from staging or leave it. SET IT ON PROD (plan 6.3). Check old Replit prod has it too.
+
+Legal notice PUBLISHED 2026-11-05 (counsel approved; no exact transfer wording given, mechanism text taken from each vendor DPA, counsel to check
+the two lines). Live: valoxi.ai/dpa v1.1 and /privacy show DigitalOcean + Neon effective 24 November 2026, Replit until then. Site auto-deploys
+from main (Cloudflare Pages project valoxi-site, GitHub AdamValoxi/valoxi-site; push needs gh account AdamValoxi). Earliest cutover Fri 2026-11-20;
+proposed Tue 2026-11-24 19:00 UK. After cutover + Phase 8 (day 7+): remove Replit rows, bump Last updated.
