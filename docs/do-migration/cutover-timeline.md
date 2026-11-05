@@ -24,7 +24,7 @@ Still to measure: the DO rebuild with the prod Clerk key (build-time variable). 
 | Date | What | Owner |
 |---|---|---|
 | Fri 6 Nov | Check the staging reconciliation email arrived (subject ends "out of step with Stripe"). If it did, remove `SMTP_ALERT_EMAIL` from staging or leave it | ADAM |
-| By Fri 13 Nov | Decide the four real customers (subs 39, 44, 68, 104): the billing fix deployed on prod will cancel 39, 68, 104 on its first 04:00 run. Check Dentiva (44) in Stripe | ADAM |
+| DECIDED 2026-11-05 | Four real customers (subs 39, 44, 68, 104). All dormant since July (last activity 18 Jun to 29 Jul). Leave 39, 68, 104 to be cancelled by the fixed dunning job on its first run; email no one. Dentiva (44): check Stripe for what happened after the 28 Aug payment (cancelled 26 Aug, invoice paid 28 Aug, app shows active), then mark cancelled by hand after cutover or contact the customer | ADAM |
 | By Fri 13 Nov | Secrets export: every Replit secret, both panes, into a password manager (`removals.md` section 4) | ADAM |
 | By Fri 13 Nov | Cloudflare: is the `app.valoxi.ai` A record proxied or DNS-only? Note the exact current record. Note the DO team name in `assessment.md` section 0 | ADAM |
 | By Fri 13 Nov | Confirm Neon plan has point-in-time recovery (readiness section 4) | ADAM |
@@ -77,7 +77,7 @@ Flip DNS back (delete the CNAME, restore the A record `34.111.179.208`, keep the
 - Cloudflare record noted, proxied status known
 - Rehearsal 3 on 16 Nov passed with a measured rebuild time
 - #574 ALTERs and rollback reviewed
-- Decision made on subs 39, 44, 68, 104
+- Dentiva (44) checked in Stripe (the other three are decided: leave to auto-cancel)
 - Staging healthy on `main`; no unmerged cutover-critical work
 - Neon PITR confirmed
 - Users notified
@@ -99,5 +99,5 @@ Flip DNS back (delete the CNAME, restore the A record `34.111.179.208`, keep the
 
 1. Rebuild time on DO with the prod Clerk key (measure on 16 Nov).
 2. Cloudflare proxied status of the current A record.
-3. What to do about the four real customers with cancelled subscriptions.
+3. Dentiva (44) outcome in Stripe (the other three are decided).
 4. Counsel's check of the two transfer-mechanism lines on the live pages (does not block the date).
