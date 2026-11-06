@@ -100,9 +100,53 @@ Only if time allows. Staging uses Clerk DEV keys, so signing in will not match t
 2. Runtime Logs: confirm it connects to the `rehearsal-3` host and starts without errors.
 3. Put `DATABASE_URL` back to the dev branch value. Confirm health again.
 
+## Part 5: test the #574 scripts on rehearsal-3 (only this branch)
+
+Proves `574-precheck.sql`, `574-apply.sql` and `574-rollback.sql` work on a real restored copy. Run after Part 1 has restored into `rehearsal-3`. These scripts CHANGE the database, so the guard below refuses anything except the rehearsal-3 endpoint. Never point them at the production branch or old prod during the rehearsal.
+
+Set up once (reads the URL from `.env.rehearsal3` and never prints it). Replace the endpoint with the rehearsal-3 one:
+
+```powershell
+$psql = 'C:\Program Files\PostgreSQL\18\bin\psql.exe'; $r3host = 'ep-REPLACE-WITH-REHEARSAL3-ENDPOINT'; $u = ((Get-Content .env.rehearsal3 | Where-Object { $_ -like 'DST_URL=*' } | Select-Object -First 1).Substring(8)).Trim().Trim('"').Trim("'"); if ($u -notlike "*$r3host*") { throw 'URL is not the rehearsal-3 endpoint. STOP.' } else { 'target is rehearsal-3' }
+```
+
+1. Before: expect SET NULL x5, NO ACTION x2 and `FK574_FOUND|7`.
+
+```powershell
+& $psql $u -X -A -t -F '|' -f scripts\migration\574-precheck.sql -o rehearsal3\574-before.txt; Get-Content rehearsal3\574-before.txt
+```
+
+2. Apply. Must end with `COMMIT` and no ERROR.
+
+```powershell
+& $psql $u -X -f scripts\migration\574-apply.sql
+```
+
+3. After apply: expect CASCADE x7 and `FK574_FOUND|7`.
+
+```powershell
+& $psql $u -X -A -t -F '|' -f scripts\migration\574-precheck.sql -o rehearsal3\574-after-apply.txt; Get-Content rehearsal3\574-after-apply.txt
+```
+
+4. Rollback. Must end with `COMMIT` and no ERROR.
+
+```powershell
+& $psql $u -X -f scripts\migration\574-rollback.sql
+```
+
+5. After rollback: must be identical to step 1 (the dependent-row counts too).
+
+```powershell
+& $psql $u -X -A -t -F '|' -f scripts\migration\574-precheck.sql -o rehearsal3\574-after-rollback.txt; fc.exe rehearsal3\574-before.txt rehearsal3\574-after-rollback.txt
+```
+
+Expected: `FC: no differences encountered`.
+
+If a guard aborts (`guard: <constraint> is ..., expected ...`), nothing was changed. Paste the message to Claude: the real prod definition differs from the docs and the script needs adjusting before the real run. Leave the branch in the rolled-back state (step 5) so it matches production.
+
 ## Record
 
-Paste the ELAPSED lines from Part 1, the Part 2 table count, and the Part 3 build and live times to Claude. They go into `rehearsal-2026-11-11.txt` and `cutover-timeline.md` section 4. Do NOT run Clerk or Stripe checks against old prod keys again unless asked.
+Paste the ELAPSED lines from Part 1, the Part 2 table count, the Part 3 build and live times, and the Part 5 outputs (or any guard message) to Claude. They go into `rehearsal-2026-11-11.txt` and `cutover-timeline.md` section 4. Do NOT run Clerk or Stripe checks against old prod keys again unless asked.
 
 ## Clean up
 
