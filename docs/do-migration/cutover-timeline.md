@@ -31,7 +31,7 @@ Still to measure: the DO rebuild with the prod Clerk key (build-time variable). 
 | By Tue 10 Nov | Check old Replit prod has `SMTP_ALERT_EMAIL` set (if not, the webhook failure alert has been silent there) | ADAM |
 | By Tue 10 Nov | #574: the seven ALTERs and their rollback scripted and reviewed (`assessment.md` section 5) | CODE + ADAM |
 | By Tue 10 Nov | Add a cutover env file for the real run: `.env.cutover` with `DST_URL` = Neon production branch DIRECT url (not pooled). Add a `-ExpectedDstHost` for the production endpoint. Never printed | ADAM, CODE prepares the commands |
-| Mon 9 Nov | Viv signs up in Clerk dev on staging (viv@shiftopsconsulting.com) so the user 2 relink is tested | ADAM |
+| Mon 9 Nov | DONE 2026-11-06 (early): Viv signed up in Clerk dev on staging (viv@shiftopsconsulting.com) and the user 2 relink worked. Viv reports no issues so far | ADAM |
 | Wed 11 Nov | Full dress rehearsal on staging against a fresh dump into a NEW Neon branch `rehearsal-3`: stop-watch every step of 6.5 to 6.11, including the rebuild. Record real downtime | ADAM + CODE |
 | Thu 19 Nov | Notice period ends. Nothing to do except confirm the live pages still say 24 November | CODE checks |
 | From Fri 20 Nov | Change freeze on `main`: only cutover-critical merges | ADAM |
