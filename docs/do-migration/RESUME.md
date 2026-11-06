@@ -84,6 +84,7 @@ email; sub 44 (active) is only reported by the 08:30 job. Decide about those cus
 Billing guards DEPLOYED to staging 2026-11-05 (health commit 8245a10). 08:30 reconciliation job registered and ran; it skipped because
 SMTP_ALERT_EMAIL was not set. Adam is setting it on staging (expect one noisy email: staging has live sub ids but Stripe test keys, so
 every lookup gives resource_missing). Then remove it from staging or leave it. SET IT ON PROD (plan 6.3). Check old Replit prod has it too.
+STAGING RECONCILIATION EMAIL CHECKED 2026-11-06: arrived 08:30 at adam@valoxi.ai, 18 checked, 0 mismatches, 18 resource_missing (expected, test keys vs live ids). Job and delivery work. Adam is removing SMTP_ALERT_EMAIL from staging to stop daily noise. Mismatch detection first meets live Stripe on prod Wed 25 Nov 08:30 (expect sub 44 flagged if still active).
 
 Legal notice PUBLISHED 2026-11-05 (counsel approved; no exact transfer wording given, mechanism text taken from each vendor DPA, counsel to check
 the two lines). Live: valoxi.ai/dpa v1.1 and /privacy show DigitalOcean + Neon effective 24 November 2026, Replit until then. Site auto-deploys
@@ -99,7 +100,7 @@ State: all branches merged to main, including PR #21 (rehearsal 3 runbook, e6991
 1. DONE: rehearsal-3-runbook pushed, PR #21 opened and merged by Adam.
 2. NEXT: Rehearsal 3 is planned for Mon 16 Nov. Steps are in docs/do-migration/rehearsal-3-runbook.md (Parts 0-4). Needs new Neon branch `rehearsal-3`, `.env.rehearsal3`, `.env.cutover`, and the endpoint names in `-ExpectedDstHost`.
 3. After it runs: Adam pastes ELAPSED lines, Part 2 table count (must be 0), DO rebuild and live times. Claude records them in rehearsal-2026-11-16.txt and cutover-timeline.md section 4.
-Adam's open items (see cutover-timeline.md sections 2 and 6): staging reconciliation email check (Fri 6 Nov ~08:30); by Fri 13 Nov secrets export, Cloudflare proxied status, Neon PITR, Dentiva (44) in Stripe, SMTP_ALERT_EMAIL on old Replit prod, DO team name; Sat 14 Nov Viv Clerk dev sign-up; #574 ALTERs review.
+Adam's open items (see cutover-timeline.md sections 2 and 6): remove SMTP_ALERT_EMAIL from staging (reconciliation email check done 6 Nov); by Fri 13 Nov secrets export, Cloudflare proxied status, Neon PITR, Dentiva (44) in Stripe, SMTP_ALERT_EMAIL on old Replit prod, DO team name; Sat 14 Nov Viv Clerk dev sign-up; #574 ALTERs review.
 Cutover: Tue 24 Nov 2026, freeze 19:00 UK, hard stop 20:30. Go/no-go Mon 23 Nov 12:00.
 Not mine, leave alone: modified scripts/send-marketing-consent-emails.ts, untracked _to_delete/.
 Rules: never print secrets or connection strings; Claude never touches old or new prod; commands in separate code blocks; Adam pushes, Claude opens PRs, Adam merges. site repo pushes need gh account AdamValoxi.

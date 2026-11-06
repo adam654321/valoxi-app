@@ -23,7 +23,7 @@ Still to measure: the DO rebuild with the prod Clerk key (build-time variable). 
 
 | Date | What | Owner |
 |---|---|---|
-| Fri 6 Nov | Check the staging reconciliation email arrived (subject ends "out of step with Stripe"). If it did, remove `SMTP_ALERT_EMAIL` from staging or leave it | ADAM |
+| Fri 6 Nov | DONE 2026-11-06: staging reconciliation email arrived at 08:30 (to adam@valoxi.ai, from noreply@send.valoxi.ai, subject "18 subscription(s) out of step with Stripe"). 18 checked, 0 status mismatches, 18 lookup errors, all `resource_missing`: expected, staging has live sub ids but Stripe test keys. Proves the job runs and the email delivers; the mismatch logic is covered by unit tests and first meets live Stripe on prod Wed 25 Nov. Adam is removing `SMTP_ALERT_EMAIL` from staging to stop the daily noise | ADAM |
 | DECIDED 2026-11-05 | Four real customers (subs 39, 44, 68, 104). All dormant since July (last activity 18 Jun to 29 Jul). Leave 39, 68, 104 to be cancelled by the fixed dunning job on its first run; email no one. Dentiva (44): check Stripe for what happened after the 28 Aug payment (cancelled 26 Aug, invoice paid 28 Aug, app shows active), then mark cancelled by hand after cutover or contact the customer | ADAM |
 | By Fri 13 Nov | Secrets export: every Replit secret, both panes, into a password manager (`removals.md` section 4) | ADAM |
 | By Fri 13 Nov | Cloudflare: is the `app.valoxi.ai` A record proxied or DNS-only? Note the exact current record. Note the DO team name in `assessment.md` section 0 | ADAM |
