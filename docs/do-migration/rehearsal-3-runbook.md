@@ -1,4 +1,4 @@
-# Rehearsal 3: dress rehearsal, Monday 16 November 2026
+# Rehearsal 3: dress rehearsal, Wednesday 11 November 2026
 
 Purpose: run the data move and the app steps of cutover end to end with a stopwatch, on a fresh dump, WITHOUT touching the Neon `production` branch and WITHOUT changing the live app. Output: the real downtime number and the DO rebuild time for `cutover-timeline.md` section 4.
 
@@ -102,7 +102,7 @@ Only if time allows. Staging uses Clerk DEV keys, so signing in will not match t
 
 ## Record
 
-Paste the ELAPSED lines from Part 1, the Part 2 table count, and the Part 3 build and live times to Claude. They go into `rehearsal-2026-11-16.txt` and `cutover-timeline.md` section 4. Do NOT run Clerk or Stripe checks against old prod keys again unless asked.
+Paste the ELAPSED lines from Part 1, the Part 2 table count, and the Part 3 build and live times to Claude. They go into `rehearsal-2026-11-11.txt` and `cutover-timeline.md` section 4. Do NOT run Clerk or Stripe checks against old prod keys again unless asked.
 
 ## Clean up
 
