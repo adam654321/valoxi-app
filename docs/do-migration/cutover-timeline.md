@@ -25,14 +25,14 @@ Still to measure: the DO rebuild with the prod Clerk key (build-time variable). 
 |---|---|---|
 | Fri 6 Nov | DONE 2026-11-06: staging reconciliation email arrived at 08:30 (to adam@valoxi.ai, from noreply@send.valoxi.ai, subject "18 subscription(s) out of step with Stripe"). 18 checked, 0 status mismatches, 18 lookup errors, all `resource_missing`: expected, staging has live sub ids but Stripe test keys. Proves the job runs and the email delivers; the mismatch logic is covered by unit tests and first meets live Stripe on prod Wed 25 Nov. Adam is removing `SMTP_ALERT_EMAIL` from staging to stop the daily noise | ADAM |
 | DECIDED 2026-11-05 | Four real customers (subs 39, 44, 68, 104). All dormant since July (last activity 18 Jun to 29 Jul). Leave 39, 68, 104 to be cancelled by the fixed dunning job on its first run; email no one. Dentiva (44): check Stripe for what happened after the 28 Aug payment (cancelled 26 Aug, invoice paid 28 Aug, app shows active), then mark cancelled by hand after cutover or contact the customer | ADAM |
-| By Fri 13 Nov | Secrets export: every Replit secret, both panes, into a password manager (`removals.md` section 4) | ADAM |
-| By Fri 13 Nov | Cloudflare: is the `app.valoxi.ai` A record proxied or DNS-only? Note the exact current record. Note the DO team name in `assessment.md` section 0 | ADAM |
-| By Fri 13 Nov | Confirm Neon plan has point-in-time recovery (readiness section 4) | ADAM |
-| By Fri 13 Nov | Check old Replit prod has `SMTP_ALERT_EMAIL` set (if not, the webhook failure alert has been silent there) | ADAM |
-| By Fri 13 Nov | #574: the seven ALTERs and their rollback scripted and reviewed (`assessment.md` section 5) | CODE + ADAM |
-| By Fri 13 Nov | Add a cutover env file for the real run: `.env.cutover` with `DST_URL` = Neon production branch DIRECT url (not pooled). Add a `-ExpectedDstHost` for the production endpoint. Never printed | ADAM, CODE prepares the commands |
-| Sat 14 Nov | Viv signs up in Clerk dev on staging (viv@shiftopsconsulting.com) so the user 2 relink is tested | ADAM |
-| Mon 16 Nov | Full dress rehearsal on staging against a fresh dump into a NEW Neon branch `rehearsal-3`: stop-watch every step of 6.5 to 6.11, including the rebuild. Record real downtime | ADAM + CODE |
+| By Tue 10 Nov | Secrets export: every Replit secret, both panes, into a password manager (`removals.md` section 4) | ADAM |
+| By Tue 10 Nov | Cloudflare: is the `app.valoxi.ai` A record proxied or DNS-only? Note the exact current record. Note the DO team name in `assessment.md` section 0 | ADAM |
+| By Tue 10 Nov | Confirm Neon plan has point-in-time recovery (readiness section 4) | ADAM |
+| By Tue 10 Nov | Check old Replit prod has `SMTP_ALERT_EMAIL` set (if not, the webhook failure alert has been silent there) | ADAM |
+| By Tue 10 Nov | #574: the seven ALTERs and their rollback scripted and reviewed (`assessment.md` section 5) | CODE + ADAM |
+| By Tue 10 Nov | Add a cutover env file for the real run: `.env.cutover` with `DST_URL` = Neon production branch DIRECT url (not pooled). Add a `-ExpectedDstHost` for the production endpoint. Never printed | ADAM, CODE prepares the commands |
+| Mon 9 Nov | Viv signs up in Clerk dev on staging (viv@shiftopsconsulting.com) so the user 2 relink is tested | ADAM |
+| Wed 11 Nov | Full dress rehearsal on staging against a fresh dump into a NEW Neon branch `rehearsal-3`: stop-watch every step of 6.5 to 6.11, including the rebuild. Record real downtime | ADAM + CODE |
 | Thu 19 Nov | Notice period ends. Nothing to do except confirm the live pages still say 24 November | CODE checks |
 | From Fri 20 Nov | Change freeze on `main`: only cutover-critical merges | ADAM |
 | Mon 23 Nov, 12:00 | Last go/no-go on the preparation list (section 6). Decide: proceed or move the date. Moving the date means editing the live notice | ADAM |
@@ -75,7 +75,7 @@ Flip DNS back (delete the CNAME, restore the A record `34.111.179.208`, keep the
 
 - Secrets exported and checked present in DO prod env set
 - Cloudflare record noted, proxied status known
-- Rehearsal 3 on 16 Nov passed with a measured rebuild time
+- Rehearsal 3 on 11 Nov passed with a measured rebuild time
 - #574 ALTERs and rollback reviewed
 - Dentiva (44) checked in Stripe (the other three are decided: leave to auto-cancel)
 - Staging healthy on `main`; no unmerged cutover-critical work
@@ -97,7 +97,7 @@ Flip DNS back (delete the CNAME, restore the A record `34.111.179.208`, keep the
 
 ## 8. Open questions that can move the date
 
-1. Rebuild time on DO with the prod Clerk key (measure on 16 Nov).
+1. Rebuild time on DO with the prod Clerk key (measure on 11 Nov).
 2. Cloudflare proxied status of the current A record.
 3. Dentiva (44) outcome in Stripe (the other three are decided).
 4. Counsel's check of the two transfer-mechanism lines on the live pages (does not block the date).
