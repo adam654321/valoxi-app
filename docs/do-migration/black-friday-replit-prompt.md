@@ -20,7 +20,7 @@ Why not "once": the annual checkout starts with the standard 7-day trial. It is 
 "once" coupon survives the $0 trial invoice. One month covers the first real charge on day 7 either way
 and has lapsed long before the renewal.
 
-$1,608 (annual Professional) less $686.16 is $921.84, which is 54% less than 12 x $167.
+$1,603.20 (annual Professional, confirmed from a live session 2026-11-12) less $686.16 is $917.04, which is 54.2% less than 12 x $167.
 
 ## Step 2: paste this into Replit Agent
 
@@ -78,7 +78,7 @@ For each session created, retrieve it from Stripe (expand line_items and total_d
 and report: amount_subtotal, amount_total, the discount applied (coupon id and amount), and the
 subscription trial length. Expected:
   - bf26-free-month: no discount, trial of about one calendar month, price 16700 a month.
-  - bf26-annual: coupon BF26_ANNUAL_PRO, discount 68616 on a 160800 annual price, 7-day trial.
+  - bf26-annual: coupon BF26_ANNUAL_PRO, discount 68616 on a 160320 annual price, 7-day trial.
 Do not open or complete either checkout. Leave the sessions to expire.
 
 Step 5. Report in a short list: database used, the two new row ids, the coupon details, and the
@@ -91,7 +91,7 @@ production database pane, then do the two curl calls from any terminal.
 ## Step 3 (Adam, by hand, before sending the link to anyone)
 
 On `valoxi.ai/black-friday/` click each button and read the Stripe Checkout page: the free month must
-show a trial then $167 a month; the annual must show $921.84 due after the 7-day trial. Do not pay.
+show a trial then $167 a month; the annual must show $917.04 due after the 7-day trial. Do not pay.
 
 ## Optional: staging
 
