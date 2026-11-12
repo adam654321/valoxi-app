@@ -1,0 +1,63 @@
+REHEARSAL 3, 2026-11-12 (Valoxi, Replit to DigitalOcean). Planned for 11 Nov, run a day late. Run by Adam in Windows PowerShell with scripts/migration/rehearsal-run.ps1, following rehearsal-3-runbook.md.
+
+Source : old Replit-owned Neon, endpoint ep-old-recipe-an7e4afw (us-east-1), PostgreSQL 16.15, read only.
+Target : Neon branch rehearsal-3, endpoint ep-dry-bonus-zay1bg7r (eu-west-2), PostgreSQL 18.6, created empty from production.
+Client : local PostgreSQL 18.3 tools.
+
+PART 1: data move. Timings (Adam's machine), with rehearsal 2 (3 Nov) for comparison
+  Check              6 s   (2 s)    source reachable (16.15), target empty (0 tables)
+  CountsBefore       5 s   (3 s)    94 COUNT lines
+  Dump              58 s   (38 s)   10,231,162 bytes
+  CountsAfter        3 s   (3 s)    94 COUNT lines
+  CompareDrift       0 s            COUNT=94 SEQ=92 SPOT=4, mismatches=0
+  Restore          390 s   (22 s)   exit code 0, --clean --if-exists --exit-on-error   <- SEE OPEN QUESTION
+  RestoredCounts     3 s   (0 s)    94 COUNT lines
+  CompareRestored    0 s            COUNT=94 SEQ=92 SPOT=4, mismatches=0
+  SourceStructure    5 s            10 STRUCT lines
+  RestoredStructure  4 s            10 STRUCT lines
+  CompareStructure   0 s            STRUCT=10 mismatches=0
+  Wall clock, CountsBefore 15:49:16 to CompareStructure 15:58:46: 9 min 30 s, including Adam's typing between steps.
+
+Result: every comparison is 0 mismatches, including the session table this time (no login session expired during the run).
+
+OPEN QUESTION: the restore took 6 min 30 s against 22 s on 3 Nov. Same source, same target region, same machine, same dump size.
+  Observed during the run (read-only look at pg_stat_activity on rehearsal-3): pg_restore was never blocked. No ungranted
+  locks; the backend was idle waiting for the client between statements and each sample showed a new statement
+  (primary keys, then foreign keys). Local pg_restore used about 0.5 s of CPU in total. So the time went on waiting,
+  per statement, not on work. The dump was also slower (58 s vs 38 s) but only by half, not by 18 times.
+  CAUSE FOUND (measured 16:0x the same day): ProtonVPN was connected and the connection to Neon went through it.
+  Round trip to rehearsal-3 was 221 ms per statement (20 samples, min 221, max 237). The dump has 918 entries and
+  --clean roughly doubles the statements, so about 1,800 round trips x 0.22 s = about 400 s. That matches 390 s.
+  Not a Neon compute or data problem. To confirm: repeat the Restore step with the VPN off and expect about 22 s.
+  RULE FOR THE REAL NIGHT: VPN off before 18:45 pre-flight. Add to cutover-timeline.md section 4.
+
+PART 2: production branch (read only, .env.cutover, endpoint ep-cold-night-za5w03lp, eu-west-2)
+  Check 15:45:53: reachable, PostgreSQL 18.6, tables in public: 0. Nothing has been restored into production.
+
+PART 3: DO rebuild time on valoxi-staging (build-time variable GIT_SHA changed to "rehearsal3", full image rebuild)
+  Save to Live: about 5 minutes (Adam's reading of the DO console; build-only duration not noted separately).
+  Health afterwards: ok true, commit "rehearsal3", node v22.23.5. So the build-time variable reached the running app.
+
+PART 4 (optional): not run.
+
+PART 5: #574 scripts on rehearsal-3. FINDING: old prod ALREADY has the #574 target state.
+  Step 1 precheck on the freshly restored copy: all 7 constraints are ON DELETE CASCADE, FK574_FOUND|7.
+    The runbook expected SET NULL x5 and NO ACTION x2 (assessment.md section 5, "prod state at 16 October").
+    Dependent rows: balance_sheets 732, income_statements 750, financial_periods 825, document_evidence 507,
+    document_evidence_period 967, document_evidence_figure 24436.
+  Step 2 apply: guard aborted on the first constraint (found CASCADE, expected SET NULL). Nothing changed. Guard works.
+  Step 3 precheck: identical to step 1.
+  Step 4 rollback: ran (its guard expects CASCADE), 14 ALTERs, COMMIT.
+  Step 5 precheck: now SET NULL x5, NO ACTION x2. So rehearsal-3 was left DIFFERENT from prod at this point.
+  Cross-check from the dumps still on disk (schema only): the same constraints are already ON DELETE CASCADE in the
+    23 Oct dump (rehearsal), the 3 Nov dump (rehearsal2) and today's. So prod has been CASCADE since 23 Oct at the latest.
+    Either prod changed between 16 and 23 Oct, or the 16 Oct record was wrong. Not yet known which.
+  Consequence: plan step 7.4 (apply #574 after cutover) is expected to be a no-op. On the night run 574-precheck.sql
+    on new prod; if it shows CASCADE x7 there is nothing to apply. The apply guard refuses anyway.
+  Step 6 apply (from the rolled-back state): guard passed, 14 ALTERs, COMMIT.
+  Step 7 precheck vs 574-before.txt: FC: no differences encountered. rehearsal-3 matches prod again (CASCADE x7).
+  So all three scripts are proven on a real restored copy: precheck, rollback and apply, and both guards.
+
+RESULT: rehearsal 3 passed. Data move clean, production branch empty, rebuild about 5 minutes, #574 scripts work.
+Still unmeasured: DNS flip and certificate issue (cannot be rehearsed). Restore with VPN off not re-timed.
+Leave the rehearsal-3 branch in Neon until after the cutover. Delete rehearsal3\valoxi-rehearsal.dump after the cutover.
