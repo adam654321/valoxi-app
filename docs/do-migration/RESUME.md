@@ -104,3 +104,10 @@ Adam's open items (see cutover-timeline.md sections 2 and 6): remove SMTP_ALERT_
 Cutover: Tue 24 Nov 2026, freeze 19:00 UK, hard stop 20:30. Go/no-go Mon 23 Nov 12:00.
 Not mine, leave alone: modified scripts/send-marketing-consent-emails.ts, untracked _to_delete/.
 Rules: never print secrets or connection strings; Claude never touches old or new prod; commands in separate code blocks; Adam pushes, Claude opens PRs, Adam merges. site repo pushes need gh account AdamValoxi.
+
+## Black Friday offer 2026-11-12 (marketing site, spans the cutover)
+- Live: valoxi.ai/black-friday/ (also /event/). valoxi-site PR merged by Adam 2026-11-12, both URLs 200, screenshot checked. Site repo on this machine: `Documents\Auty Consultancy Automation\Website\Valoxi - Copy - Copy\valoxi-site` (the other two copies are stale).
+- Offers (Professional, new accounts, end 23:59 GMT Mon 30 Nov): one month free on monthly (slug `bf26-free-month`); annual at $921.84 first year, 54% less than 12 x $167, renews $1,608 (slug `bf26-annual`, coupon `BF26_ANNUAL_PRO` $686.16 off).
+- NOT DONE as of 2026-11-12: coupon and the two campaign rows on old prod. Buttons show "no longer available" until then. Prompt for Replit: docs/do-migration/black-friday-replit-prompt.md. No code change (promo code identical on replit-final and main); rows travel in the cutover dump.
+- Cutover checks added to cutover-timeline.md (sections 2, 4 steps 6.8 and 6.11, 6, 7). Buttons fail during the freeze window; no Black Friday send on Tue 24 Nov evening.
+- Open: is a "once" coupon consumed by the $0 trial invoice? Prompt uses a 1-month repeating coupon to avoid the question.
