@@ -29,10 +29,11 @@ Still to measure: the DO rebuild with the prod Clerk key (build-time variable). 
 | By Tue 10 Nov | Cloudflare: is the `app.valoxi.ai` A record proxied or DNS-only? Note the exact current record. Note the DO team name in `assessment.md` section 0 | ADAM |
 | By Tue 10 Nov | Confirm Neon plan has point-in-time recovery (readiness section 4) | ADAM |
 | By Tue 10 Nov | Check old Replit prod has `SMTP_ALERT_EMAIL` set (if not, the webhook failure alert has been silent there) | ADAM |
-| By Tue 10 Nov | #574: the seven ALTERs and their rollback scripted and reviewed (`assessment.md` section 5) | CODE + ADAM |
+| By Tue 10 Nov | DONE 2026-11-12: #574 scripts (precheck, apply, rollback, both guards) proven on `rehearsal-3`. FINDING: old prod already has all seven constraints as ON DELETE CASCADE (true in the dumps of 23 Oct, 3 Nov and 12 Nov; `assessment.md` section 5 records SET NULL and NO ACTION on 16 Oct). So 7.4 should be a no-op: run the precheck, apply only if it does not show CASCADE x7 | CODE + ADAM |
 | By Tue 10 Nov | Add a cutover env file for the real run: `.env.cutover` with `DST_URL` = Neon production branch DIRECT url (not pooled). Add a `-ExpectedDstHost` for the production endpoint. Never printed | ADAM, CODE prepares the commands |
 | Mon 9 Nov | DONE 2026-11-06 (early): Viv signed up in Clerk dev on staging (viv@shiftopsconsulting.com) and the user 2 relink worked. Viv reports no issues so far | ADAM |
-| Wed 11 Nov | Full dress rehearsal on staging against a fresh dump into a NEW Neon branch `rehearsal-3`: stop-watch every step of 6.5 to 6.11, including the rebuild. Record real downtime | ADAM + CODE |
+| Wed 11 Nov | DONE 2026-11-12 (a day late): rehearsal 3 passed, see `rehearsal-2026-11-12.txt`. Counts 94/94, sequences 92/92, spot 4/4, structure 10/10, 0 mismatches. Dump 58 s. Restore 6 min 30 s because ProtonVPN was on (221 ms per round trip); 22 s expected with it off. Rebuild about 5 minutes Save to Live. Production branch confirmed empty | ADAM + CODE |
+| By Tue 10 Nov | DONE 2026-11-12: secrets collected into gitignored `.env.do-prod` (39 names, all format checks pass) with `scripts/migration/collect-prod-secrets.ps1`; `.env.cutover` and `.env.rehearsal3` hold the direct and pooled Neon strings (`scripts/migration/set-dst-url.ps1`). Production endpoint `ep-cold-night-za5w03lp`. `SMTP_ALERT_EMAIL` is set on old Replit prod | ADAM + CODE |
 | Before the link goes out | Black Friday offer (live on the site 2026-11-12 at `valoxi.ai/black-friday/`, also served at `/event/`; ends 23:59 GMT Mon 30 Nov, so it spans the cutover). Needs, on OLD prod: Stripe live coupon `BF26_ANNUAL_PRO` ($686.16 off, Professional only) and two `promo_code_campaigns` rows, slugs `bf26-free-month` and `bf26-annual`, `expires_at` 2026-12-01 00:00:00 UTC. Data only, no code change: the promo and checkout code is identical on `replit-final` and `main`. The rows reach new prod in the cutover dump; the coupon lives in Stripe and needs nothing | ADAM |
 | Thu 19 Nov | Notice period ends. Nothing to do except confirm the live pages still say 24 November | CODE checks |
 | From Fri 20 Nov | Change freeze on `main`: only cutover-critical merges | ADAM |
@@ -51,11 +52,11 @@ Still to measure: the DO rebuild with the prod Clerk key (build-time variable). 
 ## 4. T-0: Tuesday 24 November. Each step reported before the next.
 
 Hard rule: if there is no all-clear by **20:30** (90 minutes after the freeze), roll back (section 5).
-Expected: all-clear by about 19:45 to 20:00. Rebuild time: **TBD from the DO build log**.
+Expected: all-clear by about 19:45 to 20:00. Rebuild time: **about 5 minutes from Save to Live** (measured on staging in rehearsal 3, 2026-11-12; the 15 minutes allowed for 6.9 is ample).
 
 | Time | Step | Evidence to paste | Owner |
 |---|---|---|---|
-| 18:45 | Pre-flight: Clerk ID check and Stripe check dry runs, `-Step Check` on source and target, health of staging | outputs | ADAM + CODE |
+| 18:45 | Pre-flight: **VPN off** (rehearsal 3 on 12 Nov: with ProtonVPN on, the restore took 6 min 30 s instead of 22 s). Clerk ID check and Stripe check dry runs, `-Step Check` on source and target, health of staging | outputs | ADAM + CODE |
 | 19:00 | **6.5 Freeze.** Stop the Replit deployment. Confirm `app.valoxi.ai` errors. Timestamp this: it starts the downtime | timestamp | ADAM |
 | 19:03 | **6.6 Final dump** with the local runner (`CountsBefore`, `Dump`, `CountsAfter`). The database no longer changes once the app is stopped, so `CompareDrift` must show 0 mismatches. Keep a second copy of the dump | counts, dump size | ADAM |
 | 19:08 | **6.7 Restore** into the Neon production branch (target guard must be the production endpoint) | exit code 0 | ADAM |
@@ -94,7 +95,7 @@ Flip DNS back (delete the CNAME, restore the A record `34.111.179.208`, keep the
 | Wed 25 Nov, 04:00 | First dunning run on prod: with the billing fix, subs 39, 68 and 104 become canceled if still past_due and cancelled in Stripe. Check logs | ADAM + CODE |
 | Wed 25 Nov, 08:00 and 08:30 | Stripe webhook failure alert and Stripe reconciliation report arrive (or not) in `SMTP_ALERT_EMAIL`. Expect 44 flagged if still active | ADAM |
 | Wed 25 Nov | 7.1 restore DNS TTL to 300 or 3600 | ADAM |
-| Wed 25 Nov | 7.2, 7.3 recreate Neon `dev` from the new main, update local `.env`. 7.4 apply #574 with Adam's authorisation | CODE + ADAM |
+| Wed 25 Nov | 7.2, 7.3 recreate Neon `dev` from the new main, update local `.env`. 7.4 #574: run `574-precheck.sql` on new prod; expected CASCADE x7 already (see section 2), so nothing to apply. Apply only if it differs, with Adam's authorisation | CODE + ADAM |
 | Tue 1 Dec, 00:00 UTC | Black Friday offers expire on the server (`expires_at`); the page shows its closed state by itself. Afterwards point `/event` at the next campaign or leave it | ADAM |
 | 25 Nov to 1 Dec | 7.5 watch the crons. 7.6 DO alerting. 7.7 cancel Replit AI integrations | ADAM |
 | Tue 1 Dec (T+7) | Phase 8: confirm no traffic to Replit, last dump to R2 `backups/replit-final/`, delete the Replit deployment, remove Replit GitHub app | ADAM |
@@ -102,7 +103,7 @@ Flip DNS back (delete the CNAME, restore the A record `34.111.179.208`, keep the
 
 ## 8. Open questions that can move the date
 
-1. Rebuild time on DO with the prod Clerk key (measure on 11 Nov).
+1. CLOSED 2026-11-12: rebuild time on DO is about 5 minutes.
 2. Cloudflare proxied status of the current A record.
 3. Dentiva (44) outcome in Stripe (the other three are decided).
 4. Counsel's check of the two transfer-mechanism lines on the live pages (does not block the date).

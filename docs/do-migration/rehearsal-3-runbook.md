@@ -19,7 +19,7 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 ```
 
 ```powershell
-$r3 = @{ DstEnv = '.env.rehearsal3'; OutDir = 'rehearsal3'; ExpectedDstHost = 'ep-REPLACE-WITH-REHEARSAL3-ENDPOINT' }
+$r3 = @{ DstEnv = '.env.rehearsal3'; OutDir = 'rehearsal3'; ExpectedDstHost = 'ep-dry-bonus-zay1bg7r' }
 ```
 
 Then, one at a time. Every step prints ELAPSED; write the numbers down.
@@ -73,7 +73,7 @@ Expected: COUNT lines 94, `CompareDrift` and `CompareRestored` show only the liv
 ## Part 2: production branch still empty and reachable (read only)
 
 ```powershell
-.\scripts\migration\rehearsal-run.ps1 -Step Check -DstEnv .env.cutover -OutDir rehearsal3 -ExpectedDstHost ep-REPLACE-WITH-PRODUCTION-ENDPOINT
+.\scripts\migration\rehearsal-run.ps1 -Step Check -DstEnv .env.cutover -OutDir rehearsal3 -ExpectedDstHost ep-cold-night-za5w03lp
 ```
 
 Must say `tables in public: 0`. If it shows tables, STOP and tell Claude: something was restored into production.
@@ -107,7 +107,7 @@ Proves `574-precheck.sql`, `574-apply.sql` and `574-rollback.sql` work on a real
 Set up once (reads the URL from `.env.rehearsal3` and never prints it). Replace the endpoint with the rehearsal-3 one:
 
 ```powershell
-$psql = 'C:\Program Files\PostgreSQL\18\bin\psql.exe'; $r3host = 'ep-REPLACE-WITH-REHEARSAL3-ENDPOINT'; $u = ((Get-Content .env.rehearsal3 | Where-Object { $_ -like 'DST_URL=*' } | Select-Object -First 1).Substring(8)).Trim().Trim('"').Trim("'"); if ($u -notlike "*$r3host*") { throw 'URL is not the rehearsal-3 endpoint. STOP.' } else { 'target is rehearsal-3' }
+$psql = 'C:\Program Files\PostgreSQL\18\bin\psql.exe'; $r3host = 'ep-dry-bonus-zay1bg7r'; $u = ((Get-Content .env.rehearsal3 | Where-Object { $_ -like 'DST_URL=*' } | Select-Object -First 1).Substring(8)).Trim().Trim('"').Trim("'"); if ($u -notlike "*$r3host*") { throw 'URL is not the rehearsal-3 endpoint. STOP.' } else { 'target is rehearsal-3' }
 ```
 
 1. Before: expect SET NULL x5, NO ACTION x2 and `FK574_FOUND|7`.
