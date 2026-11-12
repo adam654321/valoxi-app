@@ -33,6 +33,7 @@ Still to measure: the DO rebuild with the prod Clerk key (build-time variable). 
 | By Tue 10 Nov | Add a cutover env file for the real run: `.env.cutover` with `DST_URL` = Neon production branch DIRECT url (not pooled). Add a `-ExpectedDstHost` for the production endpoint. Never printed | ADAM, CODE prepares the commands |
 | Mon 9 Nov | DONE 2026-11-06 (early): Viv signed up in Clerk dev on staging (viv@shiftopsconsulting.com) and the user 2 relink worked. Viv reports no issues so far | ADAM |
 | Wed 11 Nov | Full dress rehearsal on staging against a fresh dump into a NEW Neon branch `rehearsal-3`: stop-watch every step of 6.5 to 6.11, including the rebuild. Record real downtime | ADAM + CODE |
+| Before the link goes out | Black Friday offer (live on the site 2026-11-12 at `valoxi.ai/black-friday/`, also served at `/event/`; ends 23:59 GMT Mon 30 Nov, so it spans the cutover). Needs, on OLD prod: Stripe live coupon `BF26_ANNUAL_PRO` ($686.16 off, Professional only) and two `promo_code_campaigns` rows, slugs `bf26-free-month` and `bf26-annual`, `expires_at` 2026-12-01 00:00:00 UTC. Data only, no code change: the promo and checkout code is identical on `replit-final` and `main`. The rows reach new prod in the cutover dump; the coupon lives in Stripe and needs nothing | ADAM |
 | Thu 19 Nov | Notice period ends. Nothing to do except confirm the live pages still say 24 November | CODE checks |
 | From Fri 20 Nov | Change freeze on `main`: only cutover-critical merges | ADAM |
 | Mon 23 Nov, 12:00 | Last go/no-go on the preparation list (section 6). Decide: proceed or move the date. Moving the date means editing the live notice | ADAM |
@@ -58,14 +59,16 @@ Expected: all-clear by about 19:45 to 20:00. Rebuild time: **TBD from the DO bui
 | 19:00 | **6.5 Freeze.** Stop the Replit deployment. Confirm `app.valoxi.ai` errors. Timestamp this: it starts the downtime | timestamp | ADAM |
 | 19:03 | **6.6 Final dump** with the local runner (`CountsBefore`, `Dump`, `CountsAfter`). The database no longer changes once the app is stopped, so `CompareDrift` must show 0 mismatches. Keep a second copy of the dump | counts, dump size | ADAM |
 | 19:08 | **6.7 Restore** into the Neon production branch (target guard must be the production endpoint) | exit code 0 | ADAM |
-| 19:10 | **6.8 Reconcile:** `RestoredCounts`, `CompareRestored`, `SourceStructure`, `RestoredStructure`, `CompareStructure`. All must be 0 mismatches. **If not, STOP: no DNS change.** Optionally run the Clerk and Stripe checks `--all` against production as go/no-go evidence (5 known Stripe status drifts are expected) | compare outputs | ADAM |
+| 19:10 | **6.8 Reconcile:** `RestoredCounts`, `CompareRestored`, `SourceStructure`, `RestoredStructure`, `CompareStructure`. All must be 0 mismatches. **If not, STOP: no DNS change.** Optionally run the Clerk and Stripe checks `--all` against production as go/no-go evidence (5 known Stripe status drifts are expected). Black Friday: confirm both campaign rows arrived, `select slug, is_active, expires_at from promo_code_campaigns where slug like 'bf26-%'` must return 2 rows | compare outputs | ADAM |
 | 19:15 | **6.9 Apply the prod env set in DO and redeploy** (full rebuild). Check `/api/health` returns the new commit, and the log shows the new Neon host. Crons are live from here, only after the Replit stop in 6.5 | health output | ADAM |
 | 19:30 | **6.10 Flip DNS.** Delete the A record, add the CNAME to the DO hostname (DNS-only). Wait for the certificate to go active | `nslookup`, https 200 | ADAM |
-| 19:40 | **6.11 Verify live:** sign in as Adam (Clerk prod), open company 228, open a deal model, generate a PDF, upload and delete a test document, Stripe shows the webhook endpoint healthy on its next event | checklist | ADAM |
+| 19:40 | **6.11 Verify live:** sign in as Adam (Clerk prod), open company 228, open a deal model, generate a PDF, upload and delete a test document, Stripe shows the webhook endpoint healthy on its next event. Black Friday: on `valoxi.ai/black-friday/` click both offer buttons and confirm Stripe Checkout opens (free month: 1 month trial, $167 after; annual: $917.04 after the 7-day trial). Do not pay | checklist | ADAM |
 | 19:50 | **All-clear.** Timestamp it. Downtime = freeze to all-clear | timestamp | ADAM |
 | 20:30 | Hard stop. No all-clear: roll back | decision | ADAM |
 
 Stripe and Clerk retry failed webhooks for days, and the webhook URLs stay `app.valoxi.ai`, so events during the downtime are delivered afterwards.
+
+Black Friday during the freeze: the offer page stays up (it is on Cloudflare Pages) but its buttons call `app.valoxi.ai`, so from 19:00 until the all-clear a visitor gets "Checkout did not open" with a contact link. Do not schedule a Black Friday email or ad push for Tuesday evening. On rollback the offers keep working: the rows are still on old prod.
 
 ## 5. Rollback (available for 7 days)
 
@@ -81,6 +84,7 @@ Flip DNS back (delete the CNAME, restore the A record `34.111.179.208`, keep the
 - Staging healthy on `main`; no unmerged cutover-critical work
 - Neon PITR confirmed
 - Users notified
+- Black Friday: both `bf26-` campaign rows on old prod, both buttons open Stripe Checkout at the right price, no Black Friday send planned for Tuesday evening
 
 ## 7. After the night
 
@@ -91,6 +95,7 @@ Flip DNS back (delete the CNAME, restore the A record `34.111.179.208`, keep the
 | Wed 25 Nov, 08:00 and 08:30 | Stripe webhook failure alert and Stripe reconciliation report arrive (or not) in `SMTP_ALERT_EMAIL`. Expect 44 flagged if still active | ADAM |
 | Wed 25 Nov | 7.1 restore DNS TTL to 300 or 3600 | ADAM |
 | Wed 25 Nov | 7.2, 7.3 recreate Neon `dev` from the new main, update local `.env`. 7.4 apply #574 with Adam's authorisation | CODE + ADAM |
+| Tue 1 Dec, 00:00 UTC | Black Friday offers expire on the server (`expires_at`); the page shows its closed state by itself. Afterwards point `/event` at the next campaign or leave it | ADAM |
 | 25 Nov to 1 Dec | 7.5 watch the crons. 7.6 DO alerting. 7.7 cancel Replit AI integrations | ADAM |
 | Tue 1 Dec (T+7) | Phase 8: confirm no traffic to Replit, last dump to R2 `backups/replit-final/`, delete the Replit deployment, remove Replit GitHub app | ADAM |
 | After Phase 8 | Remove the Replit rows from privacy and DPA on the site (`valoxi-site`), bump "Last updated". Push needs the `AdamValoxi` gh account | CODE + ADAM |
