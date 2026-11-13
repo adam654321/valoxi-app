@@ -26,8 +26,8 @@ Still to measure: the DO rebuild with the prod Clerk key (build-time variable). 
 | Fri 6 Nov | DONE 2026-11-06: staging reconciliation email arrived at 08:30 (to adam@valoxi.ai, from noreply@send.valoxi.ai, subject "18 subscription(s) out of step with Stripe"). 18 checked, 0 status mismatches, 18 lookup errors, all `resource_missing`: expected, staging has live sub ids but Stripe test keys. Proves the job runs and the email delivers; the mismatch logic is covered by unit tests and first meets live Stripe on prod Wed 25 Nov. Adam is removing `SMTP_ALERT_EMAIL` from staging to stop the daily noise | ADAM |
 | DECIDED 2026-11-05 | Four real customers (subs 39, 44, 68, 104). All dormant since July (last activity 18 Jun to 29 Jul). Leave 39, 68, 104 to be cancelled by the fixed dunning job on its first run; email no one. Dentiva (44): check Stripe for what happened after the 28 Aug payment (cancelled 26 Aug, invoice paid 28 Aug, app shows active), then mark cancelled by hand after cutover or contact the customer | ADAM |
 | By Tue 10 Nov | Secrets export: every Replit secret, both panes, into a password manager (`removals.md` section 4) | ADAM |
-| By Tue 10 Nov | Cloudflare: is the `app.valoxi.ai` A record proxied or DNS-only? Note the exact current record. Note the DO team name in `assessment.md` section 0 | ADAM |
-| By Tue 10 Nov | Confirm Neon plan has point-in-time recovery (readiness section 4) | ADAM |
+| By Tue 10 Nov | DONE 2026-11-13: the `app.valoxi.ai` A record is **DNS-only** (not proxied), value `34.111.179.208` as in section 5. DO team name: **Valoxi** | ADAM |
+| By Tue 10 Nov | DONE 2026-11-13: the Neon project was on the free plan (history window 6 hours at most). Adam upgraded to a paid plan and the history window is now **7 days**, applying to all branches. Connection strings unchanged | ADAM |
 | By Tue 10 Nov | Check old Replit prod has `SMTP_ALERT_EMAIL` set (if not, the webhook failure alert has been silent there) | ADAM |
 | By Tue 10 Nov | DONE 2026-11-12: #574 scripts (precheck, apply, rollback, both guards) proven on `rehearsal-3`. FINDING: old prod already has all seven constraints as ON DELETE CASCADE (true in the dumps of 23 Oct, 3 Nov and 12 Nov; `assessment.md` section 5 records SET NULL and NO ACTION on 16 Oct). So 7.4 should be a no-op: run the precheck, apply only if it does not show CASCADE x7 | CODE + ADAM |
 | By Tue 10 Nov | Add a cutover env file for the real run: `.env.cutover` with `DST_URL` = Neon production branch DIRECT url (not pooled). Add a `-ExpectedDstHost` for the production endpoint. Never printed | ADAM, CODE prepares the commands |
@@ -77,13 +77,13 @@ Flip DNS back (delete the CNAME, restore the A record `34.111.179.208`, keep the
 
 ## 6. Go / no-go checklist (Mon 23 Nov, 12:00)
 
-- Secrets exported and checked present in DO prod env set
+- Secrets exported and checked present in DO prod env set. State 2026-11-13: collected in `.env.do-prod` (39 of 39); NOT yet in a password manager, Replit is the source of truth until it is taken down. They MUST be in a password manager before Phase 8 deletes the Replit deployment
 - Cloudflare record noted, proxied status known
 - Rehearsal 3 on 11 Nov passed with a measured rebuild time
 - #574 ALTERs and rollback reviewed
-- Dentiva (44) checked in Stripe (the other three are decided: leave to auto-cancel)
+- Dentiva (44) checked in Stripe (done 2026-11-13: Stripe shows the subscription cancelled on 26 Aug, so the app's "active" is wrong. After cutover mark sub 44 cancelled by hand; the Wed 25 Nov 08:30 reconciliation report will flag it until then. Not yet looked at: whether the 28 Aug payment was for a period after the cancellation and should be refunded, Adam's call). The other three are decided: leave to auto-cancel
 - Staging healthy on `main`; no unmerged cutover-critical work
-- Neon PITR confirmed
+- Neon PITR confirmed (done 2026-11-13: paid plan, history window 7 days; glance at Settings again on the day to see it still says 7 days)
 - Users notified
 - Black Friday: both `bf26-` campaign rows on old prod, both buttons open Stripe Checkout at the right price, no Black Friday send planned for Tuesday evening
 
@@ -95,15 +95,16 @@ Flip DNS back (delete the CNAME, restore the A record `34.111.179.208`, keep the
 | Wed 25 Nov, 04:00 | First dunning run on prod: with the billing fix, subs 39, 68 and 104 become canceled if still past_due and cancelled in Stripe. Check logs | ADAM + CODE |
 | Wed 25 Nov, 08:00 and 08:30 | Stripe webhook failure alert and Stripe reconciliation report arrive (or not) in `SMTP_ALERT_EMAIL`. Expect 44 flagged if still active | ADAM |
 | Wed 25 Nov | 7.1 restore DNS TTL to 300 or 3600 | ADAM |
+| Wed 25 Nov | Mark Dentiva (sub 44) cancelled by hand on new prod (Stripe: cancelled 26 Aug). Script file, Adam's authorisation | CODE + ADAM |
 | Wed 25 Nov | 7.2, 7.3 recreate Neon `dev` from the new main, update local `.env`. 7.4 #574: run `574-precheck.sql` on new prod; expected CASCADE x7 already (see section 2), so nothing to apply. Apply only if it differs, with Adam's authorisation | CODE + ADAM |
 | Tue 1 Dec, 00:00 UTC | Black Friday offers expire on the server (`expires_at`); the page shows its closed state by itself. Afterwards point `/event` at the next campaign or leave it | ADAM |
 | 25 Nov to 1 Dec | 7.5 watch the crons. 7.6 DO alerting. 7.7 cancel Replit AI integrations | ADAM |
-| Tue 1 Dec (T+7) | Phase 8: confirm no traffic to Replit, last dump to R2 `backups/replit-final/`, delete the Replit deployment, remove Replit GitHub app | ADAM |
+| Tue 1 Dec (T+7) | Phase 8: FIRST confirm every secret is in a password manager (Replit is the only master copy until then), then confirm no traffic to Replit, last dump to R2 `backups/replit-final/`, delete the Replit deployment, remove Replit GitHub app | ADAM |
 | After Phase 8 | Remove the Replit rows from privacy and DPA on the site (`valoxi-site`), bump "Last updated". Push needs the `AdamValoxi` gh account | CODE + ADAM |
 
 ## 8. Open questions that can move the date
 
 1. CLOSED 2026-11-12: rebuild time on DO is about 5 minutes.
-2. Cloudflare proxied status of the current A record.
-3. Dentiva (44) outcome in Stripe (the other three are decided).
+2. CLOSED 2026-11-13: the A record is DNS-only.
+3. CLOSED 2026-11-13: Dentiva (44) is cancelled in Stripe since 26 Aug. Does not move the date.
 4. Counsel's check of the two transfer-mechanism lines on the live pages (does not block the date).

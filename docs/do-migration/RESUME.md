@@ -123,3 +123,11 @@ Rules: never print secrets or connection strings; Claude never touches old or ne
 - #574: old prod already has CASCADE x7 (since 23 Oct at the latest). 7.4 becomes precheck only. Unknown: why assessment.md section 5 says otherwise for 16 Oct.
 - Uncommitted on main (no PR yet, Adam has not asked): the two new scripts, rehearsal-3-runbook.md (endpoints filled in), cutover-timeline.md, rehearsal-2026-11-12.txt, this file.
 - Adam still to do: Cloudflare proxied status of app.valoxi.ai, Neon PITR, Dentiva (44) in Stripe, DO team name, confirm secrets are also in the password manager.
+
+## 2026-11-13: preparation list closed
+
+- Cloudflare: app.valoxi.ai A record is DNS-only. DO team name: Valoxi.
+- Neon: was on the free plan (6 hour history). Adam upgraded; history window now 7 days. Old rehearsal branches deleted; production, dev, rehearsal-3 remain. Production re-checked empty, server now PostgreSQL 18.7.
+- Dentiva (sub 44): cancelled in Stripe 26 Aug. Mark cancelled by hand on new prod after cutover. The 28 Aug payment has not been looked at.
+- Secrets: NOT in a password manager yet. Replit is the master copy until Phase 8; they must be saved elsewhere before the Replit deployment is deleted.
+- Nothing open before go/no-go (Mon 23 Nov 12:00) except: Thu 19 Nov check the live pages still say 24 November; freeze on main from Fri 20 Nov; users notified Mon 23 Nov 19:40.
