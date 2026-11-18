@@ -95,7 +95,7 @@ CUTOVER TIMELINE written 2026-11-05: docs/do-migration/cutover-timeline.md (Tue 
 
 DECISION 2026-11-05 (Adam): subs 39, 68, 104 are left to auto-cancel on the first fixed dunning run; no emails. All four customers dormant since July. Dentiva (44) open: check Stripe, then hand-fix or contact after cutover.
 
-## RESTART HERE (updated 2026-11-05, after PR #21 merged)
+## SUPERSEDED, see "RESTART HERE" at the end of this file (was: restart point of 2026-11-05, after PR #21 merged)
 State: all branches merged to main, including PR #21 (rehearsal 3 runbook, e69916d). Staging runs billing guards (commit 8245a10). Nothing pending to push or merge.
 1. DONE: rehearsal-3-runbook pushed, PR #21 opened and merged by Adam.
 2. NEXT: Rehearsal 3 is planned for Wed 11 Nov (all prep brought forward 2026-11-06; cutover date stays Tue 24 Nov because the live notice says 24 Nov; moving it means editing the notice). Steps are in docs/do-migration/rehearsal-3-runbook.md (Parts 0-5; Part 5 tests the #574 scripts on rehearsal-3). Needs new Neon branch `rehearsal-3`, `.env.rehearsal3`, `.env.cutover`, and the endpoint names in `-ExpectedDstHost`.
@@ -121,13 +121,66 @@ Rules: never print secrets or connection strings; Claude never touches old or ne
 - Neon strings: `scripts/migration/set-dst-url.ps1` (`-Target rehearsal3|cutover`, `-Pooled`, `-Check`). `.env.rehearsal3` = branch rehearsal-3, endpoint ep-dry-bonus-zay1bg7r. `.env.cutover` = branch production, endpoint ep-cold-night-za5w03lp. Each holds DST_URL (direct) and POOLED_URL (goes to DO as DATABASE_URL).
 - Rehearsal 3: passed, record in `rehearsal-2026-11-12.txt`. 0 mismatches everywhere. Rebuild about 5 min. Restore was 6 min 30 s only because ProtonVPN was on: VPN OFF on the night (added to 18:45 pre-flight).
 - #574: old prod already has CASCADE x7 (since 23 Oct at the latest). 7.4 becomes precheck only. Unknown: why assessment.md section 5 says otherwise for 16 Oct.
-- Uncommitted on main (no PR yet, Adam has not asked): the two new scripts, rehearsal-3-runbook.md (endpoints filled in), cutover-timeline.md, rehearsal-2026-11-12.txt, this file.
-- Adam still to do: Cloudflare proxied status of app.valoxi.ai, Neon PITR, Dentiva (44) in Stripe, DO team name, confirm secrets are also in the password manager.
+- All of the above merged in PR #29 (bc4c948). Adam's items from this day were closed on 13 Nov, see below.
 
 ## 2026-11-13: preparation list closed
 
 - Cloudflare: app.valoxi.ai A record is DNS-only. DO team name: Valoxi.
 - Neon: was on the free plan (6 hour history). Adam upgraded; history window now 7 days. Old rehearsal branches deleted; production, dev, rehearsal-3 remain. Production re-checked empty, server now PostgreSQL 18.7.
-- Dentiva (sub 44): cancelled in Stripe 26 Aug. Mark cancelled by hand on new prod after cutover. The 28 Aug payment has not been looked at.
+- Dentiva (sub 44): cancelled in Stripe 26 Aug. Mark cancelled by hand on new prod after cutover. Adam checked the 28 Aug payment: no refund is due.
 - Secrets: NOT in a password manager yet. Replit is the master copy until Phase 8; they must be saved elsewhere before the Replit deployment is deleted.
+- Merged in PR #30 (c25b835).
 - Nothing open before go/no-go (Mon 23 Nov 12:00) except: Thu 19 Nov check the live pages still say 24 November; freeze on main from Fri 20 Nov; users notified Mon 23 Nov 19:40.
+
+## RESTART HERE (updated 2026-11-13, end of session)
+
+State: app repo on `main` at c25b835 (PRs #29 and #30 merged). Site repo: all three Black Friday PRs merged and live; its local checkout is still on branch `black-friday-pricing-card` (switch to main and pull before the next site change; needs gh account AdamValoxi).
+Uncommitted on app `main`, to go in the next PR (Thu 19 Nov check): this file, and one line in cutover-timeline.md (Dentiva: no refund due).
+Not mine, leave alone: modified scripts/send-marketing-consent-emails.ts, untracked _to_delete/.
+
+The preparation list is CLOSED. Every go/no-go item in cutover-timeline.md section 6 is done except "Users notified" (Mon 23 Nov 19:40) and the standing checks below.
+
+Dates
+1. Thu 19 Nov, CODE: check valoxi.ai/dpa and /privacy still say 24 November. Open a PR with the uncommitted docs.
+2. Fri 20 Nov: change freeze on `main` starts (cutover-critical merges only).
+3. Mon 23 Nov 12:00: go/no-go (section 6).
+4. Mon 23 Nov 19:00 to 19:45, ADAM: lower TTL, add app.valoxi.ai as a custom domain in DO, prepare the prod env set WITHOUT applying, notify users, dry runs (`-Step Check`, `-DryRun` of Dump and Restore).
+5. Tue 24 Nov 18:45 pre-flight (VPN OFF), 19:00 freeze, hard stop 20:30.
+6. Wed 25 Nov: backup 02:00, dunning 04:00, alert and reconciliation emails 08:00 and 08:30, TTL back, recreate `dev`, #574 precheck, Dentiva.
+7. Tue 1 Dec: Black Friday expires 00:00 UTC; Phase 8 (delete Replit) only after the secrets are in a password manager.
+
+Open for ADAM (none blocks the date)
+- Save the 39 secrets in a password manager. Adam said he will. Until then Replit is the only master copy; `.env.do-prod` is a working copy on one machine. Tell Claude when done so section 6 and the Phase 8 row can be marked.
+- Did `SMTP_ALERT_EMAIL` get removed from STAGING (to stop the daily reconciliation email)? Never confirmed.
+- Optional: delete stale local files `.env.rehearsal` and any `.env.rehearsal2` (their Neon branches are deleted).
+
+Open for CODE
+- For Mon 23 Nov 19:20 (step 6.3): help Adam enter the DO prod env set from `.env.do-prod`, names only. Plus, not in that file: `DATABASE_URL` = POOLED_URL from `.env.cutover`; `GIT_SHA` and `VITE_CLERK_PUBLISHABLE_KEY` are BUILD-TIME; `NODE_ENV`, `PORT`. Not set anywhere and not in Replit prod: SMTP_USER, SMTP_PASS, SMTP_PORT (the app runs without them today).
+- For the night: `rehearsal-run.ps1` defaults still point at the deleted rehearsal-2 branch (`.env.rehearsal`, `ep-calm-smoke-za9wqm88`). The real run must pass `-DstEnv .env.cutover -ExpectedDstHost ep-cold-night-za5w03lp` and its own `-OutDir`. Write the exact night commands into the timeline before Mon 23 Nov and dry-run them at 19:45.
+- For Wed 25 Nov: a script file to mark sub 44 (Dentiva) cancelled on new prod, for Adam to authorise and run. And `574-precheck.sql` on new prod: expect CASCADE x7, then nothing to apply.
+- After 1 Dec: remove the Black Friday code from valoxi-site (src/lib/blackFriday.ts and its users; it switches itself off, so no rush) and decide what `/event` shows. After Phase 8: remove the Replit rows from privacy and DPA, bump "Last updated".
+
+Known unknowns
+- DNS flip and certificate time on the night: never measured, cannot be rehearsed.
+- Restore with the VPN off was not re-timed after rehearsal 3 (22 s is the 3 Nov figure; 6 min 30 s with ProtonVPN on).
+- Why assessment.md section 5 records the #574 constraints as SET NULL / NO ACTION on 16 Oct when every dump since 23 Oct shows CASCADE.
+- Counsel's check of the two transfer-mechanism lines on the live legal pages (does not block the date).
+- Black Friday: whether a "once" coupon survives the $0 trial invoice (avoided by using a 1-month repeating coupon).
+
+State of things outside the repo
+- Neon project: paid plan, history window 7 days. Branches: production (ep-cold-night-za5w03lp, empty, PostgreSQL 18.7), dev (staging and local use it, do not delete), rehearsal-3 (ep-dry-bonus-zay1bg7r, holds the 12 Nov copy with CASCADE x7; delete after the cutover).
+- Staging (valoxi-staging on DO): healthy, `GIT_SHA` left as the label `rehearsal3`, still on the dev database.
+- Local gitignored files, never print: `.env.do-prod`, `.env.cutover`, `.env.rehearsal3`, `.env.prod`. Delete `.env.do-prod` and `rehearsal3\valoxi-rehearsal.dump` (customer data) after the cutover.
+- Cloudflare: app.valoxi.ai is an A record to 34.111.179.208, DNS-only. DO team: Valoxi.
+- Black Friday: live and verified; buttons fail from the 19:00 freeze until the all-clear, so no Black Friday email or ad push on Tue 24 Nov evening.
+
+Rules: never print secrets or connection strings (use the scripts' `-Check` modes, names and verdicts only); Claude never touches old or new prod (rehearsal-3 and staging health are fine); commands in separate code blocks; Claude opens PRs, Adam merges; commit only when asked; site repo pushes need gh account AdamValoxi, then switch back to adam654321.
+
+## 2026-11-18: status check (six days out)
+
+- Legal pages checked a day early: valoxi.ai/dpa and /privacy both 200 and both say 24 November 2026. Glance again on Thu 19 Nov if wanted; nothing changed since 5 Nov.
+- Staging /api/health 200, commit label `rehearsal3`. app.valoxi.ai still resolves to 34.111.179.208. Local `main` level with origin at c25b835.
+- Night commands WRITTEN: cutover-timeline.md section 4a (`$cut` splat: `.env.cutover`, OutDir `cutover`, `ep-cold-night-za5w03lp`). Note: the Monday `Restore -DryRun` aborts with "dump not found" because the fresh OutDir has no dump yet; that is the expected pass (host guard runs first).
+- SMTP_ALERT_EMAIL: Adam confirmed 2026-11-18 it was removed from staging. Closed. (It stays set on old Replit prod and must be in the DO prod env set, step 6.3.)
+- These docs go in the PR from branch `cutover-night-commands` (opened 2026-11-18).
+- Still open for Adam: secrets into a password manager (blocks Phase 8 only), users notified Mon 23 Nov 19:40.

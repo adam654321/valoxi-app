@@ -23,7 +23,7 @@ Still to measure: the DO rebuild with the prod Clerk key (build-time variable). 
 
 | Date | What | Owner |
 |---|---|---|
-| Fri 6 Nov | DONE 2026-11-06: staging reconciliation email arrived at 08:30 (to adam@valoxi.ai, from noreply@send.valoxi.ai, subject "18 subscription(s) out of step with Stripe"). 18 checked, 0 status mismatches, 18 lookup errors, all `resource_missing`: expected, staging has live sub ids but Stripe test keys. Proves the job runs and the email delivers; the mismatch logic is covered by unit tests and first meets live Stripe on prod Wed 25 Nov. Adam is removing `SMTP_ALERT_EMAIL` from staging to stop the daily noise | ADAM |
+| Fri 6 Nov | DONE 2026-11-06: staging reconciliation email arrived at 08:30 (to adam@valoxi.ai, from noreply@send.valoxi.ai, subject "18 subscription(s) out of step with Stripe"). 18 checked, 0 status mismatches, 18 lookup errors, all `resource_missing`: expected, staging has live sub ids but Stripe test keys. Proves the job runs and the email delivers; the mismatch logic is covered by unit tests and first meets live Stripe on prod Wed 25 Nov. `SMTP_ALERT_EMAIL` removed from staging to stop the daily noise (Adam confirmed 2026-11-18) | ADAM |
 | DECIDED 2026-11-05 | Four real customers (subs 39, 44, 68, 104). All dormant since July (last activity 18 Jun to 29 Jul). Leave 39, 68, 104 to be cancelled by the fixed dunning job on its first run; email no one. Dentiva (44): check Stripe for what happened after the 28 Aug payment (cancelled 26 Aug, invoice paid 28 Aug, app shows active), then mark cancelled by hand after cutover or contact the customer | ADAM |
 | By Tue 10 Nov | Secrets export: every Replit secret, both panes, into a password manager (`removals.md` section 4) | ADAM |
 | By Tue 10 Nov | DONE 2026-11-13: the `app.valoxi.ai` A record is **DNS-only** (not proxied), value `34.111.179.208` as in section 5. DO team name: **Valoxi** | ADAM |
@@ -71,6 +71,88 @@ Stripe and Clerk retry failed webhooks for days, and the webhook URLs stay `app.
 
 Black Friday during the freeze: the offer page stays up (it is on Cloudflare Pages) but its buttons call `app.valoxi.ai`, so from 19:00 until the all-clear a visitor gets "Checkout did not open" with a contact link. Do not schedule a Black Friday email or ad push for Tuesday evening. On rollback the offers keep working: the rows are still on old prod.
 
+### 4a. Exact commands for the data move (written 2026-11-18)
+
+The runner's defaults still point at the deleted rehearsal-2 branch, so every call on the night must carry the cutover options. Run from the repo root in PowerShell, VPN off. Source is `.env.prod` (`SRC_URL`), the default.
+
+Once per PowerShell window:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+```
+
+```powershell
+$cut = @{ DstEnv = '.env.cutover'; OutDir = 'cutover'; ExpectedDstHost = 'ep-cold-night-za5w03lp' }
+```
+
+**Mon 23 Nov 19:45 dry run, and again Tue 18:45 pre-flight** (nothing is written to either database):
+
+```powershell
+.\scripts\migration\rehearsal-run.ps1 -Step Check @cut
+```
+
+Must show the source host, target host `ep-cold-night-za5w03lp` (not `-pooler`), and `tables in public: 0`. If the target is not empty, STOP.
+
+```powershell
+.\scripts\migration\rehearsal-run.ps1 -Step Dump -DryRun @cut
+```
+
+```powershell
+.\scripts\migration\rehearsal-run.ps1 -Step Restore -DryRun @cut
+```
+
+Expected on the Restore dry run: `ABORT: cutover\valoxi-rehearsal.dump not found. Run -Step Dump first.` That is a pass: the host guard runs first, so reaching this line means the target was accepted as the production endpoint. An abort naming the host is a fail.
+
+**Tue 24 Nov, after the 19:00 freeze** (steps 6.6 to 6.8), one at a time, paste each output:
+
+```powershell
+.\scripts\migration\rehearsal-run.ps1 -Step CountsBefore @cut
+```
+
+```powershell
+.\scripts\migration\rehearsal-run.ps1 -Step Dump @cut
+```
+
+```powershell
+.\scripts\migration\rehearsal-run.ps1 -Step CountsAfter @cut
+```
+
+```powershell
+.\scripts\migration\rehearsal-run.ps1 -Step CompareDrift @cut
+```
+
+0 mismatches (the app is stopped). Then keep a second copy of the dump:
+
+```powershell
+Copy-Item cutover\valoxi-rehearsal.dump cutover\valoxi-cutover-copy.dump
+```
+
+```powershell
+.\scripts\migration\rehearsal-run.ps1 -Step Restore @cut
+```
+
+```powershell
+.\scripts\migration\rehearsal-run.ps1 -Step RestoredCounts @cut
+```
+
+```powershell
+.\scripts\migration\rehearsal-run.ps1 -Step CompareRestored @cut
+```
+
+```powershell
+.\scripts\migration\rehearsal-run.ps1 -Step SourceStructure @cut
+```
+
+```powershell
+.\scripts\migration\rehearsal-run.ps1 -Step RestoredStructure @cut
+```
+
+```powershell
+.\scripts\migration\rehearsal-run.ps1 -Step CompareStructure @cut
+```
+
+Any mismatch in `CompareRestored` or `CompareStructure`: STOP, no DNS change. The dump step prints "last time: 10,021,863"; that label is stale, expect about 10.1 to 10.2 MB.
+
 ## 5. Rollback (available for 7 days)
 
 Flip DNS back (delete the CNAME, restore the A record `34.111.179.208`, keep the `replit-verify` TXT) and start the Replit deployment. The old database was not written to after the freeze, so it is exactly as it was. Anything written to the new database after the all-clear is lost; decide early. Replit still runs the old billing code, which is fine.
@@ -81,7 +163,7 @@ Flip DNS back (delete the CNAME, restore the A record `34.111.179.208`, keep the
 - Cloudflare record noted, proxied status known
 - Rehearsal 3 on 11 Nov passed with a measured rebuild time
 - #574 ALTERs and rollback reviewed
-- Dentiva (44) checked in Stripe (done 2026-11-13: Stripe shows the subscription cancelled on 26 Aug, so the app's "active" is wrong. After cutover mark sub 44 cancelled by hand; the Wed 25 Nov 08:30 reconciliation report will flag it until then. Not yet looked at: whether the 28 Aug payment was for a period after the cancellation and should be refunded, Adam's call). The other three are decided: leave to auto-cancel
+- Dentiva (44) checked in Stripe (done 2026-11-13: Stripe shows the subscription cancelled on 26 Aug, so the app's "active" is wrong. After cutover mark sub 44 cancelled by hand; the Wed 25 Nov 08:30 reconciliation report will flag it until then. Adam checked the 28 Aug payment on 2026-11-13: no refund is due). The other three are decided: leave to auto-cancel
 - Staging healthy on `main`; no unmerged cutover-critical work
 - Neon PITR confirmed (done 2026-11-13: paid plan, history window 7 days; glance at Settings again on the day to see it still says 7 days)
 - Users notified
