@@ -37,7 +37,7 @@ Still to measure: the DO rebuild with the prod Clerk key (build-time variable). 
 | Before the link goes out | Black Friday offer (live on the site 2026-11-12 at `valoxi.ai/black-friday/`, also served at `/event/`; ends 23:59 GMT Mon 30 Nov, so it spans the cutover). Needs, on OLD prod: Stripe live coupon `BF26_ANNUAL_PRO` ($686.16 off, Professional only) and two `promo_code_campaigns` rows, slugs `bf26-free-month` and `bf26-annual`, `expires_at` 2026-12-01 00:00:00 UTC. Data only, no code change: the promo and checkout code is identical on `replit-final` and `main`. The rows reach new prod in the cutover dump; the coupon lives in Stripe and needs nothing | ADAM |
 | Thu 19 Nov | Notice period ends. Nothing to do except confirm the live pages still say 24 November | CODE checks |
 | From Fri 20 Nov | Change freeze on `main`: only cutover-critical merges | ADAM |
-| Mon 23 Nov, 12:00 | Last go/no-go on the preparation list (section 6). Decide: proceed or move the date. Moving the date means editing the live notice | ADAM |
+| Mon 23 Nov, 12:00 | DONE 2026-11-23: **GO** (Adam). Last go/no-go on the preparation list (section 6) | ADAM |
 
 ## 3. T-24 hours: Monday 23 November, 19:00
 
