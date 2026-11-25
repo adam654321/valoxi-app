@@ -8,9 +8,11 @@
 
     powershell -ExecutionPolicy Bypass -File C:\Users\AdamAuty\valoxi\scripts\migration\set-dst-url.ps1 -Target rehearsal3
     powershell -ExecutionPolicy Bypass -File C:\Users\AdamAuty\valoxi\scripts\migration\set-dst-url.ps1 -Target cutover
+    powershell -ExecutionPolicy Bypass -File C:\Users\AdamAuty\valoxi\scripts\migration\set-dst-url.ps1 -Target dev
 
   rehearsal3 writes .env.rehearsal3 (the Neon branch rehearsal-3).
   cutover    writes .env.cutover    (the Neon branch production).
+  dev        writes .env.dev        (the Neon dev branch, recreated from production 2026-11-25).
 
   Without -Pooled it saves the DIRECT string as DST_URL (used by the dump and
   restore runner). In Neon turn "Connection pooling" OFF before copying; a
@@ -32,7 +34,7 @@
 [CmdletBinding()]
 param(
   [Parameter(Mandatory = $true)]
-  [ValidateSet('rehearsal3', 'cutover')]
+  [ValidateSet('rehearsal3', 'cutover', 'dev')]
   [string]$Target,
   [switch]$Pooled,
   [switch]$Check
@@ -42,7 +44,7 @@ $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $outFile  = Join-Path $repoRoot (".env.$Target")
-$branch   = if ($Target -eq 'cutover') { 'production' } else { 'rehearsal-3' }
+$branch   = switch ($Target) { 'cutover' { 'production' } 'dev' { 'dev (new, from production)' } default { 'rehearsal-3' } }
 
 # Returns a hashtable: Problem (string or $null), Endpoint, IsPooled.
 function Test-Url([string]$url) {
