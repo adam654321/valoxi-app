@@ -233,3 +233,11 @@ NEXT: one-off script for subs 35 and 44 (Adam authorises and runs), 574 precheck
 - 2026-11-25: 574-precheck on new prod: CASCADE x7, FK574_FOUND|7. #574 already in place, nothing to apply. CLOSED.
 - 2026-11-25: DELETED (Adam approved): 3 dumps (cutover x2, rehearsal3 x1) and .env.do-bulk. Kept: .env.do-prod (until password manager), .env.cutover, .env.rehearsal3, count .txt files.
 - 2026-11-25: DELETED (Adam approved): rehearsal/ and rehearsal2/ dumps. No *.dump files left in repo.
+- 2026-11-25: PR #32 opened (branch cutover-complete, c9832c8). Adam merges.
+
+## 2026-11-25 DEV RECREATED (plan 7.2)
+- New Neon branch dev-2026-11-25 from production, no expiry: ep-holy-resonance-zazrpf52. .env.dev holds DST_URL + POOLED_URL for it (set-dst-url.ps1 -Target dev, new option).
+- Confirmed copy of today's prod (sub 44 canceled, 2 admin events, 89 users, 94 tables).
+- Scrubbed: scripts/migration/scrub-dev-emails.mjs --expect ep-holy-resonance-zazrpf52 --apply. 745 foreign addresses in 12 columns, 824 rows updated, re-scan 0. Names/other PII not scrubbed. nylas_grants keep real grant ids: keep Nylas unset on staging. Stripe ids are live: staging uses test keys.
+- Test guard now allows ep-holy-resonance-zazrpf52 and always blocks ep-cold-night. Full suite on new dev: 39 files, 605/605 (needs --maxWorkers=2 on this machine, else OOM).
+- Branch dev-branch-recreate (not pushed yet). Open: what is ep-square-pine-zaoqy54e (local .env DATABASE_URL)? Switch local .env to new dev. Then new staging app. Then delete old dev (ep-ancient-breeze), rehearsal-3, and .env.rehearsal3.

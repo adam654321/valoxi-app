@@ -6,10 +6,12 @@
 
 // Neon endpoint IDs of databases that are safe to run tests against.
 // Current: the Neon `dev` branch (billowing-block-98253807, eu-west-2), no expiry.
-export const DEFAULT_ALLOWED_ENDPOINTS = ['ep-ancient-breeze-zaso9i43'];
+// Recreated 2026-11-25 from production after the DigitalOcean cutover, emails scrubbed.
+export const DEFAULT_ALLOWED_ENDPOINTS = ['ep-holy-resonance-zazrpf52'];
 
 // Hosts that must never pass, even if someone adds them to the allowlist by mistake.
-const ALWAYS_BLOCKED = ['ep-old-recipe', '.prod.'];
+// ep-old-recipe = old Replit prod. ep-cold-night = production since 2026-11-24.
+const ALWAYS_BLOCKED = ['ep-old-recipe', 'ep-cold-night', '.prod.'];
 
 export function parseDbHost(databaseUrl: string): string {
   return databaseUrl.match(/@([^/?]+)[/?]?/)?.[1] ?? 'unknown';

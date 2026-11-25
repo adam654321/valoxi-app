@@ -36,6 +36,12 @@ describe('db-host-guard', () => {
     ).toThrow(/blocked/);
   });
 
+  it('refuses the current production endpoint even if it is allowlisted', () => {
+    expect(() =>
+      assertTestDbHost(url('ep-cold-night-za5w03lp-pooler.c-2.eu-west-2.aws.neon.tech'), ['ep-cold-night-za5w03lp']),
+    ).toThrow(/blocked/);
+  });
+
   it('refuses an unparseable URL', () => {
     expect(() => assertTestDbHost('not-a-url', ALLOWED)).toThrow(/not an allowlisted/);
   });
