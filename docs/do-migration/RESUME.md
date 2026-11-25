@@ -184,3 +184,52 @@ Rules: never print secrets or connection strings (use the scripts' `-Check` mode
 - SMTP_ALERT_EMAIL: Adam confirmed 2026-11-18 it was removed from staging. Closed. (It stays set on old Replit prod and must be in the DO prod env set, step 6.3.)
 - These docs go in the PR from branch `cutover-night-commands` (opened 2026-11-18).
 - Still open for Adam: secrets into a password manager (blocks Phase 8 only), users notified Mon 23 Nov 19:40.
+
+## 2026-11-23: GO
+
+- Adam called GO on Mon 23 Nov for the cutover on Tue 24 Nov 2026, freeze 19:00 UK, hard stop 20:30.
+- Tonight (section 3 of cutover-timeline.md): 19:00 TTL to 60 s and record the current A record; 19:10 DO custom domain; 19:20 prod env set prepared NOT applied (CODE helps, names only); 19:40 users notified; 19:45 dry runs with `$cut` (section 4a).
+- Glance at Neon Settings: history window still 7 days.
+- Still open, not blocking: secrets into a password manager (blocks Phase 8 only).
+- DO security notices received 2026-11-23 (PHP Nov 19 releases, OpenJDK CVE-2026-114938, NGINX HTTP/2 CVE-2026-123633/123007). Checked the Valoxi app: Dockerfile is node:22-bookworm-slim plus the PostgreSQL client, no PHP, Java or nginx; App Platform's edge is DO-managed. Not a cutover blocker. Open for Adam: check any OTHER resources in the DO account (Droplets, 1-Click images) that may run PHP, Java or nginx.
+- 2026-11-23 6.1 DONE: app.valoxi.ai A 34.111.179.208, DNS-only, TTL now 60 s (Cloudflare 1.1.1.1 answers ttl 60). Original TTL value not recorded; set back to 300 or 3600 on Wed 25 Nov (7.1).
+- 2026-11-23 6.2 DONE: app.valoxi.ai added as custom domain on valoxi-staging (pending). CNAME target for the flip: squid-app-5dwfn.ondigitalocean.app (DNS-only).
+- 2026-11-23 6.3 PREPARED OFFLINE, not in DO: DO saves env edits straight into a redeploy, so the prod set is held in gitignored .env.do-bulk (43 vars: .env.do-prod + DATABASE_URL=POOLED_URL of .env.cutover + NODE_ENV, PORT 8080, GIT_SHA 75139e9). Checks OK: pooled ep-cold-night, APP_URL app.valoxi.ai, R2 valoxi-documents, pk_live_/sk_live_, Gmail visible true. Pasted into the DO Bulk Editor at 6.9 (after Replit stop). Delete .env.do-bulk with .env.do-prod after cutover.
+- 2026-11-24 TIME CHANGE (Adam): cutover moves from 19:00 to about 22:00 UK on Tue 24 Nov. Every section 4 time shifts by +3 h: pre-flight 21:45 (VPN off), freeze 22:00, hard stop 23:30. Users emailed in the morning with 22:00 to about 23:30. Date unchanged, so the live legal notice (effective 24 Nov) still holds.
+- 2026-11-24 00:27 dry runs (Adam, VPN off): Check PASS (source ep-old-recipe-an7e4afw us-east-1, server 16.16; target ep-cold-night-za5w03lp direct, server 18.7, tables in public 0; pg_dump 18.3). Dump -DryRun PASS. Restore -DryRun PASS (host guard accepted ep-cold-night-za5w03lp, then "dump not found" as expected). All T-24h steps done; next is the morning user email, then 21:45 pre-flight.
+- 6.4 user email scheduled by Adam for 08:00 Tue 24 Nov (window 22:00 to about 23:30 UK).
+- 2026-11-24 NEW Phase 8 item: Replit workspace DEV database is not covered by the plan. Not lost tonight (only the prod deployment stops). Before Phase 8: decide if it holds anything not in prod; if yes, dump it into a Neon branch. Adam asked about a dev rehearsal today; CODE advised against (staging already proves the dev path; open risks are prod-only).
+
+## 2026-11-24 NIGHT LOG
+- 22:13 GO. Pre-flight by CODE: staging /api/health ok (commit label rehearsal3), app.valoxi.ai 200 on Replit (34.111.179.208). Hard stop = freeze time + 90 min.
+- 22:15 Check PASS (target ep-cold-night-za5w03lp, 0 tables, pg_dump 18.3).
+- 22:16 FREEZE: Replit deployment stopped (Adam). Hard stop 23:46.
+- 22:17-22:18 6.6 DONE: CountsBefore 94, Dump 10,580,987 B in 30 s, CountsAfter 94, CompareDrift COUNT=94 SEQ=92 SPOT=4 mismatches=0. Second copy cutover\valoxi-cutover-copy.dump.
+- 22:19-22:20 6.7/6.8 DONE: Restore exit 0 in 16 s; CompareRestored COUNT=94 SEQ=92 SPOT=4 mismatches=0; CompareStructure STRUCT=10 mismatches=0.
+- ~22:30 6.9 env set applied in DO (secrets encrypted), deploy started. Tidy-up later: move app to the correct DO project; optional rename (do NOT recreate: CNAME targets squid-app-5dwfn.ondigitalocean.app).
+- 22:34 6.9 LIVE: squid-app /api/health ok, commit 75139e9, uptime 146 s; root 200. Replit custom domain left in place (rollback path) until Phase 8.
+- 22:44 Neon production shows connections (Adam). 6.10 CNAME app -> squid-app-5dwfn.ondigitalocean.app saved (DNS-only).
+- 22:45 app.valoxi.ai LIVE ON DO: CNAME resolves to squid-app, https 200, cert valid, /api/health commit 75139e9. www.app.valoxi.ai still A 34.111.179.208 (Replit); not referenced in code; left for later decision.
+- 23:11 6.11 Adam: sign-in, company 228, deal model, PDF, upload/delete, Black Friday checkouts all OK. Stripe webhook check pending.
+- 23:15 ALL CLEAR (Adam). Downtime 22:16 to about 23:15. Stripe webhooks: 0 failures this week, no events during downtime; first live delivery to be checked Wed morning (no old event resent: handlers act on payloads).
+- Calendar reminder set: Wed 25 Nov 09:00 "Valoxi: post-cutover morning checks".
+
+## RESTART HERE (25 Nov morning)
+Valoxi runs on DigitalOcean (app valoxi-staging, squid-app-5dwfn) with Neon production ep-cold-night-za5w03lp. Replit deployment stopped, untouched, rollback available 7 days (section 5 of cutover-timeline.md).
+Morning: Stripe first webhook 200; R2 valoxi-documents/backups 25 Nov file; 04:00 dunning (39, 68, 104 cancelled); 08:00/08:30 emails; TTL back to 300.
+CODE to do: Dentiva sub 44 script (Adam authorises and runs), 574-precheck.sql on new prod, recreate Neon dev + new staging app, delete .env.do-bulk/.env.do-prod/cutover dumps/rehearsal3 dump/active-users CSV when no longer needed, PR with these docs.
+Tidy-up: move DO app to right project; www.app.valoxi.ai (A to Replit) delete or repoint; Replit dev DB decision before Phase 8.
+- 23:51 'We're back' email sent (Adam). active-users CSV deleted.
+
+## 2026-11-25 MORNING CHECKS: ALL PASS
+- Site: app.valoxi.ai 200, /api/health 200, CNAME to squid-app-5dwfn confirmed.
+- 04:00 dunning on DO: 3x GET /v1/subscriptions 200, no DELETE (the nightly 404 DELETE loop from Replit's old code, seen 17 and 24 Nov, has stopped). Subs 39, 68, 104 reconciled.
+- 08:00 alert job ran (GET /v1/events 200). 08:30 reconciliation email: 15 checked (was 18, so the 3 dropped out), 0 lookup errors, 2 mismatches: sub 35 (company 34, known test sub) and sub 44 (company 56, Dentiva), both app active / Stripe canceled.
+- Stripe webhooks 200. R2 backup 25 Nov 02:00:05 GMT present. Cloudflare TTL back to 300.
+NEXT: one-off script for subs 35 and 44 (Adam authorises and runs), 574 precheck, delete sensitive local files, docs PR.
+- 2026-11-25: Adam decided subs 35 and 44: correct the record only, no email. Scripts written: scripts/migration/fix-subs-35-44-check.sql (read only) and fix-subs-35-44-apply.sql (guarded, all-or-nothing, writes admin.reconciled_already_canceled event). Adam runs on new prod.
+- PARKED until cutover closed: admin area overhaul (users active/cancelled, last sign-in, missed payments, Stripe subs count, balance, payouts; waitlist retired). See memory valoxi-admin-overhaul.
+- 2026-11-25 10:30 UTC: fix-subs-35-44-apply.sql RUN by Adam on new prod. Subs 35, 44 now canceled, 2 audit events. Expect 0 mismatches in 26 Nov 08:30 report. 574 precheck next.
+- 2026-11-25: 574-precheck on new prod: CASCADE x7, FK574_FOUND|7. #574 already in place, nothing to apply. CLOSED.
+- 2026-11-25: DELETED (Adam approved): 3 dumps (cutover x2, rehearsal3 x1) and .env.do-bulk. Kept: .env.do-prod (until password manager), .env.cutover, .env.rehearsal3, count .txt files.
+- 2026-11-25: DELETED (Adam approved): rehearsal/ and rehearsal2/ dumps. No *.dump files left in repo.
