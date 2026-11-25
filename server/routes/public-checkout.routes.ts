@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { config } from '../config';
 import { asyncHandler } from '../utils/async-handler';
 import { promoCodeService, isFiveDNewMember } from '../services/promo-code.service';
+import { resolveCheckoutTrial, STANDARD_TRIAL_DAYS } from '../services/checkout-trial';
 import { VALID_PLAN_KEYS, LOOKUP_KEY_MAP } from './billing.routes';
 import type { PlanKey } from '@shared/schema/billing';
 import { systemConfigService } from '../services/system-config.service';
@@ -165,23 +166,28 @@ router.post('/checkout', asyncHandler(async (req: Request, res: Response) => {
   // free months, not just 5D. Invoices are 0 during the trial; the card is
   // still collected (payment_method_collection: 'always') for the first
   // post-trial bill. No Valoxi free-period row, no cron.
-  if (campaign && campaign.freeMonthsTotal > 0) {
-    const trialEnd = new Date();
-    // Calendar-month trial. setMonth can drift 1-2 days on month-end signups;
-    // acceptable for a trial length.
-    trialEnd.setMonth(trialEnd.getMonth() + campaign.freeMonthsTotal);
-    const trialDays = Math.ceil((trialEnd.getTime() - Date.now()) / (24 * 60 * 60 * 1000));
+  const trial = resolveCheckoutTrial(campaign);
+  if (campaign && trial.kind === 'free_months') {
     checkoutParams.subscription_data = {
-      trial_period_days: trialDays,
+      trial_period_days: trial.trialDays,
       metadata: {
         trial_type: isFiveD ? '5d_new_member' : 'promo_free_months',
         promoSlug: campaign.slug,
         freeMonthsTotal: String(campaign.freeMonthsTotal),
       },
     };
+  } else if (campaign && trial.kind === 'none') {
+    // No trial: Stripe charges the card when the checkout completes, with any
+    // coupon above applied to that first invoice. See NO_TRIAL_PROMO_SLUGS.
+    checkoutParams.subscription_data = {
+      metadata: {
+        trial_type: 'none',
+        promoSlug: campaign.slug,
+      },
+    };
   } else {
     checkoutParams.subscription_data = {
-      trial_period_days: 7,
+      trial_period_days: STANDARD_TRIAL_DAYS,
       metadata: {
         trial_type: 'standard_7d',
       },
